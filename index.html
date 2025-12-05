@@ -167,7 +167,7 @@
     <script type="module">
         // Importações do Firebase
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-        import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
         import { getFirestore, doc, getDoc, addDoc, setDoc, onSnapshot, collection } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
         import { setLogLevel } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
         
@@ -221,29 +221,25 @@
             lucide.createIcons();
             
             try {
-                // CONFIGURAÇÃO DO FIREBASE: Configuração fixa para funcionar em qualquer lugar.
-                const firebaseConfig = {
-                    apiKey: "AIzaSyAdwsGBTApwOwqr37qCv72gdPRbipsZG0Q",
-                    authDomain: "meuestoque-1badc.firebaseapp.com",
-                    projectId: "meuestoque-1badc",
-                    storageBucket: "meuestoque-1badc.firebasestorage.app",
-                    messagingSenderId: "730003067834",
-                    appId: "1:730003067834:web:b205f1ea59053345960383",
-                    measurementId: "G-2FFED8S7R3"
-                };
-
-                if (!firebaseConfig || !firebaseConfig.apiKey) {
-                    throw new Error("Configuração do Firebase incompleta. Chave API faltando.");
-                }
+                // CONFIGURAÇÃO DO FIREBASE: Usando configurações injetadas pelo ambiente Canvas.
+                const firebaseConfig = JSON.parse(typeof window.__firebase_config !== 'undefined' ? window.__firebase_config : '{}');
+                const initialAuthToken = typeof window.__initial_auth_token !== 'undefined' ? window.__initial_auth_token : null;
                 
+                if (!firebaseConfig || !firebaseConfig.apiKey) {
+                    throw new Error("Configuração do Firebase não encontrada. A chave API está faltando.");
+                }
+
                 // Inicialização
                 app = initializeApp(firebaseConfig);
                 db = getFirestore(app);
                 auth = getAuth(app);
                 
-                // Autenticação: Usamos signInAnonymously() para garantir o funcionamento externo.
-                // Isso deve ser compatível com as regras de segurança padrão.
-                await signInAnonymously(auth);
+                // Autenticação: Prioriza o token customizado do Canvas, fallback para anônimo.
+                if (initialAuthToken) {
+                    await signInWithCustomToken(auth, initialAuthToken);
+                } else {
+                    await signInAnonymously(auth);
+                }
 
                 onAuthStateChanged(auth, (user) => {
                     isAuthReady = true;
@@ -255,8 +251,8 @@
                     if (user) {
                         console.log(`Usuário logado (UID: ${user.uid}), carregando dados.`);
                     } else {
-                        console.error("Autenticação anônima falhou. Verifique as regras de segurança.");
-                        showAlertModal("Atenção: A autenticação anônima falhou. O painel está visível, mas pode haver erros de permissão de leitura/escrita no Firestore. Certifique-se de que o provedor Anônimo esteja ativado no Firebase Auth.", "Aviso de Conexão");
+                        console.error("Falha na autenticação. Verifique as regras de segurança.");
+                        showAlertModal("Atenção: A autenticação anônima falhou. Verifique se as regras de segurança do Firestore permitem leitura/escrita para usuários anônimos (request.auth != null).", "Aviso de Conexão");
                     }
                     
                     // Carrega os dados após a autenticação inicial
@@ -277,7 +273,7 @@
                     <div class="text-center p-6 bg-red-50 rounded-lg border border-red-200">
                         <p class="text-red-700 font-bold mb-2">ERRO CRÍTICO AO CARREGAR O PAINEL:</p>
                         <p class="text-red-900 font-mono text-sm break-words">${displayError}</p>
-                        <p class="text-sm text-gray-500 mt-4">Verifique sua configuração do Firebase no código.</p>
+                        <p class="text-sm text-gray-500 mt-4">Verifique sua configuração do Firebase no console. O token/configuração do ambiente pode estar ausente ou incorreto.</p>
                     </div>
                 `;
             }
