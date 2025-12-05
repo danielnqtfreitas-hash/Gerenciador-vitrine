@@ -177,8 +177,10 @@
         let isAuthReady = false;
         const STORE_CONFIG_DOC_PATH = 'config/store';
 
-        // CONFIGURAÇÃO DO FIREBASE PARA DEPLOY EXTERNO (GITHUB PAGES)
-        // Se as variáveis globais não forem encontradas, esta configuração será usada.
+        // ===================================================================================================
+        // !!! CONFIGURAÇÃO FIREBASE CORRETA (FORNECIDA PELO USUÁRIO) !!!
+        // Esta configuração é usada para deploy externo (GitHub Pages) ou se a configuração do Canvas falhar.
+        // ===================================================================================================
         const EXTERNAL_FIREBASE_CONFIG = {
           apiKey: "AIzaSyAdwsGBTApwOwqr37qCv72gdPRbipsZG0Q",
           authDomain: "meuestoque-1badc.firebaseapp.com",
@@ -186,7 +188,9 @@
           storageBucket: "meuestoque-1badc.firebasestorage.app",
           messagingSenderId: "730003067834",
           appId: "1:730003067834:web:b205f1ea59053345960383",
+          measurementId: "G-2FFED8S7R3"
         };
+        // ===================================================================================================
 
         // --- 1. Funções de Utilitário ---
         
@@ -235,18 +239,15 @@
                 let initialAuthToken = null;
                 let isCanvasEnvironment = false;
                 
-                // 1. Tenta carregar a configuração injetada pelo Canvas (abordagem mais robusta)
+                // 1. Tenta carregar a configuração injetada pelo Canvas
                 if (typeof window.__firebase_config !== 'undefined' && window.__firebase_config) {
                     try {
-                        // Tenta analisar o JSON injetado
                         const parsedConfig = JSON.parse(window.__firebase_config);
                         if (parsedConfig && parsedConfig.apiKey) {
                             firebaseConfig = parsedConfig;
                             initialAuthToken = typeof window.__initial_auth_token !== 'undefined' ? window.__initial_auth_token : null;
                             isCanvasEnvironment = true;
                             console.log("Detectado ambiente Canvas. Usando variáveis injetadas.");
-                        } else {
-                            console.warn("Aviso: Configuração Canvas está definida, mas a chave API está ausente. Caindo para a configuração externa.");
                         }
                     } catch (e) {
                         console.warn("Aviso: Falha ao analisar a configuração JSON injetada. Caindo para a configuração externa.", e);
@@ -255,14 +256,15 @@
 
                 // 2. Se a configuração do Canvas falhar ou não for válida, usa a configuração externa
                 if (!firebaseConfig || !firebaseConfig.apiKey) {
+                    // Usa o config externo, que DEVE ter a apiKey correta para o GitHub Pages
                     firebaseConfig = EXTERNAL_FIREBASE_CONFIG;
                     isCanvasEnvironment = false; 
-                    initialAuthToken = null; // Garante que o token customizado não seja usado em ambientes externos
+                    initialAuthToken = null; 
                     console.log("Usando configuração hardcoded para deploy externo.");
                 }
                 
+                // 3. Verificação final
                 if (!firebaseConfig || !firebaseConfig.apiKey) {
-                    // Lança o erro se, mesmo com o fallback, a configuração for inválida
                     throw new Error("configuration-not-found");
                 }
 
