@@ -210,51 +210,87 @@
             lucide.createIcons();
             
             try {
-                // Configuração do Firebase fornecida pelo usuário
-                const firebaseConfig = {
-                  apiKey: "AIzaSyAdwsGBTApwOwqr37qCv72gdPRbipsZG0Q",
-                  authDomain: "meuestoque-1badc.firebaseapp.com",
-                  projectId: "meuestoque-1badc",
-                  storageBucket: "meuestoque-1badc.firebasestorage.app",
-                  messagingSenderId: "730003067834",
-                  appId: "1:730003067834:web:b205f1ea59053345960383",
-                  measurementId: "G-2FFED8S7R3"
-                };
+                // CONFIGURAÇÃO DO FIREBASE: Prioriza a configuração injetada
+                const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+                let firebaseConfig;
+                
+                // 1. Tenta usar a configuração injetada pelo ambiente (Canvas)
+                if (typeof __firebase_config !== 'undefined' && __firebase_config) {
+                    try {
+                        firebaseConfig = JSON.parse(__firebase_config);
+                    } catch (e) {
+                        console.warn("Erro ao fazer o parse de __firebase_config. Usando configuração de fallback.");
+                    }
+                }
+                
+                // 2. Se a configuração injetada falhar, usa o fallback hardcoded
+                if (!firebaseConfig || !firebaseConfig.apiKey) {
+                    console.warn("Configuração do Firebase não encontrada. Usando configuração de fallback hardcoded.");
+                    firebaseConfig = {
+                        apiKey: "AIzaSyAdwsGBTApwOwqr37qCv72gdPRbipsZG0Q",
+                        authDomain: "meuestoque-1badc.firebaseapp.com",
+                        projectId: "meuestoque-1badc",
+                        storageBucket: "meuestoque-1badc.firebasestorage.app",
+                        messagingSenderId: "730003067834",
+                        appId: "1:730003067834:web:b205f1ea59053345960383",
+                        measurementId: "G-2FFED8S7R3"
+                    };
+                }
 
+                if (!firebaseConfig || !firebaseConfig.apiKey) {
+                    throw new Error("Configuração do Firebase incompleta. Chave API faltando.");
+                }
+                
+                // Inicialização
                 app = initializeApp(firebaseConfig);
                 db = getFirestore(app);
                 auth = getAuth(app);
-
-                // Autenticação (ainda usando os tokens injetados pelo Canvas, se existirem)
+                
+                // Autenticação
                 if (typeof __initial_auth_token !== 'undefined') {
                     await signInWithCustomToken(auth, __initial_auth_token);
                 } else {
                     await signInAnonymously(auth);
                 }
 
+                // O listener de estado de autenticação garante que a UI só carregue
+                // após o Firebase ter verificado o estado inicial.
                 onAuthStateChanged(auth, (user) => {
+                    isAuthReady = true;
+                    // ** MOSTRA A UI APÓS A VERIFICAÇÃO DE AUTENTICAÇÃO (SUCESSO OU FALHA) **
+                    document.getElementById('loading').classList.add('hidden');
+                    document.getElementById('app').classList.remove('hidden');
+                    lucide.createIcons(); 
+
                     if (user) {
-                        isAuthReady = true;
-                        loadStoreConfig();
+                        console.log("Usuário autenticado, carregando dados.");
+                        loadStoreConfig(); 
                         setupProductListener();
-                        document.getElementById('loading').classList.add('hidden');
-                        document.getElementById('app').classList.remove('hidden');
-                        lucide.createIcons(); 
                     } else {
-                        console.error("Autenticação falhou.");
-                        // Permite que o painel carregue para que o usuário possa editar a config, mesmo que as regras do Firestore falhem.
-                        isAuthReady = true; 
-                        loadStoreConfig();
+                        // Se a autenticação falhar, avisa, mas a UI já está visível para edição
+                        console.error("Autenticação falhou. Verifique as regras de segurança.");
+                        showAlertModal("Atenção: A autenticação anônima falhou. O painel está visível, mas pode haver erros de permissão de leitura/escrita no Firestore. Verifique as regras de segurança do seu projeto Firebase.", "Aviso de Conexão");
+                        loadStoreConfig(); 
                         setupProductListener();
-                        document.getElementById('loading').classList.add('hidden');
-                        document.getElementById('app').classList.remove('hidden');
-                        lucide.createIcons();
                     }
                 });
 
             } catch (error) {
                 console.error("Erro na inicialização do Painel:", error);
-                document.getElementById('loading').innerHTML = `<p class="text-red-600">Erro ao carregar o Painel: ${error.message}.</p>`;
+                
+                // Atualiza o loading com a mensagem de erro crítica (como o erro que você viu)
+                const errorMessage = error.message || String(error);
+                let displayError = errorMessage.includes('Firebase: Error') 
+                    ? errorMessage.replace(/Firebase: Error \((auth\/|app\/|)\s*/, '').replace(/\)/, '').replace(/\./g, '').trim()
+                    : errorMessage;
+                
+                document.getElementById('loading').innerHTML = `
+                    <div class="text-center p-6 bg-red-50 rounded-lg border border-red-200">
+                        <p class="text-red-700 font-bold mb-2">ERRO CRÍTICO AO CARREGAR O PAINEL:</p>
+                        <p class="text-red-900 font-mono text-sm break-words">${displayError}</p>
+                        <p class="text-sm text-gray-500 mt-4">Verifique sua configuração do Firebase no código.</p>
+                    </div>
+                `;
             }
         });
         
@@ -264,9 +300,7 @@
         async function loadStoreConfig() {
             if (!isAuthReady) return;
 
-            // O __app_id é injetado pelo Canvas para isolamento de dados
             const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
-            // Caminho para dados públicos que podem ser acessados pela loja e pelo painel
             const configRef = doc(db, `artifacts/${appId}/public/data/${STORE_CONFIG_DOC_PATH}`);
             
             try {
