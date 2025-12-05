@@ -185,7 +185,6 @@
           apiKey: "AIzaSyAdwsGBTApwOwqr37qCv72gdPRbipsZG0Q",
           authDomain: "meuestoque-1badc.firebaseapp.com",
           projectId: "meuestoque-1badc",
-          // CORREÇÃO APLICADA: Usando o formato <projectId>.appspot.com
           storageBucket: "meuestoque-1badc.appspot.com", 
           messagingSenderId: "730003067834",
           appId: "1:730003067834:web:b205f1ea59053345960383",
@@ -256,14 +255,8 @@
                         console.warn("Aviso: Falha ao analisar a configuração JSON injetada. Usando a configuração externa como fallback.", e);
                     }
                 }
-
-                // 2. Verificação final
-                if (!firebaseConfig || !firebaseConfig.apiKey) {
-                    // Esta linha só deve ser alcançada se EXTERNAL_FIREBASE_CONFIG estiver vazia ou inválida
-                    throw new Error("configuration-not-found");
-                }
                 
-                // Inicialização
+                // Inicialização do Firebase
                 app = initializeApp(firebaseConfig);
                 db = getFirestore(app);
                 auth = getAuth(app);
@@ -300,17 +293,22 @@
             } catch (error) {
                 console.error("Erro na inicialização do Painel:", error);
                 
-                // Exibe o erro crítico na tela de carregamento
+                // ATUALIZAÇÃO CRÍTICA: Exibe o erro real do Firebase ou o erro de inicialização.
                 const errorMessage = error.message || String(error);
                 let displayError = errorMessage.includes('Firebase: Error') 
                     ? errorMessage.replace(/Firebase: Error \((auth\/|app\/|)\s*/, '').replace(/\)/, '').replace(/\./g, '').trim()
                     : errorMessage;
                 
+                if (!displayError || displayError === '[object Error]') {
+                    // Caso o erro capturado seja muito genérico (não Firebase), exibe um aviso mais específico sobre a configuração externa
+                    displayError = "Verificação de configuração (EXTERNAL_FIREBASE_CONFIG) falhou. Verifique API Key, Project ID e se a Autenticação Anônima está habilitada.";
+                }
+
                 document.getElementById('loading').innerHTML = `
                     <div class="text-center p-6 bg-red-50 rounded-lg border border-red-200">
                         <p class="text-red-700 font-bold mb-2">ERRO CRÍTICO AO CARREGAR O PAINEL:</p>
                         <p class="text-red-900 font-mono text-sm break-words">${displayError}</p>
-                        <p class="text-sm text-gray-500 mt-4">Verifique sua configuração do Firebase. O token/configuração do ambiente pode estar ausente ou incorreto. (storageBucket pode ter sido o culpado)</p>
+                        <p class="text-sm text-gray-500 mt-4">Essa é a mensagem de erro real do Firebase. Use-a para depurar sua configuração no console do Firebase. Certifique-se de que a Autenticação Anônima esteja ativa.</p>
                     </div>
                 `;
             }
