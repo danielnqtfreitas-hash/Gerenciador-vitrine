@@ -186,7 +186,6 @@
           storageBucket: "meuestoque-1badc.firebasestorage.app",
           messagingSenderId: "730003067834",
           appId: "1:730003067834:web:b205f1ea59053345960383",
-          // measurementId não é necessário para esta aplicação
         };
 
         // --- 1. Funções de Utilitário ---
@@ -232,23 +231,39 @@
             lucide.createIcons();
             
             try {
-                // Tenta usar a configuração injetada pelo Canvas
                 let firebaseConfig = null;
                 let initialAuthToken = null;
-                let isCanvasEnvironment = typeof window.__firebase_config !== 'undefined';
+                let isCanvasEnvironment = false;
+                
+                // 1. Tenta carregar a configuração injetada pelo Canvas (abordagem mais robusta)
+                if (typeof window.__firebase_config !== 'undefined' && window.__firebase_config) {
+                    try {
+                        // Tenta analisar o JSON injetado
+                        const parsedConfig = JSON.parse(window.__firebase_config);
+                        if (parsedConfig && parsedConfig.apiKey) {
+                            firebaseConfig = parsedConfig;
+                            initialAuthToken = typeof window.__initial_auth_token !== 'undefined' ? window.__initial_auth_token : null;
+                            isCanvasEnvironment = true;
+                            console.log("Detectado ambiente Canvas. Usando variáveis injetadas.");
+                        } else {
+                            console.warn("Aviso: Configuração Canvas está definida, mas a chave API está ausente. Caindo para a configuração externa.");
+                        }
+                    } catch (e) {
+                        console.warn("Aviso: Falha ao analisar a configuração JSON injetada. Caindo para a configuração externa.", e);
+                    }
+                }
 
-                if (isCanvasEnvironment) {
-                    firebaseConfig = JSON.parse(window.__firebase_config);
-                    initialAuthToken = typeof window.__initial_auth_token !== 'undefined' ? window.__initial_auth_token : null;
-                    console.log("Detectado ambiente Canvas. Usando variáveis injetadas.");
-                } else {
-                    // Se não estiver no Canvas, usa a configuração externa
+                // 2. Se a configuração do Canvas falhar ou não for válida, usa a configuração externa
+                if (!firebaseConfig || !firebaseConfig.apiKey) {
                     firebaseConfig = EXTERNAL_FIREBASE_CONFIG;
-                    console.log("Detectado ambiente externo. Usando configuração hardcoded.");
+                    isCanvasEnvironment = false; 
+                    initialAuthToken = null; // Garante que o token customizado não seja usado em ambientes externos
+                    console.log("Usando configuração hardcoded para deploy externo.");
                 }
                 
                 if (!firebaseConfig || !firebaseConfig.apiKey) {
-                    throw new Error("Configuração do Firebase não encontrada. A chave API está faltando.");
+                    // Lança o erro se, mesmo com o fallback, a configuração for inválida
+                    throw new Error("configuration-not-found");
                 }
 
                 // Inicialização
