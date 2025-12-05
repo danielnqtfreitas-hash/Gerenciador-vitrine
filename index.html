@@ -204,14 +204,24 @@
             document.getElementById(`tab-${tabId}`).classList.remove('text-gray-600', 'hover:border-gray-400');
         };
 
-        // --- 2. Inicialização do Firebase e Autenticação (Ajustado para Deploy Externo) ---
+        // Função auxiliar para definir o ID do aplicativo de forma segura (para Canvas e Externo)
+        function getAppId() {
+            // Verifica se a variável global '__app_id' existe (no ambiente Canvas)
+            // Usamos 'window.__app_id' para evitar ReferenceError em ambientes externos
+            if (typeof window.__app_id !== 'undefined') {
+                return window.__app_id;
+            }
+            // Retorna um ID padrão para deploy externo
+            return 'default-app-id';
+        }
+
+        // --- 2. Inicialização do Firebase e Autenticação ---
         
         document.addEventListener('DOMContentLoaded', async () => {
             lucide.createIcons();
             
             try {
-                // CONFIGURAÇÃO DO FIREBASE: ESTA É A CONFIGURAÇÃO REAL DO SEU PROJETO.
-                // Usamos esta diretamente para que funcione em qualquer lugar (Canvas ou GitHub).
+                // CONFIGURAÇÃO DO FIREBASE: Configuração fixa para funcionar em qualquer lugar.
                 const firebaseConfig = {
                     apiKey: "AIzaSyAdwsGBTApwOwqr37qCv72gdPRbipsZG0Q",
                     authDomain: "meuestoque-1badc.firebaseapp.com",
@@ -231,16 +241,13 @@
                 db = getFirestore(app);
                 auth = getAuth(app);
                 
-                // Autenticação: Usamos APENAS signInAnonymously() para garantir
-                // que funcione em qualquer ambiente, já que o token do Canvas não existe fora.
+                // Autenticação: Usamos signInAnonymously() para garantir o funcionamento externo.
+                // Isso deve ser compatível com as regras de segurança padrão.
                 await signInAnonymously(auth);
 
-                // O listener de estado de autenticação garante que a UI só carregue
-                // após o Firebase ter verificado o estado inicial.
                 onAuthStateChanged(auth, (user) => {
                     isAuthReady = true;
                     
-                    // MOSTRA A UI APÓS A VERIFICAÇÃO DE AUTENTICAÇÃO (SUCESSO OU FALHA)
                     document.getElementById('loading').classList.add('hidden');
                     document.getElementById('app').classList.remove('hidden');
                     lucide.createIcons(); 
@@ -248,12 +255,11 @@
                     if (user) {
                         console.log(`Usuário logado (UID: ${user.uid}), carregando dados.`);
                     } else {
-                        // Se a autenticação falhar, avisa (mas a UI já está visível para edição)
                         console.error("Autenticação anônima falhou. Verifique as regras de segurança.");
                         showAlertModal("Atenção: A autenticação anônima falhou. O painel está visível, mas pode haver erros de permissão de leitura/escrita no Firestore. Certifique-se de que o provedor Anônimo esteja ativado no Firebase Auth.", "Aviso de Conexão");
                     }
                     
-                    // Carrega os dados
+                    // Carrega os dados após a autenticação inicial
                     loadStoreConfig(); 
                     setupProductListener();
                 });
@@ -278,11 +284,6 @@
         });
         
         // --- 3. Gestão de Configurações da Loja ---
-
-        // Função auxiliar para definir o ID do aplicativo (usa fallback para deploy externo)
-        function getAppId() {
-            return typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
-        }
 
         // Carrega a configuração existente para preencher o formulário
         async function loadStoreConfig() {
