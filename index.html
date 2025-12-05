@@ -167,7 +167,7 @@
     <script type="module">
         // Importações do Firebase
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
         import { getFirestore, doc, getDoc, addDoc, setDoc, onSnapshot, collection } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
         import { setLogLevel } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
         
@@ -204,38 +204,23 @@
             document.getElementById(`tab-${tabId}`).classList.remove('text-gray-600', 'hover:border-gray-400');
         };
 
-        // --- 2. Inicialização do Firebase e Autenticação ---
+        // --- 2. Inicialização do Firebase e Autenticação (Ajustado para Deploy Externo) ---
         
         document.addEventListener('DOMContentLoaded', async () => {
             lucide.createIcons();
             
             try {
-                // CONFIGURAÇÃO DO FIREBASE: Prioriza a configuração injetada
-                const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
-                let firebaseConfig;
-                
-                // 1. Tenta usar a configuração injetada pelo ambiente (Canvas)
-                if (typeof __firebase_config !== 'undefined' && __firebase_config) {
-                    try {
-                        firebaseConfig = JSON.parse(__firebase_config);
-                    } catch (e) {
-                        console.warn("Erro ao fazer o parse de __firebase_config. Usando configuração de fallback.");
-                    }
-                }
-                
-                // 2. Se a configuração injetada falhar, usa o fallback hardcoded
-                if (!firebaseConfig || !firebaseConfig.apiKey) {
-                    console.warn("Configuração do Firebase não encontrada. Usando configuração de fallback hardcoded.");
-                    firebaseConfig = {
-                        apiKey: "AIzaSyAdwsGBTApwOwqr37qCv72gdPRbipsZG0Q",
-                        authDomain: "meuestoque-1badc.firebaseapp.com",
-                        projectId: "meuestoque-1badc",
-                        storageBucket: "meuestoque-1badc.firebasestorage.app",
-                        messagingSenderId: "730003067834",
-                        appId: "1:730003067834:web:b205f1ea59053345960383",
-                        measurementId: "G-2FFED8S7R3"
-                    };
-                }
+                // CONFIGURAÇÃO DO FIREBASE: ESTA É A CONFIGURAÇÃO REAL DO SEU PROJETO.
+                // Usamos esta diretamente para que funcione em qualquer lugar (Canvas ou GitHub).
+                const firebaseConfig = {
+                    apiKey: "AIzaSyAdwsGBTApwOwqr37qCv72gdPRbipsZG0Q",
+                    authDomain: "meuestoque-1badc.firebaseapp.com",
+                    projectId: "meuestoque-1badc",
+                    storageBucket: "meuestoque-1badc.firebasestorage.app",
+                    messagingSenderId: "730003067834",
+                    appId: "1:730003067834:web:b205f1ea59053345960383",
+                    measurementId: "G-2FFED8S7R3"
+                };
 
                 if (!firebaseConfig || !firebaseConfig.apiKey) {
                     throw new Error("Configuração do Firebase incompleta. Chave API faltando.");
@@ -246,39 +231,37 @@
                 db = getFirestore(app);
                 auth = getAuth(app);
                 
-                // Autenticação
-                if (typeof __initial_auth_token !== 'undefined') {
-                    await signInWithCustomToken(auth, __initial_auth_token);
-                } else {
-                    await signInAnonymously(auth);
-                }
+                // Autenticação: Usamos APENAS signInAnonymously() para garantir
+                // que funcione em qualquer ambiente, já que o token do Canvas não existe fora.
+                await signInAnonymously(auth);
 
                 // O listener de estado de autenticação garante que a UI só carregue
                 // após o Firebase ter verificado o estado inicial.
                 onAuthStateChanged(auth, (user) => {
                     isAuthReady = true;
-                    // ** MOSTRA A UI APÓS A VERIFICAÇÃO DE AUTENTICAÇÃO (SUCESSO OU FALHA) **
+                    
+                    // MOSTRA A UI APÓS A VERIFICAÇÃO DE AUTENTICAÇÃO (SUCESSO OU FALHA)
                     document.getElementById('loading').classList.add('hidden');
                     document.getElementById('app').classList.remove('hidden');
                     lucide.createIcons(); 
 
                     if (user) {
-                        console.log("Usuário autenticado, carregando dados.");
-                        loadStoreConfig(); 
-                        setupProductListener();
+                        console.log(`Usuário logado (UID: ${user.uid}), carregando dados.`);
                     } else {
-                        // Se a autenticação falhar, avisa, mas a UI já está visível para edição
-                        console.error("Autenticação falhou. Verifique as regras de segurança.");
-                        showAlertModal("Atenção: A autenticação anônima falhou. O painel está visível, mas pode haver erros de permissão de leitura/escrita no Firestore. Verifique as regras de segurança do seu projeto Firebase.", "Aviso de Conexão");
-                        loadStoreConfig(); 
-                        setupProductListener();
+                        // Se a autenticação falhar, avisa (mas a UI já está visível para edição)
+                        console.error("Autenticação anônima falhou. Verifique as regras de segurança.");
+                        showAlertModal("Atenção: A autenticação anônima falhou. O painel está visível, mas pode haver erros de permissão de leitura/escrita no Firestore. Certifique-se de que o provedor Anônimo esteja ativado no Firebase Auth.", "Aviso de Conexão");
                     }
+                    
+                    // Carrega os dados
+                    loadStoreConfig(); 
+                    setupProductListener();
                 });
 
             } catch (error) {
                 console.error("Erro na inicialização do Painel:", error);
                 
-                // Atualiza o loading com a mensagem de erro crítica (como o erro que você viu)
+                // Exibe o erro crítico na tela de carregamento
                 const errorMessage = error.message || String(error);
                 let displayError = errorMessage.includes('Firebase: Error') 
                     ? errorMessage.replace(/Firebase: Error \((auth\/|app\/|)\s*/, '').replace(/\)/, '').replace(/\./g, '').trim()
@@ -296,11 +279,17 @@
         
         // --- 3. Gestão de Configurações da Loja ---
 
+        // Função auxiliar para definir o ID do aplicativo (usa fallback para deploy externo)
+        function getAppId() {
+            return typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+        }
+
         // Carrega a configuração existente para preencher o formulário
         async function loadStoreConfig() {
             if (!isAuthReady) return;
 
-            const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+            const appId = getAppId();
+            // Caminho para dados públicos que podem ser acessados pela loja e pelo painel
             const configRef = doc(db, `artifacts/${appId}/public/data/${STORE_CONFIG_DOC_PATH}`);
             
             try {
@@ -324,7 +313,7 @@
                  return;
             }
 
-            const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+            const appId = getAppId();
             const configRef = doc(db, `artifacts/${appId}/public/data/${STORE_CONFIG_DOC_PATH}`);
             
             const newConfig = {
@@ -350,7 +339,7 @@
         function setupProductListener() {
             if (!isAuthReady) return;
 
-            const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+            const appId = getAppId();
             const productsRef = collection(db, `artifacts/${appId}/public/data/products`);
             
             onSnapshot(productsRef, (snapshot) => {
@@ -369,7 +358,7 @@
                  return;
             }
 
-            const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+            const appId = getAppId();
             const productsColRef = collection(db, `artifacts/${appId}/public/data/products`);
             
             const newProduct = {
