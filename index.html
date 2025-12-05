@@ -177,6 +177,18 @@
         let isAuthReady = false;
         const STORE_CONFIG_DOC_PATH = 'config/store';
 
+        // CONFIGURAÇÃO DO FIREBASE PARA DEPLOY EXTERNO (GITHUB PAGES)
+        // Se as variáveis globais não forem encontradas, esta configuração será usada.
+        const EXTERNAL_FIREBASE_CONFIG = {
+          apiKey: "AIzaSyAdwsGBTApwOwqr37qCv72gdPRbipsZG0Q",
+          authDomain: "meuestoque-1badc.firebaseapp.com",
+          projectId: "meuestoque-1badc",
+          storageBucket: "meuestoque-1badc.firebasestorage.app",
+          messagingSenderId: "730003067834",
+          appId: "1:730003067834:web:b205f1ea59053345960383",
+          // measurementId não é necessário para esta aplicação
+        };
+
         // --- 1. Funções de Utilitário ---
         
         function showAlertModal(message, title = 'Aviso') {
@@ -207,12 +219,11 @@
         // Função auxiliar para definir o ID do aplicativo de forma segura (para Canvas e Externo)
         function getAppId() {
             // Verifica se a variável global '__app_id' existe (no ambiente Canvas)
-            // Usamos 'window.__app_id' para evitar ReferenceError em ambientes externos
             if (typeof window.__app_id !== 'undefined') {
                 return window.__app_id;
             }
-            // Retorna um ID padrão para deploy externo
-            return 'default-app-id';
+            // Retorna o appId do config externo para deploy
+            return EXTERNAL_FIREBASE_CONFIG.appId;
         }
 
         // --- 2. Inicialização do Firebase e Autenticação ---
@@ -221,9 +232,20 @@
             lucide.createIcons();
             
             try {
-                // CONFIGURAÇÃO DO FIREBASE: Usando configurações injetadas pelo ambiente Canvas.
-                const firebaseConfig = JSON.parse(typeof window.__firebase_config !== 'undefined' ? window.__firebase_config : '{}');
-                const initialAuthToken = typeof window.__initial_auth_token !== 'undefined' ? window.__initial_auth_token : null;
+                // Tenta usar a configuração injetada pelo Canvas
+                let firebaseConfig = null;
+                let initialAuthToken = null;
+                let isCanvasEnvironment = typeof window.__firebase_config !== 'undefined';
+
+                if (isCanvasEnvironment) {
+                    firebaseConfig = JSON.parse(window.__firebase_config);
+                    initialAuthToken = typeof window.__initial_auth_token !== 'undefined' ? window.__initial_auth_token : null;
+                    console.log("Detectado ambiente Canvas. Usando variáveis injetadas.");
+                } else {
+                    // Se não estiver no Canvas, usa a configuração externa
+                    firebaseConfig = EXTERNAL_FIREBASE_CONFIG;
+                    console.log("Detectado ambiente externo. Usando configuração hardcoded.");
+                }
                 
                 if (!firebaseConfig || !firebaseConfig.apiKey) {
                     throw new Error("Configuração do Firebase não encontrada. A chave API está faltando.");
@@ -234,10 +256,12 @@
                 db = getFirestore(app);
                 auth = getAuth(app);
                 
-                // Autenticação: Prioriza o token customizado do Canvas, fallback para anônimo.
-                if (initialAuthToken) {
+                // Autenticação
+                if (isCanvasEnvironment && initialAuthToken) {
+                    // Login com token customizado (ambiente Canvas)
                     await signInWithCustomToken(auth, initialAuthToken);
                 } else {
+                    // Login anônimo (ambiente externo ou fallback)
                     await signInAnonymously(auth);
                 }
 
@@ -252,7 +276,7 @@
                         console.log(`Usuário logado (UID: ${user.uid}), carregando dados.`);
                     } else {
                         console.error("Falha na autenticação. Verifique as regras de segurança.");
-                        showAlertModal("Atenção: A autenticação anônima falhou. Verifique se as regras de segurança do Firestore permitem leitura/escrita para usuários anônimos (request.auth != null).", "Aviso de Conexão");
+                        showAlertModal("Atenção: A autenticação falhou. Verifique se as regras de segurança do Firestore permitem leitura/escrita para usuários autenticados (request.auth != null).", "Aviso de Conexão");
                     }
                     
                     // Carrega os dados após a autenticação inicial
@@ -273,7 +297,7 @@
                     <div class="text-center p-6 bg-red-50 rounded-lg border border-red-200">
                         <p class="text-red-700 font-bold mb-2">ERRO CRÍTICO AO CARREGAR O PAINEL:</p>
                         <p class="text-red-900 font-mono text-sm break-words">${displayError}</p>
-                        <p class="text-sm text-gray-500 mt-4">Verifique sua configuração do Firebase no console. O token/configuração do ambiente pode estar ausente ou incorreto.</p>
+                        <p class="text-sm text-gray-500 mt-4">Verifique sua configuração do Firebase. O token/configuração do ambiente pode estar ausente ou incorreto.</p>
                     </div>
                 `;
             }
