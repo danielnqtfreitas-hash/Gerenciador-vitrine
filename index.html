@@ -39,6 +39,8 @@
         .modal-content-wrapper { max-height: 90vh; overflow-y: auto; }
         .rotate-icon { transition: transform 0.3s ease; }
         .rotate-icon.rotated { transform: rotate(180deg); }
+        .accordion-content { max-height: 0; overflow: hidden; transition: max-height 0.3s ease-out; }
+        .accordion-content.active { max-height: 2000px; transition: max-height 0.5s ease-in; }
         
         /* Toggle Switch */
         .toggle-switch { width: 52px; height: 28px; position: relative; display: inline-block; }
@@ -95,6 +97,9 @@
             <button id="nav-categories" onclick="changeTab('categories')" class="sidebar-link w-full flex items-center px-6 py-3 text-sm font-medium text-slate-600 border-r-4 border-transparent">
                 <i data-lucide="layers" class="w-5 h-5 mr-3"></i> Categorias
             </button>
+            <button id="nav-promotions" onclick="changeTab('promotions')" class="sidebar-link w-full flex items-center px-6 py-3 text-sm font-medium text-slate-600 border-r-4 border-transparent">
+                <i data-lucide="ticket" class="w-5 h-5 mr-3"></i> Promoções
+            </button>
             
             <p class="px-6 text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2 mt-6">Sistema</p>
             <button id="nav-config" onclick="changeTab('config')" class="sidebar-link w-full flex items-center px-6 py-3 text-sm font-medium text-slate-600 border-r-4 border-transparent">
@@ -121,6 +126,7 @@
             <button onclick="changeTab('dashboard'); toggleMobileMenu()" class="w-full flex items-center p-3 hover:bg-slate-50 rounded text-slate-700"><i data-lucide="bar-chart-2" class="w-5 h-5 mr-3"></i> Dashboard</button>
             <button onclick="changeTab('products'); toggleMobileMenu()" class="w-full flex items-center p-3 hover:bg-slate-50 rounded text-slate-700"><i data-lucide="package" class="w-5 h-5 mr-3"></i> Produtos</button>
             <button onclick="changeTab('categories'); toggleMobileMenu()" class="w-full flex items-center p-3 hover:bg-slate-50 rounded text-slate-700"><i data-lucide="layers" class="w-5 h-5 mr-3"></i> Categorias</button>
+            <button onclick="changeTab('promotions'); toggleMobileMenu()" class="w-full flex items-center p-3 hover:bg-slate-50 rounded text-slate-700"><i data-lucide="ticket" class="w-5 h-5 mr-3"></i> Promoções</button>
             <button onclick="changeTab('config'); toggleMobileMenu()" class="w-full flex items-center p-3 hover:bg-slate-50 rounded text-slate-700"><i data-lucide="settings" class="w-5 h-5 mr-3"></i> Configurações</button>
         </nav>
     </aside>
@@ -139,7 +145,7 @@
             <!-- DASHBOARD TAB -->
             <div id="content-dashboard" class="max-w-6xl mx-auto space-y-6 animate-fade-in hidden">
                 
-                <!-- STATUS CONTROL (MOVED TO TOP) -->
+                <!-- STATUS CONTROL -->
                 <div class="bg-white rounded-2xl border border-slate-200 shadow-xl p-6 flex flex-col md:flex-row items-center justify-between gap-4">
                     <div class="flex items-center gap-4">
                         <div class="p-3 bg-green-50 text-green-600 rounded-xl" id="statusIconBg">
@@ -174,8 +180,8 @@
                     </div>
                     <div class="section-card bg-white p-6 rounded-2xl border border-slate-100 shadow-xl ring-1 ring-red-50">
                         <div class="flex justify-between items-start mb-4">
-                            <div><p class="text-xs font-semibold text-slate-400 uppercase">Pausados</p><h3 class="text-2xl font-bold text-yellow-600" id="dash-paused-stock">0</h3></div>
-                            <div class="p-2 bg-yellow-50 text-yellow-600 rounded-xl"><i data-lucide="pause-circle" class="w-5 h-5"></i></div>
+                            <div><p class="text-xs font-semibold text-slate-400 uppercase">Cupons Ativos</p><h3 class="text-2xl font-bold text-pink-600" id="dash-active-coupons">0</h3></div>
+                            <div class="p-2 bg-pink-50 text-pink-600 rounded-xl"><i data-lucide="ticket" class="w-5 h-5"></i></div>
                         </div>
                     </div>
                     <div class="section-card bg-white p-6 rounded-2xl border border-slate-100 shadow-xl">
@@ -194,13 +200,81 @@
                         </div>
                     </div>
                     <div class="bg-slate-900 rounded-2xl shadow-xl p-6 text-white relative overflow-hidden">
-                        <div class="relative z-10"><h3 class="font-bold text-lg mb-2">Dica Admin</h3><p class="text-slate-300 text-sm mb-4">Mantenha as taxas de entrega atualizadas para evitar dúvidas no WhatsApp.</p><button onclick="changeTab('config')" class="bg-white text-slate-900 px-4 py-2 rounded-xl text-sm font-bold hover:bg-slate-100 transition shadow-lg">Editar Taxas</button></div>
+                        <div class="relative z-10"><h3 class="font-bold text-lg mb-2">Dica Admin</h3><p class="text-slate-300 text-sm mb-4">Crie cupons sazonais (ex: VERAO10) para aumentar as vendas em categorias específicas.</p><button onclick="changeTab('promotions')" class="bg-white text-slate-900 px-4 py-2 rounded-xl text-sm font-bold hover:bg-slate-100 transition shadow-lg">Criar Cupom</button></div>
                         <div class="absolute -bottom-10 -right-10 w-40 h-40 bg-white/10 rounded-full blur-2xl"></div>
                     </div>
                 </div>
             </div>
 
-            <!-- CONFIG TAB -->
+            <!-- PROMOTIONS TAB -->
+            <div id="content-promotions" class="max-w-6xl mx-auto space-y-6 hidden">
+                <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 section-card bg-white p-6 rounded-2xl border border-slate-200 shadow-xl">
+                    <div>
+                        <h3 class="text-lg font-bold text-slate-800">Cupons de Desconto</h3>
+                        <p class="text-sm text-slate-500">Gerencie códigos promocionais para toda a loja ou categorias.</p>
+                    </div>
+                    <button onclick="openCouponModal()" class="bg-primary-600 hover:bg-primary-700 text-white font-medium py-2.5 px-5 rounded-xl shadow-md flex items-center whitespace-nowrap"><i data-lucide="plus" class="w-5 h-5 mr-2"></i> Novo Cupom</button>
+                </div>
+
+                <div class="section-card bg-white rounded-2xl border border-slate-200 shadow-xl overflow-hidden">
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-sm text-left">
+                            <thead class="text-xs text-slate-500 uppercase bg-slate-50 border-b border-slate-100">
+                                <tr>
+                                    <th class="px-6 py-4">Código</th>
+                                    <th class="px-6 py-4">Desconto</th>
+                                    <th class="px-6 py-4">Aplica em</th>
+                                    <th class="px-6 py-4">Status</th>
+                                    <th class="px-6 py-4 text-right">Ações</th>
+                                </tr>
+                            </thead>
+                            <tbody id="couponsList" class="divide-y divide-slate-100">
+                                <!-- Coupons rendered here -->
+                            </tbody>
+                        </table>
+                    </div>
+                    <div id="emptyCouponsMsg" class="hidden text-center py-10 text-slate-400">
+                        <i data-lucide="ticket" class="w-10 h-10 mx-auto mb-2 opacity-20"></i>
+                        <p>Nenhum cupom criado ainda.</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- PRODUCTS TAB -->
+            <div id="content-products" class="max-w-6xl mx-auto space-y-6 hidden">
+                <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 section-card bg-white p-4 rounded-2xl border border-slate-200 shadow-xl">
+                    <div class="relative flex-grow max-w-md">
+                        <i data-lucide="search" class="absolute left-3 top-2.5 text-slate-400 w-5 h-5"></i>
+                        <input type="text" id="productSearch" onkeyup="filterProducts()" placeholder="Buscar produto..." class="w-full pl-10 border bg-slate-50 focus:bg-white focus:ring-primary-500 focus:border-primary-500">
+                    </div>
+                    <div class="flex gap-2">
+                         <select id="filterCategory" onchange="filterProducts()" class="border text-sm py-2 px-3 bg-slate-50 text-slate-600 focus:ring-primary-500"><option value="all">Todas Categorias</option></select>
+                        <button onclick="openAddModal()" class="bg-primary-600 hover:bg-primary-700 text-white font-medium py-2 px-4 rounded-xl shadow-md flex items-center whitespace-nowrap"><i data-lucide="plus" class="w-4 h-4 mr-2"></i> Novo</button>
+                    </div>
+                </div>
+                <div id="productList" class="flex flex-col gap-6"></div>
+            </div>
+
+            <!-- CATEGORIES TAB -->
+            <div id="content-categories" class="max-w-5xl mx-auto space-y-6 hidden">
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                    <div class="section-card bg-white p-6 rounded-2xl border border-slate-200 shadow-xl h-fit">
+                        <h3 class="font-bold text-slate-800 mb-4">Nova Categoria</h3>
+                        <form id="categoryForm" onsubmit="addCategory(event)">
+                            <div class="space-y-4">
+                                <input type="text" id="categoryName" required class="w-full border bg-slate-50 focus:ring-primary-500" placeholder="Nome">
+                                <button type="submit" class="w-full bg-slate-900 hover:bg-slate-800 text-white font-medium py-2 rounded-xl shadow-md">Adicionar</button>
+                            </div>
+                        </form>
+                    </div>
+                    <div class="lg:col-span-2 section-card bg-white rounded-2xl border border-slate-200 shadow-xl p-6">
+                        <h3 class="font-bold text-slate-800 mb-4 border-b pb-2">Categorias Cadastradas</h3>
+                        <div id="categoryList" class="grid grid-cols-1 sm:grid-cols-2 gap-4"></div>
+                    </div>
+                </div>
+            </div>
+
+             <!-- CONFIG TAB -->
             <div id="content-config" class="max-w-4xl mx-auto space-y-6 hidden">
                 <form id="storeConfigForm" onsubmit="saveStoreConfig(event)" class="space-y-6">
 
@@ -291,40 +365,6 @@
                 </form>
             </div>
 
-            <!-- PRODUCTS TAB -->
-            <div id="content-products" class="max-w-6xl mx-auto space-y-6 hidden">
-                <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 section-card bg-white p-4 rounded-2xl border border-slate-200 shadow-xl">
-                    <div class="relative flex-grow max-w-md">
-                        <i data-lucide="search" class="absolute left-3 top-2.5 text-slate-400 w-5 h-5"></i>
-                        <input type="text" id="productSearch" onkeyup="filterProducts()" placeholder="Buscar produto..." class="w-full pl-10 border bg-slate-50 focus:bg-white focus:ring-primary-500 focus:border-primary-500">
-                    </div>
-                    <div class="flex gap-2">
-                         <select id="filterCategory" onchange="filterProducts()" class="border text-sm py-2 px-3 bg-slate-50 text-slate-600 focus:ring-primary-500"><option value="all">Todas Categorias</option></select>
-                        <button onclick="openAddModal()" class="bg-primary-600 hover:bg-primary-700 text-white font-medium py-2 px-4 rounded-xl shadow-md flex items-center whitespace-nowrap"><i data-lucide="plus" class="w-4 h-4 mr-2"></i> Novo</button>
-                    </div>
-                </div>
-                <div id="productList" class="flex flex-col gap-6"></div>
-            </div>
-
-            <!-- CATEGORIES TAB -->
-            <div id="content-categories" class="max-w-5xl mx-auto space-y-6 hidden">
-                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                    <div class="section-card bg-white p-6 rounded-2xl border border-slate-200 shadow-xl h-fit">
-                        <h3 class="font-bold text-slate-800 mb-4">Nova Categoria</h3>
-                        <form id="categoryForm" onsubmit="addCategory(event)">
-                            <div class="space-y-4">
-                                <input type="text" id="categoryName" required class="w-full border bg-slate-50 focus:ring-primary-500" placeholder="Nome">
-                                <button type="submit" class="w-full bg-slate-900 hover:bg-slate-800 text-white font-medium py-2 rounded-xl shadow-md">Adicionar</button>
-                            </div>
-                        </form>
-                    </div>
-                    <div class="lg:col-span-2 section-card bg-white rounded-2xl border border-slate-200 shadow-xl p-6">
-                        <h3 class="font-bold text-slate-800 mb-4 border-b pb-2">Categorias Cadastradas</h3>
-                        <div id="categoryList" class="grid grid-cols-1 sm:grid-cols-2 gap-4"></div>
-                    </div>
-                </div>
-            </div>
-
         </div>
     </main>
 
@@ -335,6 +375,66 @@
             <h3 class="text-lg font-bold text-slate-900 mb-2" id="alertModalTitle">Aviso</h3>
             <p id="alertMessage" class="text-sm text-slate-500 mb-6"></p>
             <div id="alertModalFooter" class="flex justify-center gap-3"></div>
+        </div>
+    </div>
+
+    <!-- COUPON MODAL -->
+    <div id="couponModal" class="modal-overlay fixed inset-0 z-50 flex items-center justify-center p-4 hidden">
+        <div class="bg-white rounded-3xl shadow-2xl w-full max-w-lg modal-content-wrapper">
+            <div class="flex justify-between items-center p-6 border-b border-slate-100 sticky top-0 bg-white z-10">
+                <h3 class="text-xl font-bold text-slate-800">Novo Cupom</h3>
+                <button onclick="document.getElementById('couponModal').classList.add('hidden')" class="text-slate-400 hover:text-slate-600 p-2 rounded-full hover:bg-slate-50"><i data-lucide="x" class="w-6 h-6"></i></button>
+            </div>
+            <div class="p-6">
+                <form id="couponForm" onsubmit="handleCouponSubmit(event)">
+                    <div class="space-y-4">
+                        <div>
+                            <label class="block text-sm font-medium text-slate-700 mb-1">Código do Cupom</label>
+                            <input type="text" id="couponCode" required class="w-full border focus:ring-primary-500 uppercase tracking-widest font-bold" placeholder="EX: VERAO10">
+                            <p class="text-xs text-slate-400 mt-1">Será convertido para maiúsculas automaticamente.</p>
+                        </div>
+                        
+                        <div class="grid grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-sm font-medium text-slate-700 mb-1">Tipo Desconto</label>
+                                <select id="couponType" class="w-full border bg-slate-50 focus:ring-primary-500" onchange="updateCouponInputs()">
+                                    <option value="percentage">Porcentagem (%)</option>
+                                    <option value="fixed">Valor Fixo (R$)</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-slate-700 mb-1">Valor</label>
+                                <input type="number" step="0.01" id="couponValue" required class="w-full border focus:ring-primary-500">
+                            </div>
+                        </div>
+
+                        <div>
+                            <label class="block text-sm font-medium text-slate-700 mb-1">Aplicar em</label>
+                            <select id="couponScope" class="w-full border bg-slate-50 focus:ring-primary-500" onchange="toggleCategorySelect()">
+                                <option value="global">Toda a Loja</option>
+                                <option value="category">Categoria Específica</option>
+                            </select>
+                        </div>
+
+                        <div id="couponCategoryDiv" class="hidden p-4 bg-slate-50 rounded-xl border border-slate-200">
+                            <label class="block text-sm font-medium text-slate-700 mb-1">Selecione a Categoria</label>
+                            <select id="couponTargetCategory" class="w-full border bg-white focus:ring-primary-500">
+                                <!-- Populated dynamically -->
+                            </select>
+                        </div>
+
+                        <div class="flex items-center gap-2 pt-2">
+                            <input type="checkbox" id="couponActive" checked class="h-4 w-4 text-primary-600 rounded">
+                            <label class="text-sm text-slate-700">Ativar Cupom Imediatamente</label>
+                        </div>
+                    </div>
+
+                    <div class="flex justify-end gap-3 mt-8 pt-4 border-t border-slate-100">
+                        <button type="button" onclick="document.getElementById('couponModal').classList.add('hidden')" class="px-4 py-2 rounded-xl text-slate-600 hover:bg-slate-50">Cancelar</button>
+                        <button type="submit" class="bg-primary-600 hover:bg-primary-700 text-white font-bold py-2 px-6 rounded-xl shadow-md">Salvar Cupom</button>
+                    </div>
+                </form>
+            </div>
         </div>
     </div>
 
@@ -399,7 +499,7 @@
         };
         const defaultDays = ["Segunda", "Terça", "Quarta", "Quinta", "Sexta", "Sábado", "Domingo"];
         let app, db, auth, isAuthReady = false;
-        let allProducts = [], allCategories = [], deliveryAreas = []; 
+        let allProducts = [], allCategories = [], deliveryAreas = [], allCoupons = []; 
 
         window.toggleMobileMenu = () => {
             const sb = document.getElementById('mobile-sidebar');
@@ -409,7 +509,7 @@
         };
 
         window.changeTab = (tabId) => {
-            ['dashboard', 'config', 'products', 'categories'].forEach(id => {
+            ['dashboard', 'config', 'products', 'categories', 'promotions'].forEach(id => {
                 document.getElementById(`content-${id}`).classList.add('hidden');
                 const btn = document.getElementById(`nav-${id}`);
                 if(btn) { btn.classList.remove('active'); btn.classList.add('text-slate-600', 'border-transparent'); }
@@ -417,7 +517,7 @@
             document.getElementById(`content-${tabId}`).classList.remove('hidden');
             const activeBtn = document.getElementById(`nav-${tabId}`);
             if(activeBtn) { activeBtn.classList.add('active'); activeBtn.classList.remove('text-slate-600', 'border-transparent'); }
-            const titles = { 'dashboard': 'Visão Geral', 'config': 'Configurações', 'products': 'Produtos', 'categories': 'Categorias' };
+            const titles = { 'dashboard': 'Visão Geral', 'config': 'Configurações', 'products': 'Produtos', 'categories': 'Categorias', 'promotions': 'Cupons e Promoções' };
             document.getElementById('page-title').textContent = titles[tabId] || 'Painel';
             if(tabId === 'dashboard') updateDashboardStats();
             lucide.createIcons();
@@ -455,7 +555,7 @@
             if(!allProducts.length) return;
             document.getElementById('dash-total-products').textContent = allProducts.length;
             document.getElementById('dash-featured').textContent = allProducts.filter(p => p.isFeatured).length;
-            document.getElementById('dash-paused-stock').textContent = allProducts.filter(p => p.status === 'paused').length;
+            document.getElementById('dash-active-coupons').textContent = allCoupons.filter(c => c.status === 'active').length;
             document.getElementById('dash-total-cats').textContent = allCategories.length;
             const recent = [...allProducts].sort((a,b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0)).slice(0, 5);
             const table = document.getElementById('dash-recent-table');
@@ -502,9 +602,10 @@
                     if(u) {
                         isAuthReady = true;
                         document.getElementById('loading').classList.add('hidden');
-                        setupConfigListener(); // Listener Realtime para Config
+                        setupConfigListener(); 
                         setupCategoryListener();
                         setupProductListener();
+                        setupCouponsListener();
                         changeTab('dashboard');
                     }
                 });
@@ -517,7 +618,6 @@
                 if (doc.exists()) {
                     const data = doc.data();
                     
-                    // Preencher Form
                     document.getElementById('storeName').value = data.storeName || '';
                     document.getElementById('whatsappNumber').value = data.whatsappNumber || '';
                     document.getElementById('heroTag').value = data.heroTag || '';
@@ -527,11 +627,9 @@
                     document.getElementById('secondaryColor').value = data.secondaryColor || '#4f46e5';
                     renderDailyHours(data.hours || []);
                     
-                    // Atualizar Estado Local
                     deliveryAreas = data.deliveryAreas || [];
                     renderDeliveryAreas();
 
-                    // Atualizar Switch Dashboard
                     const isOpen = data.isStoreOpen !== false;
                     const dashSwitch = document.getElementById('dashboardStoreToggle');
                     if(dashSwitch) dashSwitch.checked = isOpen;
@@ -562,7 +660,7 @@
                 await updateDoc(doc(db, `artifacts/${EXTERNAL_FIREBASE_CONFIG.appId}/public/data/config/store`), { isStoreOpen: newState });
                 showToast(newState ? "Loja Aberta!" : "Loja Fechada!");
             } catch(e) { 
-                el.checked = !newState; // Revert on error
+                el.checked = !newState;
                 showAlertModal("Erro ao alterar status"); 
             }
         };
@@ -580,12 +678,10 @@
             lucide.createIcons();
         }
         
-        // CORREÇÃO DO BUG DE BAIRROS: Re-renderização limpa
         function renderDeliveryAreas() {
             const container = document.getElementById('deliveryAreasList'); 
             const emptyMsg = document.getElementById('emptyAreasMessage'); 
             
-            // Limpa Container (exceto a mensagem de vazio que manipulamos via classe)
             container.innerHTML = '';
             container.appendChild(emptyMsg); 
             
@@ -612,16 +708,11 @@
             
             if (name === "") return showAlertModal("Nome obrigatório");
             if (fee < 0) return showAlertModal("Taxa inválida");
-            
-            // Verifica duplicação local antes de adicionar
             if(deliveryAreas.some(d => d.name.toLowerCase() === name.toLowerCase())) {
                  return showAlertModal("Bairro já adicionado!");
             }
-
-            // Atualiza array e re-renderiza
             deliveryAreas.push({ name, fee }); 
             renderDeliveryAreas();
-            
             nameInput.value = ''; feeInput.value = '';
         };
 
@@ -643,7 +734,6 @@
                 });
             });
 
-            // Pega o estado atual do switch do dashboard para não sobrescrever
             const dashboardSwitch = document.getElementById('dashboardStoreToggle');
             const currentStatus = dashboardSwitch ? dashboardSwitch.checked : true;
 
@@ -655,9 +745,9 @@
                 footerText: document.getElementById('footerText').value,
                 primaryColor: document.getElementById('primaryColor').value,
                 secondaryColor: document.getElementById('secondaryColor').value,
-                isStoreOpen: currentStatus, // Usa o status atual
+                isStoreOpen: currentStatus,
                 hours: hours,
-                deliveryAreas: deliveryAreas // Salva o array atualizado
+                deliveryAreas: deliveryAreas
             };
             
             try { await setDoc(doc(db, `artifacts/${EXTERNAL_FIREBASE_CONFIG.appId}/public/data/config/store`), configData); showToast("Configurações salvas!"); } 
@@ -703,6 +793,129 @@
             if(allProducts.some(p=>p.category===name)) return showAlertModal("Em uso");
             showAlertModal(`Excluir ${name}?`, 'Excluir', true, async () => { await deleteDoc(doc(db, `artifacts/${EXTERNAL_FIREBASE_CONFIG.appId}/public/data/categories`, id)); showToast("Categoria excluída"); });
         }
+
+        // --- COUPON LOGIC ---
+        function setupCouponsListener() {
+            onSnapshot(collection(db, `artifacts/${EXTERNAL_FIREBASE_CONFIG.appId}/public/data/coupons`), s => {
+                allCoupons = s.docs.map(d => ({id: d.id, ...d.data()}));
+                renderCouponsList();
+                updateDashboardStats();
+            });
+        }
+
+        function renderCouponsList() {
+            const tbody = document.getElementById('couponsList');
+            const emptyMsg = document.getElementById('emptyCouponsMsg');
+            tbody.innerHTML = '';
+
+            if (allCoupons.length === 0) {
+                emptyMsg.classList.remove('hidden');
+                return;
+            }
+            emptyMsg.classList.add('hidden');
+
+            allCoupons.forEach(c => {
+                const tr = document.createElement('tr');
+                tr.className = "bg-white border-b hover:bg-slate-50";
+                
+                const typeLabel = c.type === 'percentage' ? `${c.value}%` : `R$ ${c.value}`;
+                const scopeLabel = c.scope === 'global' 
+                    ? '<span class="px-2 py-1 text-xs font-semibold bg-blue-50 text-blue-700 rounded-md">Toda a Loja</span>' 
+                    : `<span class="px-2 py-1 text-xs font-semibold bg-purple-50 text-purple-700 rounded-md">Categ: ${c.targetCategory}</span>`;
+                
+                const statusBadge = c.status === 'active'
+                    ? '<span class="px-2 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800">Ativo</span>'
+                    : '<span class="px-2 py-1 text-xs font-semibold rounded-full bg-slate-100 text-slate-500">Pausado</span>';
+                
+                tr.innerHTML = `
+                    <td class="px-6 py-4 font-bold text-slate-800">${c.code}</td>
+                    <td class="px-6 py-4 font-medium text-slate-600">${typeLabel} OFF</td>
+                    <td class="px-6 py-4">${scopeLabel}</td>
+                    <td class="px-6 py-4">${statusBadge}</td>
+                    <td class="px-6 py-4 text-right flex justify-end gap-2">
+                         <button onclick="toggleCouponStatus('${c.id}', '${c.status}')" class="p-2 text-slate-500 hover:bg-slate-100 rounded-lg" title="${c.status === 'active' ? 'Pausar' : 'Ativar'}">
+                            <i data-lucide="${c.status === 'active' ? 'pause-circle' : 'play-circle'}" class="w-4 h-4"></i>
+                        </button>
+                        <button onclick="deleteCoupon('${c.id}')" class="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg" title="Excluir">
+                            <i data-lucide="trash-2" class="w-4 h-4"></i>
+                        </button>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+            lucide.createIcons();
+        }
+
+        window.openCouponModal = () => {
+            document.getElementById('couponForm').reset();
+            document.getElementById('couponModal').classList.remove('hidden');
+            window.toggleCategorySelect(); // Reset view
+            // Populate category dropdown
+            const catSelect = document.getElementById('couponTargetCategory');
+            catSelect.innerHTML = '';
+            allCategories.filter(c => c.status === 'active').forEach(c => {
+                const opt = document.createElement('option');
+                opt.value = c.name;
+                opt.textContent = c.name;
+                catSelect.appendChild(opt);
+            });
+        };
+
+        window.toggleCategorySelect = () => {
+            const scope = document.getElementById('couponScope').value;
+            const div = document.getElementById('couponCategoryDiv');
+            if(scope === 'category') div.classList.remove('hidden');
+            else div.classList.add('hidden');
+        };
+
+        window.updateCouponInputs = () => {
+            // Can be used to change placeholder or step based on type
+        };
+
+        window.handleCouponSubmit = async (e) => {
+            e.preventDefault();
+            const code = document.getElementById('couponCode').value.toUpperCase();
+            if(allCoupons.some(c => c.code === code)) return showAlertModal("Esse código de cupom já existe!");
+            
+            const type = document.getElementById('couponType').value;
+            const value = parseFloat(document.getElementById('couponValue').value);
+            const scope = document.getElementById('couponScope').value;
+            const targetCategory = scope === 'category' ? document.getElementById('couponTargetCategory').value : null;
+            const isActive = document.getElementById('couponActive').checked;
+            
+            const couponData = {
+                code,
+                type,
+                value,
+                scope,
+                targetCategory,
+                status: isActive ? 'active' : 'paused',
+                createdAt: new Date().toISOString()
+            };
+
+            try {
+                await addDoc(collection(db, `artifacts/${EXTERNAL_FIREBASE_CONFIG.appId}/public/data/coupons`), couponData);
+                document.getElementById('couponModal').classList.add('hidden');
+                showToast("Cupom criado com sucesso!");
+            } catch(e) {
+                showAlertModal("Erro ao criar cupom: " + e.message);
+            }
+        };
+
+        window.toggleCouponStatus = async (id, currentStatus) => {
+            const newStatus = currentStatus === 'active' ? 'paused' : 'active';
+            try {
+                await updateDoc(doc(db, `artifacts/${EXTERNAL_FIREBASE_CONFIG.appId}/public/data/coupons`, id), { status: newStatus });
+                showToast(newStatus === 'active' ? "Cupom ativado!" : "Cupom pausado!");
+            } catch(e) { console.error(e); }
+        };
+
+        window.deleteCoupon = (id) => {
+            showAlertModal("Deseja realmente excluir este cupom?", "Excluir Cupom", true, async () => {
+                await deleteDoc(doc(db, `artifacts/${EXTERNAL_FIREBASE_CONFIG.appId}/public/data/coupons`, id));
+                showToast("Cupom excluído!");
+            });
+        };
 
         function setupProductListener() {
             onSnapshot(collection(db, `artifacts/${EXTERNAL_FIREBASE_CONFIG.appId}/public/data/products`), s => {
