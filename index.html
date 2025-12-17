@@ -14,7 +14,6 @@
                     fontFamily: { sans: ['Inter', 'sans-serif'] },
                     colors: {
                         slate: { 50: '#f8fafc', 100: '#f1f5f9', 800: '#1e293b', 900: '#0f172a' },
-                        // Mantendo cores primárias vibrantes para destaque
                         primary: { 50: '#f5f3ff', 100: '#ede9fe', 500: '#8b5cf6', 600: '#7c3aed', 700: '#6d28d9' }
                     }
                 }
@@ -27,7 +26,6 @@
         ::-webkit-scrollbar-track { background: transparent; }
         ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
         
-        /* Sidebar Link Styling */
         .sidebar-link { transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1); }
         .sidebar-link.active { 
             background-color: theme('colors.primary.50'); 
@@ -42,40 +40,29 @@
         .rotate-icon { transition: transform 0.3s ease; }
         .rotate-icon.rotated { transform: rotate(180deg); }
         
-        /* Custom Switch */
-        .toggle-switch { width: 44px; height: 24px; position: relative; }
+        /* Toggle Switch */
+        .toggle-switch { width: 52px; height: 28px; position: relative; display: inline-block; }
         .toggle-switch input { opacity: 0; width: 0; height: 0; }
-        .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #ccc; transition: .4s; border-radius: 34px; }
-        .slider:before { position: absolute; content: ""; height: 16px; width: 16px; left: 4px; bottom: 4px; background-color: white; transition: .4s; border-radius: 50%; }
+        .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #cbd5e1; transition: .4s; border-radius: 34px; }
+        .slider:before { position: absolute; content: ""; height: 20px; width: 20px; left: 4px; bottom: 4px; background-color: white; transition: .4s; border-radius: 50%; box-shadow: 0 2px 4px rgba(0,0,0,0.2); }
         input:checked + .slider { background-color: #22c55e; }
-        input:checked + .slider:before { transform: translateX(20px); }
+        input:checked + .slider:before { transform: translateX(24px); }
 
-        /* Toast Notification Animation */
         @keyframes slideIn {
             from { transform: translateX(100%); opacity: 0; }
             to { transform: translateX(0); opacity: 1; }
         }
         .toast { animation: slideIn 0.3s ease-out forwards; }
         
-        /* Standard Input Field Styling */
         input[type="text"], input[type="number"], input[type="url"], input[type="time"], select, textarea {
-            background-color: #f8fafc; /* slate-50 */
-            border-color: #e2e8f0; /* slate-200 */
-            border-radius: 0.5rem; /* rounded-lg */
-            padding: 0.625rem 1rem; /* py-2.5 px-4 */
+            background-color: #f8fafc; border-color: #e2e8f0; border-radius: 0.5rem; padding: 0.625rem 1rem;
             transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
         }
         input:focus, select:focus, textarea:focus {
-            border-color: theme('colors.primary.500');
-            box-shadow: 0 0 0 1px theme('colors.primary.500');
-            background-color: white;
+            border-color: theme('colors.primary.500'); box-shadow: 0 0 0 1px theme('colors.primary.500'); background-color: white;
         }
 
-        /* Specific style for section cards */
-        .section-card {
-            border-radius: 1.5rem; /* rounded-2xl */
-            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05); /* shadow-xl */
-        }
+        .section-card { border-radius: 1.5rem; box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05); }
     </style>
 </head>
 <body class="text-slate-800 antialiased h-screen overflow-hidden flex bg-slate-50">
@@ -99,7 +86,6 @@
 
         <nav class="flex-1 overflow-y-auto py-6 space-y-1">
             <p class="px-6 text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">Catálogo</p>
-            
             <button id="nav-dashboard" onclick="changeTab('dashboard')" class="sidebar-link w-full flex items-center px-6 py-3 text-sm font-medium text-slate-600 border-r-4 border-transparent">
                 <i data-lucide="bar-chart-2" class="w-5 h-5 mr-3"></i> Dashboard
             </button>
@@ -116,7 +102,6 @@
             </button>
         </nav>
         
-        <!-- User Info Footer -->
         <div class="p-4 border-t border-slate-100">
             <div class="flex items-center gap-3">
                 <div class="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center text-slate-500 font-bold text-xs">AD</div>
@@ -128,7 +113,7 @@
         </div>
     </aside>
 
-    <!-- MOBILE SIDEBAR & OVERLAY (Simplified) -->
+    <!-- MOBILE MENU -->
     <div id="mobile-menu-overlay" onclick="toggleMobileMenu()" class="fixed inset-0 bg-slate-900/50 z-40 hidden md:hidden backdrop-blur-sm"></div>
     <aside id="mobile-sidebar" class="fixed inset-y-0 left-0 w-64 bg-white z-50 transform -translate-x-full transition-transform duration-300 md:hidden shadow-2xl p-4">
         <h2 class="text-xl font-bold mb-6">Menu</h2>
@@ -142,7 +127,6 @@
 
     <!-- MAIN CONTENT -->
     <main class="flex-1 flex flex-col h-screen overflow-hidden relative">
-        <!-- Header -->
         <header class="h-16 bg-white border-b border-slate-200 flex items-center justify-between px-4 md:px-8 flex-shrink-0 z-20 shadow-md">
             <div class="flex items-center gap-4">
                 <button onclick="toggleMobileMenu()" class="md:hidden text-slate-500"><i data-lucide="menu" class="w-6 h-6"></i></button>
@@ -150,179 +134,156 @@
             </div>
         </header>
 
-        <!-- Content Area -->
         <div id="content-area" class="flex-1 overflow-x-hidden overflow-y-auto bg-slate-50 p-4 md:p-8 relative">
 
-            <!-- 0. ABA DASHBOARD (VITRINE FOCADA) -->
+            <!-- DASHBOARD TAB -->
             <div id="content-dashboard" class="max-w-6xl mx-auto space-y-6 animate-fade-in hidden">
-                <!-- Stats Cards -->
-                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                    <!-- Cards de Estatísticas com sombra e bordas aprimoradas -->
-                    <div class="section-card bg-white p-6 rounded-2xl border border-slate-100 shadow-xl">
-                        <div class="flex justify-between items-start mb-4">
-                            <div>
-                                <p class="text-xs font-semibold text-slate-400 uppercase">Total Produtos</p>
-                                <h3 class="text-2xl font-bold text-slate-800" id="dash-total-products">0</h3>
-                            </div>
-                            <div class="p-2 bg-blue-50 text-blue-600 rounded-xl"><i data-lucide="box" class="w-5 h-5"></i></div>
+                
+                <!-- STATUS CONTROL (MOVED TO TOP) -->
+                <div class="bg-white rounded-2xl border border-slate-200 shadow-xl p-6 flex flex-col md:flex-row items-center justify-between gap-4">
+                    <div class="flex items-center gap-4">
+                        <div class="p-3 bg-green-50 text-green-600 rounded-xl" id="statusIconBg">
+                            <i data-lucide="power" class="w-6 h-6"></i>
                         </div>
-                        <div class="text-xs text-slate-500">Itens cadastrados no sistema</div>
+                        <div>
+                            <h3 class="font-bold text-lg text-slate-800">Status da Loja Online</h3>
+                            <p class="text-sm text-slate-500" id="statusDescription">Controle se os clientes podem fazer pedidos agora.</p>
+                        </div>
                     </div>
-                    
-                    <div class="section-card bg-white p-6 rounded-2xl border border-slate-100 shadow-xl">
-                        <div class="flex justify-between items-start mb-4">
-                            <div>
-                                <p class="text-xs font-semibold text-slate-400 uppercase">Em Destaque</p>
-                                <h3 class="text-2xl font-bold text-primary-600" id="dash-featured">0</h3>
-                            </div>
-                            <div class="p-2 bg-primary-50 text-primary-600 rounded-xl"><i data-lucide="star" class="w-5 h-5"></i></div>
-                        </div>
-                        <div class="text-xs text-slate-500">Itens que aparecem na home</div>
-                    </div>
-
-                    <div class="section-card bg-white p-6 rounded-2xl border border-slate-100 shadow-xl ring-1 ring-red-50">
-                        <div class="flex justify-between items-start mb-4">
-                            <div>
-                                <p class="text-xs font-semibold text-slate-400 uppercase">Produtos Pausados</p>
-                                <h3 class="text-2xl font-bold text-yellow-600" id="dash-paused-stock">0</h3>
-                            </div>
-                            <div class="p-2 bg-yellow-50 text-yellow-600 rounded-xl"><i data-lucide="pause-circle" class="w-5 h-5"></i></div>
-                        </div>
-                        <div class="text-xs text-slate-500 font-medium">Itens ocultos na vitrine</div>
-                    </div>
-
-                    <div class="section-card bg-white p-6 rounded-2xl border border-slate-100 shadow-xl">
-                        <div class="flex justify-between items-start mb-4">
-                            <div>
-                                <p class="text-xs font-semibold text-slate-400 uppercase">Categorias</p>
-                                <h3 class="text-2xl font-bold text-slate-800" id="dash-total-cats">0</h3>
-                            </div>
-                            <div class="p-2 bg-purple-50 text-purple-600 rounded-xl"><i data-lucide="layers" class="w-5 h-5"></i></div>
-                        </div>
-                        <div class="text-xs text-slate-500" id="dash-active-cats">0 ativas na vitrine</div>
+                    <div class="flex items-center gap-3">
+                        <span class="text-sm font-semibold text-slate-600" id="statusLabel">Fechado</span>
+                        <label class="toggle-switch">
+                            <input type="checkbox" id="dashboardStoreToggle" onchange="toggleStoreStatusQuick(this)">
+                            <span class="slider"></span>
+                        </label>
                     </div>
                 </div>
 
-                <!-- Resumo Rápido -->
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                    <div class="section-card bg-white p-6 rounded-2xl border border-slate-100 shadow-xl">
+                        <div class="flex justify-between items-start mb-4">
+                            <div><p class="text-xs font-semibold text-slate-400 uppercase">Total Produtos</p><h3 class="text-2xl font-bold text-slate-800" id="dash-total-products">0</h3></div>
+                            <div class="p-2 bg-blue-50 text-blue-600 rounded-xl"><i data-lucide="box" class="w-5 h-5"></i></div>
+                        </div>
+                    </div>
+                    <div class="section-card bg-white p-6 rounded-2xl border border-slate-100 shadow-xl">
+                        <div class="flex justify-between items-start mb-4">
+                            <div><p class="text-xs font-semibold text-slate-400 uppercase">Em Destaque</p><h3 class="text-2xl font-bold text-primary-600" id="dash-featured">0</h3></div>
+                            <div class="p-2 bg-primary-50 text-primary-600 rounded-xl"><i data-lucide="star" class="w-5 h-5"></i></div>
+                        </div>
+                    </div>
+                    <div class="section-card bg-white p-6 rounded-2xl border border-slate-100 shadow-xl ring-1 ring-red-50">
+                        <div class="flex justify-between items-start mb-4">
+                            <div><p class="text-xs font-semibold text-slate-400 uppercase">Pausados</p><h3 class="text-2xl font-bold text-yellow-600" id="dash-paused-stock">0</h3></div>
+                            <div class="p-2 bg-yellow-50 text-yellow-600 rounded-xl"><i data-lucide="pause-circle" class="w-5 h-5"></i></div>
+                        </div>
+                    </div>
+                    <div class="section-card bg-white p-6 rounded-2xl border border-slate-100 shadow-xl">
+                        <div class="flex justify-between items-start mb-4">
+                            <div><p class="text-xs font-semibold text-slate-400 uppercase">Categorias</p><h3 class="text-2xl font-bold text-slate-800" id="dash-total-cats">0</h3></div>
+                            <div class="p-2 bg-purple-50 text-purple-600 rounded-xl"><i data-lucide="layers" class="w-5 h-5"></i></div>
+                        </div>
+                    </div>
+                </div>
+
                 <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
                     <div class="lg:col-span-2 section-card bg-white rounded-2xl border border-slate-100 shadow-xl p-6">
                         <h3 class="font-bold text-slate-800 mb-4">Produtos Recentes</h3>
                         <div class="overflow-x-auto">
-                            <table class="w-full text-sm text-left">
-                                <thead class="text-xs text-slate-400 uppercase bg-slate-50">
-                                    <tr>
-                                        <th class="px-4 py-3 rounded-l-lg">Produto</th>
-                                        <th class="px-4 py-3">Preço</th>
-                                        <th class="px-4 py-3">Destaque</th>
-                                        <th class="px-4 py-3 rounded-r-lg">Status</th>
-                                    </tr>
-                                </thead>
-                                <tbody id="dash-recent-table" class="divide-y divide-slate-100">
-                                    <!-- JS Populate -->
-                                </tbody>
-                            </table>
+                            <table class="w-full text-sm text-left"><thead class="text-xs text-slate-400 uppercase bg-slate-50"><tr><th class="px-4 py-3 rounded-l-lg">Produto</th><th class="px-4 py-3">Preço</th><th class="px-4 py-3">Destaque</th><th class="px-4 py-3 rounded-r-lg">Status</th></tr></thead><tbody id="dash-recent-table" class="divide-y divide-slate-100"></tbody></table>
                         </div>
                     </div>
                     <div class="bg-slate-900 rounded-2xl shadow-xl p-6 text-white relative overflow-hidden">
-                        <div class="relative z-10">
-                            <h3 class="font-bold text-lg mb-2">Dica do Sistema</h3>
-                            <p class="text-slate-300 text-sm mb-4">Lembre-se de sempre manter as categorias atualizadas e os preços visíveis. O cliente do WhatsApp já chega informado!</p>
-                            <button onclick="changeTab('products')" class="bg-white text-slate-900 px-4 py-2 rounded-xl text-sm font-bold hover:bg-slate-100 transition shadow-lg">Gerenciar Vitrine</button>
-                        </div>
+                        <div class="relative z-10"><h3 class="font-bold text-lg mb-2">Dica Admin</h3><p class="text-slate-300 text-sm mb-4">Mantenha as taxas de entrega atualizadas para evitar dúvidas no WhatsApp.</p><button onclick="changeTab('config')" class="bg-white text-slate-900 px-4 py-2 rounded-xl text-sm font-bold hover:bg-slate-100 transition shadow-lg">Editar Taxas</button></div>
                         <div class="absolute -bottom-10 -right-10 w-40 h-40 bg-white/10 rounded-full blur-2xl"></div>
                     </div>
                 </div>
             </div>
 
-            <!-- 1. ABA DE CONFIGURAÇÕES -->
+            <!-- CONFIG TAB -->
             <div id="content-config" class="max-w-4xl mx-auto space-y-6 hidden">
                 <form id="storeConfigForm" onsubmit="saveStoreConfig(event)" class="space-y-6">
 
-                    <!-- SEÇÃO 1: IDENTIDADE E CONTATO -->
+                    <!-- IDENTIDADE -->
                     <div class="section-card bg-white rounded-2xl border border-slate-200 shadow-xl p-6 md:p-8">
                         <h3 class="text-lg font-bold text-slate-800 mb-6">Identidade da Loja e Contato</h3>
-                        
                         <div class="mb-4">
                             <label class="block text-sm font-medium text-slate-700 mb-2">Nome Comercial</label>
-                            <!-- Input padronizado -->
                             <input type="text" id="storeName" required class="w-full border focus:ring-primary-500 focus:border-primary-500">
                         </div>
-                        
-                        <div class="mb-8">
+                        <div class="mb-2">
                             <label class="block text-sm font-medium text-slate-700 mb-2">WhatsApp da Loja (Com DDD)</label>
-                            <!-- Input padronizado -->
                             <input type="text" id="whatsappNumber" placeholder="Ex: 5511987654321" class="w-full border focus:ring-primary-500 focus:border-primary-500">
-                            <p class="text-xs text-slate-500 mt-1">Deve incluir o código do país (55) e o DDD. O cliente será redirecionado para este número.</p>
+                            <p class="text-xs text-slate-500 mt-1">Inclua o código do país (55) e o DDD.</p>
                         </div>
                     </div>
 
-                    <!-- SEÇÃO 2: DISPONIBILIDADE E HORÁRIOS -->
+                    <!-- TEXTOS -->
                     <div class="section-card bg-white rounded-2xl border border-slate-200 shadow-xl p-6 md:p-8">
-                        <h3 class="text-lg font-bold text-slate-800 mb-6">Disponibilidade e Horários</h3>
-
-                        <!-- Status Manual da Loja -->
-                        <div class="flex items-center justify-between p-4 bg-slate-100 border border-slate-200 rounded-xl mb-6">
-                            <div>
-                                <label class="block text-sm font-bold text-slate-700 mb-1">Status Manual da Loja</label>
-                                <p class="text-xs text-slate-500">Use para forçar o fechamento/abertura (ex: feriados).</p>
-                            </div>
-                            <label class="toggle-switch">
-                                <input type="checkbox" id="isStoreOpen">
-                                <span class="slider"></span>
-                            </label>
-                        </div>
+                        <h3 class="text-lg font-bold text-slate-800 mb-6 flex items-center gap-2">
+                            <i data-lucide="type" class="w-5 h-5 text-primary-600"></i> Personalização de Textos (Vitrine)
+                        </h3>
                         
-                        <!-- Horários de Funcionamento Semanal -->
-                        <h4 class="font-semibold text-slate-800 mb-3 border-t pt-4">Horários por Dia da Semana</h4>
-                        <div id="dailyHoursContainer" class="space-y-3">
-                            <!-- JS will render daily inputs here -->
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                            <div>
+                                <label class="block text-sm font-medium text-slate-700 mb-2">Etiqueta do Banner (Topo)</label>
+                                <input type="text" id="heroTag" placeholder="Ex: Bem-vindo" class="w-full border focus:ring-primary-500">
+                                <p class="text-xs text-slate-400 mt-1">Texto pequeno acima do título principal.</p>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-slate-700 mb-2">Título Principal (Hero)</label>
+                                <input type="text" id="heroHeadline" placeholder="Ex: Encontre o que você ama." class="w-full border focus:ring-primary-500">
+                                <p class="text-xs text-slate-400 mt-1">A frase de maior destaque na loja.</p>
+                            </div>
+                        </div>
+
+                        <div>
+                            <label class="block text-sm font-medium text-slate-700 mb-2">Descrição do Rodapé</label>
+                            <textarea id="footerText" rows="3" placeholder="Ex: Sua loja online favorita. Qualidade e confiança em cada entrega." class="w-full border focus:ring-primary-500"></textarea>
+                            <p class="text-xs text-slate-400 mt-1">Texto institucional exibido no final da página.</p>
                         </div>
                     </div>
 
-                    <!-- SEÇÃO 3: ÁREAS DE ENTREGA E TAXAS (NOVO) -->
+                    <!-- HORÁRIOS -->
+                    <div class="section-card bg-white rounded-2xl border border-slate-200 shadow-xl p-6 md:p-8">
+                        <h3 class="text-lg font-bold text-slate-800 mb-6">Horários de Funcionamento</h3>
+                        <p class="text-sm text-slate-500 mb-4">O status "Aberto/Fechado" é calculado automaticamente com base nisso.</p>
+                        <div id="dailyHoursContainer" class="space-y-3"></div>
+                    </div>
+
+                    <!-- ÁREAS DE ENTREGA -->
                     <div class="section-card bg-white rounded-2xl border border-slate-200 shadow-xl p-6 md:p-8">
                         <h3 class="text-lg font-bold text-slate-800 mb-6">Áreas de Entrega e Taxas</h3>
-                        
-                        <!-- Formulário de Adição -->
                         <div class="flex flex-col sm:flex-row gap-3 p-4 bg-slate-100 border border-slate-200 rounded-xl mb-6">
-                            <input type="text" id="deliveryAreaName" placeholder="Nome do Bairro (Ex: Centro)" class="flex-1 rounded-lg border-slate-300 py-2.5 px-4 bg-white border text-sm focus:ring-primary-500">
-                            <input type="number" step="0.01" id="deliveryAreaFee" placeholder="Taxa (Ex: 8.50)" class="w-28 rounded-lg border-slate-300 py-2.5 px-4 bg-white border text-sm focus:ring-primary-500">
-                            <button type="button" onclick="addDeliveryArea()" class="bg-primary-600 hover:bg-primary-700 text-white font-medium py-2.5 px-4 rounded-xl flex items-center justify-center transition shadow-md">
-                                <i data-lucide="plus" class="w-4 h-4 sm:mr-2"></i> <span class="hidden sm:inline">Adicionar</span>
-                            </button>
+                            <input type="text" id="deliveryAreaName" placeholder="Nome do Bairro" class="flex-1 rounded-lg border-slate-300 py-2.5 px-4 bg-white border text-sm focus:ring-primary-500">
+                            <input type="number" step="0.01" id="deliveryAreaFee" placeholder="Taxa (R$)" class="w-28 rounded-lg border-slate-300 py-2.5 px-4 bg-white border text-sm focus:ring-primary-500">
+                            <button type="button" onclick="addDeliveryArea()" class="bg-primary-600 hover:bg-primary-700 text-white font-medium py-2.5 px-4 rounded-xl shadow-md">Adicionar</button>
                         </div>
-
-                        <!-- Lista de Áreas -->
                         <div id="deliveryAreasList" class="divide-y divide-slate-100 border border-slate-200 rounded-xl overflow-hidden">
-                            <!-- JS will render the list here -->
-                            <p class="text-center text-slate-500 py-4 text-sm" id="emptyAreasMessage">Nenhuma área de entrega cadastrada.</p>
+                            <p class="text-center text-slate-500 py-4 text-sm" id="emptyAreasMessage">Nenhuma área cadastrada.</p>
                         </div>
                     </div>
 
-                    <!-- SEÇÃO 4: CUSTOMIZAÇÃO DE CORES -->
+                    <!-- CORES -->
                     <div class="section-card bg-white rounded-2xl border border-slate-200 shadow-xl p-6 md:p-8">
-                        <h3 class="text-lg font-bold text-slate-800 mb-6">Customização de Cores</h3>
-                        
-                        <!-- Cores da Loja -->
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
+                        <h3 class="text-lg font-bold text-slate-800 mb-6">Cores da Loja</h3>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
                             <div>
                                 <label class="block text-sm font-medium text-slate-700 mb-2">Cor Primária</label>
                                 <div class="flex items-center gap-3">
                                     <input type="color" id="primaryColor" class="h-10 w-20 rounded-xl cursor-pointer border border-slate-300">
-                                    <span class="text-xs text-slate-500">Botões e destaques.</span>
                                 </div>
                             </div>
                             <div>
                                 <label class="block text-sm font-medium text-slate-700 mb-2">Cor Secundária</label>
                                 <div class="flex items-center gap-3">
                                     <input type="color" id="secondaryColor" class="h-10 w-20 rounded-xl cursor-pointer border border-slate-300">
-                                    <span class="text-xs text-slate-500">Detalhes e ícones.</span>
                                 </div>
                             </div>
                         </div>
                     </div>
                         
-                    <div class="flex justify-end pt-4 border-t border-slate-100">
+                    <div class="flex justify-end pt-4 border-t border-slate-100 pb-10">
                         <button type="submit" class="bg-slate-900 hover:bg-slate-800 text-white font-medium py-2.5 px-6 rounded-xl shadow-lg transition-all flex items-center">
                             <i data-lucide="save" class="w-4 h-4 mr-2"></i> Salvar Configurações
                         </button>
@@ -330,36 +291,29 @@
                 </form>
             </div>
 
-            <!-- 2. ABA DE PRODUTOS (COM BUSCA) -->
+            <!-- PRODUCTS TAB -->
             <div id="content-products" class="max-w-6xl mx-auto space-y-6 hidden">
-                <!-- Toolbar -->
                 <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 section-card bg-white p-4 rounded-2xl border border-slate-200 shadow-xl">
                     <div class="relative flex-grow max-w-md">
                         <i data-lucide="search" class="absolute left-3 top-2.5 text-slate-400 w-5 h-5"></i>
                         <input type="text" id="productSearch" onkeyup="filterProducts()" placeholder="Buscar produto..." class="w-full pl-10 border bg-slate-50 focus:bg-white focus:ring-primary-500 focus:border-primary-500">
                     </div>
                     <div class="flex gap-2">
-                         <select id="filterCategory" onchange="filterProducts()" class="border text-sm py-2 px-3 bg-slate-50 text-slate-600 focus:ring-primary-500">
-                             <option value="all">Todas Categorias</option>
-                         </select>
-                        <button onclick="openAddModal()" class="bg-primary-600 hover:bg-primary-700 text-white font-medium py-2 px-4 rounded-xl shadow-md transition-all flex items-center whitespace-nowrap">
-                            <i data-lucide="plus" class="w-4 h-4 mr-2"></i> Novo Produto
-                        </button>
+                         <select id="filterCategory" onchange="filterProducts()" class="border text-sm py-2 px-3 bg-slate-50 text-slate-600 focus:ring-primary-500"><option value="all">Todas Categorias</option></select>
+                        <button onclick="openAddModal()" class="bg-primary-600 hover:bg-primary-700 text-white font-medium py-2 px-4 rounded-xl shadow-md flex items-center whitespace-nowrap"><i data-lucide="plus" class="w-4 h-4 mr-2"></i> Novo</button>
                     </div>
                 </div>
-
-                <!-- Products List -->
                 <div id="productList" class="flex flex-col gap-6"></div>
             </div>
 
-            <!-- 3. ABA DE CATEGORIAS -->
+            <!-- CATEGORIES TAB -->
             <div id="content-categories" class="max-w-5xl mx-auto space-y-6 hidden">
                 <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
                     <div class="section-card bg-white p-6 rounded-2xl border border-slate-200 shadow-xl h-fit">
                         <h3 class="font-bold text-slate-800 mb-4">Nova Categoria</h3>
                         <form id="categoryForm" onsubmit="addCategory(event)">
                             <div class="space-y-4">
-                                <input type="text" id="categoryName" required class="w-full border bg-slate-50 focus:ring-primary-500" placeholder="Nome da categoria">
+                                <input type="text" id="categoryName" required class="w-full border bg-slate-50 focus:ring-primary-500" placeholder="Nome">
                                 <button type="submit" class="w-full bg-slate-900 hover:bg-slate-800 text-white font-medium py-2 rounded-xl shadow-md">Adicionar</button>
                             </div>
                         </form>
@@ -374,19 +328,17 @@
         </div>
     </main>
 
-    <!-- MODAL ALERT -->
+    <!-- ALERT MODAL -->
     <div id="alertModal" class="modal-overlay fixed inset-0 z-[60] flex items-center justify-center p-4 hidden">
-        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-sm p-6 text-center transform transition-all scale-100">
-            <div class="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-slate-100 mb-4" id="alertIconContainer">
-                <i id="alertIcon" class="w-6 h-6 text-slate-600"></i>
-            </div>
+        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-sm p-6 text-center">
+            <div class="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-slate-100 mb-4" id="alertIconContainer"><i id="alertIcon" class="w-6 h-6 text-slate-600"></i></div>
             <h3 class="text-lg font-bold text-slate-900 mb-2" id="alertModalTitle">Aviso</h3>
             <p id="alertMessage" class="text-sm text-slate-500 mb-6"></p>
             <div id="alertModalFooter" class="flex justify-center gap-3"></div>
         </div>
     </div>
 
-    <!-- MODAL ADD/EDIT PRODUCT -->
+    <!-- PRODUCT MODAL -->
     <div id="productModal" class="modal-overlay fixed inset-0 z-50 flex items-center justify-center p-4 hidden">
         <div class="bg-white rounded-3xl shadow-2xl w-full max-w-2xl modal-content-wrapper">
             <div class="flex justify-between items-center p-6 border-b border-slate-100 sticky top-0 bg-white z-10">
@@ -397,43 +349,18 @@
                 <form id="productFormMain" onsubmit="handleProductSubmit(event)">
                     <input type="hidden" id="prodId">
                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-5 mb-5">
-                        <div class="col-span-1 sm:col-span-2">
-                            <label class="text-sm font-medium text-slate-700">Nome</label>
-                            <input type="text" id="prodName" required class="w-full border focus:ring-primary-500">
-                        </div>
-                        <div>
-                            <label class="text-sm font-medium text-slate-700">Categoria</label>
-                            <select id="prodCategory" required class="w-full border bg-slate-50 focus:ring-primary-500"></select>
-                        </div>
-                        <div>
-                            <label class="text-sm font-medium text-slate-700">Preço (R$)</label>
-                            <input type="number" step="0.01" id="prodValue" required class="w-full border focus:ring-primary-500">
-                        </div>
-                        <div>
-                            <label class="text-sm font-medium text-slate-700">Promo (R$)</label>
-                            <input type="number" step="0.01" id="prodPromo" class="w-full border text-green-600 focus:ring-primary-500">
-                        </div>
-                        <!-- Campos de Variação (Tamanhos/Cores) -->
+                        <div class="col-span-1 sm:col-span-2"><label class="text-sm font-medium text-slate-700">Nome</label><input type="text" id="prodName" required class="w-full border focus:ring-primary-500"></div>
+                        <div><label class="text-sm font-medium text-slate-700">Categoria</label><select id="prodCategory" required class="w-full border bg-slate-50 focus:ring-primary-500"></select></div>
+                        <div><label class="text-sm font-medium text-slate-700">Preço (R$)</label><input type="number" step="0.01" id="prodValue" required class="w-full border focus:ring-primary-500"></div>
+                        <div><label class="text-sm font-medium text-slate-700">Promo (R$)</label><input type="number" step="0.01" id="prodPromo" class="w-full border text-green-600 focus:ring-primary-500"></div>
                         <div class="col-span-1 sm:col-span-2 bg-slate-100 p-4 rounded-xl border border-slate-200">
                             <div class="grid grid-cols-2 gap-4">
-                                <div>
-                                    <label class="text-xs font-bold text-slate-500 uppercase">Tamanhos (Separe por vírgula)</label>
-                                    <input type="text" id="prodSizes" class="w-full rounded border-slate-300 text-sm mt-1 bg-white" placeholder="P, M, G">
-                                </div>
-                                <div>
-                                    <label class="text-xs font-bold text-slate-500 uppercase">Cores (Separe por vírgula)</label>
-                                    <input type="text" id="prodColors" class="w-full rounded border-slate-300 text-sm mt-1 bg-white" placeholder="Azul, Vermelho">
-                                </div>
+                                <div><label class="text-xs font-bold text-slate-500 uppercase">Tamanhos</label><input type="text" id="prodSizes" class="w-full rounded border-slate-300 text-sm mt-1 bg-white" placeholder="P, M, G"></div>
+                                <div><label class="text-xs font-bold text-slate-500 uppercase">Cores</label><input type="text" id="prodColors" class="w-full rounded border-slate-300 text-sm mt-1 bg-white" placeholder="Azul, Vermelho"></div>
                             </div>
                         </div>
-                        <div class="col-span-1 sm:col-span-2">
-                            <label class="text-sm font-medium text-slate-700">Imagem URL (Ex: Link do Imgur ou Google Photos)</label>
-                            <input type="url" id="prodImage" class="w-full border text-sm text-slate-500 focus:ring-primary-500">
-                        </div>
-                        <div class="col-span-1 sm:col-span-2 flex items-center gap-2">
-                            <input type="checkbox" id="prodFeatured" class="h-4 w-4 text-primary-600 rounded">
-                            <label class="text-sm text-slate-700">Destaque na Vitrine (Home Page)</label>
-                        </div>
+                        <div class="col-span-1 sm:col-span-2"><label class="text-sm font-medium text-slate-700">Imagem URL</label><input type="url" id="prodImage" class="w-full border text-sm text-slate-500 focus:ring-primary-500"></div>
+                        <div class="col-span-1 sm:col-span-2 flex items-center gap-2"><input type="checkbox" id="prodFeatured" class="h-4 w-4 text-primary-600 rounded"><label class="text-sm text-slate-700">Destaque na Vitrine</label></div>
                     </div>
                     <div class="flex justify-end gap-3 border-t border-slate-100 pt-4">
                         <button type="button" onclick="closeProductModal()" class="px-4 py-2 rounded-xl text-slate-600 hover:bg-slate-50">Cancelar</button>
@@ -444,21 +371,15 @@
         </div>
     </div>
 
-    <!-- MODAL EDIT CATEGORY -->
+    <!-- EDIT CATEGORY MODAL -->
     <div id="editCategoryModal" class="modal-overlay fixed inset-0 z-50 flex items-center justify-center p-4 hidden">
          <div class="bg-white rounded-2xl shadow-2xl w-full max-w-sm p-6">
              <h3 class="text-lg font-bold mb-4">Editar Categoria</h3>
              <form id="editCategoryForm" onsubmit="updateCategory(event)">
                  <input type="hidden" id="editCatId">
                  <input type="text" id="editCatName" required class="w-full border bg-slate-50 mb-4 focus:ring-primary-500">
-                 <div class="flex items-center mb-6">
-                     <input type="checkbox" id="editCatActive" class="h-4 w-4 text-primary-600 rounded">
-                     <label class="ml-2 text-sm text-slate-700">Ativa</label>
-                 </div>
-                 <div class="flex justify-end gap-2">
-                     <button type="button" onclick="document.getElementById('editCategoryModal').classList.add('hidden')" class="px-3 py-1.5 text-slate-500 hover:bg-slate-50 rounded-lg">Cancelar</button>
-                     <button type="submit" class="bg-primary-600 text-white px-4 py-1.5 rounded-xl shadow-md">Salvar</button>
-                 </div>
+                 <div class="flex items-center mb-6"><input type="checkbox" id="editCatActive" class="h-4 w-4 text-primary-600 rounded"><label class="ml-2 text-sm text-slate-700">Ativa</label></div>
+                 <div class="flex justify-end gap-2"><button type="button" onclick="document.getElementById('editCategoryModal').classList.add('hidden')" class="px-3 py-1.5 text-slate-500 hover:bg-slate-50 rounded-lg">Cancelar</button><button type="submit" class="bg-primary-600 text-white px-4 py-1.5 rounded-xl shadow-md">Salvar</button></div>
              </form>
          </div>
     </div>
@@ -468,7 +389,6 @@
         import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
         import { getFirestore, doc, getDoc, addDoc, setDoc, updateDoc, deleteDoc, onSnapshot, collection } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
         
-        // --- CONFIG ---
         const EXTERNAL_FIREBASE_CONFIG = {
             apiKey: "AIzaSyAdwsGBTApwOwqr37qCv72gdPRbipsZG0Q",
             authDomain: "meuestoque-1badc.firebaseapp.com",
@@ -478,11 +398,9 @@
             appId: "1:730003067834:web:b205f1ea59053345960383"
         };
         const defaultDays = ["Segunda", "Terça", "Quarta", "Quinta", "Sexta", "Sábado", "Domingo"];
-
         let app, db, auth, isAuthReady = false;
         let allProducts = [], allCategories = [], deliveryAreas = []; 
 
-        // --- UI HELPERS ---
         window.toggleMobileMenu = () => {
             const sb = document.getElementById('mobile-sidebar');
             const ov = document.getElementById('mobile-menu-overlay');
@@ -499,15 +417,9 @@
             document.getElementById(`content-${tabId}`).classList.remove('hidden');
             const activeBtn = document.getElementById(`nav-${tabId}`);
             if(activeBtn) { activeBtn.classList.add('active'); activeBtn.classList.remove('text-slate-600', 'border-transparent'); }
-            
-            // Update Title
             const titles = { 'dashboard': 'Visão Geral', 'config': 'Configurações', 'products': 'Produtos', 'categories': 'Categorias' };
             document.getElementById('page-title').textContent = titles[tabId] || 'Painel';
-            
-            // If going to dashboard, refresh stats
             if(tabId === 'dashboard') updateDashboardStats();
-
-            // Re-create icons when content changes
             lucide.createIcons();
         };
 
@@ -516,8 +428,7 @@
             const el = document.createElement('div');
             el.className = `toast p-4 rounded-xl shadow-xl flex items-center text-sm font-medium text-white ${type === 'success' ? 'bg-slate-800' : 'bg-red-600'}`;
             el.innerHTML = `<i data-lucide="${type === 'success' ? 'check-circle' : 'alert-circle'}" class="w-5 h-5 mr-3"></i> ${msg}`;
-            container.appendChild(el);
-            lucide.createIcons();
+            container.appendChild(el); lucide.createIcons();
             setTimeout(() => { el.style.opacity = '0'; setTimeout(() => el.remove(), 300); }, 3000);
         };
 
@@ -527,10 +438,7 @@
             document.getElementById('alertMessage').textContent = msg;
             const ft = document.getElementById('alertModalFooter');
             const icon = document.getElementById('alertIcon');
-            
-            icon.setAttribute('data-lucide', title.includes('Excluir') ? 'trash-2' : 'info');
-            lucide.createIcons();
-            
+            icon.setAttribute('data-lucide', title.includes('Excluir') ? 'trash-2' : 'info'); lucide.createIcons();
             ft.innerHTML = '';
             if(isConf) {
                 const cBtn = document.createElement('button'); cBtn.textContent = 'Cancelar'; cBtn.className = 'px-4 py-2 rounded-xl text-slate-600 hover:bg-slate-50 transition'; cBtn.onclick = () => modal.classList.add('hidden');
@@ -543,101 +451,49 @@
             modal.classList.remove('hidden');
         };
 
-        // --- DASHBOARD LOGIC (FOCADO EM VITRINE) ---
         function updateDashboardStats() {
             if(!allProducts.length) return;
-            
-            // 1. Totals
             document.getElementById('dash-total-products').textContent = allProducts.length;
-            
-            const featuredCount = allProducts.filter(p => p.isFeatured).length;
-            document.getElementById('dash-featured').textContent = featuredCount;
-            
-            const pausedCount = allProducts.filter(p => p.status === 'paused').length;
-            document.getElementById('dash-paused-stock').textContent = pausedCount;
-            
+            document.getElementById('dash-featured').textContent = allProducts.filter(p => p.isFeatured).length;
+            document.getElementById('dash-paused-stock').textContent = allProducts.filter(p => p.status === 'paused').length;
             document.getElementById('dash-total-cats').textContent = allCategories.length;
-            document.getElementById('dash-active-cats').textContent = `${allCategories.filter(c => c.status === 'active').length} ativas`;
-
-            // 2. Recent Products Table (Last 5)
             const recent = [...allProducts].sort((a,b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0)).slice(0, 5);
             const table = document.getElementById('dash-recent-table');
             table.innerHTML = '';
             recent.forEach(p => {
-                const tr = document.createElement('tr');
-                tr.className = 'bg-white border-b hover:bg-slate-50';
-                tr.innerHTML = `
-                    <td class="px-4 py-3 font-medium text-slate-900 whitespace-nowrap">${p.name}</td>
-                    <td class="px-4 py-3">R$ ${p.value.toFixed(2)}</td>
-                    <td class="px-4 py-3">${p.isFeatured ? '<span class="text-primary-600 font-bold">SIM</span>' : 'Não'}</td>
-                    <td class="px-4 py-3">
-                        <span class="px-2 py-1 text-xs font-semibold rounded-full ${p.status === 'active' ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'}">
-                            ${p.status === 'active' ? 'Ativo' : 'Pausado'}
-                        </span>
-                    </td>
-                `;
+                const tr = document.createElement('tr'); tr.className = 'bg-white border-b hover:bg-slate-50';
+                tr.innerHTML = `<td class="px-4 py-3 font-medium text-slate-900 whitespace-nowrap">${p.name}</td><td class="px-4 py-3">R$ ${p.value.toFixed(2)}</td><td class="px-4 py-3">${p.isFeatured ? '<span class="text-primary-600 font-bold">SIM</span>' : 'Não'}</td><td class="px-4 py-3"><span class="px-2 py-1 text-xs font-semibold rounded-full ${p.status === 'active' ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'}">${p.status === 'active' ? 'Ativo' : 'Pausado'}</span></td>`;
                 table.appendChild(tr);
             });
             lucide.createIcons();
         }
 
-        // --- FILTER & SEARCH LOGIC ---
         window.filterProducts = () => {
             const term = document.getElementById('productSearch').value.toLowerCase();
             const cat = document.getElementById('filterCategory').value;
-            
-            const filtered = allProducts.filter(p => {
-                const matchesSearch = p.name.toLowerCase().includes(term);
-                const matchesCat = cat === 'all' || p.category === cat;
-                return matchesSearch && matchesCat;
-            });
-            
+            const filtered = allProducts.filter(p => { return p.name.toLowerCase().includes(term) && (cat === 'all' || p.category === cat); });
             renderFilteredProducts(filtered, term !== '' || cat !== 'all');
         };
 
         function renderFilteredProducts(products, isFiltering) {
             const container = document.getElementById('productList');
             container.innerHTML = '';
-            
-            if(products.length === 0) {
-                container.innerHTML = `<div class="text-center py-10 text-slate-400">Nenhum produto encontrado.</div>`;
-                return;
-            }
-
-            if(isFiltering) {
-                products.forEach(p => container.appendChild(createProductRowElement(p)));
-                lucide.createIcons();
-            } else {
-                renderProductListGrouped(products); 
-            }
+            if(products.length === 0) { container.innerHTML = `<div class="text-center py-10 text-slate-400">Nenhum produto encontrado.</div>`; return; }
+            if(isFiltering) { products.forEach(p => container.appendChild(createProductRowElement(p))); lucide.createIcons(); }
+            else { renderProductListGrouped(products); }
         }
 
         function createProductRowElement(p) {
             const div = document.createElement('div');
             const paused = p.status === 'paused';
-            
             div.className = "section-card bg-white p-4 rounded-2xl border border-slate-200 shadow-xl flex items-center justify-between gap-4 transition duration-200 hover:shadow-2xl";
-            div.innerHTML = `
-                <div class="flex items-center gap-4">
-                    <img src="${p.images?.[0] || 'https://placehold.co/80'}" onerror="this.onerror=null; this.src='https://placehold.co/80x80/e2e8f0/94a3b8?text=Sem+Foto';" class="w-12 h-12 rounded-xl object-cover bg-slate-100">
-                    <div>
-                        <div class="font-bold text-slate-800 ${paused ? 'text-slate-400' : ''}">${p.name}</div>
-                        <div class="text-xs text-slate-500">${p.category} • Preço: R$ ${p.value.toFixed(2)} ${p.isFeatured ? '• Destaque' : ''}</div>
-                    </div>
-                </div>
-                <div class="flex items-center gap-2">
-                    <button onclick="openEditModal('${p.id}')" class="p-2 text-primary-600 bg-primary-50 rounded-xl hover:bg-primary-100 transition"><i data-lucide="pencil" class="w-4 h-4"></i></button>
-                    <button onclick="toggleProductStatus('${p.id}', '${p.status}')" class="p-2 text-slate-500 bg-slate-100 rounded-xl hover:bg-slate-200 transition"><i data-lucide="${paused ? 'play' : 'pause'}" class="w-4 h-4"></i></button>
-                </div>
-            `;
+            div.innerHTML = `<div class="flex items-center gap-4"><img src="${p.images?.[0] || 'https://placehold.co/80'}" onerror="this.onerror=null; this.src='https://placehold.co/80x80/e2e8f0/94a3b8?text=Sem+Foto';" class="w-12 h-12 rounded-xl object-cover bg-slate-100"><div><div class="font-bold text-slate-800 ${paused ? 'text-slate-400' : ''}">${p.name}</div><div class="text-xs text-slate-500">${p.category} • R$ ${p.value.toFixed(2)} ${p.isFeatured ? '• Destaque' : ''}</div></div></div><div class="flex items-center gap-2"><button onclick="openEditModal('${p.id}')" class="p-2 text-primary-600 bg-primary-50 rounded-xl hover:bg-primary-100 transition"><i data-lucide="pencil" class="w-4 h-4"></i></button><button onclick="toggleProductStatus('${p.id}', '${p.status}')" class="p-2 text-slate-500 bg-slate-100 rounded-xl hover:bg-slate-200 transition"><i data-lucide="${paused ? 'play' : 'pause'}" class="w-4 h-4"></i></button></div>`;
             return div;
         }
 
-        // --- CORE FIREBASE ---
         document.addEventListener('DOMContentLoaded', async () => {
             lucide.createIcons();
             try {
-                // Initialize Firebase (Using a placeholder config for demonstration)
                 app = initializeApp(EXTERNAL_FIREBASE_CONFIG);
                 db = getFirestore(app);
                 auth = getAuth(app);
@@ -646,95 +502,103 @@
                     if(u) {
                         isAuthReady = true;
                         document.getElementById('loading').classList.add('hidden');
-                        loadStoreConfig();
+                        setupConfigListener(); // Listener Realtime para Config
                         setupCategoryListener();
                         setupProductListener();
-                        changeTab('dashboard'); // Default to Dashboard
+                        changeTab('dashboard');
                     }
                 });
             } catch(e) { console.error(e); }
         });
 
-        // Config
-        async function loadStoreConfig() {
-            try {
-                const d = await getDoc(doc(db, `artifacts/${EXTERNAL_FIREBASE_CONFIG.appId}/public/data/config/store`));
-                let data = {};
-                if(d.exists()) { data = d.data(); }
-                
-                // 1. General Config
-                document.getElementById('storeName').value = data.storeName || '';
-                document.getElementById('whatsappNumber').value = data.whatsappNumber || '';
-                document.getElementById('primaryColor').value = data.primaryColor || '#7c3aed';
-                document.getElementById('secondaryColor').value = data.secondaryColor || '#4f46e5';
+        // --- REALTIME CONFIG LISTENER ---
+        function setupConfigListener() {
+            onSnapshot(doc(db, `artifacts/${EXTERNAL_FIREBASE_CONFIG.appId}/public/data/config/store`), (doc) => {
+                if (doc.exists()) {
+                    const data = doc.data();
+                    
+                    // Preencher Form
+                    document.getElementById('storeName').value = data.storeName || '';
+                    document.getElementById('whatsappNumber').value = data.whatsappNumber || '';
+                    document.getElementById('heroTag').value = data.heroTag || '';
+                    document.getElementById('heroHeadline').value = data.heroHeadline || '';
+                    document.getElementById('footerText').value = data.footerText || '';
+                    document.getElementById('primaryColor').value = data.primaryColor || '#7c3aed';
+                    document.getElementById('secondaryColor').value = data.secondaryColor || '#4f46e5';
+                    renderDailyHours(data.hours || []);
+                    
+                    // Atualizar Estado Local
+                    deliveryAreas = data.deliveryAreas || [];
+                    renderDeliveryAreas();
 
-                // 2. Status
-                document.getElementById('isStoreOpen').checked = data.isStoreOpen !== false; 
-
-                // 3. Hours
-                const savedHours = data.hours || [];
-                renderDailyHours(savedHours);
-
-                // 4. Delivery Areas
-                deliveryAreas = data.deliveryAreas || [];
-                renderDeliveryAreas();
-
-            } catch(e) { console.error("Error loading config:", e); }
+                    // Atualizar Switch Dashboard
+                    const isOpen = data.isStoreOpen !== false;
+                    const dashSwitch = document.getElementById('dashboardStoreToggle');
+                    if(dashSwitch) dashSwitch.checked = isOpen;
+                    updateDashboardStatusUI(isOpen);
+                }
+            });
         }
         
-        function renderDailyHours(savedHours) {
-            const container = document.getElementById('dailyHoursContainer');
-            container.innerHTML = '';
+        function updateDashboardStatusUI(isOpen) {
+            const lbl = document.getElementById('statusLabel');
+            const desc = document.getElementById('statusDescription');
+            const bg = document.getElementById('statusIconBg');
             
+            if(isOpen) {
+                lbl.textContent = "Aberto"; lbl.className = "text-sm font-bold text-green-600";
+                desc.textContent = "Sua loja está visível e aceitando pedidos.";
+                bg.className = "p-3 bg-green-50 text-green-600 rounded-xl";
+            } else {
+                lbl.textContent = "Fechado"; lbl.className = "text-sm font-bold text-red-600";
+                desc.textContent = "Loja fechada temporariamente (Status Manual).";
+                bg.className = "p-3 bg-red-50 text-red-600 rounded-xl";
+            }
+        }
+
+        window.toggleStoreStatusQuick = async (el) => {
+            const newState = el.checked;
+            try {
+                await updateDoc(doc(db, `artifacts/${EXTERNAL_FIREBASE_CONFIG.appId}/public/data/config/store`), { isStoreOpen: newState });
+                showToast(newState ? "Loja Aberta!" : "Loja Fechada!");
+            } catch(e) { 
+                el.checked = !newState; // Revert on error
+                showAlertModal("Erro ao alterar status"); 
+            }
+        };
+
+        function renderDailyHours(savedHours) {
+            const container = document.getElementById('dailyHoursContainer'); container.innerHTML = '';
             defaultDays.forEach((dayName, index) => {
                 const dayKey = dayName.toLowerCase().replace('ç', 'c').replace('ã', 'a');
                 const hour = savedHours.find(h => h.day === dayName) || { day: dayName, open: '09:00', close: '18:00', isActive: (index < 5) }; 
-
                 const div = document.createElement('div');
                 div.className = "flex items-center gap-3 p-3 border border-slate-200 bg-slate-50 rounded-xl";
-                div.innerHTML = `
-                    <label class="flex items-center cursor-pointer">
-                        <input type="checkbox" id="${dayKey}Active" data-day="${dayName}" ${hour.isActive ? 'checked' : ''} class="h-4 w-4 text-primary-600 rounded">
-                        <span class="ml-2 font-medium w-20 text-sm text-slate-700">${dayName}</span>
-                    </label>
-                    
-                    <div class="flex items-center gap-2 flex-grow">
-                        <input type="time" id="${dayKey}Open" value="${hour.open}" class="w-full border focus:ring-primary-500 py-1.5 px-3">
-                        <span class="text-slate-500">-</span>
-                        <input type="time" id="${dayKey}Close" value="${hour.close}" class="w-full border focus:ring-primary-500 py-1.5 px-3">
-                    </div>
-                `;
+                div.innerHTML = `<label class="flex items-center cursor-pointer"><input type="checkbox" id="${dayKey}Active" data-day="${dayName}" ${hour.isActive ? 'checked' : ''} class="h-4 w-4 text-primary-600 rounded"><span class="ml-2 font-medium w-20 text-sm text-slate-700">${dayName}</span></label><div class="flex items-center gap-2 flex-grow"><input type="time" id="${dayKey}Open" value="${hour.open}" class="w-full border focus:ring-primary-500 py-1.5 px-3"><span class="text-slate-500">-</span><input type="time" id="${dayKey}Close" value="${hour.close}" class="w-full border focus:ring-primary-500 py-1.5 px-3"></div>`;
                 container.appendChild(div);
             });
             lucide.createIcons();
         }
         
-        // Gerenciamento de Áreas de Entrega
+        // CORREÇÃO DO BUG DE BAIRROS: Re-renderização limpa
         function renderDeliveryAreas() {
-            const container = document.getElementById('deliveryAreasList');
-            const emptyMsg = document.getElementById('emptyAreasMessage');
-            container.innerHTML = '';
+            const container = document.getElementById('deliveryAreasList'); 
+            const emptyMsg = document.getElementById('emptyAreasMessage'); 
             
-            if (deliveryAreas.length === 0) {
-                emptyMsg.classList.remove('hidden');
-                container.appendChild(emptyMsg); 
-                return;
+            // Limpa Container (exceto a mensagem de vazio que manipulamos via classe)
+            container.innerHTML = '';
+            container.appendChild(emptyMsg); 
+            
+            if (!deliveryAreas || deliveryAreas.length === 0) { 
+                emptyMsg.classList.remove('hidden'); 
+                return; 
             }
-
             emptyMsg.classList.add('hidden');
             
             deliveryAreas.forEach((area, index) => {
                 const div = document.createElement('div');
-                div.className = "flex items-center justify-between p-4 bg-white hover:bg-slate-50 transition";
-                div.innerHTML = `
-                    <div class="font-medium text-slate-800">${area.name}</div>
-                    <div class="flex items-center gap-3">
-                        <span class="text-slate-600 font-semibold">R$ ${parseFloat(area.fee).toFixed(2).replace('.', ',')}</span>
-                        <button type="button" onclick="removeDeliveryArea(${index})" class="p-1.5 text-red-500 hover:bg-red-100 rounded-xl transition">
-                            <i data-lucide="trash-2" class="w-4 h-4"></i>
-                        </button>
-                    </div>
-                `;
+                div.className = "flex items-center justify-between p-4 bg-white hover:bg-slate-50 transition border-b last:border-0 border-slate-100";
+                div.innerHTML = `<div class="font-medium text-slate-800">${area.name}</div><div class="flex items-center gap-3"><span class="text-slate-600 font-semibold">R$ ${parseFloat(area.fee).toFixed(2).replace('.', ',')}</span><button type="button" onclick="removeDeliveryArea(${index})" class="p-1.5 text-red-500 hover:bg-red-100 rounded-xl transition"><i data-lucide="trash-2" class="w-4 h-4"></i></button></div>`;
                 container.appendChild(div);
             });
             lucide.createIcons();
@@ -745,74 +609,65 @@
             const feeInput = document.getElementById('deliveryAreaFee');
             const name = nameInput.value.trim();
             const fee = parseFloat(feeInput.value.replace(',', '.')) || 0;
-
-            if (name === "") {
-                return showAlertModal("O nome do bairro é obrigatório.");
-            }
-            if (fee < 0) {
-                return showAlertModal("A taxa de entrega não pode ser negativa.");
-            }
-            if (deliveryAreas.some(a => a.name.toLowerCase() === name.toLowerCase())) {
-                return showAlertModal(`O bairro "${name}" já está cadastrado.`);
+            
+            if (name === "") return showAlertModal("Nome obrigatório");
+            if (fee < 0) return showAlertModal("Taxa inválida");
+            
+            // Verifica duplicação local antes de adicionar
+            if(deliveryAreas.some(d => d.name.toLowerCase() === name.toLowerCase())) {
+                 return showAlertModal("Bairro já adicionado!");
             }
 
-            deliveryAreas.push({ name: name, fee: fee });
+            // Atualiza array e re-renderiza
+            deliveryAreas.push({ name, fee }); 
             renderDeliveryAreas();
-            nameInput.value = '';
-            feeInput.value = '';
-            showToast("Área de entrega adicionada (salve as configurações)");
+            
+            nameInput.value = ''; feeInput.value = '';
         };
 
-        window.removeDeliveryArea = (index) => {
-            deliveryAreas.splice(index, 1);
-            renderDeliveryAreas();
-            showToast("Área removida (salve as configurações)");
+        window.removeDeliveryArea = (index) => { 
+            deliveryAreas.splice(index, 1); 
+            renderDeliveryAreas(); 
         };
-
 
         window.saveStoreConfig = async (e) => {
             e.preventDefault();
-
-            // 1. Collect Daily Hours
             const hours = [];
             defaultDays.forEach(dayName => {
                 const dayKey = dayName.toLowerCase().replace('ç', 'c').replace('ã', 'a');
-                const isActive = document.getElementById(`${dayKey}Active`).checked;
-                const open = document.getElementById(`${dayKey}Open`).value;
-                const close = document.getElementById(`${dayKey}Close`).value;
-                
                 hours.push({
                     day: dayName,
-                    isActive: isActive,
-                    open: open,
-                    close: close
+                    isActive: document.getElementById(`${dayKey}Active`).checked,
+                    open: document.getElementById(`${dayKey}Open`).value,
+                    close: document.getElementById(`${dayKey}Close`).value
                 });
             });
 
-            // 2. Main Config Data
+            // Pega o estado atual do switch do dashboard para não sobrescrever
+            const dashboardSwitch = document.getElementById('dashboardStoreToggle');
+            const currentStatus = dashboardSwitch ? dashboardSwitch.checked : true;
+
             const configData = {
                 storeName: document.getElementById('storeName').value,
                 whatsappNumber: document.getElementById('whatsappNumber').value,
+                heroTag: document.getElementById('heroTag').value,
+                heroHeadline: document.getElementById('heroHeadline').value,
+                footerText: document.getElementById('footerText').value,
                 primaryColor: document.getElementById('primaryColor').value,
                 secondaryColor: document.getElementById('secondaryColor').value,
-                isStoreOpen: document.getElementById('isStoreOpen').checked,
+                isStoreOpen: currentStatus, // Usa o status atual
                 hours: hours,
-                deliveryAreas: deliveryAreas
+                deliveryAreas: deliveryAreas // Salva o array atualizado
             };
             
-            try {
-                await setDoc(doc(db, `artifacts/${EXTERNAL_FIREBASE_CONFIG.appId}/public/data/config/store`), configData);
-                showToast("Configurações salvas!");
-            } catch(e) { showAlertModal("Erro ao salvar: " + e.message); }
+            try { await setDoc(doc(db, `artifacts/${EXTERNAL_FIREBASE_CONFIG.appId}/public/data/config/store`), configData); showToast("Configurações salvas!"); } 
+            catch(e) { showAlertModal("Erro ao salvar: " + e.message); }
         };
 
-        // Categories
         function setupCategoryListener() {
             onSnapshot(collection(db, `artifacts/${EXTERNAL_FIREBASE_CONFIG.appId}/public/data/categories`), s => {
                 allCategories = s.docs.map(d => ({id: d.id, ...d.data()})).sort((a,b)=>a.name.localeCompare(b.name));
-                renderCategoryList(allCategories);
-                populateCatDropdowns();
-                updateDashboardStats(); 
+                renderCategoryList(allCategories); populateCatDropdowns(); updateDashboardStats(); 
             });
         }
         function renderCategoryList(list) {
@@ -821,13 +676,7 @@
                 const el = document.createElement('div');
                 const active = c.status === 'active';
                 el.className = `p-4 border rounded-xl flex justify-between items-center transition hover:shadow-md ${active ? 'bg-white border-slate-200' : 'bg-slate-50 opacity-70'}`;
-                el.innerHTML = `
-                    <span class="font-semibold text-slate-700">${c.name}</span>
-                    <div class="flex gap-1">
-                        <button onclick="openEditCategoryModal('${c.id}')" class="p-1.5 text-slate-400 hover:text-primary-600 hover:bg-slate-50 rounded-lg"><i data-lucide="pencil" class="w-4 h-4"></i></button>
-                        <button onclick="confirmDeleteCategory('${c.id}', '${c.name}')" class="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50/50 rounded-lg"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
-                    </div>
-                `;
+                el.innerHTML = `<span class="font-semibold text-slate-700">${c.name}</span><div class="flex gap-1"><button onclick="openEditCategoryModal('${c.id}')" class="p-1.5 text-slate-400 hover:text-primary-600 hover:bg-slate-50 rounded-lg"><i data-lucide="pencil" class="w-4 h-4"></i></button><button onclick="confirmDeleteCategory('${c.id}', '${c.name}')" class="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50/50 rounded-lg"><i data-lucide="trash-2" class="w-4 h-4"></i></button></div>`;
                 div.appendChild(el);
             });
             lucide.createIcons();
@@ -837,180 +686,51 @@
             const name = document.getElementById('categoryName').value;
             if(allCategories.some(c=>c.name.toLowerCase()===name.toLowerCase())) return showAlertModal("Categoria já existe");
             await addDoc(collection(db, `artifacts/${EXTERNAL_FIREBASE_CONFIG.appId}/public/data/categories`), {name, status:'active'});
-            document.getElementById('categoryName').value = '';
-            showToast("Categoria adicionada");
+            document.getElementById('categoryName').value = ''; showToast("Categoria adicionada");
         };
-        // Edit/Delete Category logic 
         window.openEditCategoryModal = (id) => {
             const c = allCategories.find(x=>x.id===id);
-            document.getElementById('editCatId').value = id;
-            document.getElementById('editCatName').value = c.name;
-            document.getElementById('editCatActive').checked = c.status === 'active';
+            document.getElementById('editCatId').value = id; document.getElementById('editCatName').value = c.name; document.getElementById('editCatActive').checked = c.status === 'active';
             document.getElementById('editCategoryModal').classList.remove('hidden');
         }
         window.updateCategory = async (e) => {
             e.preventDefault();
-            const id = document.getElementById('editCatId').value;
-            const name = document.getElementById('editCatName').value;
-            const status = document.getElementById('editCatActive').checked ? 'active' : 'paused';
+            const id = document.getElementById('editCatId').value; const name = document.getElementById('editCatName').value; const status = document.getElementById('editCatActive').checked ? 'active' : 'paused';
             await updateDoc(doc(db, `artifacts/${EXTERNAL_FIREBASE_CONFIG.appId}/public/data/categories`, id), {name, status});
-            document.getElementById('editCategoryModal').classList.add('hidden');
-            showToast("Categoria atualizada");
+            document.getElementById('editCategoryModal').classList.add('hidden'); showToast("Categoria atualizada");
         }
         window.confirmDeleteCategory = (id, name) => {
-            if(allProducts.some(p=>p.category===name)) return showAlertModal("Não é possível excluir categoria em uso.");
-            showAlertModal(`Excluir ${name}?`, 'Excluir Categoria', true, async () => {
-                await deleteDoc(doc(db, `artifacts/${EXTERNAL_FIREBASE_CONFIG.appId}/public/data/categories`, id));
-                showToast("Categoria excluída");
-            });
+            if(allProducts.some(p=>p.category===name)) return showAlertModal("Em uso");
+            showAlertModal(`Excluir ${name}?`, 'Excluir', true, async () => { await deleteDoc(doc(db, `artifacts/${EXTERNAL_FIREBASE_CONFIG.appId}/public/data/categories`, id)); showToast("Categoria excluída"); });
         }
 
-        // Products
         function setupProductListener() {
             onSnapshot(collection(db, `artifacts/${EXTERNAL_FIREBASE_CONFIG.appId}/public/data/products`), s => {
-                allProducts = s.docs.map(d => ({id: d.id, ...d.data()}));
-                filterProducts(); 
-                updateDashboardStats(); 
+                allProducts = s.docs.map(d => ({id: d.id, ...d.data()})); filterProducts(); updateDashboardStats(); 
             });
         }
-
         function renderProductListGrouped(products) {
             const container = document.getElementById('productList');
-            
-            // Grouping Logic:
             const grouped = products.reduce((acc, p) => { (acc[p.category] = acc[p.category] || []).push(p); return acc; }, {});
             container.innerHTML = ''; 
             Object.keys(grouped).forEach(cat => {
-                const items = grouped[cat];
-                const cleanCat = cat.replace(/[^a-zA-Z0-9]/g, '');
+                const items = grouped[cat]; const cleanCat = cat.replace(/[^a-zA-Z0-9]/g, '');
                 const section = document.createElement('div');
                 section.className = 'section-card bg-white rounded-2xl border border-slate-200 shadow-xl overflow-hidden';
-                section.innerHTML = `
-                    <div class="px-6 py-4 bg-slate-50 border-b border-slate-100 flex justify-between items-center cursor-pointer transition hover:bg-slate-100/70" onclick="toggleAcc('acc-${cleanCat}')">
-                        <h3 class="font-bold text-slate-800">${cat} <span class="text-xs bg-slate-200 px-2 py-0.5 rounded-full ml-2 text-slate-600">${items.length}</span></h3>
-                        <i id="icon-acc-${cleanCat}" data-lucide="chevron-down" class="rotate-icon text-slate-400"></i>
-                    </div>
-                    <div id="acc-${cleanCat}" class="accordion-content bg-white">
-                        <div class="divide-y divide-slate-100">
-                             ${items.map(p => {
-                                 const paused = p.status === 'paused';
-                                 return `
-                                 <div class="p-4 flex justify-between items-center hover:bg-slate-50 group transition">
-                                     <div class="flex items-center gap-4">
-                                         <img src="${p.images?.[0] || 'https://placehold.co/80'}" onerror="this.onerror=null; this.src='https://placehold.co/80x80/e2e8f0/94a3b8?text=Sem+Foto';" class="w-12 h-12 rounded-xl object-cover bg-slate-100">
-                                         <div>
-                                             <div class="font-medium ${paused?'text-slate-400':''}">${p.name}</div>
-                                             <div class="text-xs text-slate-500">R$ ${p.value.toFixed(2)} ${p.isFeatured ? '• Destaque' : ''}</div>
-                                         </div>
-                                     </div>
-                                     <div class="flex gap-2 opacity-100 sm:opacity-0 group-hover:opacity-100 transition-opacity">
-                                         <button onclick="openEditModal('${p.id}')" class="p-2 hover:bg-primary-50 rounded-xl text-primary-600"><i data-lucide="pencil" class="w-4 h-4"></i></button>
-                                         <button onclick="toggleProductStatus('${p.id}', '${p.status}')" class="p-2 hover:bg-slate-100 rounded-xl text-slate-500"><i data-lucide="${paused?'play':'pause'}" class="w-4 h-4"></i></button>
-                                         <button onclick="confirmDeleteProduct('${p.id}')" class="p-2 hover:bg-red-50 hover:text-red-600 rounded-xl text-slate-500"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
-                                     </div>
-                                 </div>`
-                             }).join('')}
-                        </div>
-                    </div>
-                `;
+                section.innerHTML = `<div class="px-6 py-4 bg-slate-50 border-b border-slate-100 flex justify-between items-center cursor-pointer transition hover:bg-slate-100/70" onclick="toggleAcc('acc-${cleanCat}')"><h3 class="font-bold text-slate-800">${cat} <span class="text-xs bg-slate-200 px-2 py-0.5 rounded-full ml-2 text-slate-600">${items.length}</span></h3><i id="icon-acc-${cleanCat}" data-lucide="chevron-down" class="rotate-icon text-slate-400"></i></div><div id="acc-${cleanCat}" class="accordion-content bg-white"><div class="divide-y divide-slate-100">${items.map(p => { const paused = p.status === 'paused'; return `<div class="p-4 flex justify-between items-center hover:bg-slate-50 group transition"><div class="flex items-center gap-4"><img src="${p.images?.[0] || 'https://placehold.co/80'}" onerror="this.onerror=null; this.src='https://placehold.co/80x80/e2e8f0/94a3b8?text=Sem+Foto';" class="w-12 h-12 rounded-xl object-cover bg-slate-100"><div><div class="font-medium ${paused?'text-slate-400':''}">${p.name}</div><div class="text-xs text-slate-500">R$ ${p.value.toFixed(2)} ${p.isFeatured ? '• Destaque' : ''}</div></div></div><div class="flex gap-2 opacity-100 sm:opacity-0 group-hover:opacity-100 transition-opacity"><button onclick="openEditModal('${p.id}')" class="p-2 hover:bg-primary-50 rounded-xl text-primary-600"><i data-lucide="pencil" class="w-4 h-4"></i></button><button onclick="toggleProductStatus('${p.id}', '${p.status}')" class="p-2 hover:bg-slate-100 rounded-xl text-slate-500"><i data-lucide="${paused?'play':'pause'}" class="w-4 h-4"></i></button><button onclick="confirmDeleteProduct('${p.id}')" class="p-2 hover:bg-red-50 hover:text-red-600 rounded-xl text-slate-500"><i data-lucide="trash-2" class="w-4 h-4"></i></button></div></div>` }).join('')}</div></div>`;
                 container.appendChild(section);
             });
             lucide.createIcons();
         }
-        
-        window.toggleAcc = (id) => {
-            const el = document.getElementById(id);
-            const ic = document.getElementById('icon-'+id);
-            if(el.classList.contains('active')) { el.classList.remove('active'); ic.classList.remove('rotated'); }
-            else { el.classList.add('active'); ic.classList.add('rotated'); }
-        }
-
-        // --- PRODUCT FORM MODAL LOGIC (Unified Add/Edit) ---
+        window.toggleAcc = (id) => { const el = document.getElementById(id); const ic = document.getElementById('icon-'+id); if(el.classList.contains('active')) { el.classList.remove('active'); ic.classList.remove('rotated'); } else { el.classList.add('active'); ic.classList.add('rotated'); } }
         let isEditing = false;
-        window.openAddModal = () => {
-            isEditing = false;
-            document.getElementById('productFormMain').reset();
-            document.getElementById('prodId').value = '';
-            document.getElementById('productModalTitle').textContent = "Novo Produto";
-            document.getElementById('productModal').classList.remove('hidden');
-            populateCatDropdowns();
-            lucide.createIcons(); // Ensure modal icons are visible
-        };
-        window.openEditModal = (id) => {
-            isEditing = true;
-            const p = allProducts.find(x => x.id === id);
-            document.getElementById('prodId').value = id;
-            document.getElementById('prodName').value = p.name;
-            document.getElementById('prodCategory').value = p.category;
-            document.getElementById('prodValue').value = p.value;
-            document.getElementById('prodPromo').value = p.promoValue || '';
-            document.getElementById('prodSizes').value = p.sizes?.join(', ') || '';
-            document.getElementById('prodColors').value = p.colors?.join(', ') || '';
-            document.getElementById('prodImage').value = p.images?.[0] || '';
-            document.getElementById('prodFeatured').checked = p.isFeatured;
-            
-            document.getElementById('productModalTitle').textContent = "Editar Produto";
-            document.getElementById('productModal').classList.remove('hidden');
-            populateCatDropdowns(p.category);
-            lucide.createIcons(); // Ensure modal icons are visible
-        };
+        window.openAddModal = () => { isEditing = false; document.getElementById('productFormMain').reset(); document.getElementById('prodId').value = ''; document.getElementById('productModalTitle').textContent = "Novo Produto"; document.getElementById('productModal').classList.remove('hidden'); populateCatDropdowns(); lucide.createIcons(); };
+        window.openEditModal = (id) => { isEditing = true; const p = allProducts.find(x => x.id === id); document.getElementById('prodId').value = id; document.getElementById('prodName').value = p.name; document.getElementById('prodCategory').value = p.category; document.getElementById('prodValue').value = p.value; document.getElementById('prodPromo').value = p.promoValue || ''; document.getElementById('prodSizes').value = p.sizes?.join(', ') || ''; document.getElementById('prodColors').value = p.colors?.join(', ') || ''; document.getElementById('prodImage').value = p.images?.[0] || ''; document.getElementById('prodFeatured').checked = p.isFeatured; document.getElementById('productModalTitle').textContent = "Editar Produto"; document.getElementById('productModal').classList.remove('hidden'); populateCatDropdowns(p.category); lucide.createIcons(); };
         window.closeProductModal = () => document.getElementById('productModal').classList.add('hidden');
-        
-        window.handleProductSubmit = async (e) => {
-            e.preventDefault();
-            const data = {
-                name: document.getElementById('prodName').value,
-                category: document.getElementById('prodCategory').value,
-                value: parseFloat(document.getElementById('prodValue').value),
-                promoValue: parseFloat(document.getElementById('prodPromo').value) || null,
-                sizes: document.getElementById('prodSizes').value.split(',').map(s=>s.trim()).filter(Boolean),
-                colors: document.getElementById('prodColors').value.split(',').map(s=>s.trim()).filter(Boolean),
-                images: [document.getElementById('prodImage').value],
-                isFeatured: document.getElementById('prodFeatured').checked,
-                updatedAt: new Date().toISOString()
-            };
-            
-            try {
-                if(isEditing) {
-                    const id = document.getElementById('prodId').value;
-                    await updateDoc(doc(db, `artifacts/${EXTERNAL_FIREBASE_CONFIG.appId}/public/data/products`, id), data);
-                    showToast("Produto atualizado!");
-                } else {
-                    data.status = 'active';
-                    data.createdAt = new Date().toISOString();
-                    await addDoc(collection(db, `artifacts/${EXTERNAL_FIREBASE_CONFIG.appId}/public/data/products`), data);
-                    showToast("Produto criado!");
-                }
-                closeProductModal();
-            } catch(err) { showAlertModal("Erro ao salvar produto"); }
-        };
-
-        window.toggleProductStatus = async (id, status) => {
-            await updateDoc(doc(db, `artifacts/${EXTERNAL_FIREBASE_CONFIG.appId}/public/data/products`, id), {status: status === 'active' ? 'paused' : 'active'});
-            showToast("Status alterado");
-        }
-        window.confirmDeleteProduct = (id) => {
-            showAlertModal("Excluir produto permanentemente?", "Excluir", true, async () => {
-                await deleteDoc(doc(db, `artifacts/${EXTERNAL_FIREBASE_CONFIG.appId}/public/data/products`, id));
-                showToast("Produto excluído");
-            });
-        }
-
-        function populateCatDropdowns(sel) {
-            const dropdowns = [document.getElementById('prodCategory'), document.getElementById('filterCategory')];
-            dropdowns.forEach(dd => {
-                if(!dd) return;
-                const isFilter = dd.id === 'filterCategory';
-                dd.innerHTML = isFilter ? '<option value="all">Todas</option>' : '';
-                allCategories.filter(c => c.status === 'active' || (sel && c.name === sel)).forEach(c => {
-                    const opt = document.createElement('option');
-                    opt.value = c.name;
-                    opt.textContent = c.name;
-                    if(sel && c.name === sel) opt.selected = true;
-                    dd.appendChild(opt);
-                });
-            });
-        }
+        window.handleProductSubmit = async (e) => { e.preventDefault(); const data = { name: document.getElementById('prodName').value, category: document.getElementById('prodCategory').value, value: parseFloat(document.getElementById('prodValue').value), promoValue: parseFloat(document.getElementById('prodPromo').value) || null, sizes: document.getElementById('prodSizes').value.split(',').map(s=>s.trim()).filter(Boolean), colors: document.getElementById('prodColors').value.split(',').map(s=>s.trim()).filter(Boolean), images: [document.getElementById('prodImage').value], isFeatured: document.getElementById('prodFeatured').checked, updatedAt: new Date().toISOString() }; try { if(isEditing) { await updateDoc(doc(db, `artifacts/${EXTERNAL_FIREBASE_CONFIG.appId}/public/data/products`, document.getElementById('prodId').value), data); showToast("Atualizado!"); } else { data.status = 'active'; data.createdAt = new Date().toISOString(); await addDoc(collection(db, `artifacts/${EXTERNAL_FIREBASE_CONFIG.appId}/public/data/products`), data); showToast("Criado!"); } closeProductModal(); } catch(err) { showAlertModal("Erro ao salvar"); } };
+        window.toggleProductStatus = async (id, status) => { await updateDoc(doc(db, `artifacts/${EXTERNAL_FIREBASE_CONFIG.appId}/public/data/products`, id), {status: status === 'active' ? 'paused' : 'active'}); showToast("Status alterado"); }
+        window.confirmDeleteProduct = (id) => { showAlertModal("Excluir?", "Excluir", true, async () => { await deleteDoc(doc(db, `artifacts/${EXTERNAL_FIREBASE_CONFIG.appId}/public/data/products`, id)); showToast("Excluído"); }); }
+        function populateCatDropdowns(sel) { const dd = [document.getElementById('prodCategory'), document.getElementById('filterCategory')]; dd.forEach(d => { if(!d) return; d.innerHTML = d.id === 'filterCategory' ? '<option value="all">Todas</option>' : ''; allCategories.filter(c => c.status === 'active' || (sel && c.name === sel)).forEach(c => { const o = document.createElement('option'); o.value = c.name; o.textContent = c.name; if(sel && c.name === sel) o.selected = true; d.appendChild(o); }); }); }
     </script>
 </body>
 </html>
