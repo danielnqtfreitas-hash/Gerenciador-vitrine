@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Painel Administrativo | ShopWave Vitrine</title>
+    <title>Painel Administrativo | ShopWave</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <script src="https://unpkg.com/lucide@latest"></script>
@@ -37,97 +37,55 @@
         
         .modal-overlay { background-color: rgba(15, 23, 42, 0.7); backdrop-filter: blur(5px); }
         .modal-content-wrapper { max-height: 90vh; overflow-y: auto; }
-        .rotate-icon { transition: transform 0.3s ease; }
-        .rotate-icon.rotated { transform: rotate(180deg); }
-        .accordion-content { max-height: 0; overflow: hidden; transition: max-height 0.3s ease-out; }
-        .accordion-content.active { max-height: 2000px; transition: max-height 0.5s ease-in; }
         
         /* Toggle Switch */
-        .toggle-switch { width: 52px; height: 28px; position: relative; display: inline-block; }
+        .toggle-switch { width: 44px; height: 24px; position: relative; display: inline-block; }
         .toggle-switch input { opacity: 0; width: 0; height: 0; }
         .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #cbd5e1; transition: .4s; border-radius: 34px; }
-        .slider:before { position: absolute; content: ""; height: 20px; width: 20px; left: 4px; bottom: 4px; background-color: white; transition: .4s; border-radius: 50%; box-shadow: 0 2px 4px rgba(0,0,0,0.2); }
+        .slider:before { position: absolute; content: ""; height: 18px; width: 18px; left: 3px; bottom: 3px; background-color: white; transition: .4s; border-radius: 50%; box-shadow: 0 2px 4px rgba(0,0,0,0.2); }
         input:checked + .slider { background-color: #22c55e; }
-        input:checked + .slider:before { transform: translateX(24px); }
+        input:checked + .slider:before { transform: translateX(20px); }
 
-        @keyframes slideIn {
-            from { transform: translateX(100%); opacity: 0; }
-            to { transform: translateX(0); opacity: 1; }
-        }
-        .toast { animation: slideIn 0.3s ease-out forwards; }
+        .section-card { border-radius: 1.5rem; box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1); }
         
-        input[type="text"], input[type="number"], input[type="url"], input[type="time"], select, textarea {
-            background-color: #f8fafc; border-color: #e2e8f0; border-radius: 0.5rem; padding: 0.625rem 1rem;
-            transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
-        }
-        input:focus, select:focus, textarea:focus {
-            border-color: theme('colors.primary.500'); box-shadow: 0 0 0 1px theme('colors.primary.500'); background-color: white;
-        }
-
-        .section-card { border-radius: 1.5rem; box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05); }
+        @keyframes slideIn { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+        .toast { animation: slideIn 0.3s ease-out forwards; }
     </style>
 </head>
 <body class="text-slate-800 antialiased h-screen overflow-hidden flex bg-slate-50">
 
-    <!-- LOADING SCREEN -->
-    <div id="loading" class="fixed inset-0 flex flex-col items-center justify-center bg-white z-[9999]">
-        <div class="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary-600"></div>
-    </div>
-
-    <!-- TOAST CONTAINER -->
+    <!-- TOAST -->
     <div id="toast-container" class="fixed top-5 right-5 z-[100] flex flex-col gap-2"></div>
 
     <!-- SIDEBAR -->
     <aside class="hidden md:flex flex-col w-64 bg-white border-r border-slate-200 h-full shadow-lg z-10">
-        <div class="h-16 flex items-center px-6 border-b border-primary-600/10 bg-gradient-to-r from-white to-primary-50">
-            <div class="w-8 h-8 bg-gradient-to-br from-primary-600 to-indigo-700 rounded-lg flex items-center justify-center text-white mr-3 shadow-lg shadow-primary-500/50">
-                <i data-lucide="store" class="w-5 h-5"></i>
-            </div>
-            <span class="text-lg font-bold text-slate-800 tracking-tight">Admin<span class="text-primary-600">Vitrine</span></span>
+        <div class="h-16 flex items-center px-6 border-b border-primary-600/10">
+            <span class="text-lg font-bold text-slate-800">Admin<span class="text-primary-600">Vitrine</span></span>
         </div>
-
         <nav class="flex-1 overflow-y-auto py-6 space-y-1">
-            <p class="px-6 text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">Catálogo</p>
-            <button id="nav-dashboard" onclick="changeTab('dashboard')" class="sidebar-link w-full flex items-center px-6 py-3 text-sm font-medium text-slate-600 border-r-4 border-transparent">
-                <i data-lucide="bar-chart-2" class="w-5 h-5 mr-3"></i> Dashboard
-            </button>
-            <button id="nav-products" onclick="changeTab('products')" class="sidebar-link w-full flex items-center px-6 py-3 text-sm font-medium text-slate-600 border-r-4 border-transparent">
-                <i data-lucide="package" class="w-5 h-5 mr-3"></i> Produtos
-            </button>
-            <button id="nav-categories" onclick="changeTab('categories')" class="sidebar-link w-full flex items-center px-6 py-3 text-sm font-medium text-slate-600 border-r-4 border-transparent">
-                <i data-lucide="layers" class="w-5 h-5 mr-3"></i> Categorias
-            </button>
-            <button id="nav-promotions" onclick="changeTab('promotions')" class="sidebar-link w-full flex items-center px-6 py-3 text-sm font-medium text-slate-600 border-r-4 border-transparent">
-                <i data-lucide="ticket" class="w-5 h-5 mr-3"></i> Promoções
-            </button>
+            <p class="px-6 text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">Principal</p>
+            <button id="nav-dashboard" onclick="changeTab('dashboard')" class="sidebar-link w-full flex items-center px-6 py-3 text-sm font-medium text-slate-600 border-r-4 border-transparent"><i data-lucide="bar-chart-2" class="w-5 h-5 mr-3"></i> Dashboard</button>
+            <button id="nav-banners" onclick="changeTab('banners')" class="sidebar-link w-full flex items-center px-6 py-3 text-sm font-medium text-slate-600 border-r-4 border-transparent"><i data-lucide="layout" class="w-5 h-5 mr-3"></i> Banners (Cards)</button>
+            
+            <p class="px-6 text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2 mt-6">Catálogo</p>
+            <button id="nav-products" onclick="changeTab('products')" class="sidebar-link w-full flex items-center px-6 py-3 text-sm font-medium text-slate-600 border-r-4 border-transparent"><i data-lucide="package" class="w-5 h-5 mr-3"></i> Produtos</button>
+            <button id="nav-categories" onclick="changeTab('categories')" class="sidebar-link w-full flex items-center px-6 py-3 text-sm font-medium text-slate-600 border-r-4 border-transparent"><i data-lucide="layers" class="w-5 h-5 mr-3"></i> Categorias</button>
             
             <p class="px-6 text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2 mt-6">Sistema</p>
-            <button id="nav-config" onclick="changeTab('config')" class="sidebar-link w-full flex items-center px-6 py-3 text-sm font-medium text-slate-600 border-r-4 border-transparent">
-                <i data-lucide="settings" class="w-5 h-5 mr-3"></i> Configurações
-            </button>
+            <button id="nav-config" onclick="changeTab('config')" class="sidebar-link w-full flex items-center px-6 py-3 text-sm font-medium text-slate-600 border-r-4 border-transparent"><i data-lucide="settings" class="w-5 h-5 mr-3"></i> Configurações</button>
         </nav>
-        
-        <div class="p-4 border-t border-slate-100">
-            <div class="flex items-center gap-3">
-                <div class="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center text-slate-500 font-bold text-xs">AD</div>
-                <div>
-                    <p class="text-xs font-medium text-slate-700">Admin</p>
-                    <p class="text-[10px] text-green-600 flex items-center"><span class="w-1.5 h-1.5 bg-green-500 rounded-full mr-1"></span> Online</p>
-                </div>
-            </div>
-        </div>
     </aside>
 
-    <!-- MOBILE MENU -->
+    <!-- MOBILE MENU OVERLAY -->
     <div id="mobile-menu-overlay" onclick="toggleMobileMenu()" class="fixed inset-0 bg-slate-900/50 z-40 hidden md:hidden backdrop-blur-sm"></div>
     <aside id="mobile-sidebar" class="fixed inset-y-0 left-0 w-64 bg-white z-50 transform -translate-x-full transition-transform duration-300 md:hidden shadow-2xl p-4">
         <h2 class="text-xl font-bold mb-6">Menu</h2>
         <nav class="space-y-2">
-            <button onclick="changeTab('dashboard'); toggleMobileMenu()" class="w-full flex items-center p-3 hover:bg-slate-50 rounded text-slate-700"><i data-lucide="bar-chart-2" class="w-5 h-5 mr-3"></i> Dashboard</button>
-            <button onclick="changeTab('products'); toggleMobileMenu()" class="w-full flex items-center p-3 hover:bg-slate-50 rounded text-slate-700"><i data-lucide="package" class="w-5 h-5 mr-3"></i> Produtos</button>
-            <button onclick="changeTab('categories'); toggleMobileMenu()" class="w-full flex items-center p-3 hover:bg-slate-50 rounded text-slate-700"><i data-lucide="layers" class="w-5 h-5 mr-3"></i> Categorias</button>
-            <button onclick="changeTab('promotions'); toggleMobileMenu()" class="w-full flex items-center p-3 hover:bg-slate-50 rounded text-slate-700"><i data-lucide="ticket" class="w-5 h-5 mr-3"></i> Promoções</button>
-            <button onclick="changeTab('config'); toggleMobileMenu()" class="w-full flex items-center p-3 hover:bg-slate-50 rounded text-slate-700"><i data-lucide="settings" class="w-5 h-5 mr-3"></i> Configurações</button>
+            <button onclick="changeTab('dashboard'); toggleMobileMenu()" class="w-full flex items-center p-3 hover:bg-slate-50 rounded">Dashboard</button>
+            <button onclick="changeTab('banners'); toggleMobileMenu()" class="w-full flex items-center p-3 hover:bg-slate-50 rounded">Banners</button>
+            <button onclick="changeTab('products'); toggleMobileMenu()" class="w-full flex items-center p-3 hover:bg-slate-50 rounded">Produtos</button>
+            <button onclick="changeTab('categories'); toggleMobileMenu()" class="w-full flex items-center p-3 hover:bg-slate-50 rounded">Categorias</button>
+            <button onclick="changeTab('config'); toggleMobileMenu()" class="w-full flex items-center p-3 hover:bg-slate-50 rounded">Configurações</button>
         </nav>
     </aside>
 
@@ -138,106 +96,55 @@
                 <button onclick="toggleMobileMenu()" class="md:hidden text-slate-500"><i data-lucide="menu" class="w-6 h-6"></i></button>
                 <h2 id="page-title" class="text-xl font-bold text-slate-800">Dashboard</h2>
             </div>
+            <div class="flex items-center gap-2">
+                <span class="text-xs text-green-600 font-bold bg-green-50 px-2 py-1 rounded-full border border-green-100 flex items-center gap-1"><span class="w-2 h-2 bg-green-500 rounded-full"></span> Online</span>
+            </div>
         </header>
 
         <div id="content-area" class="flex-1 overflow-x-hidden overflow-y-auto bg-slate-50 p-4 md:p-8 relative">
 
             <!-- DASHBOARD TAB -->
             <div id="content-dashboard" class="max-w-6xl mx-auto space-y-6 animate-fade-in hidden">
-                
-                <!-- STATUS CONTROL -->
                 <div class="bg-white rounded-2xl border border-slate-200 shadow-xl p-6 flex flex-col md:flex-row items-center justify-between gap-4">
                     <div class="flex items-center gap-4">
-                        <div class="p-3 bg-green-50 text-green-600 rounded-xl" id="statusIconBg">
-                            <i data-lucide="power" class="w-6 h-6"></i>
-                        </div>
-                        <div>
-                            <h3 class="font-bold text-lg text-slate-800">Status da Loja Online</h3>
-                            <p class="text-sm text-slate-500" id="statusDescription">Controle se os clientes podem fazer pedidos agora.</p>
-                        </div>
+                        <div class="p-3 bg-blue-50 text-blue-600 rounded-xl"><i data-lucide="store" class="w-6 h-6"></i></div>
+                        <div><h3 class="font-bold text-lg text-slate-800">Status da Loja</h3><p class="text-sm text-slate-500">Controle se os clientes podem fazer pedidos.</p></div>
                     </div>
                     <div class="flex items-center gap-3">
-                        <span class="text-sm font-semibold text-slate-600" id="statusLabel">Fechado</span>
-                        <label class="toggle-switch">
-                            <input type="checkbox" id="dashboardStoreToggle" onchange="toggleStoreStatusQuick(this)">
-                            <span class="slider"></span>
-                        </label>
+                        <span class="text-sm font-semibold text-slate-600" id="statusLabel">Aberto</span>
+                        <label class="toggle-switch"><input type="checkbox" id="dashboardStoreToggle" onchange="toggleStoreStatusQuick(this)"><span class="slider"></span></label>
                     </div>
                 </div>
 
-                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
                     <div class="section-card bg-white p-6 rounded-2xl border border-slate-100 shadow-xl">
-                        <div class="flex justify-between items-start mb-4">
-                            <div><p class="text-xs font-semibold text-slate-400 uppercase">Total Produtos</p><h3 class="text-2xl font-bold text-slate-800" id="dash-total-products">0</h3></div>
-                            <div class="p-2 bg-blue-50 text-blue-600 rounded-xl"><i data-lucide="box" class="w-5 h-5"></i></div>
-                        </div>
+                        <p class="text-xs font-semibold text-slate-400 uppercase">Produtos</p>
+                        <h3 class="text-3xl font-bold text-slate-800" id="dash-total-products">0</h3>
                     </div>
                     <div class="section-card bg-white p-6 rounded-2xl border border-slate-100 shadow-xl">
-                        <div class="flex justify-between items-start mb-4">
-                            <div><p class="text-xs font-semibold text-slate-400 uppercase">Em Destaque</p><h3 class="text-2xl font-bold text-primary-600" id="dash-featured">0</h3></div>
-                            <div class="p-2 bg-primary-50 text-primary-600 rounded-xl"><i data-lucide="star" class="w-5 h-5"></i></div>
-                        </div>
-                    </div>
-                    <div class="section-card bg-white p-6 rounded-2xl border border-slate-100 shadow-xl ring-1 ring-red-50">
-                        <div class="flex justify-between items-start mb-4">
-                            <div><p class="text-xs font-semibold text-slate-400 uppercase">Cupons Ativos</p><h3 class="text-2xl font-bold text-pink-600" id="dash-active-coupons">0</h3></div>
-                            <div class="p-2 bg-pink-50 text-pink-600 rounded-xl"><i data-lucide="ticket" class="w-5 h-5"></i></div>
-                        </div>
+                        <p class="text-xs font-semibold text-slate-400 uppercase">Banners Ativos</p>
+                        <h3 class="text-3xl font-bold text-primary-600" id="dash-total-banners">0</h3>
                     </div>
                     <div class="section-card bg-white p-6 rounded-2xl border border-slate-100 shadow-xl">
-                        <div class="flex justify-between items-start mb-4">
-                            <div><p class="text-xs font-semibold text-slate-400 uppercase">Categorias</p><h3 class="text-2xl font-bold text-slate-800" id="dash-total-cats">0</h3></div>
-                            <div class="p-2 bg-purple-50 text-purple-600 rounded-xl"><i data-lucide="layers" class="w-5 h-5"></i></div>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                    <div class="lg:col-span-2 section-card bg-white rounded-2xl border border-slate-100 shadow-xl p-6">
-                        <h3 class="font-bold text-slate-800 mb-4">Produtos Recentes</h3>
-                        <div class="overflow-x-auto">
-                            <table class="w-full text-sm text-left"><thead class="text-xs text-slate-400 uppercase bg-slate-50"><tr><th class="px-4 py-3 rounded-l-lg">Produto</th><th class="px-4 py-3">Preço</th><th class="px-4 py-3">Destaque</th><th class="px-4 py-3 rounded-r-lg">Status</th></tr></thead><tbody id="dash-recent-table" class="divide-y divide-slate-100"></tbody></table>
-                        </div>
-                    </div>
-                    <div class="bg-slate-900 rounded-2xl shadow-xl p-6 text-white relative overflow-hidden">
-                        <div class="relative z-10"><h3 class="font-bold text-lg mb-2">Dica Admin</h3><p class="text-slate-300 text-sm mb-4">Crie cupons sazonais (ex: VERAO10) para aumentar as vendas em categorias específicas.</p><button onclick="changeTab('promotions')" class="bg-white text-slate-900 px-4 py-2 rounded-xl text-sm font-bold hover:bg-slate-100 transition shadow-lg">Criar Cupom</button></div>
-                        <div class="absolute -bottom-10 -right-10 w-40 h-40 bg-white/10 rounded-full blur-2xl"></div>
+                        <p class="text-xs font-semibold text-slate-400 uppercase">Categorias</p>
+                        <h3 class="text-3xl font-bold text-slate-800" id="dash-total-cats">0</h3>
                     </div>
                 </div>
             </div>
 
-            <!-- PROMOTIONS TAB -->
-            <div id="content-promotions" class="max-w-6xl mx-auto space-y-6 hidden">
-                <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 section-card bg-white p-6 rounded-2xl border border-slate-200 shadow-xl">
+            <!-- BANNERS TAB (NEW) -->
+            <div id="content-banners" class="max-w-6xl mx-auto space-y-6 hidden">
+                <div class="flex flex-col md:flex-row justify-between items-center section-card bg-white p-6 rounded-2xl border border-slate-200 shadow-xl gap-4">
                     <div>
-                        <h3 class="text-lg font-bold text-slate-800">Cupons de Desconto</h3>
-                        <p class="text-sm text-slate-500">Gerencie códigos promocionais para toda a loja ou categorias.</p>
+                        <h3 class="text-lg font-bold text-slate-800">Cards da Vitrine (Hero)</h3>
+                        <p class="text-sm text-slate-500">Adicione cards coloridos no carrossel do topo da loja.</p>
                     </div>
-                    <button onclick="openCouponModal()" class="bg-primary-600 hover:bg-primary-700 text-white font-medium py-2.5 px-5 rounded-xl shadow-md flex items-center whitespace-nowrap"><i data-lucide="plus" class="w-5 h-5 mr-2"></i> Novo Cupom</button>
+                    <button onclick="openBannerModal()" class="bg-primary-600 hover:bg-primary-700 text-white font-medium py-2 px-4 rounded-xl shadow-md flex items-center"><i data-lucide="plus" class="w-4 h-4 mr-2"></i> Novo Card</button>
                 </div>
-
-                <div class="section-card bg-white rounded-2xl border border-slate-200 shadow-xl overflow-hidden">
-                    <div class="overflow-x-auto">
-                        <table class="w-full text-sm text-left">
-                            <thead class="text-xs text-slate-500 uppercase bg-slate-50 border-b border-slate-100">
-                                <tr>
-                                    <th class="px-6 py-4">Código</th>
-                                    <th class="px-6 py-4">Desconto</th>
-                                    <th class="px-6 py-4">Aplica em</th>
-                                    <th class="px-6 py-4">Status</th>
-                                    <th class="px-6 py-4 text-right">Ações</th>
-                                </tr>
-                            </thead>
-                            <tbody id="couponsList" class="divide-y divide-slate-100">
-                                <!-- Coupons rendered here -->
-                            </tbody>
-                        </table>
-                    </div>
-                    <div id="emptyCouponsMsg" class="hidden text-center py-10 text-slate-400">
-                        <i data-lucide="ticket" class="w-10 h-10 mx-auto mb-2 opacity-20"></i>
-                        <p>Nenhum cupom criado ainda.</p>
-                    </div>
+                <div id="bannersList" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    <!-- Banners renderizados via JS -->
                 </div>
+                <div id="emptyBannersMsg" class="hidden text-center py-10 text-slate-400 italic">Nenhum banner criado.</div>
             </div>
 
             <!-- PRODUCTS TAB -->
@@ -245,122 +152,58 @@
                 <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 section-card bg-white p-4 rounded-2xl border border-slate-200 shadow-xl">
                     <div class="relative flex-grow max-w-md">
                         <i data-lucide="search" class="absolute left-3 top-2.5 text-slate-400 w-5 h-5"></i>
-                        <input type="text" id="productSearch" onkeyup="filterProducts()" placeholder="Buscar produto..." class="w-full pl-10 border bg-slate-50 focus:bg-white focus:ring-primary-500 focus:border-primary-500">
+                        <input type="text" id="productSearch" onkeyup="filterProducts()" placeholder="Buscar produto..." class="w-full pl-10 border bg-slate-50 rounded-lg p-2 focus:ring-primary-500 focus:border-primary-500">
                     </div>
-                    <div class="flex gap-2">
-                         <select id="filterCategory" onchange="filterProducts()" class="border text-sm py-2 px-3 bg-slate-50 text-slate-600 focus:ring-primary-500"><option value="all">Todas Categorias</option></select>
-                        <button onclick="openAddModal()" class="bg-primary-600 hover:bg-primary-700 text-white font-medium py-2 px-4 rounded-xl shadow-md flex items-center whitespace-nowrap"><i data-lucide="plus" class="w-4 h-4 mr-2"></i> Novo</button>
-                    </div>
+                    <button onclick="openProductModal()" class="bg-primary-600 hover:bg-primary-700 text-white font-medium py-2 px-4 rounded-xl shadow-md flex items-center whitespace-nowrap"><i data-lucide="plus" class="w-4 h-4 mr-2"></i> Novo Produto</button>
                 </div>
-                <div id="productList" class="flex flex-col gap-6"></div>
+                <div id="productList" class="grid grid-cols-1 gap-4"></div>
             </div>
 
             <!-- CATEGORIES TAB -->
-            <div id="content-categories" class="max-w-5xl mx-auto space-y-6 hidden">
-                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                    <div class="section-card bg-white p-6 rounded-2xl border border-slate-200 shadow-xl h-fit">
-                        <h3 class="font-bold text-slate-800 mb-4">Nova Categoria</h3>
-                        <form id="categoryForm" onsubmit="addCategory(event)">
-                            <div class="space-y-4">
-                                <input type="text" id="categoryName" required class="w-full border bg-slate-50 focus:ring-primary-500" placeholder="Nome">
-                                <button type="submit" class="w-full bg-slate-900 hover:bg-slate-800 text-white font-medium py-2 rounded-xl shadow-md">Adicionar</button>
-                            </div>
-                        </form>
-                    </div>
-                    <div class="lg:col-span-2 section-card bg-white rounded-2xl border border-slate-200 shadow-xl p-6">
-                        <h3 class="font-bold text-slate-800 mb-4 border-b pb-2">Categorias Cadastradas</h3>
-                        <div id="categoryList" class="grid grid-cols-1 sm:grid-cols-2 gap-4"></div>
-                    </div>
+            <div id="content-categories" class="max-w-4xl mx-auto space-y-6 hidden">
+                <div class="section-card bg-white p-6 rounded-2xl border border-slate-200 shadow-xl">
+                    <h3 class="font-bold text-slate-800 mb-4">Adicionar Categoria</h3>
+                    <form onsubmit="addCategory(event)" class="flex gap-2">
+                        <input type="text" id="catInputName" class="flex-1 border rounded-xl px-4 py-2 bg-slate-50 focus:ring-primary-500" placeholder="Nome da Categoria (ex: Pizzas)" required>
+                        <button type="submit" class="bg-slate-900 text-white px-6 py-2 rounded-xl font-medium shadow-md">Salvar</button>
+                    </form>
+                </div>
+                <div class="bg-white rounded-2xl border border-slate-200 shadow-xl overflow-hidden">
+                     <div id="categoryList" class="divide-y divide-slate-100"></div>
                 </div>
             </div>
 
-             <!-- CONFIG TAB -->
+            <!-- CONFIG TAB -->
             <div id="content-config" class="max-w-4xl mx-auto space-y-6 hidden">
                 <form id="storeConfigForm" onsubmit="saveStoreConfig(event)" class="space-y-6">
-
-                    <!-- IDENTIDADE -->
-                    <div class="section-card bg-white rounded-2xl border border-slate-200 shadow-xl p-6 md:p-8">
-                        <h3 class="text-lg font-bold text-slate-800 mb-6">Identidade da Loja e Contato</h3>
-                        <div class="mb-4">
-                            <label class="block text-sm font-medium text-slate-700 mb-2">Nome Comercial</label>
-                            <input type="text" id="storeName" required class="w-full border focus:ring-primary-500 focus:border-primary-500">
-                        </div>
-                        <div class="mb-2">
-                            <label class="block text-sm font-medium text-slate-700 mb-2">WhatsApp da Loja (Com DDD)</label>
-                            <input type="text" id="whatsappNumber" placeholder="Ex: 5511987654321" class="w-full border focus:ring-primary-500 focus:border-primary-500">
-                            <p class="text-xs text-slate-500 mt-1">Inclua o código do país (55) e o DDD.</p>
+                    <div class="section-card bg-white rounded-2xl border border-slate-200 shadow-xl p-6">
+                        <h3 class="text-lg font-bold text-slate-800 mb-4">Dados da Loja</h3>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div><label class="block text-sm font-medium mb-1">Nome da Loja</label><input type="text" id="confStoreName" class="w-full border rounded-lg p-2"></div>
+                            <div><label class="block text-sm font-medium mb-1">WhatsApp (55+DDD+Num)</label><input type="text" id="confWhatsapp" class="w-full border rounded-lg p-2"></div>
+                            <div class="md:col-span-2"><label class="block text-sm font-medium mb-1">Descrição Rodapé</label><textarea id="confFooter" class="w-full border rounded-lg p-2" rows="2"></textarea></div>
                         </div>
                     </div>
 
-                    <!-- TEXTOS -->
-                    <div class="section-card bg-white rounded-2xl border border-slate-200 shadow-xl p-6 md:p-8">
-                        <h3 class="text-lg font-bold text-slate-800 mb-6 flex items-center gap-2">
-                            <i data-lucide="type" class="w-5 h-5 text-primary-600"></i> Personalização de Textos (Vitrine)
-                        </h3>
-                        
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-                            <div>
-                                <label class="block text-sm font-medium text-slate-700 mb-2">Etiqueta do Banner (Topo)</label>
-                                <input type="text" id="heroTag" placeholder="Ex: Bem-vindo" class="w-full border focus:ring-primary-500">
-                                <p class="text-xs text-slate-400 mt-1">Texto pequeno acima do título principal.</p>
-                            </div>
-                            <div>
-                                <label class="block text-sm font-medium text-slate-700 mb-2">Título Principal (Hero)</label>
-                                <input type="text" id="heroHeadline" placeholder="Ex: Encontre o que você ama." class="w-full border focus:ring-primary-500">
-                                <p class="text-xs text-slate-400 mt-1">A frase de maior destaque na loja.</p>
-                            </div>
-                        </div>
-
-                        <div>
-                            <label class="block text-sm font-medium text-slate-700 mb-2">Descrição do Rodapé</label>
-                            <textarea id="footerText" rows="3" placeholder="Ex: Sua loja online favorita. Qualidade e confiança em cada entrega." class="w-full border focus:ring-primary-500"></textarea>
-                            <p class="text-xs text-slate-400 mt-1">Texto institucional exibido no final da página.</p>
+                    <div class="section-card bg-white rounded-2xl border border-slate-200 shadow-xl p-6">
+                        <h3 class="text-lg font-bold text-slate-800 mb-4">Cores da Vitrine</h3>
+                        <div class="flex gap-6">
+                            <div><label class="block text-sm font-medium mb-1">Cor Primária</label><input type="color" id="confColorPrimary" class="h-10 w-20 rounded border cursor-pointer"></div>
                         </div>
                     </div>
 
-                    <!-- HORÁRIOS -->
-                    <div class="section-card bg-white rounded-2xl border border-slate-200 shadow-xl p-6 md:p-8">
-                        <h3 class="text-lg font-bold text-slate-800 mb-6">Horários de Funcionamento</h3>
-                        <p class="text-sm text-slate-500 mb-4">O status "Aberto/Fechado" é calculado automaticamente com base nisso.</p>
-                        <div id="dailyHoursContainer" class="space-y-3"></div>
+                    <div class="section-card bg-white rounded-2xl border border-slate-200 shadow-xl p-6">
+                        <h3 class="text-lg font-bold text-slate-800 mb-4">Áreas de Entrega</h3>
+                        <div class="flex gap-2 mb-4">
+                            <input type="text" id="areaName" placeholder="Bairro" class="flex-1 border rounded-lg p-2">
+                            <input type="number" id="areaFee" placeholder="Taxa R$" step="0.01" class="w-24 border rounded-lg p-2">
+                            <button type="button" onclick="addDeliveryArea()" class="bg-slate-900 text-white px-4 rounded-lg">Add</button>
+                        </div>
+                        <div id="deliveryAreasList" class="border rounded-xl divide-y divide-slate-100 overflow-hidden"></div>
                     </div>
 
-                    <!-- ÁREAS DE ENTREGA -->
-                    <div class="section-card bg-white rounded-2xl border border-slate-200 shadow-xl p-6 md:p-8">
-                        <h3 class="text-lg font-bold text-slate-800 mb-6">Áreas de Entrega e Taxas</h3>
-                        <div class="flex flex-col sm:flex-row gap-3 p-4 bg-slate-100 border border-slate-200 rounded-xl mb-6">
-                            <input type="text" id="deliveryAreaName" placeholder="Nome do Bairro" class="flex-1 rounded-lg border-slate-300 py-2.5 px-4 bg-white border text-sm focus:ring-primary-500">
-                            <input type="number" step="0.01" id="deliveryAreaFee" placeholder="Taxa (R$)" class="w-28 rounded-lg border-slate-300 py-2.5 px-4 bg-white border text-sm focus:ring-primary-500">
-                            <button type="button" onclick="addDeliveryArea()" class="bg-primary-600 hover:bg-primary-700 text-white font-medium py-2.5 px-4 rounded-xl shadow-md">Adicionar</button>
-                        </div>
-                        <div id="deliveryAreasList" class="divide-y divide-slate-100 border border-slate-200 rounded-xl overflow-hidden">
-                            <p class="text-center text-slate-500 py-4 text-sm" id="emptyAreasMessage">Nenhuma área cadastrada.</p>
-                        </div>
-                    </div>
-
-                    <!-- CORES -->
-                    <div class="section-card bg-white rounded-2xl border border-slate-200 shadow-xl p-6 md:p-8">
-                        <h3 class="text-lg font-bold text-slate-800 mb-6">Cores da Loja</h3>
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
-                            <div>
-                                <label class="block text-sm font-medium text-slate-700 mb-2">Cor Primária</label>
-                                <div class="flex items-center gap-3">
-                                    <input type="color" id="primaryColor" class="h-10 w-20 rounded-xl cursor-pointer border border-slate-300">
-                                </div>
-                            </div>
-                            <div>
-                                <label class="block text-sm font-medium text-slate-700 mb-2">Cor Secundária</label>
-                                <div class="flex items-center gap-3">
-                                    <input type="color" id="secondaryColor" class="h-10 w-20 rounded-xl cursor-pointer border border-slate-300">
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                        
-                    <div class="flex justify-end pt-4 border-t border-slate-100 pb-10">
-                        <button type="submit" class="bg-slate-900 hover:bg-slate-800 text-white font-medium py-2.5 px-6 rounded-xl shadow-lg transition-all flex items-center">
-                            <i data-lucide="save" class="w-4 h-4 mr-2"></i> Salvar Configurações
-                        </button>
+                    <div class="flex justify-end pt-4 pb-10">
+                        <button type="submit" class="bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-8 rounded-xl shadow-lg flex items-center"><i data-lucide="save" class="w-5 h-5 mr-2"></i> Salvar Tudo</button>
                     </div>
                 </form>
             </div>
@@ -368,70 +211,34 @@
         </div>
     </main>
 
-    <!-- ALERT MODAL -->
-    <div id="alertModal" class="modal-overlay fixed inset-0 z-[60] flex items-center justify-center p-4 hidden">
-        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-sm p-6 text-center">
-            <div class="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-slate-100 mb-4" id="alertIconContainer"><i id="alertIcon" class="w-6 h-6 text-slate-600"></i></div>
-            <h3 class="text-lg font-bold text-slate-900 mb-2" id="alertModalTitle">Aviso</h3>
-            <p id="alertMessage" class="text-sm text-slate-500 mb-6"></p>
-            <div id="alertModalFooter" class="flex justify-center gap-3"></div>
-        </div>
-    </div>
-
-    <!-- COUPON MODAL -->
-    <div id="couponModal" class="modal-overlay fixed inset-0 z-50 flex items-center justify-center p-4 hidden">
+    <!-- BANNER MODAL -->
+    <div id="bannerModal" class="modal-overlay fixed inset-0 z-50 flex items-center justify-center p-4 hidden">
         <div class="bg-white rounded-3xl shadow-2xl w-full max-w-lg modal-content-wrapper">
-            <div class="flex justify-between items-center p-6 border-b border-slate-100 sticky top-0 bg-white z-10">
-                <h3 class="text-xl font-bold text-slate-800">Novo Cupom</h3>
-                <button onclick="document.getElementById('couponModal').classList.add('hidden')" class="text-slate-400 hover:text-slate-600 p-2 rounded-full hover:bg-slate-50"><i data-lucide="x" class="w-6 h-6"></i></button>
+            <div class="flex justify-between items-center p-6 border-b border-slate-100">
+                <h3 class="text-xl font-bold text-slate-800">Editar Card</h3>
+                <button onclick="document.getElementById('bannerModal').classList.add('hidden')" class="text-slate-400 hover:text-slate-600"><i data-lucide="x" class="w-6 h-6"></i></button>
             </div>
             <div class="p-6">
-                <form id="couponForm" onsubmit="handleCouponSubmit(event)">
+                <form id="bannerForm" onsubmit="handleBannerSubmit(event)">
+                    <input type="hidden" id="bannerId">
                     <div class="space-y-4">
-                        <div>
-                            <label class="block text-sm font-medium text-slate-700 mb-1">Código do Cupom</label>
-                            <input type="text" id="couponCode" required class="w-full border focus:ring-primary-500 uppercase tracking-widest font-bold" placeholder="EX: VERAO10">
-                            <p class="text-xs text-slate-400 mt-1">Será convertido para maiúsculas automaticamente.</p>
+                        <div id="bannerPreview" class="h-32 rounded-2xl flex flex-col justify-center p-6 text-white shadow-md transition-all">
+                            <span id="prevTag" class="text-xs font-bold uppercase tracking-wider opacity-80 mb-1">Tag</span>
+                            <h3 id="prevTitle" class="font-bold text-2xl leading-tight">Título</h3>
                         </div>
-                        
                         <div class="grid grid-cols-2 gap-4">
-                            <div>
-                                <label class="block text-sm font-medium text-slate-700 mb-1">Tipo Desconto</label>
-                                <select id="couponType" class="w-full border bg-slate-50 focus:ring-primary-500" onchange="updateCouponInputs()">
-                                    <option value="percentage">Porcentagem (%)</option>
-                                    <option value="fixed">Valor Fixo (R$)</option>
-                                </select>
-                            </div>
-                            <div>
-                                <label class="block text-sm font-medium text-slate-700 mb-1">Valor</label>
-                                <input type="number" step="0.01" id="couponValue" required class="w-full border focus:ring-primary-500">
-                            </div>
+                            <div><label class="text-xs font-bold text-slate-500 uppercase">Tag (Pequeno)</label><input type="text" id="bannerTag" oninput="updateBannerPreview()" class="w-full border rounded-lg p-2 mt-1" required></div>
+                            <div><label class="text-xs font-bold text-slate-500 uppercase">Destino</label><select id="bannerTarget" class="w-full border rounded-lg p-2 mt-1 bg-white"></select></div>
                         </div>
-
-                        <div>
-                            <label class="block text-sm font-medium text-slate-700 mb-1">Aplicar em</label>
-                            <select id="couponScope" class="w-full border bg-slate-50 focus:ring-primary-500" onchange="toggleCategorySelect()">
-                                <option value="global">Toda a Loja</option>
-                                <option value="category">Categoria Específica</option>
-                            </select>
-                        </div>
-
-                        <div id="couponCategoryDiv" class="hidden p-4 bg-slate-50 rounded-xl border border-slate-200">
-                            <label class="block text-sm font-medium text-slate-700 mb-1">Selecione a Categoria</label>
-                            <select id="couponTargetCategory" class="w-full border bg-white focus:ring-primary-500">
-                                <!-- Populated dynamically -->
-                            </select>
-                        </div>
-
-                        <div class="flex items-center gap-2 pt-2">
-                            <input type="checkbox" id="couponActive" checked class="h-4 w-4 text-primary-600 rounded">
-                            <label class="text-sm text-slate-700">Ativar Cupom Imediatamente</label>
+                        <div><label class="text-xs font-bold text-slate-500 uppercase">Título (Grande)</label><input type="text" id="bannerTitle" oninput="updateBannerPreview()" class="w-full border rounded-lg p-2 mt-1" required></div>
+                        <div class="grid grid-cols-2 gap-4">
+                            <div><label class="text-xs font-bold text-slate-500 uppercase">Cor Início</label><input type="color" id="bannerColor1" oninput="updateBannerPreview()" class="w-full h-10 mt-1 rounded cursor-pointer"></div>
+                            <div><label class="text-xs font-bold text-slate-500 uppercase">Cor Fim</label><input type="color" id="bannerColor2" oninput="updateBannerPreview()" class="w-full h-10 mt-1 rounded cursor-pointer"></div>
                         </div>
                     </div>
-
-                    <div class="flex justify-end gap-3 mt-8 pt-4 border-t border-slate-100">
-                        <button type="button" onclick="document.getElementById('couponModal').classList.add('hidden')" class="px-4 py-2 rounded-xl text-slate-600 hover:bg-slate-50">Cancelar</button>
-                        <button type="submit" class="bg-primary-600 hover:bg-primary-700 text-white font-bold py-2 px-6 rounded-xl shadow-md">Salvar Cupom</button>
+                    <div class="flex justify-end gap-3 mt-8 border-t border-slate-100 pt-4">
+                        <button type="button" onclick="document.getElementById('bannerModal').classList.add('hidden')" class="px-4 py-2 text-slate-600">Cancelar</button>
+                        <button type="submit" class="bg-primary-600 text-white font-bold py-2 px-6 rounded-xl shadow-md">Salvar</button>
                     </div>
                 </form>
             </div>
@@ -442,46 +249,34 @@
     <div id="productModal" class="modal-overlay fixed inset-0 z-50 flex items-center justify-center p-4 hidden">
         <div class="bg-white rounded-3xl shadow-2xl w-full max-w-2xl modal-content-wrapper">
             <div class="flex justify-between items-center p-6 border-b border-slate-100 sticky top-0 bg-white z-10">
-                <h3 id="productModalTitle" class="text-xl font-bold text-slate-800">Produto</h3>
-                <button onclick="closeProductModal()" class="text-slate-400 hover:text-slate-600 p-2 rounded-full hover:bg-slate-50"><i data-lucide="x" class="w-6 h-6"></i></button>
+                <h3 class="text-xl font-bold text-slate-800">Dados do Produto</h3>
+                <button onclick="document.getElementById('productModal').classList.add('hidden')" class="text-slate-400 hover:text-slate-600"><i data-lucide="x" class="w-6 h-6"></i></button>
             </div>
             <div class="p-6">
-                <form id="productFormMain" onsubmit="handleProductSubmit(event)">
+                <form id="productForm" onsubmit="handleProductSubmit(event)">
                     <input type="hidden" id="prodId">
-                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-5 mb-5">
-                        <div class="col-span-1 sm:col-span-2"><label class="text-sm font-medium text-slate-700">Nome</label><input type="text" id="prodName" required class="w-full border focus:ring-primary-500"></div>
-                        <div><label class="text-sm font-medium text-slate-700">Categoria</label><select id="prodCategory" required class="w-full border bg-slate-50 focus:ring-primary-500"></select></div>
-                        <div><label class="text-sm font-medium text-slate-700">Preço (R$)</label><input type="number" step="0.01" id="prodValue" required class="w-full border focus:ring-primary-500"></div>
-                        <div><label class="text-sm font-medium text-slate-700">Promo (R$)</label><input type="number" step="0.01" id="prodPromo" class="w-full border text-green-600 focus:ring-primary-500"></div>
-                        <div class="col-span-1 sm:col-span-2 bg-slate-100 p-4 rounded-xl border border-slate-200">
-                            <div class="grid grid-cols-2 gap-4">
-                                <div><label class="text-xs font-bold text-slate-500 uppercase">Tamanhos</label><input type="text" id="prodSizes" class="w-full rounded border-slate-300 text-sm mt-1 bg-white" placeholder="P, M, G"></div>
-                                <div><label class="text-xs font-bold text-slate-500 uppercase">Cores</label><input type="text" id="prodColors" class="w-full rounded border-slate-300 text-sm mt-1 bg-white" placeholder="Azul, Vermelho"></div>
-                            </div>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                        <div class="md:col-span-2"><label class="text-sm font-medium">Nome</label><input type="text" id="prodName" required class="w-full border rounded-lg p-2"></div>
+                        <div><label class="text-sm font-medium">Categoria</label><select id="prodCategory" class="w-full border rounded-lg p-2 bg-white"></select></div>
+                        <div><label class="text-sm font-medium">Preço (R$)</label><input type="number" step="0.01" id="prodValue" required class="w-full border rounded-lg p-2"></div>
+                        <div><label class="text-sm font-medium">Preço Promo (Opcional)</label><input type="number" step="0.01" id="prodPromo" class="w-full border rounded-lg p-2 text-green-600"></div>
+                        <div class="md:col-span-2 bg-slate-50 p-4 rounded-xl border border-slate-100">
+                             <div class="grid grid-cols-2 gap-4">
+                                <div><label class="text-xs font-bold text-slate-500 uppercase">Tamanhos (Separe por vírgula)</label><input type="text" id="prodSizes" placeholder="P, M, G" class="w-full border rounded-lg p-2 mt-1"></div>
+                                <div><label class="text-xs font-bold text-slate-500 uppercase">Cores (Separe por vírgula)</label><input type="text" id="prodColors" placeholder="Azul, Vermelho" class="w-full border rounded-lg p-2 mt-1"></div>
+                             </div>
                         </div>
-                        <div class="col-span-1 sm:col-span-2"><label class="text-sm font-medium text-slate-700">Imagem URL</label><input type="url" id="prodImage" class="w-full border text-sm text-slate-500 focus:ring-primary-500"></div>
-                        <div class="col-span-1 sm:col-span-2 flex items-center gap-2"><input type="checkbox" id="prodFeatured" class="h-4 w-4 text-primary-600 rounded"><label class="text-sm text-slate-700">Destaque na Vitrine</label></div>
+                        <div class="md:col-span-2"><label class="text-sm font-medium">URL da Imagem</label><input type="url" id="prodImage" class="w-full border rounded-lg p-2 text-sm text-slate-500"></div>
+                        <div class="md:col-span-2"><label class="text-sm font-medium">Descrição</label><textarea id="prodDesc" rows="2" class="w-full border rounded-lg p-2"></textarea></div>
+                        <div class="flex items-center gap-2"><input type="checkbox" id="prodFeatured" class="h-4 w-4"><label class="text-sm">Destaque na Vitrine</label></div>
                     </div>
                     <div class="flex justify-end gap-3 border-t border-slate-100 pt-4">
-                        <button type="button" onclick="closeProductModal()" class="px-4 py-2 rounded-xl text-slate-600 hover:bg-slate-50">Cancelar</button>
-                        <button type="submit" class="bg-primary-600 hover:bg-primary-700 text-white font-bold py-2 px-6 rounded-xl shadow-md">Salvar</button>
+                        <button type="button" onclick="document.getElementById('productModal').classList.add('hidden')" class="px-4 py-2 text-slate-600">Cancelar</button>
+                        <button type="submit" class="bg-primary-600 text-white font-bold py-2 px-6 rounded-xl shadow-md">Salvar</button>
                     </div>
                 </form>
             </div>
         </div>
-    </div>
-
-    <!-- EDIT CATEGORY MODAL -->
-    <div id="editCategoryModal" class="modal-overlay fixed inset-0 z-50 flex items-center justify-center p-4 hidden">
-         <div class="bg-white rounded-2xl shadow-2xl w-full max-w-sm p-6">
-             <h3 class="text-lg font-bold mb-4">Editar Categoria</h3>
-             <form id="editCategoryForm" onsubmit="updateCategory(event)">
-                 <input type="hidden" id="editCatId">
-                 <input type="text" id="editCatName" required class="w-full border bg-slate-50 mb-4 focus:ring-primary-500">
-                 <div class="flex items-center mb-6"><input type="checkbox" id="editCatActive" class="h-4 w-4 text-primary-600 rounded"><label class="ml-2 text-sm text-slate-700">Ativa</label></div>
-                 <div class="flex justify-end gap-2"><button type="button" onclick="document.getElementById('editCategoryModal').classList.add('hidden')" class="px-3 py-1.5 text-slate-500 hover:bg-slate-50 rounded-lg">Cancelar</button><button type="submit" class="bg-primary-600 text-white px-4 py-1.5 rounded-xl shadow-md">Salvar</button></div>
-             </form>
-         </div>
     </div>
 
     <script type="module">
@@ -489,462 +284,294 @@
         import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
         import { getFirestore, doc, getDoc, addDoc, setDoc, updateDoc, deleteDoc, onSnapshot, collection } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
         
-        const EXTERNAL_FIREBASE_CONFIG = {
-            apiKey: "AIzaSyAdwsGBTApwOwqr37qCv72gdPRbipsZG0Q",
-            authDomain: "meuestoque-1badc.firebaseapp.com",
-            projectId: "meuestoque-1badc",
-            storageBucket: "meuestoque-1badc.appspot.com",
-            messagingSenderId: "730003067834",
-            appId: "1:730003067834:web:b205f1ea59053345960383"
-        };
-        const defaultDays = ["Segunda", "Terça", "Quarta", "Quinta", "Sexta", "Sábado", "Domingo"];
-        let app, db, auth, isAuthReady = false;
-        let allProducts = [], allCategories = [], deliveryAreas = [], allCoupons = []; 
+        const CONFIG = { apiKey: "AIzaSyAdwsGBTApwOwqr37qCv72gdPRbipsZG0Q", authDomain: "meuestoque-1badc.firebaseapp.com", projectId: "meuestoque-1badc", storageBucket: "meuestoque-1badc.appspot.com", messagingSenderId: "730003067834", appId: "1:730003067834:web:b205f1ea59053345960383" };
+        
+        let db, auth;
+        let allProducts=[], allCategories=[], allBanners=[], deliveryAreas=[];
 
+        // --- NAVIGATION ---
+        window.changeTab = (id) => {
+            ['dashboard','banners','products','categories','config'].forEach(t => {
+                document.getElementById(`content-${t}`).classList.add('hidden');
+                document.getElementById(`nav-${t}`)?.classList.remove('active', 'bg-primary-50', 'text-primary-700', 'border-primary-600');
+            });
+            document.getElementById(`content-${id}`).classList.remove('hidden');
+            const btn = document.getElementById(`nav-${id}`);
+            if(btn) btn.classList.add('active', 'bg-primary-50', 'text-primary-700', 'border-primary-600');
+            document.getElementById('page-title').textContent = id.charAt(0).toUpperCase() + id.slice(1);
+        };
         window.toggleMobileMenu = () => {
-            const sb = document.getElementById('mobile-sidebar');
-            const ov = document.getElementById('mobile-menu-overlay');
-            if(sb.classList.contains('-translate-x-full')) { sb.classList.remove('-translate-x-full'); ov.classList.remove('hidden'); }
-            else { sb.classList.add('-translate-x-full'); ov.classList.add('hidden'); }
+            document.getElementById('mobile-sidebar').classList.toggle('-translate-x-full');
+            document.getElementById('mobile-menu-overlay').classList.toggle('hidden');
         };
-
-        window.changeTab = (tabId) => {
-            ['dashboard', 'config', 'products', 'categories', 'promotions'].forEach(id => {
-                document.getElementById(`content-${id}`).classList.add('hidden');
-                const btn = document.getElementById(`nav-${id}`);
-                if(btn) { btn.classList.remove('active'); btn.classList.add('text-slate-600', 'border-transparent'); }
-            });
-            document.getElementById(`content-${tabId}`).classList.remove('hidden');
-            const activeBtn = document.getElementById(`nav-${tabId}`);
-            if(activeBtn) { activeBtn.classList.add('active'); activeBtn.classList.remove('text-slate-600', 'border-transparent'); }
-            const titles = { 'dashboard': 'Visão Geral', 'config': 'Configurações', 'products': 'Produtos', 'categories': 'Categorias', 'promotions': 'Cupons e Promoções' };
-            document.getElementById('page-title').textContent = titles[tabId] || 'Painel';
-            if(tabId === 'dashboard') updateDashboardStats();
-            lucide.createIcons();
-        };
-
-        window.showToast = (msg, type = 'success') => {
-            const container = document.getElementById('toast-container');
+        window.showToast = (msg) => {
+            const c = document.getElementById('toast-container');
             const el = document.createElement('div');
-            el.className = `toast p-4 rounded-xl shadow-xl flex items-center text-sm font-medium text-white ${type === 'success' ? 'bg-slate-800' : 'bg-red-600'}`;
-            el.innerHTML = `<i data-lucide="${type === 'success' ? 'check-circle' : 'alert-circle'}" class="w-5 h-5 mr-3"></i> ${msg}`;
-            container.appendChild(el); lucide.createIcons();
-            setTimeout(() => { el.style.opacity = '0'; setTimeout(() => el.remove(), 300); }, 3000);
+            el.className = "toast bg-slate-800 text-white px-4 py-3 rounded-xl shadow-lg flex items-center gap-2";
+            el.innerHTML = `<i data-lucide="check-circle" class="w-4 h-4 text-green-400"></i> ${msg}`;
+            c.appendChild(el); lucide.createIcons();
+            setTimeout(() => el.remove(), 3000);
         };
 
-        window.showAlertModal = (msg, title = 'Aviso', isConf = false, onConf = null) => {
-            const modal = document.getElementById('alertModal');
-            document.getElementById('alertModalTitle').textContent = title;
-            document.getElementById('alertMessage').textContent = msg;
-            const ft = document.getElementById('alertModalFooter');
-            const icon = document.getElementById('alertIcon');
-            icon.setAttribute('data-lucide', title.includes('Excluir') ? 'trash-2' : 'info'); lucide.createIcons();
-            ft.innerHTML = '';
-            if(isConf) {
-                const cBtn = document.createElement('button'); cBtn.textContent = 'Cancelar'; cBtn.className = 'px-4 py-2 rounded-xl text-slate-600 hover:bg-slate-50 transition'; cBtn.onclick = () => modal.classList.add('hidden');
-                const okBtn = document.createElement('button'); okBtn.textContent = 'Confirmar'; okBtn.className = 'px-4 py-2 bg-red-600 text-white rounded-xl hover:bg-red-700 transition shadow-md'; okBtn.onclick = () => { onConf(); modal.classList.add('hidden'); };
-                ft.append(cBtn, okBtn);
-            } else {
-                const okBtn = document.createElement('button'); okBtn.textContent = 'Ok'; okBtn.className = 'px-6 py-2 bg-slate-900 text-white rounded-xl transition hover:bg-slate-800'; okBtn.onclick = () => modal.classList.add('hidden');
-                ft.append(okBtn);
-            }
-            modal.classList.remove('hidden');
-        };
-
-        function updateDashboardStats() {
-            if(!allProducts.length) return;
-            document.getElementById('dash-total-products').textContent = allProducts.length;
-            document.getElementById('dash-featured').textContent = allProducts.filter(p => p.isFeatured).length;
-            document.getElementById('dash-active-coupons').textContent = allCoupons.filter(c => c.status === 'active').length;
-            document.getElementById('dash-total-cats').textContent = allCategories.length;
-            const recent = [...allProducts].sort((a,b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0)).slice(0, 5);
-            const table = document.getElementById('dash-recent-table');
-            table.innerHTML = '';
-            recent.forEach(p => {
-                const tr = document.createElement('tr'); tr.className = 'bg-white border-b hover:bg-slate-50';
-                tr.innerHTML = `<td class="px-4 py-3 font-medium text-slate-900 whitespace-nowrap">${p.name}</td><td class="px-4 py-3">R$ ${p.value.toFixed(2)}</td><td class="px-4 py-3">${p.isFeatured ? '<span class="text-primary-600 font-bold">SIM</span>' : 'Não'}</td><td class="px-4 py-3"><span class="px-2 py-1 text-xs font-semibold rounded-full ${p.status === 'active' ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'}">${p.status === 'active' ? 'Ativo' : 'Pausado'}</span></td>`;
-                table.appendChild(tr);
-            });
-            lucide.createIcons();
-        }
-
-        window.filterProducts = () => {
-            const term = document.getElementById('productSearch').value.toLowerCase();
-            const cat = document.getElementById('filterCategory').value;
-            const filtered = allProducts.filter(p => { return p.name.toLowerCase().includes(term) && (cat === 'all' || p.category === cat); });
-            renderFilteredProducts(filtered, term !== '' || cat !== 'all');
-        };
-
-        function renderFilteredProducts(products, isFiltering) {
-            const container = document.getElementById('productList');
-            container.innerHTML = '';
-            if(products.length === 0) { container.innerHTML = `<div class="text-center py-10 text-slate-400">Nenhum produto encontrado.</div>`; return; }
-            if(isFiltering) { products.forEach(p => container.appendChild(createProductRowElement(p))); lucide.createIcons(); }
-            else { renderProductListGrouped(products); }
-        }
-
-        function createProductRowElement(p) {
-            const div = document.createElement('div');
-            const paused = p.status === 'paused';
-            div.className = "section-card bg-white p-4 rounded-2xl border border-slate-200 shadow-xl flex items-center justify-between gap-4 transition duration-200 hover:shadow-2xl";
-            div.innerHTML = `<div class="flex items-center gap-4"><img src="${p.images?.[0] || 'https://placehold.co/80'}" onerror="this.onerror=null; this.src='https://placehold.co/80x80/e2e8f0/94a3b8?text=Sem+Foto';" class="w-12 h-12 rounded-xl object-cover bg-slate-100"><div><div class="font-bold text-slate-800 ${paused ? 'text-slate-400' : ''}">${p.name}</div><div class="text-xs text-slate-500">${p.category} • R$ ${p.value.toFixed(2)} ${p.isFeatured ? '• Destaque' : ''}</div></div></div><div class="flex items-center gap-2"><button onclick="openEditModal('${p.id}')" class="p-2 text-primary-600 bg-primary-50 rounded-xl hover:bg-primary-100 transition"><i data-lucide="pencil" class="w-4 h-4"></i></button><button onclick="toggleProductStatus('${p.id}', '${p.status}')" class="p-2 text-slate-500 bg-slate-100 rounded-xl hover:bg-slate-200 transition"><i data-lucide="${paused ? 'play' : 'pause'}" class="w-4 h-4"></i></button></div>`;
-            return div;
-        }
-
+        // --- FIREBASE INIT ---
         document.addEventListener('DOMContentLoaded', async () => {
             lucide.createIcons();
-            try {
-                app = initializeApp(EXTERNAL_FIREBASE_CONFIG);
-                db = getFirestore(app);
-                auth = getAuth(app);
-                await signInAnonymously(auth);
-                onAuthStateChanged(auth, u => {
-                    if(u) {
-                        isAuthReady = true;
-                        document.getElementById('loading').classList.add('hidden');
-                        setupConfigListener(); 
-                        setupCategoryListener();
-                        setupProductListener();
-                        setupCouponsListener();
-                        changeTab('dashboard');
-                    }
-                });
-            } catch(e) { console.error(e); }
+            const app = initializeApp(CONFIG);
+            db = getFirestore(app);
+            auth = getAuth(app);
+            await signInAnonymously(auth);
+            
+            setupListeners();
+            changeTab('dashboard'); // Start on dashboard
         });
 
-        // --- REALTIME CONFIG LISTENER ---
-        function setupConfigListener() {
-            onSnapshot(doc(db, `artifacts/${EXTERNAL_FIREBASE_CONFIG.appId}/public/data/config/store`), (doc) => {
-                if (doc.exists()) {
-                    const data = doc.data();
-                    
-                    document.getElementById('storeName').value = data.storeName || '';
-                    document.getElementById('whatsappNumber').value = data.whatsappNumber || '';
-                    document.getElementById('heroTag').value = data.heroTag || '';
-                    document.getElementById('heroHeadline').value = data.heroHeadline || '';
-                    document.getElementById('footerText').value = data.footerText || '';
-                    document.getElementById('primaryColor').value = data.primaryColor || '#7c3aed';
-                    document.getElementById('secondaryColor').value = data.secondaryColor || '#4f46e5';
-                    renderDailyHours(data.hours || []);
-                    
+        function setupListeners() {
+            // PRODUCTS
+            onSnapshot(collection(db, `artifacts/${CONFIG.appId}/public/data/products`), s => {
+                allProducts = s.docs.map(d => ({id: d.id, ...d.data()}));
+                renderProductList(); updateDashboard();
+            });
+            // CATEGORIES
+            onSnapshot(collection(db, `artifacts/${CONFIG.appId}/public/data/categories`), s => {
+                allCategories = s.docs.map(d => ({id: d.id, ...d.data()}));
+                renderCategoryList(); updateDashboard();
+            });
+            // BANNERS (HERO CARDS)
+            onSnapshot(collection(db, `artifacts/${CONFIG.appId}/public/data/hero_cards`), s => {
+                allBanners = s.docs.map(d => ({id: d.id, ...d.data()}));
+                renderBannerList(); updateDashboard();
+            });
+            // CONFIG
+            onSnapshot(doc(db, `artifacts/${CONFIG.appId}/public/data/config/store`), d => {
+                if(d.exists()) {
+                    const data = d.data();
+                    document.getElementById('confStoreName').value = data.storeName || '';
+                    document.getElementById('confWhatsapp').value = data.whatsappNumber || '';
+                    document.getElementById('confFooter').value = data.footerText || '';
+                    document.getElementById('confColorPrimary').value = data.primaryColor || '#2563eb';
+                    document.getElementById('dashboardStoreToggle').checked = data.isStoreOpen !== false;
+                    document.getElementById('statusLabel').textContent = (data.isStoreOpen !== false) ? 'Aberto' : 'Fechado';
                     deliveryAreas = data.deliveryAreas || [];
                     renderDeliveryAreas();
-
-                    const isOpen = data.isStoreOpen !== false;
-                    const dashSwitch = document.getElementById('dashboardStoreToggle');
-                    if(dashSwitch) dashSwitch.checked = isOpen;
-                    updateDashboardStatusUI(isOpen);
                 }
             });
         }
-        
-        function updateDashboardStatusUI(isOpen) {
-            const lbl = document.getElementById('statusLabel');
-            const desc = document.getElementById('statusDescription');
-            const bg = document.getElementById('statusIconBg');
+
+        function updateDashboard() {
+            document.getElementById('dash-total-products').textContent = allProducts.length;
+            document.getElementById('dash-total-cats').textContent = allCategories.length;
+            document.getElementById('dash-total-banners').textContent = allBanners.length;
+        }
+
+        // --- BANNER LOGIC (NEW) ---
+        window.updateBannerPreview = () => {
+            const t = document.getElementById('bannerTag').value || 'TAG';
+            const ti = document.getElementById('bannerTitle').value || 'TÍTULO';
+            const c1 = document.getElementById('bannerColor1').value;
+            const c2 = document.getElementById('bannerColor2').value;
+            const p = document.getElementById('bannerPreview');
+            document.getElementById('prevTag').textContent = t;
+            document.getElementById('prevTitle').textContent = ti;
+            p.style.background = `linear-gradient(135deg, ${c1}, ${c2})`;
+        };
+        window.openBannerModal = (b = null) => {
+            const s = document.getElementById('bannerTarget');
+            s.innerHTML = '<option value="offers">Ofertas (Padrão)</option>';
+            allCategories.forEach(c => s.innerHTML += `<option value="${c.name}">${c.name}</option>`);
             
-            if(isOpen) {
-                lbl.textContent = "Aberto"; lbl.className = "text-sm font-bold text-green-600";
-                desc.textContent = "Sua loja está visível e aceitando pedidos.";
-                bg.className = "p-3 bg-green-50 text-green-600 rounded-xl";
+            if(b) {
+                document.getElementById('bannerId').value = b.id;
+                document.getElementById('bannerTag').value = b.tag;
+                document.getElementById('bannerTitle').value = b.title;
+                document.getElementById('bannerColor1').value = b.color1;
+                document.getElementById('bannerColor2').value = b.color2;
+                document.getElementById('bannerTarget').value = b.target;
             } else {
-                lbl.textContent = "Fechado"; lbl.className = "text-sm font-bold text-red-600";
-                desc.textContent = "Loja fechada temporariamente (Status Manual).";
-                bg.className = "p-3 bg-red-50 text-red-600 rounded-xl";
+                document.getElementById('bannerForm').reset();
+                document.getElementById('bannerId').value = '';
+                document.getElementById('bannerColor1').value = '#2563eb';
+                document.getElementById('bannerColor2').value = '#1e3a8a';
             }
-        }
-
-        window.toggleStoreStatusQuick = async (el) => {
-            const newState = el.checked;
-            try {
-                await updateDoc(doc(db, `artifacts/${EXTERNAL_FIREBASE_CONFIG.appId}/public/data/config/store`), { isStoreOpen: newState });
-                showToast(newState ? "Loja Aberta!" : "Loja Fechada!");
-            } catch(e) { 
-                el.checked = !newState;
-                showAlertModal("Erro ao alterar status"); 
-            }
+            updateBannerPreview();
+            document.getElementById('bannerModal').classList.remove('hidden');
         };
-
-        function renderDailyHours(savedHours) {
-            const container = document.getElementById('dailyHoursContainer'); container.innerHTML = '';
-            defaultDays.forEach((dayName, index) => {
-                const dayKey = dayName.toLowerCase().replace('ç', 'c').replace('ã', 'a');
-                const hour = savedHours.find(h => h.day === dayName) || { day: dayName, open: '09:00', close: '18:00', isActive: (index < 5) }; 
-                const div = document.createElement('div');
-                div.className = "flex items-center gap-3 p-3 border border-slate-200 bg-slate-50 rounded-xl";
-                div.innerHTML = `<label class="flex items-center cursor-pointer"><input type="checkbox" id="${dayKey}Active" data-day="${dayName}" ${hour.isActive ? 'checked' : ''} class="h-4 w-4 text-primary-600 rounded"><span class="ml-2 font-medium w-20 text-sm text-slate-700">${dayName}</span></label><div class="flex items-center gap-2 flex-grow"><input type="time" id="${dayKey}Open" value="${hour.open}" class="w-full border focus:ring-primary-500 py-1.5 px-3"><span class="text-slate-500">-</span><input type="time" id="${dayKey}Close" value="${hour.close}" class="w-full border focus:ring-primary-500 py-1.5 px-3"></div>`;
-                container.appendChild(div);
-            });
-            lucide.createIcons();
-        }
-        
-        function renderDeliveryAreas() {
-            const container = document.getElementById('deliveryAreasList'); 
-            const emptyMsg = document.getElementById('emptyAreasMessage'); 
-            
-            container.innerHTML = '';
-            container.appendChild(emptyMsg); 
-            
-            if (!deliveryAreas || deliveryAreas.length === 0) { 
-                emptyMsg.classList.remove('hidden'); 
-                return; 
-            }
-            emptyMsg.classList.add('hidden');
-            
-            deliveryAreas.forEach((area, index) => {
-                const div = document.createElement('div');
-                div.className = "flex items-center justify-between p-4 bg-white hover:bg-slate-50 transition border-b last:border-0 border-slate-100";
-                div.innerHTML = `<div class="font-medium text-slate-800">${area.name}</div><div class="flex items-center gap-3"><span class="text-slate-600 font-semibold">R$ ${parseFloat(area.fee).toFixed(2).replace('.', ',')}</span><button type="button" onclick="removeDeliveryArea(${index})" class="p-1.5 text-red-500 hover:bg-red-100 rounded-xl transition"><i data-lucide="trash-2" class="w-4 h-4"></i></button></div>`;
-                container.appendChild(div);
-            });
-            lucide.createIcons();
-        }
-
-        window.addDeliveryArea = () => {
-            const nameInput = document.getElementById('deliveryAreaName');
-            const feeInput = document.getElementById('deliveryAreaFee');
-            const name = nameInput.value.trim();
-            const fee = parseFloat(feeInput.value.replace(',', '.')) || 0;
-            
-            if (name === "") return showAlertModal("Nome obrigatório");
-            if (fee < 0) return showAlertModal("Taxa inválida");
-            if(deliveryAreas.some(d => d.name.toLowerCase() === name.toLowerCase())) {
-                 return showAlertModal("Bairro já adicionado!");
-            }
-            deliveryAreas.push({ name, fee }); 
-            renderDeliveryAreas();
-            nameInput.value = ''; feeInput.value = '';
-        };
-
-        window.removeDeliveryArea = (index) => { 
-            deliveryAreas.splice(index, 1); 
-            renderDeliveryAreas(); 
-        };
-
-        window.saveStoreConfig = async (e) => {
+        window.handleBannerSubmit = async (e) => {
             e.preventDefault();
-            const hours = [];
-            defaultDays.forEach(dayName => {
-                const dayKey = dayName.toLowerCase().replace('ç', 'c').replace('ã', 'a');
-                hours.push({
-                    day: dayName,
-                    isActive: document.getElementById(`${dayKey}Active`).checked,
-                    open: document.getElementById(`${dayKey}Open`).value,
-                    close: document.getElementById(`${dayKey}Close`).value
-                });
-            });
-
-            const dashboardSwitch = document.getElementById('dashboardStoreToggle');
-            const currentStatus = dashboardSwitch ? dashboardSwitch.checked : true;
-
-            const configData = {
-                storeName: document.getElementById('storeName').value,
-                whatsappNumber: document.getElementById('whatsappNumber').value,
-                heroTag: document.getElementById('heroTag').value,
-                heroHeadline: document.getElementById('heroHeadline').value,
-                footerText: document.getElementById('footerText').value,
-                primaryColor: document.getElementById('primaryColor').value,
-                secondaryColor: document.getElementById('secondaryColor').value,
-                isStoreOpen: currentStatus,
-                hours: hours,
-                deliveryAreas: deliveryAreas
+            const id = document.getElementById('bannerId').value;
+            const data = {
+                tag: document.getElementById('bannerTag').value,
+                title: document.getElementById('bannerTitle').value,
+                color1: document.getElementById('bannerColor1').value,
+                color2: document.getElementById('bannerColor2').value,
+                target: document.getElementById('bannerTarget').value,
+                updatedAt: new Date().toISOString()
             };
-            
-            try { await setDoc(doc(db, `artifacts/${EXTERNAL_FIREBASE_CONFIG.appId}/public/data/config/store`), configData); showToast("Configurações salvas!"); } 
-            catch(e) { showAlertModal("Erro ao salvar: " + e.message); }
+            try {
+                if(id) await updateDoc(doc(db, `artifacts/${CONFIG.appId}/public/data/hero_cards`, id), data);
+                else await addDoc(collection(db, `artifacts/${CONFIG.appId}/public/data/hero_cards`), data);
+                document.getElementById('bannerModal').classList.add('hidden');
+                showToast('Banner salvo!');
+            } catch(e) { alert('Erro: ' + e.message); }
         };
+        window.deleteBanner = async (id) => {
+            if(confirm('Excluir este banner?')) await deleteDoc(doc(db, `artifacts/${CONFIG.appId}/public/data/hero_cards`, id));
+        };
+        function renderBannerList() {
+            const l = document.getElementById('bannersList');
+            l.innerHTML = '';
+            if(!allBanners.length) document.getElementById('emptyBannersMsg').classList.remove('hidden');
+            else document.getElementById('emptyBannersMsg').classList.add('hidden');
 
-        function setupCategoryListener() {
-            onSnapshot(collection(db, `artifacts/${EXTERNAL_FIREBASE_CONFIG.appId}/public/data/categories`), s => {
-                allCategories = s.docs.map(d => ({id: d.id, ...d.data()})).sort((a,b)=>a.name.localeCompare(b.name));
-                renderCategoryList(allCategories); populateCatDropdowns(); updateDashboardStats(); 
-            });
-        }
-        function renderCategoryList(list) {
-            const div = document.getElementById('categoryList'); div.innerHTML = '';
-            list.forEach(c => {
-                const el = document.createElement('div');
-                const active = c.status === 'active';
-                el.className = `p-4 border rounded-xl flex justify-between items-center transition hover:shadow-md ${active ? 'bg-white border-slate-200' : 'bg-slate-50 opacity-70'}`;
-                el.innerHTML = `<span class="font-semibold text-slate-700">${c.name}</span><div class="flex gap-1"><button onclick="openEditCategoryModal('${c.id}')" class="p-1.5 text-slate-400 hover:text-primary-600 hover:bg-slate-50 rounded-lg"><i data-lucide="pencil" class="w-4 h-4"></i></button><button onclick="confirmDeleteCategory('${c.id}', '${c.name}')" class="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50/50 rounded-lg"><i data-lucide="trash-2" class="w-4 h-4"></i></button></div>`;
-                div.appendChild(el);
+            allBanners.forEach(b => {
+                const div = document.createElement('div');
+                div.className = "bg-white p-4 rounded-xl border border-slate-200 shadow-sm";
+                div.innerHTML = `
+                    <div class="h-24 rounded-lg flex flex-col justify-center p-4 text-white mb-3" style="background: linear-gradient(135deg, ${b.color1}, ${b.color2})">
+                        <span class="text-xs font-bold uppercase opacity-80">${b.tag}</span>
+                        <h4 class="font-bold text-lg leading-tight">${b.title}</h4>
+                    </div>
+                    <div class="flex justify-between items-center">
+                        <span class="text-xs font-bold text-slate-500 bg-slate-100 px-2 py-1 rounded">Link: ${b.target}</span>
+                        <div class="flex gap-2">
+                            <button onclick='openBannerModal(${JSON.stringify(b).replace(/'/g, "&#39;")})' class="p-1.5 text-blue-600 hover:bg-blue-50 rounded"><i data-lucide="pencil" class="w-4 h-4"></i></button>
+                            <button onclick="deleteBanner('${b.id}')" class="p-1.5 text-red-600 hover:bg-red-50 rounded"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
+                        </div>
+                    </div>
+                `;
+                l.appendChild(div);
             });
             lucide.createIcons();
         }
+
+        // --- PRODUCT LOGIC ---
+        window.openProductModal = (p=null) => {
+            const s = document.getElementById('prodCategory');
+            s.innerHTML = '';
+            allCategories.forEach(c => s.innerHTML += `<option value="${c.name}">${c.name}</option>`);
+            
+            if(p) {
+                document.getElementById('prodId').value = p.id;
+                document.getElementById('prodName').value = p.name;
+                document.getElementById('prodCategory').value = p.category;
+                document.getElementById('prodValue').value = p.value;
+                document.getElementById('prodPromo').value = p.promoValue || '';
+                document.getElementById('prodSizes').value = p.sizes ? p.sizes.join(', ') : '';
+                document.getElementById('prodColors').value = p.colors ? p.colors.join(', ') : '';
+                document.getElementById('prodImage').value = p.images ? p.images[0] : '';
+                document.getElementById('prodDesc').value = p.description || '';
+                document.getElementById('prodFeatured').checked = p.isFeatured;
+            } else {
+                document.getElementById('productForm').reset();
+                document.getElementById('prodId').value = '';
+            }
+            document.getElementById('productModal').classList.remove('hidden');
+        };
+        window.handleProductSubmit = async (e) => {
+            e.preventDefault();
+            const id = document.getElementById('prodId').value;
+            const data = {
+                name: document.getElementById('prodName').value,
+                category: document.getElementById('prodCategory').value,
+                value: parseFloat(document.getElementById('prodValue').value),
+                promoValue: parseFloat(document.getElementById('prodPromo').value) || null,
+                sizes: document.getElementById('prodSizes').value.split(',').map(s=>s.trim()).filter(Boolean),
+                colors: document.getElementById('prodColors').value.split(',').map(s=>s.trim()).filter(Boolean),
+                images: [document.getElementById('prodImage').value],
+                description: document.getElementById('prodDesc').value,
+                isFeatured: document.getElementById('prodFeatured').checked,
+                status: 'active'
+            };
+            if(id) await updateDoc(doc(db, `artifacts/${CONFIG.appId}/public/data/products`, id), data);
+            else await addDoc(collection(db, `artifacts/${CONFIG.appId}/public/data/products`), data);
+            document.getElementById('productModal').classList.add('hidden'); showToast('Produto Salvo');
+        };
+        window.deleteProduct = async (id) => { if(confirm('Excluir produto?')) await deleteDoc(doc(db, `artifacts/${CONFIG.appId}/public/data/products`, id)); };
+        window.toggleProductStatus = async (id, current) => await updateDoc(doc(db, `artifacts/${CONFIG.appId}/public/data/products`, id), { status: current==='active'?'paused':'active' });
+        
+        function renderProductList() {
+            const l = document.getElementById('productList');
+            const term = document.getElementById('productSearch').value.toLowerCase();
+            const filtered = allProducts.filter(p => p.name.toLowerCase().includes(term));
+            
+            l.innerHTML = filtered.map(p => `
+                <div class="flex items-center gap-4 bg-white p-4 rounded-xl border border-slate-100 shadow-sm">
+                    <img src="${p.images?.[0]||''}" class="w-12 h-12 rounded-lg bg-slate-100 object-cover">
+                    <div class="flex-1">
+                        <div class="font-bold text-slate-800">${p.name}</div>
+                        <div class="text-xs text-slate-500">${p.category} • R$ ${p.value.toFixed(2)}</div>
+                    </div>
+                    <div class="flex gap-2">
+                        <button onclick='openProductModal(${JSON.stringify(p).replace(/'/g, "&#39;")})' class="p-2 text-blue-600 hover:bg-blue-50 rounded"><i data-lucide="pencil" class="w-4 h-4"></i></button>
+                        <button onclick="toggleProductStatus('${p.id}','${p.status}')" class="p-2 ${p.status==='active'?'text-green-600':'text-orange-500'} hover:bg-slate-50 rounded"><i data-lucide="${p.status==='active'?'pause':'play'}" class="w-4 h-4"></i></button>
+                        <button onclick="deleteProduct('${p.id}')" class="p-2 text-red-600 hover:bg-red-50 rounded"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
+                    </div>
+                </div>
+            `).join('');
+            lucide.createIcons();
+        }
+        window.filterProducts = renderProductList;
+
+        // --- CATEGORY LOGIC ---
         window.addCategory = async (e) => {
             e.preventDefault();
-            const name = document.getElementById('categoryName').value;
-            if(allCategories.some(c=>c.name.toLowerCase()===name.toLowerCase())) return showAlertModal("Categoria já existe");
-            await addDoc(collection(db, `artifacts/${EXTERNAL_FIREBASE_CONFIG.appId}/public/data/categories`), {name, status:'active'});
-            document.getElementById('categoryName').value = ''; showToast("Categoria adicionada");
+            await addDoc(collection(db, `artifacts/${CONFIG.appId}/public/data/categories`), { name: document.getElementById('catInputName').value, status: 'active' });
+            document.getElementById('catInputName').value = ''; showToast('Categoria criada');
         };
-        window.openEditCategoryModal = (id) => {
-            const c = allCategories.find(x=>x.id===id);
-            document.getElementById('editCatId').value = id; document.getElementById('editCatName').value = c.name; document.getElementById('editCatActive').checked = c.status === 'active';
-            document.getElementById('editCategoryModal').classList.remove('hidden');
-        }
-        window.updateCategory = async (e) => {
-            e.preventDefault();
-            const id = document.getElementById('editCatId').value; const name = document.getElementById('editCatName').value; const status = document.getElementById('editCatActive').checked ? 'active' : 'paused';
-            await updateDoc(doc(db, `artifacts/${EXTERNAL_FIREBASE_CONFIG.appId}/public/data/categories`, id), {name, status});
-            document.getElementById('editCategoryModal').classList.add('hidden'); showToast("Categoria atualizada");
-        }
-        window.confirmDeleteCategory = (id, name) => {
-            if(allProducts.some(p=>p.category===name)) return showAlertModal("Em uso");
-            showAlertModal(`Excluir ${name}?`, 'Excluir', true, async () => { await deleteDoc(doc(db, `artifacts/${EXTERNAL_FIREBASE_CONFIG.appId}/public/data/categories`, id)); showToast("Categoria excluída"); });
-        }
-
-        // --- COUPON LOGIC ---
-        function setupCouponsListener() {
-            onSnapshot(collection(db, `artifacts/${EXTERNAL_FIREBASE_CONFIG.appId}/public/data/coupons`), s => {
-                allCoupons = s.docs.map(d => ({id: d.id, ...d.data()}));
-                renderCouponsList();
-                updateDashboardStats();
-            });
-        }
-
-        function renderCouponsList() {
-            const tbody = document.getElementById('couponsList');
-            const emptyMsg = document.getElementById('emptyCouponsMsg');
-            tbody.innerHTML = '';
-
-            if (allCoupons.length === 0) {
-                emptyMsg.classList.remove('hidden');
-                return;
-            }
-            emptyMsg.classList.add('hidden');
-
-            allCoupons.forEach(c => {
-                const tr = document.createElement('tr');
-                tr.className = "bg-white border-b hover:bg-slate-50";
-                
-                const typeLabel = c.type === 'percentage' ? `${c.value}%` : `R$ ${c.value}`;
-                const scopeLabel = c.scope === 'global' 
-                    ? '<span class="px-2 py-1 text-xs font-semibold bg-blue-50 text-blue-700 rounded-md">Toda a Loja</span>' 
-                    : `<span class="px-2 py-1 text-xs font-semibold bg-purple-50 text-purple-700 rounded-md">Categ: ${c.targetCategory}</span>`;
-                
-                const statusBadge = c.status === 'active'
-                    ? '<span class="px-2 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800">Ativo</span>'
-                    : '<span class="px-2 py-1 text-xs font-semibold rounded-full bg-slate-100 text-slate-500">Pausado</span>';
-                
-                tr.innerHTML = `
-                    <td class="px-6 py-4 font-bold text-slate-800">${c.code}</td>
-                    <td class="px-6 py-4 font-medium text-slate-600">${typeLabel} OFF</td>
-                    <td class="px-6 py-4">${scopeLabel}</td>
-                    <td class="px-6 py-4">${statusBadge}</td>
-                    <td class="px-6 py-4 text-right flex justify-end gap-2">
-                         <button onclick="toggleCouponStatus('${c.id}', '${c.status}')" class="p-2 text-slate-500 hover:bg-slate-100 rounded-lg" title="${c.status === 'active' ? 'Pausar' : 'Ativar'}">
-                            <i data-lucide="${c.status === 'active' ? 'pause-circle' : 'play-circle'}" class="w-4 h-4"></i>
-                        </button>
-                        <button onclick="deleteCoupon('${c.id}')" class="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg" title="Excluir">
-                            <i data-lucide="trash-2" class="w-4 h-4"></i>
-                        </button>
-                    </td>
-                `;
-                tbody.appendChild(tr);
-            });
+        window.deleteCategory = async (id) => { if(confirm('Excluir categoria?')) await deleteDoc(doc(db, `artifacts/${CONFIG.appId}/public/data/categories`, id)); };
+        function renderCategoryList() {
+            document.getElementById('categoryList').innerHTML = allCategories.map(c => `
+                <div class="flex justify-between items-center p-4">
+                    <span class="font-medium">${c.name}</span>
+                    <button onclick="deleteCategory('${c.id}')" class="text-red-500 hover:bg-red-50 p-2 rounded"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
+                </div>
+            `).join('');
             lucide.createIcons();
         }
 
-        window.openCouponModal = () => {
-            document.getElementById('couponForm').reset();
-            document.getElementById('couponModal').classList.remove('hidden');
-            window.toggleCategorySelect(); // Reset view
-            // Populate category dropdown
-            const catSelect = document.getElementById('couponTargetCategory');
-            catSelect.innerHTML = '';
-            allCategories.filter(c => c.status === 'active').forEach(c => {
-                const opt = document.createElement('option');
-                opt.value = c.name;
-                opt.textContent = c.name;
-                catSelect.appendChild(opt);
-            });
+        // --- CONFIG LOGIC ---
+        window.addDeliveryArea = () => {
+            const n = document.getElementById('areaName').value;
+            const f = parseFloat(document.getElementById('areaFee').value);
+            if(n && !isNaN(f)) {
+                deliveryAreas.push({name:n, fee:f});
+                renderDeliveryAreas();
+                document.getElementById('areaName').value = '';
+                document.getElementById('areaFee').value = '';
+            }
         };
-
-        window.toggleCategorySelect = () => {
-            const scope = document.getElementById('couponScope').value;
-            const div = document.getElementById('couponCategoryDiv');
-            if(scope === 'category') div.classList.remove('hidden');
-            else div.classList.add('hidden');
+        window.removeArea = (idx) => { deliveryAreas.splice(idx,1); renderDeliveryAreas(); };
+        function renderDeliveryAreas() {
+            document.getElementById('deliveryAreasList').innerHTML = deliveryAreas.map((a,i) => `
+                <div class="flex justify-between p-3">
+                    <span>${a.name}</span>
+                    <div class="flex items-center gap-3">
+                        <span class="font-bold">R$ ${a.fee.toFixed(2)}</span>
+                        <button onclick="removeArea(${i})" class="text-red-500"><i data-lucide="x" class="w-4 h-4"></i></button>
+                    </div>
+                </div>
+            `).join('');
+            lucide.createIcons();
+        }
+        window.toggleStoreStatusQuick = async (el) => {
+            const open = el.checked;
+            document.getElementById('statusLabel').textContent = open ? 'Aberto' : 'Fechado';
+            await updateDoc(doc(db, `artifacts/${CONFIG.appId}/public/data/config/store`), { isStoreOpen: open });
         };
-
-        window.updateCouponInputs = () => {
-            // Can be used to change placeholder or step based on type
-        };
-
-        window.handleCouponSubmit = async (e) => {
+        window.saveStoreConfig = async (e) => {
             e.preventDefault();
-            const code = document.getElementById('couponCode').value.toUpperCase();
-            if(allCoupons.some(c => c.code === code)) return showAlertModal("Esse código de cupom já existe!");
-            
-            const type = document.getElementById('couponType').value;
-            const value = parseFloat(document.getElementById('couponValue').value);
-            const scope = document.getElementById('couponScope').value;
-            const targetCategory = scope === 'category' ? document.getElementById('couponTargetCategory').value : null;
-            const isActive = document.getElementById('couponActive').checked;
-            
-            const couponData = {
-                code,
-                type,
-                value,
-                scope,
-                targetCategory,
-                status: isActive ? 'active' : 'paused',
-                createdAt: new Date().toISOString()
+            const data = {
+                storeName: document.getElementById('confStoreName').value,
+                whatsappNumber: document.getElementById('confWhatsapp').value,
+                footerText: document.getElementById('confFooter').value,
+                primaryColor: document.getElementById('confColorPrimary').value,
+                deliveryAreas: deliveryAreas,
+                isStoreOpen: document.getElementById('dashboardStoreToggle').checked
             };
-
-            try {
-                await addDoc(collection(db, `artifacts/${EXTERNAL_FIREBASE_CONFIG.appId}/public/data/coupons`), couponData);
-                document.getElementById('couponModal').classList.add('hidden');
-                showToast("Cupom criado com sucesso!");
-            } catch(e) {
-                showAlertModal("Erro ao criar cupom: " + e.message);
-            }
+            await setDoc(doc(db, `artifacts/${CONFIG.appId}/public/data/config/store`), data);
+            showToast('Configurações salvas!');
         };
-
-        window.toggleCouponStatus = async (id, currentStatus) => {
-            const newStatus = currentStatus === 'active' ? 'paused' : 'active';
-            try {
-                await updateDoc(doc(db, `artifacts/${EXTERNAL_FIREBASE_CONFIG.appId}/public/data/coupons`, id), { status: newStatus });
-                showToast(newStatus === 'active' ? "Cupom ativado!" : "Cupom pausado!");
-            } catch(e) { console.error(e); }
-        };
-
-        window.deleteCoupon = (id) => {
-            showAlertModal("Deseja realmente excluir este cupom?", "Excluir Cupom", true, async () => {
-                await deleteDoc(doc(db, `artifacts/${EXTERNAL_FIREBASE_CONFIG.appId}/public/data/coupons`, id));
-                showToast("Cupom excluído!");
-            });
-        };
-
-        function setupProductListener() {
-            onSnapshot(collection(db, `artifacts/${EXTERNAL_FIREBASE_CONFIG.appId}/public/data/products`), s => {
-                allProducts = s.docs.map(d => ({id: d.id, ...d.data()})); filterProducts(); updateDashboardStats(); 
-            });
-        }
-        function renderProductListGrouped(products) {
-            const container = document.getElementById('productList');
-            const grouped = products.reduce((acc, p) => { (acc[p.category] = acc[p.category] || []).push(p); return acc; }, {});
-            container.innerHTML = ''; 
-            Object.keys(grouped).forEach(cat => {
-                const items = grouped[cat]; const cleanCat = cat.replace(/[^a-zA-Z0-9]/g, '');
-                const section = document.createElement('div');
-                section.className = 'section-card bg-white rounded-2xl border border-slate-200 shadow-xl overflow-hidden';
-                section.innerHTML = `<div class="px-6 py-4 bg-slate-50 border-b border-slate-100 flex justify-between items-center cursor-pointer transition hover:bg-slate-100/70" onclick="toggleAcc('acc-${cleanCat}')"><h3 class="font-bold text-slate-800">${cat} <span class="text-xs bg-slate-200 px-2 py-0.5 rounded-full ml-2 text-slate-600">${items.length}</span></h3><i id="icon-acc-${cleanCat}" data-lucide="chevron-down" class="rotate-icon text-slate-400"></i></div><div id="acc-${cleanCat}" class="accordion-content bg-white"><div class="divide-y divide-slate-100">${items.map(p => { const paused = p.status === 'paused'; return `<div class="p-4 flex justify-between items-center hover:bg-slate-50 group transition"><div class="flex items-center gap-4"><img src="${p.images?.[0] || 'https://placehold.co/80'}" onerror="this.onerror=null; this.src='https://placehold.co/80x80/e2e8f0/94a3b8?text=Sem+Foto';" class="w-12 h-12 rounded-xl object-cover bg-slate-100"><div><div class="font-medium ${paused?'text-slate-400':''}">${p.name}</div><div class="text-xs text-slate-500">R$ ${p.value.toFixed(2)} ${p.isFeatured ? '• Destaque' : ''}</div></div></div><div class="flex gap-2 opacity-100 sm:opacity-0 group-hover:opacity-100 transition-opacity"><button onclick="openEditModal('${p.id}')" class="p-2 hover:bg-primary-50 rounded-xl text-primary-600"><i data-lucide="pencil" class="w-4 h-4"></i></button><button onclick="toggleProductStatus('${p.id}', '${p.status}')" class="p-2 hover:bg-slate-100 rounded-xl text-slate-500"><i data-lucide="${paused?'play':'pause'}" class="w-4 h-4"></i></button><button onclick="confirmDeleteProduct('${p.id}')" class="p-2 hover:bg-red-50 hover:text-red-600 rounded-xl text-slate-500"><i data-lucide="trash-2" class="w-4 h-4"></i></button></div></div>` }).join('')}</div></div>`;
-                container.appendChild(section);
-            });
-            lucide.createIcons();
-        }
-        window.toggleAcc = (id) => { const el = document.getElementById(id); const ic = document.getElementById('icon-'+id); if(el.classList.contains('active')) { el.classList.remove('active'); ic.classList.remove('rotated'); } else { el.classList.add('active'); ic.classList.add('rotated'); } }
-        let isEditing = false;
-        window.openAddModal = () => { isEditing = false; document.getElementById('productFormMain').reset(); document.getElementById('prodId').value = ''; document.getElementById('productModalTitle').textContent = "Novo Produto"; document.getElementById('productModal').classList.remove('hidden'); populateCatDropdowns(); lucide.createIcons(); };
-        window.openEditModal = (id) => { isEditing = true; const p = allProducts.find(x => x.id === id); document.getElementById('prodId').value = id; document.getElementById('prodName').value = p.name; document.getElementById('prodCategory').value = p.category; document.getElementById('prodValue').value = p.value; document.getElementById('prodPromo').value = p.promoValue || ''; document.getElementById('prodSizes').value = p.sizes?.join(', ') || ''; document.getElementById('prodColors').value = p.colors?.join(', ') || ''; document.getElementById('prodImage').value = p.images?.[0] || ''; document.getElementById('prodFeatured').checked = p.isFeatured; document.getElementById('productModalTitle').textContent = "Editar Produto"; document.getElementById('productModal').classList.remove('hidden'); populateCatDropdowns(p.category); lucide.createIcons(); };
-        window.closeProductModal = () => document.getElementById('productModal').classList.add('hidden');
-        window.handleProductSubmit = async (e) => { e.preventDefault(); const data = { name: document.getElementById('prodName').value, category: document.getElementById('prodCategory').value, value: parseFloat(document.getElementById('prodValue').value), promoValue: parseFloat(document.getElementById('prodPromo').value) || null, sizes: document.getElementById('prodSizes').value.split(',').map(s=>s.trim()).filter(Boolean), colors: document.getElementById('prodColors').value.split(',').map(s=>s.trim()).filter(Boolean), images: [document.getElementById('prodImage').value], isFeatured: document.getElementById('prodFeatured').checked, updatedAt: new Date().toISOString() }; try { if(isEditing) { await updateDoc(doc(db, `artifacts/${EXTERNAL_FIREBASE_CONFIG.appId}/public/data/products`, document.getElementById('prodId').value), data); showToast("Atualizado!"); } else { data.status = 'active'; data.createdAt = new Date().toISOString(); await addDoc(collection(db, `artifacts/${EXTERNAL_FIREBASE_CONFIG.appId}/public/data/products`), data); showToast("Criado!"); } closeProductModal(); } catch(err) { showAlertModal("Erro ao salvar"); } };
-        window.toggleProductStatus = async (id, status) => { await updateDoc(doc(db, `artifacts/${EXTERNAL_FIREBASE_CONFIG.appId}/public/data/products`, id), {status: status === 'active' ? 'paused' : 'active'}); showToast("Status alterado"); }
-        window.confirmDeleteProduct = (id) => { showAlertModal("Excluir?", "Excluir", true, async () => { await deleteDoc(doc(db, `artifacts/${EXTERNAL_FIREBASE_CONFIG.appId}/public/data/products`, id)); showToast("Excluído"); }); }
-        function populateCatDropdowns(sel) { const dd = [document.getElementById('prodCategory'), document.getElementById('filterCategory')]; dd.forEach(d => { if(!d) return; d.innerHTML = d.id === 'filterCategory' ? '<option value="all">Todas</option>' : ''; allCategories.filter(c => c.status === 'active' || (sel && c.name === sel)).forEach(c => { const o = document.createElement('option'); o.value = c.name; o.textContent = c.name; if(sel && c.name === sel) o.selected = true; d.appendChild(o); }); }); }
     </script>
 </body>
 </html>
+
 
