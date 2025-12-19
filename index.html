@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Painel Administrativo | ShopWave</title>
+    <title>Painel do Lojista | ShopWave</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <script src="https://unpkg.com/lucide@latest"></script>
@@ -54,13 +54,70 @@
 </head>
 <body class="text-slate-800 antialiased h-screen overflow-hidden flex bg-slate-50">
 
+    <!-- LOGIN SCREEN (Inicialmente Visível) -->
+    <div id="login-screen" class="fixed inset-0 z-[200] bg-slate-900 flex items-center justify-center p-4">
+        <div class="bg-white w-full max-w-md p-8 rounded-3xl shadow-2xl relative overflow-hidden">
+            <div class="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-primary-500 to-indigo-600"></div>
+            
+            <div class="mb-8 text-center">
+                <div class="bg-primary-50 w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                    <i data-lucide="store" class="w-8 h-8 text-primary-600"></i>
+                </div>
+                <h2 class="text-2xl font-bold text-slate-800">Painel do Lojista</h2>
+                <p class="text-slate-500 text-sm mt-1">Entre para gerenciar sua loja.</p>
+            </div>
+
+            <form onsubmit="handleLogin(event)" class="space-y-4">
+                <div>
+                    <label class="block text-xs font-bold uppercase text-slate-500 mb-1">Email</label>
+                    <input type="email" id="loginEmail" class="w-full border border-slate-300 rounded-xl p-3 focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none transition-all" placeholder="admin@loja.com" required>
+                </div>
+                
+                <div class="relative">
+                    <label class="block text-xs font-bold uppercase text-slate-500 mb-1">Senha</label>
+                    <div class="relative">
+                        <input type="password" id="loginPass" class="w-full border border-slate-300 rounded-xl p-3 pr-10 focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none transition-all" placeholder="••••••" required>
+                        <button type="button" onclick="togglePassword()" class="absolute right-3 top-3 text-slate-400 hover:text-slate-600 transition-colors" tabindex="-1">
+                            <i id="eyeIcon" data-lucide="eye" class="w-5 h-5"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="flex items-center justify-between mt-2">
+                    <label class="flex items-center gap-2 cursor-pointer select-none">
+                        <input type="checkbox" id="rememberMe" class="w-4 h-4 rounded text-primary-600 focus:ring-primary-500 border-gray-300">
+                        <span class="text-sm text-slate-600">Manter conectado</span>
+                    </label>
+                    <a href="#" onclick="alert('Entre em contato com o suporte para redefinir.')" class="text-sm font-semibold text-primary-600 hover:text-primary-700">Esqueceu?</a>
+                </div>
+                
+                <div id="loginError" class="hidden p-3 bg-red-50 text-red-600 text-xs font-bold rounded-lg text-center border border-red-100"></div>
+
+                <button type="submit" id="btnLogin" class="w-full bg-slate-900 hover:bg-slate-800 text-white font-bold py-4 rounded-xl shadow-lg transition-all flex justify-center items-center gap-2 mt-6">
+                    <span>Entrar no Sistema</span>
+                    <i data-lucide="arrow-right" class="w-4 h-4"></i>
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- TELA DE BLOQUEIO (Pagamento Pendente) -->
+    <div id="suspended-screen" class="fixed inset-0 z-[200] bg-slate-900 flex flex-col items-center justify-center p-4 hidden text-center">
+        <div class="bg-white p-4 rounded-full mb-6 animate-bounce">
+            <i data-lucide="lock" class="w-12 h-12 text-red-500"></i>
+        </div>
+        <h1 class="text-3xl font-bold text-white mb-2">Acesso Suspenso</h1>
+        <p class="text-slate-400 max-w-md mb-8">O acesso ao painel administrativo desta loja foi temporariamente bloqueado. Entre em contato com o administrador para regularizar.</p>
+        <button onclick="handleLogout()" class="bg-slate-700 hover:bg-slate-600 text-white px-6 py-3 rounded-xl font-bold transition-colors">Voltar ao Login</button>
+    </div>
+
     <!-- TOAST -->
-    <div id="toast-container" class="fixed top-5 right-5 z-[100] flex flex-col gap-2"></div>
+    <div id="toast-container" class="fixed top-5 right-5 z-[100] flex flex-col gap-2 pointer-events-none"></div>
 
     <!-- SIDEBAR -->
-    <aside class="hidden md:flex flex-col w-64 bg-white border-r border-slate-200 h-full shadow-lg z-10">
-        <div class="h-16 flex items-center px-6 border-b border-primary-600/10">
-            <span class="text-lg font-bold text-slate-800">Admin<span class="text-primary-600">Vitrine</span></span>
+    <aside class="hidden md:flex flex-col w-64 bg-white border-r border-slate-200 h-full shadow-lg z-10 relative">
+        <div class="h-16 flex items-center px-6 border-b border-primary-600/10 justify-between">
+            <span class="text-lg font-bold text-slate-800 truncate" id="sidebarStoreName">Carregando...</span>
         </div>
         <nav class="flex-1 overflow-y-auto py-6 space-y-1">
             <p class="px-6 text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">Principal</p>
@@ -74,30 +131,47 @@
             <p class="px-6 text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2 mt-6">Sistema</p>
             <button id="nav-config" onclick="changeTab('config')" class="sidebar-link w-full flex items-center px-6 py-3 text-sm font-medium text-slate-600 border-r-4 border-transparent"><i data-lucide="settings" class="w-5 h-5 mr-3"></i> Configurações</button>
         </nav>
+        
+        <!-- LOGOUT BUTTON -->
+        <div class="p-4 border-t border-slate-100 bg-slate-50/50">
+            <div class="flex items-center gap-3 mb-3 px-2">
+                <div class="w-8 h-8 rounded-full bg-primary-100 text-primary-600 flex items-center justify-center font-bold text-xs">LJ</div>
+                <div class="overflow-hidden">
+                    <p class="text-xs font-bold text-slate-700 truncate" id="userEmailDisplay">...</p>
+                    <p class="text-[10px] text-green-600 font-medium">Online</p>
+                </div>
+            </div>
+            <button onclick="handleLogout()" class="w-full flex items-center justify-center gap-2 px-4 py-2 text-sm font-medium text-red-600 bg-red-50 hover:bg-red-100 rounded-lg transition-colors">
+                <i data-lucide="log-out" class="w-4 h-4"></i> Sair
+            </button>
+        </div>
     </aside>
 
     <!-- MOBILE MENU OVERLAY -->
     <div id="mobile-menu-overlay" onclick="toggleMobileMenu()" class="fixed inset-0 bg-slate-900/50 z-40 hidden md:hidden backdrop-blur-sm"></div>
-    <aside id="mobile-sidebar" class="fixed inset-y-0 left-0 w-64 bg-white z-50 transform -translate-x-full transition-transform duration-300 md:hidden shadow-2xl p-4">
+    <aside id="mobile-sidebar" class="fixed inset-y-0 left-0 w-64 bg-white z-50 transform -translate-x-full transition-transform duration-300 md:hidden shadow-2xl p-4 flex flex-col">
         <h2 class="text-xl font-bold mb-6">Menu</h2>
-        <nav class="space-y-2">
+        <nav class="space-y-2 flex-1">
             <button onclick="changeTab('dashboard'); toggleMobileMenu()" class="w-full flex items-center p-3 hover:bg-slate-50 rounded">Dashboard</button>
             <button onclick="changeTab('banners'); toggleMobileMenu()" class="w-full flex items-center p-3 hover:bg-slate-50 rounded">Banners</button>
             <button onclick="changeTab('products'); toggleMobileMenu()" class="w-full flex items-center p-3 hover:bg-slate-50 rounded">Produtos</button>
             <button onclick="changeTab('categories'); toggleMobileMenu()" class="w-full flex items-center p-3 hover:bg-slate-50 rounded">Categorias</button>
             <button onclick="changeTab('config'); toggleMobileMenu()" class="w-full flex items-center p-3 hover:bg-slate-50 rounded">Configurações</button>
         </nav>
+        <button onclick="handleLogout()" class="w-full flex items-center p-3 text-red-600 bg-red-50 rounded mt-4 justify-center gap-2 font-bold"><i data-lucide="log-out" class="w-4 h-4"></i> Sair</button>
     </aside>
 
     <!-- MAIN CONTENT -->
     <main class="flex-1 flex flex-col h-screen overflow-hidden relative">
-        <header class="h-16 bg-white border-b border-slate-200 flex items-center justify-between px-4 md:px-8 flex-shrink-0 z-20 shadow-md">
+        <header class="h-16 bg-white border-b border-slate-200 flex items-center justify-between px-4 md:px-8 flex-shrink-0 z-20 shadow-sm">
             <div class="flex items-center gap-4">
                 <button onclick="toggleMobileMenu()" class="md:hidden text-slate-500"><i data-lucide="menu" class="w-6 h-6"></i></button>
                 <h2 id="page-title" class="text-xl font-bold text-slate-800">Dashboard</h2>
             </div>
             <div class="flex items-center gap-2">
-                <span class="text-xs text-green-600 font-bold bg-green-50 px-2 py-1 rounded-full border border-green-100 flex items-center gap-1"><span class="w-2 h-2 bg-green-500 rounded-full"></span> Online</span>
+                <a id="storeLinkBtn" href="#" target="_blank" class="text-xs font-bold text-blue-600 bg-blue-50 px-3 py-1.5 rounded-full border border-blue-100 hover:bg-blue-100 transition-colors flex items-center gap-1 opacity-50 pointer-events-none">
+                    <i data-lucide="external-link" class="w-3 h-3"></i> Ver Loja
+                </a>
             </div>
         </header>
 
@@ -105,7 +179,7 @@
 
             <!-- DASHBOARD TAB -->
             <div id="content-dashboard" class="max-w-6xl mx-auto space-y-6 animate-fade-in hidden">
-                <div class="bg-white rounded-2xl border border-slate-200 shadow-xl p-6 flex flex-col md:flex-row items-center justify-between gap-4">
+                <div class="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 flex flex-col md:flex-row items-center justify-between gap-4">
                     <div class="flex items-center gap-4">
                         <div class="p-3 bg-blue-50 text-blue-600 rounded-xl"><i data-lucide="store" class="w-6 h-6"></i></div>
                         <div><h3 class="font-bold text-lg text-slate-800">Status da Loja</h3><p class="text-sm text-slate-500">Controle se os clientes podem fazer pedidos.</p></div>
@@ -117,24 +191,24 @@
                 </div>
 
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-                    <div class="section-card bg-white p-6 rounded-2xl border border-slate-100 shadow-xl">
+                    <div class="section-card bg-white p-6 rounded-2xl border border-slate-100 shadow-sm">
                         <p class="text-xs font-semibold text-slate-400 uppercase">Produtos</p>
                         <h3 class="text-3xl font-bold text-slate-800" id="dash-total-products">0</h3>
                     </div>
-                    <div class="section-card bg-white p-6 rounded-2xl border border-slate-100 shadow-xl">
+                    <div class="section-card bg-white p-6 rounded-2xl border border-slate-100 shadow-sm">
                         <p class="text-xs font-semibold text-slate-400 uppercase">Banners Ativos</p>
                         <h3 class="text-3xl font-bold text-primary-600" id="dash-total-banners">0</h3>
                     </div>
-                    <div class="section-card bg-white p-6 rounded-2xl border border-slate-100 shadow-xl">
+                    <div class="section-card bg-white p-6 rounded-2xl border border-slate-100 shadow-sm">
                         <p class="text-xs font-semibold text-slate-400 uppercase">Categorias</p>
                         <h3 class="text-3xl font-bold text-slate-800" id="dash-total-cats">0</h3>
                     </div>
                 </div>
             </div>
 
-            <!-- BANNERS TAB (NEW) -->
+            <!-- BANNERS TAB -->
             <div id="content-banners" class="max-w-6xl mx-auto space-y-6 hidden">
-                <div class="flex flex-col md:flex-row justify-between items-center section-card bg-white p-6 rounded-2xl border border-slate-200 shadow-xl gap-4">
+                <div class="flex flex-col md:flex-row justify-between items-center section-card bg-white p-6 rounded-2xl border border-slate-200 shadow-sm gap-4">
                     <div>
                         <h3 class="text-lg font-bold text-slate-800">Cards da Vitrine (Hero)</h3>
                         <p class="text-sm text-slate-500">Adicione cards coloridos no carrossel do topo da loja.</p>
@@ -149,7 +223,7 @@
 
             <!-- PRODUCTS TAB -->
             <div id="content-products" class="max-w-6xl mx-auto space-y-6 hidden">
-                <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 section-card bg-white p-4 rounded-2xl border border-slate-200 shadow-xl">
+                <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 section-card bg-white p-4 rounded-2xl border border-slate-200 shadow-sm">
                     <div class="relative flex-grow max-w-md">
                         <i data-lucide="search" class="absolute left-3 top-2.5 text-slate-400 w-5 h-5"></i>
                         <input type="text" id="productSearch" onkeyup="filterProducts()" placeholder="Buscar produto..." class="w-full pl-10 border bg-slate-50 rounded-lg p-2 focus:ring-primary-500 focus:border-primary-500">
@@ -161,14 +235,14 @@
 
             <!-- CATEGORIES TAB -->
             <div id="content-categories" class="max-w-4xl mx-auto space-y-6 hidden">
-                <div class="section-card bg-white p-6 rounded-2xl border border-slate-200 shadow-xl">
+                <div class="section-card bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
                     <h3 class="font-bold text-slate-800 mb-4">Adicionar Categoria</h3>
                     <form onsubmit="addCategory(event)" class="flex gap-2">
                         <input type="text" id="catInputName" class="flex-1 border rounded-xl px-4 py-2 bg-slate-50 focus:ring-primary-500" placeholder="Nome da Categoria (ex: Pizzas)" required>
                         <button type="submit" class="bg-slate-900 text-white px-6 py-2 rounded-xl font-medium shadow-md">Salvar</button>
                     </form>
                 </div>
-                <div class="bg-white rounded-2xl border border-slate-200 shadow-xl overflow-hidden">
+                <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
                      <div id="categoryList" class="divide-y divide-slate-100"></div>
                 </div>
             </div>
@@ -176,7 +250,7 @@
             <!-- CONFIG TAB -->
             <div id="content-config" class="max-w-4xl mx-auto space-y-6 hidden">
                 <form id="storeConfigForm" onsubmit="saveStoreConfig(event)" class="space-y-6">
-                    <div class="section-card bg-white rounded-2xl border border-slate-200 shadow-xl p-6">
+                    <div class="section-card bg-white rounded-2xl border border-slate-200 shadow-sm p-6">
                         <h3 class="text-lg font-bold text-slate-800 mb-4">Dados da Loja</h3>
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <div><label class="block text-sm font-medium mb-1">Nome da Loja</label><input type="text" id="confStoreName" class="w-full border rounded-lg p-2"></div>
@@ -185,14 +259,14 @@
                         </div>
                     </div>
 
-                    <div class="section-card bg-white rounded-2xl border border-slate-200 shadow-xl p-6">
+                    <div class="section-card bg-white rounded-2xl border border-slate-200 shadow-sm p-6">
                         <h3 class="text-lg font-bold text-slate-800 mb-4">Cores da Vitrine</h3>
                         <div class="flex gap-6">
                             <div><label class="block text-sm font-medium mb-1">Cor Primária</label><input type="color" id="confColorPrimary" class="h-10 w-20 rounded border cursor-pointer"></div>
                         </div>
                     </div>
 
-                    <div class="section-card bg-white rounded-2xl border border-slate-200 shadow-xl p-6">
+                    <div class="section-card bg-white rounded-2xl border border-slate-200 shadow-sm p-6">
                         <h3 class="text-lg font-bold text-slate-800 mb-4">Áreas de Entrega</h3>
                         <div class="flex gap-2 mb-4">
                             <input type="text" id="areaName" placeholder="Bairro" class="flex-1 border rounded-lg p-2">
@@ -281,13 +355,65 @@
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-        import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged, setPersistence, browserLocalPersistence, browserSessionPersistence } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
         import { getFirestore, doc, getDoc, addDoc, setDoc, updateDoc, deleteDoc, onSnapshot, collection } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
         
         const CONFIG = { apiKey: "AIzaSyAdwsGBTApwOwqr37qCv72gdPRbipsZG0Q", authDomain: "meuestoque-1badc.firebaseapp.com", projectId: "meuestoque-1badc", storageBucket: "meuestoque-1badc.appspot.com", messagingSenderId: "730003067834", appId: "1:730003067834:web:b205f1ea59053345960383" };
         
         let db, auth;
+        let currentStoreId = null;
         let allProducts=[], allCategories=[], allBanners=[], deliveryAreas=[];
+
+        // --- UI UTILS ---
+        window.togglePassword = () => {
+            const input = document.getElementById('loginPass');
+            const icon = document.getElementById('eyeIcon');
+            if (input.type === 'password') {
+                input.type = 'text';
+                icon.setAttribute('data-lucide', 'eye-off');
+            } else {
+                input.type = 'password';
+                icon.setAttribute('data-lucide', 'eye');
+            }
+            lucide.createIcons();
+        }
+
+        // --- AUTH LOGIC ---
+        window.handleLogin = async (e) => {
+            e.preventDefault();
+            const email = document.getElementById('loginEmail').value;
+            const pass = document.getElementById('loginPass').value;
+            const remember = document.getElementById('rememberMe').checked;
+            
+            const btn = document.getElementById('btnLogin');
+            const err = document.getElementById('loginError');
+
+            btn.disabled = true;
+            btn.innerHTML = 'Verificando...';
+            err.classList.add('hidden');
+
+            try {
+                // Configura persistência antes de logar
+                const persistenceType = remember ? browserLocalPersistence : browserSessionPersistence;
+                await setPersistence(auth, persistenceType);
+                await signInWithEmailAndPassword(auth, email, pass);
+                // O listener onAuthStateChanged vai lidar com o resto
+            } catch(e) {
+                btn.disabled = false;
+                btn.innerHTML = '<span>Entrar no Sistema</span><i data-lucide="arrow-right" class="w-4 h-4"></i>';
+                lucide.createIcons();
+                
+                let msg = "Email ou senha incorretos.";
+                if(e.code === 'auth/too-many-requests') msg = "Muitas tentativas. Aguarde um pouco.";
+                err.textContent = msg;
+                err.classList.remove('hidden');
+            }
+        };
+
+        window.handleLogout = async () => {
+            await signOut(auth);
+            window.location.reload();
+        };
 
         // --- NAVIGATION ---
         window.changeTab = (id) => {
@@ -307,45 +433,99 @@
         window.showToast = (msg) => {
             const c = document.getElementById('toast-container');
             const el = document.createElement('div');
-            el.className = "toast bg-slate-800 text-white px-4 py-3 rounded-xl shadow-lg flex items-center gap-2";
+            el.className = "toast bg-slate-800 text-white px-4 py-3 rounded-xl shadow-lg flex items-center gap-2 pointer-events-auto";
             el.innerHTML = `<i data-lucide="check-circle" class="w-4 h-4 text-green-400"></i> ${msg}`;
             c.appendChild(el); lucide.createIcons();
             setTimeout(() => el.remove(), 3000);
         };
 
-        // --- FIREBASE INIT ---
+        // --- INIT ---
         document.addEventListener('DOMContentLoaded', async () => {
             lucide.createIcons();
             const app = initializeApp(CONFIG);
             db = getFirestore(app);
             auth = getAuth(app);
-            await signInAnonymously(auth);
             
-            setupListeners();
-            changeTab('dashboard'); // Start on dashboard
+            onAuthStateChanged(auth, async (user) => {
+                if(user) {
+                    try {
+                        // 1. Descobrir qual loja pertence a este usuário
+                        const dirDoc = await getDoc(doc(db, "admin_directory", user.uid));
+                        
+                        if(!dirDoc.exists()) {
+                            alert("ERRO CRÍTICO: Usuário sem loja vinculada.");
+                            await signOut(auth);
+                            return;
+                        }
+
+                        currentStoreId = dirDoc.data().storeId;
+                        document.getElementById('userEmailDisplay').textContent = user.email;
+
+                        // 2. Verificar Status da Loja (Suspensão)
+                        // Checagem dupla: No registro geral e na config da loja
+                        const configDoc = await getDoc(doc(db, `stores/${currentStoreId}/config/store`));
+                        const isSuspended = configDoc.exists() && configDoc.data().subscriptionStatus === 'suspended';
+
+                        if(isSuspended) {
+                            document.getElementById('login-screen').classList.add('hidden');
+                            document.getElementById('suspended-screen').classList.remove('hidden');
+                        } else {
+                            // SUCESSO - CARREGAR PAINEL
+                            document.getElementById('login-screen').classList.add('hidden');
+                            document.getElementById('suspended-screen').classList.add('hidden');
+                            
+                            // 3. Atualizar link da vitrine
+                            const linkBtn = document.getElementById('storeLinkBtn');
+                            linkBtn.href = `index.html?id=${currentStoreId}`; 
+                            linkBtn.classList.remove('opacity-50', 'pointer-events-none');
+                            
+                            setupStoreListeners();
+                            changeTab('dashboard');
+                        }
+
+                    } catch(e) {
+                        console.error(e);
+                        alert("Erro ao carregar perfil da loja: " + e.message);
+                    }
+                } else {
+                    // Se não estiver logado, mostra login
+                    document.getElementById('login-screen').classList.remove('hidden');
+                }
+            });
         });
 
-        function setupListeners() {
-            // PRODUCTS
-            onSnapshot(collection(db, `artifacts/${CONFIG.appId}/public/data/products`), s => {
+        // --- FIRESTORE LISTENERS (MULTI-TENANT) ---
+        function setupStoreListeners() {
+            if(!currentStoreId) return;
+
+            // PRODUCTS: stores/{id}/products
+            onSnapshot(collection(db, `stores/${currentStoreId}/products`), s => {
                 allProducts = s.docs.map(d => ({id: d.id, ...d.data()}));
                 renderProductList(); updateDashboard();
             });
             // CATEGORIES
-            onSnapshot(collection(db, `artifacts/${CONFIG.appId}/public/data/categories`), s => {
+            onSnapshot(collection(db, `stores/${currentStoreId}/categories`), s => {
                 allCategories = s.docs.map(d => ({id: d.id, ...d.data()}));
                 renderCategoryList(); updateDashboard();
             });
-            // BANNERS (HERO CARDS)
-            onSnapshot(collection(db, `artifacts/${CONFIG.appId}/public/data/hero_cards`), s => {
+            // BANNERS
+            onSnapshot(collection(db, `stores/${currentStoreId}/hero_cards`), s => {
                 allBanners = s.docs.map(d => ({id: d.id, ...d.data()}));
                 renderBannerList(); updateDashboard();
             });
             // CONFIG
-            onSnapshot(doc(db, `artifacts/${CONFIG.appId}/public/data/config/store`), d => {
+            onSnapshot(doc(db, `stores/${currentStoreId}/config/store`), d => {
                 if(d.exists()) {
                     const data = d.data();
+                    
+                    // Se a loja for suspensa enquanto o usuário está logado, bloqueia na hora
+                    if(data.subscriptionStatus === 'suspended') {
+                        window.location.reload(); // Vai recarregar e cair na tela de suspensão
+                        return;
+                    }
+
                     document.getElementById('confStoreName').value = data.storeName || '';
+                    document.getElementById('sidebarStoreName').textContent = data.storeName || 'Minha Loja';
                     document.getElementById('confWhatsapp').value = data.whatsappNumber || '';
                     document.getElementById('confFooter').value = data.footerText || '';
                     document.getElementById('confColorPrimary').value = data.primaryColor || '#2563eb';
@@ -363,7 +543,7 @@
             document.getElementById('dash-total-banners').textContent = allBanners.length;
         }
 
-        // --- BANNER LOGIC (NEW) ---
+        // --- BANNER LOGIC ---
         window.updateBannerPreview = () => {
             const t = document.getElementById('bannerTag').value || 'TAG';
             const ti = document.getElementById('bannerTitle').value || 'TÍTULO';
@@ -397,6 +577,7 @@
         };
         window.handleBannerSubmit = async (e) => {
             e.preventDefault();
+            if(!currentStoreId) return;
             const id = document.getElementById('bannerId').value;
             const data = {
                 tag: document.getElementById('bannerTag').value,
@@ -407,14 +588,15 @@
                 updatedAt: new Date().toISOString()
             };
             try {
-                if(id) await updateDoc(doc(db, `artifacts/${CONFIG.appId}/public/data/hero_cards`, id), data);
-                else await addDoc(collection(db, `artifacts/${CONFIG.appId}/public/data/hero_cards`), data);
+                if(id) await updateDoc(doc(db, `stores/${currentStoreId}/hero_cards`, id), data);
+                else await addDoc(collection(db, `stores/${currentStoreId}/hero_cards`), data);
                 document.getElementById('bannerModal').classList.add('hidden');
                 showToast('Banner salvo!');
             } catch(e) { alert('Erro: ' + e.message); }
         };
         window.deleteBanner = async (id) => {
-            if(confirm('Excluir este banner?')) await deleteDoc(doc(db, `artifacts/${CONFIG.appId}/public/data/hero_cards`, id));
+            if(!currentStoreId) return;
+            if(confirm('Excluir este banner?')) await deleteDoc(doc(db, `stores/${currentStoreId}/hero_cards`, id));
         };
         function renderBannerList() {
             const l = document.getElementById('bannersList');
@@ -468,6 +650,7 @@
         };
         window.handleProductSubmit = async (e) => {
             e.preventDefault();
+            if(!currentStoreId) return;
             const id = document.getElementById('prodId').value;
             const data = {
                 name: document.getElementById('prodName').value,
@@ -481,12 +664,18 @@
                 isFeatured: document.getElementById('prodFeatured').checked,
                 status: 'active'
             };
-            if(id) await updateDoc(doc(db, `artifacts/${CONFIG.appId}/public/data/products`, id), data);
-            else await addDoc(collection(db, `artifacts/${CONFIG.appId}/public/data/products`), data);
+            if(id) await updateDoc(doc(db, `stores/${currentStoreId}/products`, id), data);
+            else await addDoc(collection(db, `stores/${currentStoreId}/products`), data);
             document.getElementById('productModal').classList.add('hidden'); showToast('Produto Salvo');
         };
-        window.deleteProduct = async (id) => { if(confirm('Excluir produto?')) await deleteDoc(doc(db, `artifacts/${CONFIG.appId}/public/data/products`, id)); };
-        window.toggleProductStatus = async (id, current) => await updateDoc(doc(db, `artifacts/${CONFIG.appId}/public/data/products`, id), { status: current==='active'?'paused':'active' });
+        window.deleteProduct = async (id) => { 
+            if(!currentStoreId) return;
+            if(confirm('Excluir produto?')) await deleteDoc(doc(db, `stores/${currentStoreId}/products`, id)); 
+        };
+        window.toggleProductStatus = async (id, current) => {
+            if(!currentStoreId) return;
+            await updateDoc(doc(db, `stores/${currentStoreId}/products`, id), { status: current==='active'?'paused':'active' });
+        };
         
         function renderProductList() {
             const l = document.getElementById('productList');
@@ -514,10 +703,14 @@
         // --- CATEGORY LOGIC ---
         window.addCategory = async (e) => {
             e.preventDefault();
-            await addDoc(collection(db, `artifacts/${CONFIG.appId}/public/data/categories`), { name: document.getElementById('catInputName').value, status: 'active' });
+            if(!currentStoreId) return;
+            await addDoc(collection(db, `stores/${currentStoreId}/categories`), { name: document.getElementById('catInputName').value, status: 'active' });
             document.getElementById('catInputName').value = ''; showToast('Categoria criada');
         };
-        window.deleteCategory = async (id) => { if(confirm('Excluir categoria?')) await deleteDoc(doc(db, `artifacts/${CONFIG.appId}/public/data/categories`, id)); };
+        window.deleteCategory = async (id) => { 
+            if(!currentStoreId) return;
+            if(confirm('Excluir categoria?')) await deleteDoc(doc(db, `stores/${currentStoreId}/categories`, id)); 
+        };
         function renderCategoryList() {
             document.getElementById('categoryList').innerHTML = allCategories.map(c => `
                 <div class="flex justify-between items-center p-4">
@@ -553,12 +746,14 @@
             lucide.createIcons();
         }
         window.toggleStoreStatusQuick = async (el) => {
+            if(!currentStoreId) return;
             const open = el.checked;
             document.getElementById('statusLabel').textContent = open ? 'Aberto' : 'Fechado';
-            await updateDoc(doc(db, `artifacts/${CONFIG.appId}/public/data/config/store`), { isStoreOpen: open });
+            await updateDoc(doc(db, `stores/${currentStoreId}/config/store`), { isStoreOpen: open });
         };
         window.saveStoreConfig = async (e) => {
             e.preventDefault();
+            if(!currentStoreId) return;
             const data = {
                 storeName: document.getElementById('confStoreName').value,
                 whatsappNumber: document.getElementById('confWhatsapp').value,
@@ -567,7 +762,8 @@
                 deliveryAreas: deliveryAreas,
                 isStoreOpen: document.getElementById('dashboardStoreToggle').checked
             };
-            await setDoc(doc(db, `artifacts/${CONFIG.appId}/public/data/config/store`), data);
+            // Usa setDoc com merge:true para não apagar campos críticos como subscriptionStatus
+            await setDoc(doc(db, `stores/${currentStoreId}/config/store`), data, { merge: true });
             showToast('Configurações salvas!');
         };
     </script>
