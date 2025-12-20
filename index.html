@@ -59,7 +59,10 @@
 </head>
 <body class="text-slate-800 antialiased h-screen overflow-hidden flex bg-slate-50">
 
+    <!-- LOGIN & REGISTER SCREENS -->
     <div id="auth-screen" class="fixed inset-0 z-[200] bg-slate-900 flex items-center justify-center p-4">
+        
+        <!-- LOGIN CARD -->
         <div id="login-card" class="bg-white w-full max-w-md p-8 rounded-3xl shadow-2xl relative overflow-hidden animate-fade-in">
             <div class="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-primary-500 to-indigo-600"></div>
             <div class="mb-8 text-center">
@@ -67,7 +70,7 @@
                     <i data-lucide="store" class="w-8 h-8 text-primary-600"></i>
                 </div>
                 <h2 class="text-2xl font-bold text-slate-800">Painel do Lojista</h2>
-                <p class="text-slate-500 text-sm mt-1">Faça login para gerir a sua loja.</p>
+                <p class="text-slate-500 text-sm mt-1">Aceda para gerir a sua vitrine.</p>
             </div>
             <form onsubmit="handleLogin(event)" class="space-y-4">
                 <div>
@@ -88,6 +91,7 @@
             </div>
         </div>
 
+        <!-- PRE-REGISTER CARD -->
         <div id="register-card" class="bg-white w-full max-w-md p-8 rounded-3xl shadow-2xl relative overflow-hidden hidden animate-fade-in">
             <div class="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-green-500 to-teal-600"></div>
             <div class="mb-6 text-center">
@@ -104,26 +108,33 @@
             <div id="regSuccess" class="hidden text-center py-6">
                 <i data-lucide="check-circle" class="w-12 h-12 text-green-500 mx-auto mb-4"></i>
                 <h3 class="font-bold text-slate-800">Solicitação Enviada!</h3>
-                <button onclick="toggleAuthView('login')" class="text-sm text-primary-600 mt-4 font-bold">Voltar</button>
+                <p class="text-sm text-slate-500 mt-2">A nossa equipa analisará os dados e entrará em contacto em breve.</p>
+                <button onclick="toggleAuthView('login')" class="text-sm text-primary-600 mt-6 font-bold hover:underline">Voltar para o Login</button>
+            </div>
+            <div class="mt-6 text-center" id="regBackLink">
+                <button onclick="toggleAuthView('login')" class="text-sm text-slate-500 hover:text-slate-800 font-medium">Cancelar e Voltar</button>
             </div>
         </div>
     </div>
 
+    <!-- TELA DE BLOQUEIO -->
     <div id="suspended-screen" class="fixed inset-0 z-[200] bg-slate-900 flex flex-col items-center justify-center p-4 hidden text-center">
         <div class="bg-white p-4 rounded-full mb-6 animate-bounce"><i data-lucide="lock" class="w-12 h-12 text-red-500"></i></div>
         <h1 class="text-3xl font-bold text-white mb-2">Acesso Suspenso</h1>
-        <button onclick="handleLogout()" class="bg-slate-700 text-white px-6 py-3 rounded-xl font-bold mt-4">Sair</button>
+        <p class="text-slate-400 max-w-md mb-8">O seu acesso administrativo foi bloqueado. Contacte o suporte.</p>
+        <button onclick="handleLogout()" class="bg-slate-700 text-white px-6 py-3 rounded-xl font-bold">Sair</button>
     </div>
 
     <div id="toast-container" class="fixed top-5 right-5 z-[100] flex flex-col gap-2 pointer-events-none"></div>
 
+    <!-- SIDEBAR -->
     <aside class="hidden md:flex flex-col w-64 bg-white border-r border-slate-200 h-full shadow-lg z-10 relative">
         <div class="h-16 flex items-center px-6 border-b border-primary-600/10 justify-between">
             <span class="text-lg font-bold text-slate-800 truncate" id="sidebarStoreName">A carregar...</span>
         </div>
         <nav class="flex-1 overflow-y-auto py-6 space-y-1">
             <button id="nav-dashboard" onclick="changeTab('dashboard')" class="sidebar-link w-full flex items-center px-6 py-3 text-sm font-medium text-slate-600 active"><i data-lucide="bar-chart-2" class="w-5 h-5 mr-3"></i> Dashboard</button>
-            <button id="nav-banners" onclick="changeTab('banners')" class="sidebar-link w-full flex items-center px-6 py-3 text-sm font-medium text-slate-600"><i data-lucide="layout" class="w-5 h-5 mr-3"></i> Banners (Cards)</button>
+            <button id="nav-banners" onclick="changeTab('banners')" class="sidebar-link w-full flex items-center px-6 py-3 text-sm font-medium text-slate-600"><i data-lucide="layout" class="w-5 h-5 mr-3"></i> Banners (Hero)</button>
             <button id="nav-products" onclick="changeTab('products')" class="sidebar-link w-full flex items-center px-6 py-3 text-sm font-medium text-slate-600"><i data-lucide="package" class="w-5 h-5 mr-3"></i> Produtos</button>
             <button id="nav-categories" onclick="changeTab('categories')" class="sidebar-link w-full flex items-center px-6 py-3 text-sm font-medium text-slate-600"><i data-lucide="layers" class="w-5 h-5 mr-3"></i> Categorias</button>
             <button id="nav-config" onclick="changeTab('config')" class="sidebar-link w-full flex items-center px-6 py-3 text-sm font-medium text-slate-600"><i data-lucide="settings" class="w-5 h-5 mr-3"></i> Configurações</button>
@@ -133,6 +144,7 @@
         </div>
     </aside>
 
+    <!-- MAIN CONTENT -->
     <main class="flex-1 flex flex-col h-screen overflow-hidden relative">
         <header class="h-16 bg-white border-b border-slate-200 flex items-center justify-between px-4 md:px-8 flex-shrink-0 z-20">
             <div class="flex items-center gap-3">
@@ -148,7 +160,7 @@
                 </button>
                 <div id="storeDropdown" class="hidden absolute top-full right-0 mt-2 w-64 md:w-72 bg-white border border-slate-100 rounded-xl shadow-xl z-50 overflow-hidden animate-fade-in">
                     <div class="p-3 bg-slate-50 border-b border-slate-100">
-                        <p class="text-[10px] text-slate-500 uppercase font-bold mb-1">URL DA LOJA:</p>
+                        <p class="text-[10px] text-slate-500 uppercase font-bold mb-1">URL DA VITRINE:</p>
                         <p id="urlDisplay" class="text-[10px] text-slate-800 font-mono break-all select-all bg-white p-2 rounded-lg border">...</p>
                     </div>
                     <div class="p-1">
@@ -161,6 +173,7 @@
 
         <div id="content-area" class="flex-1 overflow-y-auto bg-slate-50 p-4 md:p-8 relative">
 
+            <!-- DASHBOARD TAB -->
             <div id="content-dashboard" class="max-w-6xl mx-auto space-y-6 animate-fade-in">
                 <div class="bg-white rounded-2xl border border-slate-200 p-6 flex items-center justify-between shadow-sm">
                     <div class="flex items-center gap-4">
@@ -179,26 +192,29 @@
                 </div>
             </div>
 
+            <!-- BANNERS TAB -->
             <div id="content-banners" class="max-w-6xl mx-auto space-y-6 hidden animate-fade-in">
                 <div class="flex justify-between items-center">
-                    <h3 class="text-xl font-bold">Gerir Banners</h3>
-                    <button onclick="openBannerModal()" class="bg-primary-600 text-white px-4 py-2 rounded-xl font-bold flex items-center gap-2"><i data-lucide="plus" class="w-4 h-4"></i> Novo Banner</button>
+                    <h3 class="text-xl font-bold text-slate-800">Gerir Banners Hero</h3>
+                    <button onclick="openBannerModal()" class="bg-primary-600 text-white px-4 py-2 rounded-xl font-bold flex items-center gap-2 shadow-lg active:scale-95 transition-all"><i data-lucide="plus" class="w-4 h-4"></i> Novo Banner</button>
                 </div>
                 <div id="bannersList" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"></div>
                 <div id="emptyBannersMsg" class="hidden text-center py-20 text-slate-400 italic">Nenhum banner encontrado.</div>
             </div>
 
+            <!-- PRODUCTS TAB -->
             <div id="content-products" class="max-w-6xl mx-auto space-y-6 hidden animate-fade-in">
                 <div class="flex flex-col md:flex-row justify-between items-center gap-4">
                     <div class="relative w-full md:w-96">
                         <i data-lucide="search" class="absolute left-3 top-3 text-slate-400 w-4 h-4"></i>
                         <input type="text" id="productSearch" onkeyup="renderProductList()" placeholder="Procurar produto..." class="w-full pl-10 border rounded-xl p-2.5 focus:ring-2 focus:ring-primary-500 outline-none">
                     </div>
-                    <button onclick="openProductModal()" class="w-full md:w-auto bg-primary-600 text-white px-6 py-2.5 rounded-xl font-bold flex justify-center items-center gap-2"><i data-lucide="plus" class="w-4 h-4"></i> Adicionar Produto</button>
+                    <button onclick="openProductModal()" class="w-full md:w-auto bg-primary-600 text-white px-6 py-2.5 rounded-xl font-bold flex justify-center items-center gap-2 shadow-lg active:scale-95 transition-all"><i data-lucide="plus" class="w-4 h-4"></i> Adicionar Produto</button>
                 </div>
                 <div id="productList" class="grid grid-cols-1 gap-4"></div>
             </div>
 
+            <!-- CATEGORIES TAB -->
             <div id="content-categories" class="max-w-4xl mx-auto space-y-6 hidden animate-fade-in">
                 <div class="section-card bg-white p-6 border border-slate-100">
                     <h3 class="font-bold mb-4">Nova Categoria</h3>
@@ -210,80 +226,82 @@
                 <div id="categoryList" class="bg-white rounded-2xl border border-slate-200 divide-y divide-slate-100 overflow-hidden shadow-sm"></div>
             </div>
 
+            <!-- CONFIG TAB -->
             <div id="content-config" class="max-w-4xl mx-auto space-y-6 hidden animate-fade-in">
                 <form id="storeConfigForm" onsubmit="saveStoreConfig(event)" class="space-y-6">
                     <div class="section-card bg-white rounded-2xl border border-slate-200 p-6 shadow-sm">
-                        <h3 class="text-lg font-bold text-slate-800 mb-4">Dados da Loja</h3>
+                        <h3 class="text-lg font-bold text-slate-800 mb-4 text-sm uppercase tracking-widest">Dados da Loja</h3>
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <div><label class="block text-sm font-medium mb-1">Nome da Loja</label><input type="text" id="confStoreName" class="w-full border rounded-lg p-2 focus:ring-primary-500 outline-none"></div>
-                            <div><label class="block text-sm font-medium mb-1">WhatsApp</label><input type="text" id="confWhatsapp" class="w-full border rounded-lg p-2 focus:ring-primary-500 outline-none"></div>
-                            <div class="md:col-span-2"><label class="block text-sm font-medium mb-1">Descrição Rodapé</label><textarea id="confFooter" class="w-full border rounded-lg p-2 focus:ring-primary-500 outline-none" rows="2"></textarea></div>
-                            <div><label class="block text-sm font-medium mb-1">Cor Primária</label><input type="color" id="confColorPrimary" class="h-10 w-20 rounded border cursor-pointer"></div>
+                            <div><label class="block text-xs font-bold text-slate-400 mb-1 uppercase">Nome da Loja</label><input type="text" id="confStoreName" class="w-full border rounded-xl p-3 focus:ring-2 focus:ring-primary-500 outline-none"></div>
+                            <div><label class="block text-xs font-bold text-slate-400 mb-1 uppercase">WhatsApp</label><input type="text" id="confWhatsapp" class="w-full border rounded-xl p-3 focus:ring-2 focus:ring-primary-500 outline-none"></div>
+                            <div class="md:col-span-2"><label class="block text-xs font-bold text-slate-400 mb-1 uppercase">Descrição Rodapé</label><textarea id="confFooter" class="w-full border rounded-xl p-3 focus:ring-2 focus:ring-primary-500 outline-none" rows="2"></textarea></div>
+                            <div><label class="block text-xs font-bold text-slate-400 mb-1 uppercase">Cor de Destaque</label><input type="color" id="confColorPrimary" class="h-12 w-full rounded-xl border cursor-pointer"></div>
                         </div>
                     </div>
-                    
-                    <div class="section-card bg-white rounded-2xl border border-slate-200 p-6 shadow-sm">
-                        <h3 class="text-lg font-bold text-slate-800 mb-4">Taxas de Entrega</h3>
-                        <div class="flex flex-col md:flex-row gap-2 mb-4">
-                            <input type="text" id="areaName" placeholder="Bairro" class="flex-1 border rounded-lg p-2">
-                            <input type="number" id="areaFee" placeholder="Taxa R$" step="0.01" class="md:w-24 border rounded-lg p-2">
-                            <button type="button" onclick="addDeliveryArea()" class="bg-slate-900 text-white px-4 py-2 rounded-lg font-bold">Add</button>
-                        </div>
-                        <div id="deliveryAreasList" class="border rounded-xl divide-y divide-slate-100 overflow-hidden"></div>
-                    </div>
-
-                    <div class="flex justify-end pt-4"><button type="submit" class="w-full md:w-auto bg-green-600 text-white font-bold py-3 px-8 rounded-xl shadow-lg">Salvar Configurações</button></div>
+                    <div class="flex justify-end pt-2"><button type="submit" class="w-full md:w-auto bg-green-600 text-white font-bold py-3.5 px-10 rounded-2xl shadow-lg active:scale-95 transition-all">Gravar Definições</button></div>
                 </form>
+
+                <div class="section-card bg-white rounded-2xl border border-slate-200 p-6 shadow-sm mt-8">
+                    <h3 class="text-lg font-bold text-slate-800 mb-4 flex items-center gap-2"><i data-lucide="lock" class="w-5 h-5 text-yellow-500"></i> Alterar Senha</h3>
+                    <form onsubmit="handleUpdatePassword(event)" class="space-y-4 max-w-sm">
+                        <input type="password" id="newPass" required minlength="6" placeholder="Nova Senha" class="w-full border rounded-xl p-3 focus:ring-2 focus:ring-primary-500 outline-none">
+                        <input type="password" id="confirmNewPass" required minlength="6" placeholder="Confirmar Nova Senha" class="w-full border rounded-xl p-3 focus:ring-2 focus:ring-primary-500 outline-none">
+                        <div id="passMsg" class="hidden text-xs font-bold"></div>
+                        <button type="submit" id="btnUpdatePass" class="w-full bg-slate-800 text-white py-3 rounded-xl font-bold">Atualizar</button>
+                    </form>
+                </div>
             </div>
 
         </div>
     </main>
 
+    <!-- MODAL: BANNER -->
     <div id="bannerModal" class="modal-overlay fixed inset-0 z-[150] flex items-center justify-center p-4 hidden">
         <div class="bg-white rounded-3xl shadow-2xl w-full max-w-lg modal-content-wrapper p-6">
-            <h3 class="text-xl font-bold mb-6">Configurar Card Hero</h3>
+            <h3 class="text-xl font-bold mb-6">Configurar Banner Hero</h3>
             <form id="bannerForm" onsubmit="handleBannerSubmit(event)" class="space-y-4">
                 <input type="hidden" id="bannerId">
                 <div id="bannerPreview" class="h-32 rounded-2xl flex flex-col justify-center p-6 text-white shadow-md transition-all">
-                    <span id="prevTag" class="text-xs font-bold uppercase tracking-wider opacity-80 mb-1">Tag</span>
+                    <span id="prevTag" class="text-[10px] font-black uppercase tracking-widest opacity-80 mb-1">Tag</span>
                     <h3 id="prevTitle" class="font-bold text-2xl leading-tight">Título do Card</h3>
                 </div>
                 <div class="grid grid-cols-2 gap-4">
-                    <input type="text" id="bannerTag" placeholder="Tag (Ex: Oferta)" oninput="updateBannerPreview()" required class="border rounded-xl p-2.5 outline-none">
-                    <select id="bannerTarget" class="border rounded-xl p-2.5 outline-none bg-white"></select>
+                    <input type="text" id="bannerTag" placeholder="Tag (Ex: Oferta)" oninput="updateBannerPreview()" required class="border rounded-xl p-3 outline-none">
+                    <select id="bannerTarget" class="border rounded-xl p-3 outline-none bg-white"></select>
                 </div>
-                <input type="text" id="bannerTitle" placeholder="Título Principal" oninput="updateBannerPreview()" required class="w-full border rounded-xl p-2.5 outline-none">
+                <input type="text" id="bannerTitle" placeholder="Título Principal" oninput="updateBannerPreview()" required class="w-full border rounded-xl p-3 outline-none">
                 <div class="grid grid-cols-2 gap-4">
-                    <div><label class="text-xs font-bold text-slate-400 block mb-1">Cor Início</label><input type="color" id="bannerColor1" oninput="updateBannerPreview()" class="w-full h-10 rounded cursor-pointer"></div>
-                    <div><label class="text-xs font-bold text-slate-400 block mb-1">Cor Fim</label><input type="color" id="bannerColor2" oninput="updateBannerPreview()" class="w-full h-10 rounded cursor-pointer"></div>
+                    <div><label class="text-[10px] font-bold text-slate-400 block mb-1 uppercase">Cor Início</label><input type="color" id="bannerColor1" oninput="updateBannerPreview()" class="w-full h-10 rounded-xl cursor-pointer"></div>
+                    <div><label class="text-[10px] font-bold text-slate-400 block mb-1 uppercase">Cor Fim</label><input type="color" id="bannerColor2" oninput="updateBannerPreview()" class="w-full h-10 rounded-xl cursor-pointer"></div>
                 </div>
-                <div class="flex justify-end gap-3 pt-4">
+                <div class="flex justify-end gap-3 pt-6 border-t">
                     <button type="button" onclick="document.getElementById('bannerModal').classList.add('hidden')" class="px-4 py-2 text-slate-500 font-bold">Cancelar</button>
-                    <button type="submit" class="bg-primary-600 text-white px-6 py-2 rounded-xl font-bold shadow-lg">Salvar Card</button>
+                    <button type="submit" class="bg-primary-600 text-white px-8 py-2.5 rounded-xl font-bold shadow-lg shadow-primary-500/20">Salvar Banner</button>
                 </div>
             </form>
         </div>
     </div>
 
+    <!-- MODAL: PRODUTO -->
     <div id="productModal" class="modal-overlay fixed inset-0 z-[150] flex items-center justify-center p-4 hidden">
         <div class="bg-white rounded-3xl shadow-2xl w-full max-w-2xl modal-content-wrapper p-6">
             <h3 class="text-xl font-bold mb-6">Dados do Produto</h3>
             <form id="productForm" onsubmit="handleProductSubmit(event)" class="space-y-4">
                 <input type="hidden" id="prodId">
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div class="md:col-span-2"><input type="text" id="prodName" placeholder="Nome do Produto" required class="w-full border rounded-xl p-2.5 outline-none"></div>
-                    <select id="prodCategory" class="border rounded-xl p-2.5 outline-none bg-white" required></select>
-                    <input type="number" step="0.01" id="prodValue" placeholder="Preço (R$)" required class="border rounded-xl p-2.5 outline-none">
-                    <input type="number" step="0.01" id="prodPromo" placeholder="Preço Promo (Opcional)" class="border rounded-xl p-2.5 outline-none text-green-600">
-                    <input type="text" id="prodSizes" placeholder="Tamanhos (P, M, G)" class="border rounded-xl p-2.5 outline-none">
-                    <input type="text" id="prodColors" placeholder="Cores (Azul, Preto)" class="border rounded-xl p-2.5 outline-none">
-                    <div class="md:col-span-2"><input type="url" id="prodImage" placeholder="URL da Imagem (https://...)" class="w-full border rounded-xl p-2.5 outline-none"></div>
-                    <div class="md:col-span-2"><textarea id="prodDesc" placeholder="Breve descrição..." class="w-full border rounded-xl p-2.5 outline-none" rows="3"></textarea></div>
-                    <div class="flex items-center gap-2"><input type="checkbox" id="prodFeatured" class="w-4 h-4"><label class="text-sm font-medium">Destaque na vitrine</label></div>
+                    <div class="md:col-span-2"><input type="text" id="prodName" placeholder="Nome do Produto" required class="w-full border rounded-xl p-3 outline-none focus:ring-2 focus:ring-primary-500"></div>
+                    <select id="prodCategory" class="border rounded-xl p-3 outline-none bg-white focus:ring-2 focus:ring-primary-500" required></select>
+                    <input type="number" step="0.01" id="prodValue" placeholder="Preço (R$)" required class="border rounded-xl p-3 outline-none focus:ring-2 focus:ring-primary-500">
+                    <input type="number" step="0.01" id="prodPromo" placeholder="Preço Promo (Opcional)" class="border rounded-xl p-3 outline-none text-green-600 focus:ring-2 focus:ring-green-500">
+                    <input type="text" id="prodSizes" placeholder="Tamanhos (P, M, G)" class="border rounded-xl p-3 outline-none focus:ring-2 focus:ring-primary-500">
+                    <input type="text" id="prodColors" placeholder="Cores (Azul, Preto)" class="border rounded-xl p-3 outline-none focus:ring-2 focus:ring-primary-500">
+                    <div class="md:col-span-2"><input type="url" id="prodImage" placeholder="URL da Imagem (https://...)" class="w-full border rounded-xl p-3 outline-none focus:ring-2 focus:ring-primary-500"></div>
+                    <div class="md:col-span-2"><textarea id="prodDesc" placeholder="Breve descrição..." class="w-full border rounded-xl p-3 outline-none focus:ring-2 focus:ring-primary-500" rows="3"></textarea></div>
+                    <div class="flex items-center gap-2"><input type="checkbox" id="prodFeatured" class="w-4 h-4 accent-primary-600"><label class="text-sm font-medium">Destaque na vitrine</label></div>
                 </div>
-                <div class="flex justify-end gap-3 pt-4 border-t border-slate-100">
+                <div class="flex justify-end gap-3 pt-6 border-t">
                     <button type="button" onclick="document.getElementById('productModal').classList.add('hidden')" class="px-4 py-2 text-slate-500 font-bold">Cancelar</button>
-                    <button type="submit" class="bg-primary-600 text-white px-8 py-2.5 rounded-xl font-bold shadow-lg">Gravar Produto</button>
+                    <button type="submit" class="bg-primary-600 text-white px-8 py-2.5 rounded-xl font-bold shadow-lg shadow-primary-500/20">Gravar Produto</button>
                 </div>
             </form>
         </div>
@@ -291,8 +309,8 @@
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-        import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        import { getFirestore, doc, getDoc, setDoc, updateDoc, deleteDoc, onSnapshot, collection, addDoc, query, where } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged, updatePassword } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, doc, getDoc, setDoc, updateDoc, deleteDoc, onSnapshot, collection, addDoc, query, where, getDocs, serverTimestamp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
         
         const CONFIG = { apiKey: "AIzaSyAdwsGBTApwOwqr37qCv72gdPRbipsZG0Q", authDomain: "meuestoque-1badc.firebaseapp.com", projectId: "meuestoque-1badc", storageBucket: "meuestoque-1badc.appspot.com", messagingSenderId: "730003067834", appId: "1:730003067834:web:b205f1ea59053345960383" };
         
@@ -313,12 +331,73 @@
             try { await signInWithEmailAndPassword(auth, email, pass); } 
             catch(e) { 
                 btn.disabled = false; btn.textContent = "Entrar no Sistema";
-                document.getElementById('loginError').textContent = "Dados inválidos.";
-                document.getElementById('loginError').classList.remove('hidden');
+                const err = document.getElementById('loginError');
+                err.textContent = "E-mail ou senha incorretos.";
+                err.classList.remove('hidden');
             }
         };
 
         window.handleLogout = async () => { await signOut(auth); window.location.reload(); };
+
+        window.toggleAuthView = (view) => {
+            document.getElementById('login-card').classList.toggle('hidden', view === 'register');
+            document.getElementById('register-card').classList.toggle('hidden', view === 'login');
+            lucide.createIcons();
+        };
+
+        window.handlePreRegister = async (e) => {
+            e.preventDefault();
+            const btn = document.getElementById('btnReg');
+            btn.disabled = true; btn.textContent = "A enviar...";
+            const data = {
+                ownerName: document.getElementById('regOwner').value,
+                email: document.getElementById('regEmail').value,
+                storeName: document.getElementById('regStoreName').value,
+                phone: document.getElementById('regPhone').value,
+                timestamp: serverTimestamp(),
+                status: 'pending'
+            };
+            try {
+                await addDoc(collection(db, "registration_requests"), data);
+                document.getElementById('preRegForm').classList.add('hidden');
+                document.getElementById('regBackLink').classList.add('hidden');
+                document.getElementById('regSuccess').classList.remove('hidden');
+                lucide.createIcons();
+            } catch(err) {
+                alert("Erro ao enviar: " + err.message);
+                btn.disabled = false; btn.textContent = "Enviar Solicitação";
+            }
+        };
+
+        // --- PASSWORD UPDATE ---
+        window.handleUpdatePassword = async (e) => {
+            e.preventDefault();
+            const newP = document.getElementById('newPass').value;
+            const confP = document.getElementById('confirmNewPass').value;
+            const msg = document.getElementById('passMsg');
+            const btn = document.getElementById('btnUpdatePass');
+
+            if(newP !== confP) {
+                msg.textContent = "As senhas não coincidem!";
+                msg.className = "text-xs font-bold mt-1 text-red-500 block";
+                return;
+            }
+
+            btn.disabled = true; btn.textContent = "A atualizar...";
+            try {
+                await updatePassword(auth.currentUser, newP);
+                msg.textContent = "Senha atualizada com sucesso!";
+                msg.className = "text-xs font-bold mt-1 text-green-500 block";
+                document.getElementById('newPass').value = '';
+                document.getElementById('confirmNewPass').value = '';
+                showToast("Sua senha foi alterada.");
+            } catch(e) {
+                msg.textContent = "Erro: Re-autenticação necessária.";
+                msg.className = "text-xs font-bold mt-1 text-red-500 block";
+            } finally {
+                btn.disabled = false; btn.textContent = "Atualizar";
+            }
+        };
 
         // --- ESTADO INICIAL ---
         onAuthStateChanged(auth, async (user) => {
@@ -327,7 +406,6 @@
                 let dirDoc = await getDoc(doc(db, "admin_directory", user.uid));
                 
                 if(!dirDoc.exists()){
-                    // Tenta busca alternativa por email se diretório falhar
                     const q = query(collection(db, "stores_registry"), where("ownerEmail", "==", user.email));
                     const snap = await getDocs(q);
                     if(snap.empty) { alert("Sem loja vinculada."); return handleLogout(); }
@@ -343,12 +421,14 @@
         });
 
         function initStoreData() {
-            // Link Vitrine
-            const url = `${window.location.origin}${window.location.pathname.replace('admin.html','index.html')}?id=${currentStoreId}`;
+            // URL Vitrine
+            const origin = window.location.origin;
+            const path = window.location.pathname.substring(0, window.location.pathname.lastIndexOf('/') + 1);
+            const url = `${origin}${path}index.html?id=${currentStoreId}`;
             document.getElementById('urlDisplay').textContent = url;
             document.getElementById('storeMenuBtn').classList.remove('opacity-50', 'pointer-events-none');
 
-            // Listeners Real-time
+            // Listeners
             onSnapshot(doc(db, `stores/${currentStoreId}/config/store`), d => {
                 if(d.exists()) {
                     const data = d.data();
@@ -427,13 +507,15 @@
                 color2: document.getElementById('bannerColor2').value,
                 target: document.getElementById('bannerTarget').value
             };
-            if(id) await updateDoc(doc(db, `stores/${currentStoreId}/hero_cards`, id), data);
-            else await addDoc(collection(db, `stores/${currentStoreId}/hero_cards`), data);
-            document.getElementById('bannerModal').classList.add('hidden');
-            showToast("Banner salvo!");
+            try {
+                if(id) await updateDoc(doc(db, `stores/${currentStoreId}/hero_cards`, id), data);
+                else await addDoc(collection(db, `stores/${currentStoreId}/hero_cards`), data);
+                document.getElementById('bannerModal').classList.add('hidden');
+                showToast("Banner salvo com sucesso!");
+            } catch(e) { console.error(e); }
         };
 
-        window.deleteBanner = async (id) => { if(confirm("Apagar banner?")) await deleteDoc(doc(db, `stores/${currentStoreId}/hero_cards`, id)); };
+        window.deleteBanner = async (id) => { if(confirm("Deseja apagar este banner?")) await deleteDoc(doc(db, `stores/${currentStoreId}/hero_cards`, id)); };
 
         function renderBannerList() {
             const list = document.getElementById('bannersList');
@@ -441,17 +523,17 @@
             document.getElementById('emptyBannersMsg').classList.toggle('hidden', allBanners.length > 0);
             allBanners.forEach(b => {
                 const div = document.createElement('div');
-                div.className = "bg-white p-4 rounded-2xl border border-slate-200 shadow-sm";
+                div.className = "bg-white p-4 rounded-3xl border border-slate-200 shadow-sm animate-fade-in";
                 div.innerHTML = `
-                    <div class="h-24 rounded-xl flex flex-col justify-center p-4 text-white mb-3" style="background:linear-gradient(135deg, ${b.color1}, ${b.color2})">
-                        <span class="text-[10px] font-bold uppercase opacity-80">${b.tag}</span>
-                        <h4 class="font-bold leading-tight">${b.title}</h4>
+                    <div class="h-28 rounded-2xl flex flex-col justify-center p-5 text-white mb-4" style="background:linear-gradient(135deg, ${b.color1}, ${b.color2})">
+                        <span class="text-[9px] font-black uppercase opacity-80 tracking-widest">${b.tag}</span>
+                        <h4 class="font-bold text-lg leading-tight">${b.title}</h4>
                     </div>
                     <div class="flex justify-between items-center">
-                        <span class="text-[10px] font-bold text-slate-400 bg-slate-50 px-2 py-1 rounded">${b.target}</span>
+                        <span class="text-[10px] font-bold text-indigo-600 bg-indigo-50 px-2 py-1 rounded-full border border-indigo-100">${b.target === 'offers' ? 'OFERTAS' : b.target.toUpperCase()}</span>
                         <div class="flex gap-2">
-                            <button onclick='openBannerModal(${JSON.stringify(b)})' class="p-1.5 text-blue-600 hover:bg-blue-50 rounded-lg"><i data-lucide="pencil" class="w-4 h-4"></i></button>
-                            <button onclick="deleteBanner('${b.id}')" class="p-1.5 text-red-600 hover:bg-red-50 rounded-lg"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
+                            <button onclick='openBannerModal(${JSON.stringify(b)})' class="p-2 text-blue-600 hover:bg-blue-50 rounded-xl transition-colors"><i data-lucide="pencil" class="w-4 h-4"></i></button>
+                            <button onclick="deleteBanner('${b.id}')" class="p-2 text-red-600 hover:bg-red-50 rounded-xl transition-colors"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
                         </div>
                     </div>
                 `;
@@ -500,7 +582,7 @@
             if(id) await updateDoc(doc(db, `stores/${currentStoreId}/products`, id), data);
             else await addDoc(collection(db, `stores/${currentStoreId}/products`), data);
             document.getElementById('productModal').classList.add('hidden');
-            showToast("Produto salvo!");
+            showToast("Produto atualizado!");
         };
 
         window.deleteProduct = async (id) => { if(confirm("Excluir produto?")) await deleteDoc(doc(db, `stores/${currentStoreId}/products`, id)); };
@@ -510,43 +592,43 @@
             const search = document.getElementById('productSearch').value.toLowerCase();
             const filtered = allProducts.filter(p => p.name.toLowerCase().includes(search));
             list.innerHTML = filtered.map(p => `
-                <div class="flex items-center gap-4 bg-white p-3 rounded-2xl border border-slate-100 shadow-sm">
-                    <img src="${p.images?.[0]||''}" class="w-12 h-12 rounded-xl bg-slate-100 object-cover">
+                <div class="flex items-center gap-4 bg-white p-3 rounded-3xl border border-slate-100 shadow-sm animate-fade-in">
+                    <img src="${p.images?.[0]||''}" class="w-14 h-14 rounded-2xl bg-slate-100 object-cover border">
                     <div class="flex-1">
-                        <p class="font-bold text-slate-800 text-sm">${p.name}</p>
-                        <p class="text-[10px] text-slate-400 font-bold uppercase">${p.category} • R$ ${p.value.toFixed(2)}</p>
+                        <p class="font-bold text-slate-800 text-sm leading-tight">${p.name}</p>
+                        <p class="text-[10px] text-slate-400 font-bold uppercase mt-1 tracking-wider">${p.category} • R$ ${p.value.toFixed(2)}</p>
                     </div>
                     <div class="flex gap-1">
-                        <button onclick='openProductModal(${JSON.stringify(p)})' class="p-2 text-blue-600 hover:bg-blue-50 rounded-xl"><i data-lucide="pencil" class="w-4 h-4"></i></button>
-                        <button onclick="deleteProduct('${p.id}')" class="p-2 text-red-600 hover:bg-red-50 rounded-xl"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
+                        <button onclick='openProductModal(${JSON.stringify(p)})' class="p-2 text-blue-600 hover:bg-blue-50 rounded-xl transition-colors"><i data-lucide="pencil" class="w-4 h-4"></i></button>
+                        <button onclick="deleteProduct('${p.id}')" class="p-2 text-red-600 hover:bg-red-50 rounded-xl transition-colors"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
                     </div>
                 </div>
             `).join('');
             lucide.createIcons();
         }
 
-        // --- CATEGORIES & OTHERS ---
+        // --- CATEGORIES LOGIC ---
         window.addCategory = async (e) => {
             e.preventDefault();
             const name = document.getElementById('catInputName').value;
             await addDoc(collection(db, `stores/${currentStoreId}/categories`), { name, status: 'active' });
             document.getElementById('catInputName').value = '';
-            showToast("Categoria criada!");
+            showToast("Categoria adicionada!");
         };
 
-        window.deleteCategory = async (id) => { if(confirm("Excluir categoria?")) await deleteDoc(doc(db, `stores/${currentStoreId}/categories`, id)); };
+        window.deleteCategory = async (id) => { if(confirm("Excluir esta categoria?")) await deleteDoc(doc(db, `stores/${currentStoreId}/categories`, id)); };
 
         function renderCategoryList() {
             document.getElementById('categoryList').innerHTML = allCategories.map(c => `
-                <div class="flex justify-between items-center p-4">
-                    <span class="font-bold text-slate-700">${c.name}</span>
-                    <button onclick="deleteCategory('${c.id}')" class="p-2 text-red-500 hover:bg-red-50 rounded-lg"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
+                <div class="flex justify-between items-center p-4 bg-white">
+                    <span class="font-bold text-slate-700 text-sm">${c.name}</span>
+                    <button onclick="deleteCategory('${c.id}')" class="p-2 text-red-500 hover:bg-red-50 rounded-xl transition-colors"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
                 </div>
             `).join('');
             lucide.createIcons();
         }
 
-        // --- CONFIG & UTILS ---
+        // --- NAVIGATION & UI ---
         window.changeTab = (id) => {
             ['dashboard','banners','products','categories','config'].forEach(t => {
                 document.getElementById(`content-${t}`).classList.add('hidden');
@@ -554,19 +636,20 @@
             });
             document.getElementById(`content-${id}`).classList.remove('hidden');
             document.getElementById(`nav-${id}`).classList.add('active');
-            document.getElementById('page-title').textContent = id.charAt(0).toUpperCase() + id.slice(1);
+            document.getElementById('page-title').textContent = id.charAt(0).toUpperCase() + id.slice(1).replace('-',' ');
         };
 
         window.toggleStoreMenu = (e) => { e.stopPropagation(); document.getElementById('storeDropdown').classList.toggle('hidden'); };
-        window.copyStoreLink = () => { navigator.clipboard.writeText(document.getElementById('urlDisplay').textContent); showToast("Link copiado!"); };
+        window.copyStoreLink = () => { navigator.clipboard.writeText(document.getElementById('urlDisplay').textContent); showToast("Link da vitrine copiado!"); };
         window.openStoreLink = () => { window.open(document.getElementById('urlDisplay').textContent, '_blank'); };
+        
         window.showToast = (msg) => {
             const el = document.createElement('div');
-            el.className = "toast bg-slate-900 text-white px-6 py-3 rounded-2xl shadow-2xl flex items-center gap-2 font-bold text-sm";
-            el.innerHTML = `<i data-lucide="check-circle" class="w-4 h-4 text-green-400"></i> ${msg}`;
+            el.className = "toast bg-slate-900 text-white px-6 py-3 rounded-2xl shadow-2xl flex items-center gap-3 font-bold text-sm pointer-events-auto border border-white/10";
+            el.innerHTML = `<i data-lucide="check-circle" class="w-5 h-5 text-green-400"></i> <span>${msg}</span>`;
             document.getElementById('toast-container').appendChild(el);
-            setTimeout(() => el.remove(), 3000);
             lucide.createIcons();
+            setTimeout(() => { el.style.opacity = '0'; el.style.transform = 'translateY(-20px)'; setTimeout(() => el.remove(), 300); }, 3000);
         };
 
         window.toggleStoreStatusQuick = async (el) => {
@@ -576,12 +659,12 @@
         window.addDeliveryArea = () => {
             const n = document.getElementById('areaName').value;
             const f = parseFloat(document.getElementById('areaFee').value);
-            if(n && !isNaN(f)) { deliveryAreas.push({name:n, fee:f}); renderDeliveryAreas(); }
+            if(n && !isNaN(f)) { deliveryAreas.push({name:n, fee:f}); renderDeliveryAreas(); document.getElementById('areaName').value=''; document.getElementById('areaFee').value=''; }
         };
         window.removeArea = (i) => { deliveryAreas.splice(i,1); renderDeliveryAreas(); };
         function renderDeliveryAreas() {
             document.getElementById('deliveryAreasList').innerHTML = deliveryAreas.map((a,i) => `
-                <div class="flex justify-between p-3"><span>${a.name}</span><b>R$ ${a.fee.toFixed(2)} <button onclick="removeArea(${i})" class="ml-2 text-red-500">×</button></b></div>
+                <div class="flex justify-between p-3 bg-white"><span>${a.name}</span><b>R$ ${a.fee.toFixed(2)} <button onclick="removeArea(${i})" class="ml-2 text-red-500 hover:bg-red-50 p-1 rounded-lg transition-colors">×</button></b></div>
             `).join('');
         }
         window.saveStoreConfig = async (e) => {
@@ -594,10 +677,11 @@
                 deliveryAreas: deliveryAreas
             };
             await setDoc(doc(db, `stores/${currentStoreId}/config/store`), data, { merge: true });
-            showToast("Configurações atualizadas!");
+            showToast("Definições da loja salvas!");
         };
 
         lucide.createIcons();
     </script>
 </body>
 </html>
+
