@@ -42,6 +42,22 @@
         .modal-overlay { background-color: rgba(15, 23, 42, 0.7); backdrop-filter: blur(5px); }
         .modal-content-wrapper { max-height: 90vh; overflow-y: auto; }
         
+        /* Plan Selection Cards */
+        .plan-card {
+            border: 2px solid #e2e8f0;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            cursor: pointer;
+            position: relative;
+        }
+        .plan-card.selected {
+            border-color: #8b5cf6;
+            background-color: #f5f3ff;
+            transform: translateY(-2px);
+            box-shadow: 0 10px 15px -3px rgba(139, 92, 246, 0.1);
+        }
+        .plan-card.selected .check-icon { display: flex; }
+        .check-icon { display: none; position: absolute; top: -8px; right: -8px; background: #22c55e; color: white; border-radius: 50%; padding: 2px; box-shadow: 0 2px 4px rgba(0,0,0,0.2); }
+
         .toggle-switch { width: 44px; height: 24px; position: relative; display: inline-block; }
         .toggle-switch input { opacity: 0; width: 0; height: 0; }
         .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #cbd5e1; transition: .4s; border-radius: 34px; }
@@ -106,30 +122,58 @@
             </div>
         </div>
 
-        <!-- CARD PRÉ-CADASTRO -->
-        <div id="register-card" class="bg-white w-full max-w-md p-8 rounded-3xl shadow-2xl relative overflow-hidden hidden animate-fade-in">
+        <!-- CARD PRÉ-CADASTRO COM SELEÇÃO DE PLANOS -->
+        <div id="register-card" class="bg-white w-full max-w-2xl p-8 rounded-3xl shadow-2xl relative overflow-hidden hidden animate-fade-in">
             <div class="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-green-500 to-teal-600"></div>
             <div class="mb-6 text-center">
                 <h2 class="text-2xl font-bold text-slate-800">Seja um Parceiro</h2>
                 <p class="text-slate-500 text-sm mt-1">Crie a sua vitrine digital em poucos minutos.</p>
             </div>
-            <form id="preRegForm" onsubmit="handlePreRegister(event)" class="space-y-4">
-                <input type="text" id="regOwner" placeholder="Seu Nome Completo" required class="w-full border rounded-xl p-3 outline-none focus:ring-2 focus:ring-green-500 transition-all">
-                <input type="email" id="regEmail" placeholder="E-mail Profissional" required class="w-full border rounded-xl p-3 outline-none focus:ring-2 focus:ring-green-500 transition-all">
-                <input type="text" id="regStoreName" placeholder="Nome da Sua Loja" required class="w-full border rounded-xl p-3 outline-none focus:ring-2 focus:ring-green-500 transition-all">
-                <input type="text" id="regPhone" placeholder="WhatsApp (Ex: 5511999999999)" required class="w-full border rounded-xl p-3 outline-none focus:ring-2 focus:ring-green-500 transition-all">
-                <button type="submit" id="btnReg" class="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-4 rounded-xl shadow-lg transition-all uppercase tracking-wider text-sm">
-                    Criar Minha Loja Agora
+            
+            <form id="preRegForm" onsubmit="handlePreRegister(event)" class="space-y-6">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-[10px] font-bold uppercase text-slate-400 mb-1 ml-1">Seu Nome</label>
+                        <input type="text" id="regOwner" placeholder="Nome Completo" required class="w-full border rounded-xl p-3 outline-none focus:ring-2 focus:ring-green-500 transition-all">
+                    </div>
+                    <div>
+                        <label class="block text-[10px] font-bold uppercase text-slate-400 mb-1 ml-1">E-mail Profissional</label>
+                        <input type="email" id="regEmail" placeholder="exemplo@email.com" required class="w-full border rounded-xl p-3 outline-none focus:ring-2 focus:ring-green-500 transition-all">
+                    </div>
+                    <div>
+                        <label class="block text-[10px] font-bold uppercase text-slate-400 mb-1 ml-1">Nome da Loja</label>
+                        <input type="text" id="regStoreName" placeholder="Ex: Boutique da Maria" required class="w-full border rounded-xl p-3 outline-none focus:ring-2 focus:ring-green-500 transition-all">
+                    </div>
+                    <div>
+                        <label class="block text-[10px] font-bold uppercase text-slate-400 mb-1 ml-1">WhatsApp</label>
+                        <input type="text" id="regPhone" placeholder="5511999999999" required class="w-full border rounded-xl p-3 outline-none focus:ring-2 focus:ring-green-500 transition-all">
+                    </div>
+                </div>
+
+                <!-- SELEÇÃO DE PLANOS DINÂMICA -->
+                <div>
+                    <label class="block text-xs font-bold uppercase text-slate-400 mb-3 tracking-widest text-center">Escolha o seu Plano de Assinatura</label>
+                    <div id="plansGridSelection" class="grid grid-cols-1 md:grid-cols-3 gap-3">
+                        <!-- Planos serão injetados aqui via JS -->
+                        <div class="col-span-full py-8 text-center text-slate-400 text-xs italic">A carregar planos disponíveis...</div>
+                    </div>
+                    <input type="hidden" id="selectedPlanId" required>
+                </div>
+
+                <button type="submit" id="btnReg" class="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-4 rounded-xl shadow-lg transition-all uppercase tracking-wider text-sm flex justify-center items-center gap-2">
+                    Enviar Solicitação <i data-lucide="send" class="w-4 h-4"></i>
                 </button>
             </form>
+
             <div id="regSuccess" class="hidden text-center py-6">
                 <div class="bg-green-50 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
                     <i data-lucide="check-circle" class="w-10 h-10 text-green-500"></i>
                 </div>
                 <h3 class="font-bold text-slate-800 text-xl">Pedido Recebido!</h3>
-                <p class="text-sm text-slate-500 mt-2">Iremos analisar os seus dados e entraremos em contacto brevemente.</p>
-                <button onclick="toggleAuthView('login')" class="text-sm text-primary-600 mt-6 font-bold hover:underline">Voltar ao Início</button>
+                <p class="text-sm text-slate-500 mt-2 px-6">Analisaremos os seus dados e o plano escolhido. Entraremos em contacto brevemente com os seus dados de acesso.</p>
+                <button onclick="toggleAuthView('login')" class="text-sm text-primary-600 mt-8 font-bold hover:underline">Voltar ao Login</button>
             </div>
+            
             <div class="mt-6 text-center" id="regFooter">
                 <button onclick="toggleAuthView('login')" class="text-sm text-slate-500 font-medium hover:text-slate-800 transition-colors">Já tenho uma conta</button>
             </div>
@@ -247,7 +291,7 @@
                 </div>
             </div>
 
-            <!-- OUTRAS TABS -->
+            <!-- OUTRAS TABS (BANNERS, PRODS, CATS, CONFIG) - Mantidas as originais -->
             <div id="content-banners" class="max-w-6xl mx-auto space-y-6 hidden animate-fade-in">
                 <div class="flex justify-between items-center px-2">
                     <h3 class="text-2xl font-bold text-slate-800">Banners Hero</h3>
@@ -281,7 +325,6 @@
                 <div id="categoryList" class="bg-white rounded-3xl border border-slate-200 divide-y divide-slate-100 overflow-hidden shadow-xl"></div>
             </div>
 
-            <!-- CONFIG TAB -->
             <div id="content-config" class="max-w-4xl mx-auto space-y-8 hidden animate-fade-in">
                 <div class="section-card bg-white rounded-3xl border border-slate-200 p-8 shadow-sm">
                     <h3 class="text-xl font-bold text-slate-800 mb-6 flex items-center gap-3">
@@ -328,41 +371,33 @@
         </div>
     </main>
 
-    <!-- MODAIS -->
+    <!-- TOAST & MODAIS -->
     <div id="toast-container" class="fixed top-5 right-5 z-[100] flex flex-col gap-2 pointer-events-none"></div>
 
-    <!-- MODAL PRODUTO COM MULTI-UPLOAD -->
+    <!-- MODAL PRODUTO -->
     <div id="productModal" class="modal-overlay fixed inset-0 z-[150] flex items-center justify-center p-4 hidden">
         <div class="bg-white rounded-3xl shadow-2xl w-full max-w-2xl modal-content-wrapper p-8">
             <h3 class="text-2xl font-bold mb-6 text-slate-800">Ficha do Produto</h3>
             <form id="productForm" onsubmit="handleProductSubmit(event)" class="space-y-5">
                 <input type="hidden" id="prodId">
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
-                    
-                    <!-- UPLOAD DE IMAGENS -->
                     <div class="md:col-span-2">
                         <div class="flex justify-between items-center mb-2">
                             <label id="photoLabel" class="block text-xs font-bold uppercase text-slate-400 tracking-wider">Fotos do Produto (Máx. 4)</label>
                             <span id="photoCount" class="text-[10px] font-bold text-slate-300">0/4</span>
                         </div>
-                        
                         <div id="imageDropZone" class="drop-zone relative h-32 rounded-2xl flex flex-col items-center justify-center cursor-pointer overflow-hidden bg-slate-50 group mb-4">
                             <input type="file" id="prodImageInput" accept="image/*" multiple class="absolute inset-0 opacity-0 cursor-pointer z-10" onchange="processImages(this.files)">
                             <div class="flex flex-col items-center group-hover:scale-105 transition-transform">
                                 <i data-lucide="cloud-upload" class="w-8 h-8 text-slate-300 mb-1"></i>
                                 <span class="text-[11px] text-slate-400 font-medium">Clique para adicionar fotos</span>
-                                <span class="text-[9px] text-slate-300 mt-0.5">(Apenas imagens até 10MB)</span>
                             </div>
                             <div id="imageLoading" class="absolute inset-0 bg-white/90 flex flex-col items-center justify-center hidden z-20">
                                 <div class="w-6 h-6 border-4 border-primary-500 border-t-transparent rounded-full animate-spin"></div>
-                                <span class="text-[10px] font-bold text-primary-600 mt-2 uppercase tracking-widest">Processando fotos...</span>
                             </div>
                         </div>
-
-                        <!-- GALERIA DE PREVISÃO -->
                         <div id="imageGallery" class="grid grid-cols-4 gap-3"></div>
                     </div>
-
                     <div class="md:col-span-2"><input type="text" id="prodName" placeholder="Nome comercial" required class="w-full border rounded-2xl p-3.5 outline-none focus:ring-2 focus:ring-primary-500"></div>
                     <select id="prodCategory" class="border rounded-2xl p-3.5 outline-none bg-white focus:ring-2 focus:ring-primary-500" required></select>
                     <input type="number" step="0.01" id="prodValue" placeholder="Preço Base (R$)" required class="border rounded-2xl p-3.5 outline-none focus:ring-2 focus:ring-primary-500">
@@ -421,48 +456,23 @@
         let currentStoreId = null;
         let allProducts = [], allCategories = [], allBanners = [], deliveryAreas = [];
         let currentProductImages = []; 
-        
-        // Estado Global da Loja
-        let storeConfig = {
-            planId: 'basic',
-            maxProducts: 50,
-            maxBanners: 1,
-            hasCarousel: false
-        };
+        let storeConfig = { planId: 'basic', maxProducts: 50, maxBanners: 1, hasCarousel: false };
 
-        // --- SISTEMA DE COMPRESSÃO E SEGURANÇA DE IMAGEM ---
+        // --- SISTEMA DE IMAGENS ---
         window.processImages = async (files) => {
             if (!files || files.length === 0) return;
-            
             const loading = document.getElementById('imageLoading');
             const btn = document.getElementById('btnSaveProd');
-            
-            // Limite padrão de 4 imagens por produto para todos
-            const imgLimit = 4;
-            
-            if (currentProductImages.length + files.length > imgLimit) {
-                showToast(`Máximo de ${imgLimit} foto(s) por produto.`);
-                return;
-            }
-
+            if (currentProductImages.length + files.length > 4) { showToast("Máximo de 4 fotos."); return; }
             loading.classList.remove('hidden');
             btn.disabled = true;
-
             for (let file of files) {
                 if (!file.type.startsWith('image/')) continue;
-                if (file.size > 10 * 1024 * 1024) { 
-                    showToast(`Imagem muito grande (máx 10MB).`);
-                    continue;
-                }
-
                 try {
                     const dataUrl = await compressImage(file);
                     currentProductImages.push(dataUrl);
-                } catch (err) {
-                    console.error(err);
-                }
+                } catch (err) { console.error(err); }
             }
-
             renderImagePreviews();
             loading.classList.add('hidden');
             btn.disabled = false;
@@ -489,28 +499,22 @@
             });
         }
 
-        window.removeImage = (index) => {
-            currentProductImages.splice(index, 1);
-            renderImagePreviews();
-        };
-
+        window.removeImage = (index) => { currentProductImages.splice(index, 1); renderImagePreviews(); };
         function renderImagePreviews() {
             const gallery = document.getElementById('imageGallery');
             const counter = document.getElementById('photoCount');
             gallery.innerHTML = '';
-            
             currentProductImages.forEach((img, idx) => {
                 const div = document.createElement('div');
                 div.className = "relative h-16 rounded-lg overflow-hidden border border-slate-200";
-                div.innerHTML = `<img src="${img}" class="w-full h-full object-cover"><button type="button" onclick="removeImage(${idx})" class="absolute top-0 right-0 bg-red-500 text-white p-1 rounded-bl-lg hover:bg-red-600 transition-colors"><i data-lucide="trash-2" class="w-3 h-3"></i></button>`;
+                div.innerHTML = `<img src="${img}" class="w-full h-full object-cover"><button type="button" onclick="removeImage(${idx})" class="absolute top-0 right-0 bg-red-500 text-white p-1 rounded-bl-lg"><i data-lucide="trash-2" class="w-3 h-3"></i></button>`;
                 gallery.appendChild(div);
             });
-            
             counter.textContent = `${currentProductImages.length}/4`;
             lucide.createIcons();
         }
 
-        // --- AUTH ---
+        // --- AUTH & NAVIGATION ---
         window.handleLogin = async (e) => {
             e.preventDefault();
             const email = document.getElementById('loginEmail').value;
@@ -524,16 +528,80 @@
                 await signInWithEmailAndPassword(auth, email, pass);
             } catch(e) { 
                 btn.disabled = false; btn.textContent = "Aceder ao Painel";
-                document.getElementById('loginError').textContent = "Credenciais inválidas ou conta não autorizada.";
+                document.getElementById('loginError').textContent = "Credenciais inválidas.";
                 document.getElementById('loginError').classList.remove('hidden');
             }
         };
 
         window.handleLogout = async () => { await signOut(auth); window.location.reload(); };
-        window.toggleAuthView = (view) => { document.getElementById('login-card').classList.toggle('hidden', view === 'register'); document.getElementById('register-card').classList.toggle('hidden', view === 'login'); lucide.createIcons(); };
+        
+        window.toggleAuthView = (view) => { 
+            document.getElementById('login-card').classList.toggle('hidden', view === 'register'); 
+            document.getElementById('register-card').classList.toggle('hidden', view === 'login'); 
+            if(view === 'register') loadPlansForRegistration();
+            lucide.createIcons(); 
+        };
+
         window.togglePasswordVisibility = (i, ic) => { const el=document.getElementById(i);const icon=document.getElementById(ic);if(el.type==='password'){el.type='text';icon.setAttribute('data-lucide','eye-off');}else{el.type='password';icon.setAttribute('data-lucide','eye');} lucide.createIcons(); };
 
-        // --- INIT ---
+        // --- PRÉ-REGISTO COM PLANOS ---
+        async function loadPlansForRegistration() {
+            const grid = document.getElementById('plansGridSelection');
+            try {
+                const q = query(collection(db, "config_plans"));
+                const snap = await getDocs(q);
+                if(snap.empty) { grid.innerHTML = '<p class="text-center text-slate-400 text-xs col-span-full">Nenhum plano disponível.</p>'; return; }
+                grid.innerHTML = '';
+                snap.forEach(d => {
+                    const p = d.data();
+                    const card = document.createElement('div');
+                    card.className = "plan-card bg-white p-4 rounded-2xl flex flex-col items-center text-center group";
+                    card.id = `plan-card-${d.id}`;
+                    card.onclick = () => selectPlanForReg(d.id);
+                    card.innerHTML = `
+                        <div class="check-icon"><i data-lucide="check" class="w-3 h-3"></i></div>
+                        <span class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">${p.name}</span>
+                        <span class="text-base font-bold text-slate-800">R$ ${p.price.toFixed(2)}</span>
+                        <div class="mt-2 text-[9px] text-slate-400 leading-tight">
+                            <p>${p.maxProducts} Produtos</p>
+                            <p>${p.hasCarousel ? 'Carrossel Ativo' : 'Sem Carrossel'}</p>
+                        </div>
+                    `;
+                    grid.appendChild(card);
+                });
+                lucide.createIcons();
+            } catch(e) { grid.innerHTML = '<p class="text-red-400 text-xs">Erro ao carregar planos.</p>'; }
+        }
+
+        window.selectPlanForReg = (id) => {
+            document.querySelectorAll('.plan-card').forEach(c => c.classList.remove('selected'));
+            document.getElementById(`plan-card-${id}`).classList.add('selected');
+            document.getElementById('selectedPlanId').value = id;
+        };
+
+        window.handlePreRegister = async (e) => {
+            e.preventDefault();
+            const planId = document.getElementById('selectedPlanId').value;
+            if(!planId) { showToast("Selecione um plano primeiro."); return; }
+            const data = {
+                ownerName: document.getElementById('regOwner').value,
+                email: document.getElementById('regEmail').value,
+                storeName: document.getElementById('regStoreName').value,
+                phone: document.getElementById('regPhone').value,
+                planId: planId, // Importante: Envia o plano escolhido
+                status: 'pending',
+                requestDate: new Date().toISOString()
+            };
+            try {
+                await addDoc(collection(db, "registration_requests"), data);
+                document.getElementById('preRegForm').classList.add('hidden');
+                document.getElementById('regFooter').classList.add('hidden');
+                document.getElementById('regSuccess').classList.remove('hidden');
+                lucide.createIcons();
+            } catch(e) { alert("Erro: " + e.message); }
+        };
+
+        // --- INIT DATA ---
         onAuthStateChanged(auth, async (user) => {
             if(user) {
                 document.getElementById('auth-screen').classList.add('hidden');
@@ -542,7 +610,7 @@
                 if(!dirDoc.exists()){
                     const q = query(collection(db, "stores_registry"), where("ownerEmail", "==", user.email));
                     const snap = await getDocs(q);
-                    if(snap.empty) { alert("Perfil não vinculado."); return handleLogout(); }
+                    if(snap.empty) { alert("Acesso não autorizado."); return handleLogout(); }
                     currentStoreId = snap.docs[0].data().slug;
                 } else { currentStoreId = dirDoc.data().storeId; }
                 initStoreData();
@@ -553,21 +621,17 @@
             const url = `https://danielnqtfreitas-hash.github.io/Vitrine/?id=${currentStoreId}`;
             document.getElementById('urlDisplay').textContent = url;
             document.getElementById('storeMenuBtn').classList.remove('opacity-50', 'pointer-events-none');
-
-            // 1. CARREGAR CONFIGURAÇÃO DA LOJA (INCLUINDO LIMITES DO PLANO)
             onSnapshot(doc(db, `stores/${currentStoreId}/config/store`), d => {
                 if(d.exists()) {
                     const data = d.data();
                     if(data.subscriptionStatus === 'suspended') document.getElementById('suspended-screen').classList.remove('hidden');
-                    
-                    // --- CARREGAR LIMITES DO PLANO SALVOS NO SUPER ADMIN ---
-                    storeConfig.planId = data.planId || data.plan || 'basic'; // Compatibilidade
-                    storeConfig.maxProducts = data.maxProducts || 50;
-                    storeConfig.maxBanners = data.maxBanners || 1;
-                    storeConfig.hasCarousel = data.hasCarousel ?? false;
-
-                    updateUIForPlan();
-
+                    storeConfig = {
+                        planId: data.planId || 'básico',
+                        maxProducts: data.maxProducts || 50,
+                        maxBanners: data.maxBanners || 1,
+                        hasCarousel: data.hasCarousel ?? false
+                    };
+                    updateUIByPlan();
                     document.getElementById('sidebarStoreName').textContent = data.storeName;
                     document.getElementById('sidebarStoreNameMobile').textContent = data.storeName;
                     document.getElementById('confStoreName').value = data.storeName || '';
@@ -580,19 +644,16 @@
                     renderDeliveryAreas();
                 }
             });
-
             onSnapshot(collection(db, `stores/${currentStoreId}/products`), s => {
                 allProducts = s.docs.map(d => ({id: d.id, ...d.data()}));
                 document.getElementById('dash-total-products').textContent = allProducts.length;
                 renderProductList();
             });
-
             onSnapshot(collection(db, `stores/${currentStoreId}/categories`), s => {
                 allCategories = s.docs.map(d => ({id: d.id, ...d.data()}));
                 document.getElementById('dash-total-cats').textContent = allCategories.length;
                 renderCategoryList();
             });
-
             onSnapshot(collection(db, `stores/${currentStoreId}/hero_cards`), s => {
                 allBanners = s.docs.map(d => ({id: d.id, ...d.data()}));
                 document.getElementById('dash-total-banners').textContent = allBanners.length;
@@ -600,53 +661,35 @@
             });
         }
 
-        function updateUIForPlan() {
-            // Badge no Dashboard (Só exibe o ID/Nome do plano, ex: "iniciante", "premium")
-            const badge = document.getElementById('currentPlanBadge');
-            badge.textContent = storeConfig.planId.toUpperCase();
-            
-            // Textos de Limite no Dashboard
+        function updateUIByPlan() {
+            document.getElementById('currentPlanBadge').textContent = storeConfig.planId.toUpperCase();
             document.getElementById('dash-limit-products').textContent = `/${storeConfig.maxProducts}`;
             document.getElementById('dash-limit-banners').textContent = `/${storeConfig.maxBanners}`;
-
-            // Controle da Aba Banners (Esconder se não tiver carrossel)
             const navBanners = document.getElementById('nav-banners');
-            const mobNavBanners = document.getElementById('mob-nav-banners');
-            
+            const mobBanners = document.getElementById('mob-nav-banners');
             if(!storeConfig.hasCarousel) {
-                if(navBanners) navBanners.classList.add('hidden');
-                if(mobNavBanners) mobNavBanners.classList.add('hidden');
-                // Se estiver na aba banners, volta pro dash
-                if(!document.getElementById('content-banners').classList.contains('hidden')) {
-                    changeTab('dashboard');
-                }
+                navBanners?.classList.add('hidden');
+                mobBanners?.classList.add('hidden');
+                if(!document.getElementById('content-banners').classList.contains('hidden')) changeTab('dashboard');
             } else {
-                if(navBanners) navBanners.classList.remove('hidden');
-                if(mobNavBanners) mobNavBanners.classList.remove('hidden');
+                navBanners?.classList.remove('hidden');
+                mobBanners?.classList.remove('hidden');
             }
         }
 
-        // --- CRUD PRODUTOS ---
+        // --- CRUD LOGIC ---
         window.openProductModal = (p = null) => {
-            // VERIFICAÇÃO DE LIMITE DO PLANO (Se for criação)
-            if(!p) {
-                if(allProducts.length >= storeConfig.maxProducts) {
-                    showToast(`Limite do plano atingido (${storeConfig.maxProducts} produtos).`);
-                    return;
-                }
-            }
-
+            if(!p && allProducts.length >= storeConfig.maxProducts) { showToast("Limite de produtos atingido."); return; }
             const sel = document.getElementById('prodCategory');
             sel.innerHTML = allCategories.map(c => `<option value="${c.name}">${c.name}</option>`).join('');
-            
             if(p) {
                 document.getElementById('prodId').value = p.id;
                 document.getElementById('prodName').value = p.name;
                 document.getElementById('prodCategory').value = p.category;
                 document.getElementById('prodValue').value = p.value;
                 document.getElementById('prodPromo').value = p.promoValue || '';
-                document.getElementById('prodSizes').value = p.sizes ? p.sizes.join(', ') : '';
-                document.getElementById('prodColors').value = p.colors ? p.colors.join(', ') : '';
+                document.getElementById('prodSizes').value = p.sizes?.join(', ') || '';
+                document.getElementById('prodColors').value = p.colors?.join(', ') || '';
                 document.getElementById('prodDesc').value = p.description || '';
                 document.getElementById('prodFeatured').checked = p.isFeatured;
                 currentProductImages = p.images ? [...p.images] : [];
@@ -661,8 +704,7 @@
 
         window.handleProductSubmit = async (e) => {
             e.preventDefault();
-            if (currentProductImages.length === 0) { showToast("Adicione pelo menos uma foto ao produto."); return; }
-
+            if(currentProductImages.length === 0) { showToast("Adicione uma foto."); return; }
             const id = document.getElementById('prodId').value;
             const data = {
                 name: document.getElementById('prodName').value,
@@ -676,45 +718,34 @@
                 isFeatured: document.getElementById('prodFeatured').checked,
                 status: 'active'
             };
-            try {
-                if(id) await updateDoc(doc(db, `stores/${currentStoreId}/products`, id), data);
-                else await addDoc(collection(db, `stores/${currentStoreId}/products`), data);
-                document.getElementById('productModal').classList.add('hidden');
-                showToast("Catálogo atualizado com sucesso!");
-            } catch (err) { showToast("Erro ao guardar: " + err.message); }
+            if(id) await updateDoc(doc(db, `stores/${currentStoreId}/products`, id), data);
+            else await addDoc(collection(db, `stores/${currentStoreId}/products`), data);
+            document.getElementById('productModal').classList.add('hidden');
+            showToast("Produto guardado.");
         };
 
-        window.deleteProduct = async (id) => { if(confirm("Apagar produto definitivamente?")) await deleteDoc(doc(db, `stores/${currentStoreId}/products`, id)); };
-
+        window.deleteProduct = async (id) => { if(confirm("Apagar?")) await deleteDoc(doc(db, `stores/${currentStoreId}/products`, id)); };
         function renderProductList() {
             const list = document.getElementById('productList');
             const search = document.getElementById('productSearch').value.toLowerCase();
             const filtered = allProducts.filter(p => p.name.toLowerCase().includes(search));
             list.innerHTML = filtered.map(p => `
-                <div class="flex items-center gap-5 bg-white p-4 rounded-3xl border shadow-sm transition-all hover:shadow-md">
-                    <img src="${p.images?.[0]||''}" class="w-16 h-16 rounded-2xl bg-slate-100 object-cover border" onerror="this.src='https://placehold.co/100x100?text=Sem+Foto'">
+                <div class="flex items-center gap-5 bg-white p-4 rounded-3xl border shadow-sm">
+                    <img src="${p.images?.[0]||''}" class="w-16 h-16 rounded-2xl bg-slate-100 object-cover border">
                     <div class="flex-1">
-                        <p class="font-bold text-slate-800 text-base leading-tight">${p.name}</p>
-                        <p class="text-[10px] text-slate-400 font-bold uppercase tracking-wide mt-1">${p.category} • R$ ${p.value.toFixed(2)}</p>
+                        <p class="font-bold text-slate-800 text-sm leading-tight">${p.name}</p>
+                        <p class="text-[9px] text-slate-400 font-bold uppercase mt-1">${p.category} • R$ ${p.value.toFixed(2)}</p>
                     </div>
-                    <div class="flex gap-2">
-                        <button onclick='openProductModal(${JSON.stringify(p).replace(/'/g, "&apos;")})' class="p-3 text-blue-600 hover:bg-blue-50 rounded-2xl transition-colors"><i data-lucide="pencil" class="w-5 h-5"></i></button>
-                        <button onclick="deleteProduct('${p.id}')" class="p-3 text-red-600 hover:bg-red-50 rounded-2xl transition-colors"><i data-lucide="trash-2" class="w-5 h-5"></i></button>
+                    <div class="flex gap-1">
+                        <button onclick='openProductModal(${JSON.stringify(p).replace(/'/g, "&apos;")})' class="p-2 text-blue-600"><i data-lucide="pencil" class="w-4 h-4"></i></button>
+                        <button onclick="deleteProduct('${p.id}')" class="p-2 text-red-600"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
                     </div>
                 </div>`).join('');
             lucide.createIcons();
         }
 
-        // --- BANNERS ---
         window.openBannerModal = (b = null) => {
-             // VERIFICAÇÃO DE LIMITE DO PLANO (Se for criação)
-             if(!b) {
-                if(allBanners.length >= storeConfig.maxBanners) {
-                    showToast(`Limite de banners do plano atingido (${storeConfig.maxBanners}).`);
-                    return;
-                }
-            }
-
+            if(!b && allBanners.length >= storeConfig.maxBanners) { showToast("Limite de banners atingido."); return; }
             const select = document.getElementById('bannerTarget');
             select.innerHTML = '<option value="offers">Todas as Ofertas</option>';
             allCategories.forEach(c => select.innerHTML += `<option value="${c.name}">${c.name}</option>`);
@@ -758,28 +789,27 @@
             if(id) await updateDoc(doc(db, `stores/${currentStoreId}/hero_cards`, id), data);
             else await addDoc(collection(db, `stores/${currentStoreId}/hero_cards`), data);
             document.getElementById('bannerModal').classList.add('hidden');
-            showToast("Banner atualizado!");
+            showToast("Banner salvo.");
         };
 
-        window.deleteBanner = async (id) => { if(confirm("Apagar banner?")) await deleteDoc(doc(db, `stores/${currentStoreId}/hero_cards`, id)); };
-
+        window.deleteBanner = async (id) => { if(confirm("Apagar?")) await deleteDoc(doc(db, `stores/${currentStoreId}/hero_cards`, id)); };
         function renderBannerList() {
             const list = document.getElementById('bannersList');
             list.innerHTML = '';
             document.getElementById('emptyBannersMsg').classList.toggle('hidden', allBanners.length > 0);
             allBanners.forEach(b => {
                 const div = document.createElement('div');
-                div.className = "bg-white p-4 rounded-3xl border shadow-sm transition-all hover:shadow-md";
+                div.className = "bg-white p-4 rounded-3xl border shadow-sm";
                 div.innerHTML = `
                     <div class="h-28 rounded-2xl flex flex-col justify-center p-5 text-white mb-4" style="background:linear-gradient(135deg, ${b.color1}, ${b.color2})">
-                        <span class="text-[9px] font-extrabold uppercase tracking-widest opacity-80 text-white/80">${b.tag}</span>
-                        <h4 class="font-bold text-lg leading-tight text-white">${b.title}</h4>
+                        <span class="text-[9px] font-bold uppercase opacity-80">${b.tag}</span>
+                        <h4 class="font-bold text-base leading-tight">${b.title}</h4>
                     </div>
                     <div class="flex justify-between items-center">
-                        <span class="text-[10px] font-bold text-slate-400 bg-slate-50 px-3 py-1 rounded-full border">${b.target}</span>
+                        <span class="text-[10px] font-bold text-slate-400 bg-slate-50 px-2 py-1 rounded-full border">${b.target}</span>
                         <div class="flex gap-1">
-                            <button onclick='openBannerModal(${JSON.stringify(b)})' class="p-2 text-blue-600 hover:bg-blue-50 rounded-xl transition-colors"><i data-lucide="pencil" class="w-4 h-4"></i></button>
-                            <button onclick="deleteBanner('${b.id}')" class="p-2 text-red-600 hover:bg-red-50 rounded-xl transition-colors"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
+                            <button onclick='openBannerModal(${JSON.stringify(b)})' class="p-2 text-blue-600"><i data-lucide="pencil" class="w-4 h-4"></i></button>
+                            <button onclick="deleteBanner('${b.id}')" class="p-2 text-red-600"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
                         </div>
                     </div>`;
                 list.appendChild(div);
@@ -787,7 +817,7 @@
             lucide.createIcons();
         }
 
-        // --- GERAL ---
+        // --- GENERAL ---
         window.changeTab = (id) => {
             ['dashboard','banners','products','categories','config'].forEach(t => { document.getElementById(`content-${t}`).classList.add('hidden'); document.getElementById(`nav-${t}`)?.classList.remove('active'); });
             document.getElementById(`content-${id}`).classList.remove('hidden');
@@ -800,7 +830,6 @@
         window.toggleStoreMenu = (e) => { e.stopPropagation(); document.getElementById('storeDropdown').classList.toggle('hidden'); };
         window.copyStoreLink = () => { navigator.clipboard.writeText(document.getElementById('urlDisplay').textContent); showToast("Link copiado."); };
         window.openStoreLink = () => { window.open(document.getElementById('urlDisplay').textContent, '_blank'); };
-        
         window.showToast = (msg) => {
             const el = document.createElement('div');
             el.className = "toast bg-slate-900 text-white px-6 py-4 rounded-3xl shadow-2xl flex items-center gap-3 font-bold text-sm border border-slate-700";
@@ -813,20 +842,15 @@
         window.toggleStoreStatusQuick = async (el) => { await updateDoc(doc(db, `stores/${currentStoreId}/config/store`), { isStoreOpen: el.checked }); };
         window.addCategory = async (e) => { e.preventDefault(); const name=document.getElementById('catInputName').value; await addDoc(collection(db, `stores/${currentStoreId}/categories`), { name, status: 'active' }); document.getElementById('catInputName').value=''; showToast("Categoria adicionada."); };
         window.deleteCategory = async (id) => { if(confirm("Apagar categoria?")) await deleteDoc(doc(db, `stores/${currentStoreId}/categories`, id)); };
-        function renderCategoryList() { document.getElementById('categoryList').innerHTML = allCategories.map(c => `<div class="flex justify-between items-center p-5 bg-white hover:bg-slate-50 transition-colors"><span class="font-bold text-slate-700">${c.name}</span><button onclick="deleteCategory('${c.id}')" class="p-2 text-red-500 hover:bg-red-50 rounded-xl transition-colors"><i data-lucide="trash-2" class="w-5 h-5"></i></button></div>`).join(''); lucide.createIcons(); }
-
+        function renderCategoryList() { document.getElementById('categoryList').innerHTML = allCategories.map(c => `<div class="flex justify-between items-center p-5 bg-white"><span class="font-bold text-slate-700">${c.name}</span><button onclick="deleteCategory('${c.id}')" class="p-2 text-red-500"><i data-lucide="trash-2" class="w-5 h-5"></i></button></div>`).join(''); lucide.createIcons(); }
         window.addDeliveryArea = () => { const n=document.getElementById('areaName').value; const f=parseFloat(document.getElementById('areaFee').value); if(n&&!isNaN(f)) { deliveryAreas.push({name:n, fee:f}); renderDeliveryAreas(); document.getElementById('areaName').value=''; document.getElementById('areaFee').value=''; } };
         window.removeArea = (i) => { deliveryAreas.splice(i,1); renderDeliveryAreas(); };
-        function renderDeliveryAreas() { document.getElementById('deliveryAreasList').innerHTML = deliveryAreas.map((a,i) => `<div class="flex justify-between items-center p-4 bg-white"><span class="text-slate-700 font-medium text-sm">${a.name}</span><div class="flex items-center gap-4"><b class="text-slate-900 text-sm">R$ ${a.fee.toFixed(2)}</b><button onclick="removeArea(${i})" class="text-red-500 font-bold hover:bg-red-50 p-2 rounded-lg transition-colors">×</button></div></div>`).join(''); }
-
+        function renderDeliveryAreas() { document.getElementById('deliveryAreasList').innerHTML = deliveryAreas.map((a,i) => `<div class="flex justify-between items-center p-4 bg-white"><span class="text-slate-700 font-medium text-sm">${a.name}</span><div class="flex items-center gap-4"><b class="text-slate-900 text-sm">R$ ${a.fee.toFixed(2)}</b><button onclick="removeArea(${i})" class="text-red-500 font-bold p-2">×</button></div></div>`).join(''); }
         window.saveStoreConfig = async (e) => { e.preventDefault(); const data={ storeName: document.getElementById('confStoreName').value, whatsappNumber: document.getElementById('confWhatsapp').value, footerText: document.getElementById('confFooter').value, primaryColor: document.getElementById('confColorPrimary').value, deliveryAreas: deliveryAreas }; await setDoc(doc(db, `stores/${currentStoreId}/config/store`), data, { merge: true }); showToast("Definições guardadas."); };
-
-        window.handlePreRegister = async (e) => { e.preventDefault(); const data={ ownerName: document.getElementById('regOwner').value, email: document.getElementById('regEmail').value, storeName: document.getElementById('regStoreName').value, phone: document.getElementById('regPhone').value, status: 'pending', requestDate: new Date().toISOString() }; try { await addDoc(collection(db, "registration_requests"), data); document.getElementById('preRegForm').classList.add('hidden'); document.getElementById('regFooter').classList.add('hidden'); document.getElementById('regSuccess').classList.remove('hidden'); } catch(err){ alert("Erro: " + err.message); } };
         window.handleUpdatePassword = async (e) => { e.preventDefault(); const n=document.getElementById('newPass').value; const c=document.getElementById('confirmNewPass').value; if(n!==c){document.getElementById('passError').classList.remove('hidden'); return;} try{ await updatePassword(auth.currentUser, n); showToast("Senha alterada."); document.getElementById('newPass').value=''; document.getElementById('confirmNewPass').value=''; document.getElementById('passError').classList.add('hidden'); } catch(e){ showToast("Erro: " + e.message); } };
 
         lucide.createIcons();
     </script>
 </body>
 </html>
-
 
