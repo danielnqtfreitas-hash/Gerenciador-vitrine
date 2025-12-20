@@ -59,10 +59,10 @@
 </head>
 <body class="text-slate-800 antialiased h-screen overflow-hidden flex bg-slate-50">
 
-    <!-- LOGIN & REGISTER SCREENS -->
+    <!-- LOGIN / REGISTER SCREEN -->
     <div id="auth-screen" class="fixed inset-0 z-[200] bg-slate-900 flex items-center justify-center p-4">
         
-        <!-- LOGIN CARD -->
+        <!-- CARD LOGIN -->
         <div id="login-card" class="bg-white w-full max-w-md p-8 rounded-3xl shadow-2xl relative overflow-hidden animate-fade-in">
             <div class="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-primary-500 to-indigo-600"></div>
             <div class="mb-8 text-center">
@@ -70,238 +70,310 @@
                     <i data-lucide="store" class="w-8 h-8 text-primary-600"></i>
                 </div>
                 <h2 class="text-2xl font-bold text-slate-800">Painel do Lojista</h2>
-                <p class="text-slate-500 text-sm mt-1">Aceda para gerir a sua vitrine.</p>
+                <p class="text-slate-500 text-sm mt-1">Gestão profissional para o seu negócio.</p>
             </div>
             <form onsubmit="handleLogin(event)" class="space-y-4">
                 <div>
-                    <label class="block text-xs font-bold uppercase text-slate-500 mb-1">E-mail</label>
-                    <input type="email" id="loginEmail" class="w-full border border-slate-300 rounded-xl p-3 focus:ring-2 focus:ring-primary-500 outline-none" placeholder="admin@loja.com" required>
+                    <label class="block text-xs font-bold uppercase text-slate-500 mb-1">E-mail de acesso</label>
+                    <input type="email" id="loginEmail" class="w-full border border-slate-300 rounded-xl p-3 focus:ring-2 focus:ring-primary-500 outline-none transition-all" placeholder="exemplo@loja.com" required>
                 </div>
                 <div>
-                    <label class="block text-xs font-bold uppercase text-slate-500 mb-1">Senha</label>
-                    <input type="password" id="loginPass" class="w-full border border-slate-300 rounded-xl p-3 focus:ring-2 focus:ring-primary-500 outline-none" placeholder="••••••" required>
+                    <label class="block text-xs font-bold uppercase text-slate-500 mb-1">Palavra-passe</label>
+                    <div class="relative">
+                        <input type="password" id="loginPass" class="w-full border border-slate-300 rounded-xl p-3 pr-10 focus:ring-2 focus:ring-primary-500 outline-none transition-all" placeholder="••••••" required>
+                        <button type="button" onclick="togglePasswordVisibility('loginPass', 'eyeIconLogin')" class="absolute right-3 top-3.5 text-slate-400 hover:text-slate-600">
+                            <i id="eyeIconLogin" data-lucide="eye" class="w-5 h-5"></i>
+                        </button>
+                    </div>
                 </div>
+                
+                <div class="flex items-center gap-2 py-1">
+                    <input type="checkbox" id="rememberMe" class="w-4 h-4 rounded border-slate-300 text-primary-600 focus:ring-primary-500 cursor-pointer">
+                    <label for="rememberMe" class="text-sm text-slate-600 cursor-pointer select-none font-medium">Manter sessão iniciada</label>
+                </div>
+
                 <div id="loginError" class="hidden p-3 bg-red-50 text-red-600 text-xs font-bold rounded-lg text-center border border-red-100"></div>
                 <button type="submit" id="btnLogin" class="w-full bg-slate-900 hover:bg-slate-800 text-white font-bold py-4 rounded-xl shadow-lg transition-all flex justify-center items-center gap-2">
-                    Entrar no Sistema <i data-lucide="arrow-right" class="w-4 h-4"></i>
+                    Aceder ao Painel <i data-lucide="arrow-right" class="w-4 h-4"></i>
                 </button>
             </form>
-            <div class="mt-6 text-center">
-                <p class="text-sm text-slate-500">Ainda não é parceiro? <button onclick="toggleAuthView('register')" class="text-primary-600 font-bold hover:underline">Solicitar Abertura</button></p>
+            <div class="mt-8 pt-6 border-t border-slate-100 text-center">
+                <p class="text-sm text-slate-500">Ainda não vende connosco? <br>
+                <button onclick="toggleAuthView('register')" class="text-primary-600 font-bold hover:underline mt-1">Torne-se um Parceiro ShopWave</button></p>
             </div>
         </div>
 
-        <!-- PRE-REGISTER CARD -->
+        <!-- CARD PRÉ-CADASTRO -->
         <div id="register-card" class="bg-white w-full max-w-md p-8 rounded-3xl shadow-2xl relative overflow-hidden hidden animate-fade-in">
             <div class="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-green-500 to-teal-600"></div>
             <div class="mb-6 text-center">
-                <h2 class="text-2xl font-bold text-slate-800">Solicitar Loja</h2>
-                <p class="text-slate-500 text-sm mt-1">Preencha os dados e aguarde o nosso contacto.</p>
+                <h2 class="text-2xl font-bold text-slate-800">Seja um Parceiro</h2>
+                <p class="text-slate-500 text-sm mt-1">Crie a sua vitrine digital em poucos minutos.</p>
             </div>
             <form id="preRegForm" onsubmit="handlePreRegister(event)" class="space-y-4">
-                <input type="text" id="regOwner" placeholder="Nome Completo" required class="w-full border border-slate-300 rounded-xl p-3 focus:ring-2 focus:ring-green-500 outline-none">
-                <input type="email" id="regEmail" placeholder="E-mail" required class="w-full border border-slate-300 rounded-xl p-3 focus:ring-2 focus:ring-green-500 outline-none">
-                <input type="text" id="regStoreName" placeholder="Nome da Loja" required class="w-full border border-slate-300 rounded-xl p-3 focus:ring-2 focus:ring-green-500 outline-none">
-                <input type="text" id="regPhone" placeholder="WhatsApp (Ex: 5511999999999)" required class="w-full border border-slate-300 rounded-xl p-3 focus:ring-2 focus:ring-green-500 outline-none">
-                <button type="submit" id="btnReg" class="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-4 rounded-xl shadow-lg transition-all">Enviar Solicitação</button>
+                <input type="text" id="regOwner" placeholder="Seu Nome Completo" required class="w-full border rounded-xl p-3 outline-none focus:ring-2 focus:ring-green-500 transition-all">
+                <input type="email" id="regEmail" placeholder="E-mail Profissional" required class="w-full border rounded-xl p-3 outline-none focus:ring-2 focus:ring-green-500 transition-all">
+                <input type="text" id="regStoreName" placeholder="Nome da Sua Loja" required class="w-full border rounded-xl p-3 outline-none focus:ring-2 focus:ring-green-500 transition-all">
+                <input type="text" id="regPhone" placeholder="WhatsApp (Ex: 5511999999999)" required class="w-full border rounded-xl p-3 outline-none focus:ring-2 focus:ring-green-500 transition-all">
+                <button type="submit" id="btnReg" class="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-4 rounded-xl shadow-lg transition-all">
+                    Criar Minha Loja Agora
+                </button>
             </form>
             <div id="regSuccess" class="hidden text-center py-6">
-                <i data-lucide="check-circle" class="w-12 h-12 text-green-500 mx-auto mb-4"></i>
-                <h3 class="font-bold text-slate-800">Solicitação Enviada!</h3>
-                <p class="text-sm text-slate-500 mt-2">A nossa equipa analisará os dados e entrará em contacto em breve.</p>
-                <button onclick="toggleAuthView('login')" class="text-sm text-primary-600 mt-6 font-bold hover:underline">Voltar para o Login</button>
+                <div class="bg-green-50 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <i data-lucide="check-circle" class="w-10 h-10 text-green-500"></i>
+                </div>
+                <h3 class="font-bold text-slate-800 text-xl">Pedido Recebido!</h3>
+                <p class="text-sm text-slate-500 mt-2">Iremos analisar os seus dados e entraremos em contacto brevemente.</p>
+                <button onclick="toggleAuthView('login')" class="text-sm text-primary-600 mt-6 font-bold hover:underline">Voltar ao Início</button>
             </div>
-            <div class="mt-6 text-center" id="regBackLink">
-                <button onclick="toggleAuthView('login')" class="text-sm text-slate-500 hover:text-slate-800 font-medium">Cancelar e Voltar</button>
+            <div class="mt-6 text-center" id="regFooter">
+                <button onclick="toggleAuthView('login')" class="text-sm text-slate-500 font-medium hover:text-slate-800 transition-colors">Já tenho uma conta</button>
             </div>
         </div>
     </div>
 
-    <!-- TELA DE BLOQUEIO -->
-    <div id="suspended-screen" class="fixed inset-0 z-[200] bg-slate-900 flex flex-col items-center justify-center p-4 hidden text-center">
-        <div class="bg-white p-4 rounded-full mb-6 animate-bounce"><i data-lucide="lock" class="w-12 h-12 text-red-500"></i></div>
-        <h1 class="text-3xl font-bold text-white mb-2">Acesso Suspenso</h1>
-        <p class="text-slate-400 max-w-md mb-8">O seu acesso administrativo foi bloqueado. Contacte o suporte.</p>
-        <button onclick="handleLogout()" class="bg-slate-700 text-white px-6 py-3 rounded-xl font-bold">Sair</button>
+    <!-- TELA DE SUSPENSÃO -->
+    <div id="suspended-screen" class="fixed inset-0 z-[200] bg-slate-900 flex flex-col items-center justify-center p-4 hidden text-center text-white">
+        <i data-lucide="lock" class="w-16 h-16 text-red-500 mb-6 animate-pulse"></i>
+        <h1 class="text-3xl font-bold mb-2">Acesso Suspenso</h1>
+        <p class="text-slate-400 mb-8 max-w-xs">O acesso administrativo foi temporariamente suspenso. Por favor, contacte o suporte.</p>
+        <button onclick="handleLogout()" class="bg-slate-700 hover:bg-slate-600 px-8 py-3 rounded-xl font-bold transition-colors">Sair da Conta</button>
     </div>
 
-    <div id="toast-container" class="fixed top-5 right-5 z-[100] flex flex-col gap-2 pointer-events-none"></div>
+    <!-- SIDEBARS -->
+    <div id="mobileOverlay" onclick="toggleMobileSidebar()" class="fixed inset-0 bg-black/60 z-[140] hidden md:hidden backdrop-blur-sm"></div>
+    <aside id="mobileSidebar" class="fixed inset-y-0 left-0 w-72 bg-white z-[150] shadow-2xl flex flex-col md:hidden sidebar-hidden">
+        <div class="h-16 flex items-center px-6 border-b justify-between">
+            <span class="text-lg font-bold text-slate-800 truncate" id="sidebarStoreNameMobile">Menu</span>
+            <button onclick="toggleMobileSidebar()"><i data-lucide="x" class="w-6 h-6 text-slate-400"></i></button>
+        </div>
+        <nav class="flex-1 overflow-y-auto py-4">
+            <button onclick="changeTab('dashboard')" class="w-full flex items-center px-6 py-4 text-slate-600 font-medium hover:bg-slate-50">Dashboard</button>
+            <button onclick="changeTab('banners')" class="w-full flex items-center px-6 py-4 text-slate-600 font-medium hover:bg-slate-50">Banners</button>
+            <button onclick="changeTab('products')" class="w-full flex items-center px-6 py-4 text-slate-600 font-medium hover:bg-slate-50">Produtos</button>
+            <button onclick="changeTab('categories')" class="w-full flex items-center px-6 py-4 text-slate-600 font-medium hover:bg-slate-50">Categorias</button>
+            <button onclick="changeTab('config')" class="w-full flex items-center px-6 py-4 text-slate-600 font-medium hover:bg-slate-50">Configurações</button>
+        </nav>
+        <div class="p-6 border-t bg-slate-50">
+            <button onclick="handleLogout()" class="w-full flex items-center justify-center gap-2 py-4 text-red-600 bg-red-50 rounded-xl font-bold">
+                <i data-lucide="log-out" class="w-5 h-5"></i> Encerrar Sessão
+            </button>
+        </div>
+    </aside>
 
-    <!-- SIDEBAR -->
     <aside class="hidden md:flex flex-col w-64 bg-white border-r border-slate-200 h-full shadow-lg z-10 relative">
         <div class="h-16 flex items-center px-6 border-b border-primary-600/10 justify-between">
-            <span class="text-lg font-bold text-slate-800 truncate" id="sidebarStoreName">A carregar...</span>
+            <span class="text-lg font-bold text-slate-800 truncate" id="sidebarStoreName">Carregando...</span>
         </div>
         <nav class="flex-1 overflow-y-auto py-6 space-y-1">
             <button id="nav-dashboard" onclick="changeTab('dashboard')" class="sidebar-link w-full flex items-center px-6 py-3 text-sm font-medium text-slate-600 active"><i data-lucide="bar-chart-2" class="w-5 h-5 mr-3"></i> Dashboard</button>
-            <button id="nav-banners" onclick="changeTab('banners')" class="sidebar-link w-full flex items-center px-6 py-3 text-sm font-medium text-slate-600"><i data-lucide="layout" class="w-5 h-5 mr-3"></i> Banners (Hero)</button>
+            <button id="nav-banners" onclick="changeTab('banners')" class="sidebar-link w-full flex items-center px-6 py-3 text-sm font-medium text-slate-600"><i data-lucide="layout" class="w-5 h-5 mr-3"></i> Banners (Cards)</button>
             <button id="nav-products" onclick="changeTab('products')" class="sidebar-link w-full flex items-center px-6 py-3 text-sm font-medium text-slate-600"><i data-lucide="package" class="w-5 h-5 mr-3"></i> Produtos</button>
             <button id="nav-categories" onclick="changeTab('categories')" class="sidebar-link w-full flex items-center px-6 py-3 text-sm font-medium text-slate-600"><i data-lucide="layers" class="w-5 h-5 mr-3"></i> Categorias</button>
             <button id="nav-config" onclick="changeTab('config')" class="sidebar-link w-full flex items-center px-6 py-3 text-sm font-medium text-slate-600"><i data-lucide="settings" class="w-5 h-5 mr-3"></i> Configurações</button>
         </nav>
         <div class="p-4 border-t border-slate-100 bg-slate-50/50">
-             <button onclick="handleLogout()" class="w-full flex items-center justify-center gap-2 py-2 text-red-600 bg-red-50 rounded-lg font-bold">Sair</button>
+            <div class="flex items-center gap-2 mb-4 px-2">
+                <div class="w-8 h-8 rounded-full bg-primary-100 flex items-center justify-center text-primary-600 font-bold text-[10px]">AD</div>
+                <div class="overflow-hidden leading-tight"><p class="text-[10px] font-bold text-slate-700 truncate" id="userEmailDisplay">...</p></div>
+            </div>
+            <button onclick="handleLogout()" class="w-full flex items-center justify-center gap-2 py-2.5 text-red-600 bg-red-50 hover:bg-red-100 rounded-xl font-bold transition-all">
+                <i data-lucide="log-out" class="w-4 h-4"></i> Sair do Painel
+            </button>
         </div>
     </aside>
 
     <!-- MAIN CONTENT -->
     <main class="flex-1 flex flex-col h-screen overflow-hidden relative">
-        <header class="h-16 bg-white border-b border-slate-200 flex items-center justify-between px-4 md:px-8 flex-shrink-0 z-20">
+        <header class="h-16 bg-white border-b flex items-center justify-between px-4 md:px-8 flex-shrink-0 z-20 shadow-sm">
             <div class="flex items-center gap-3">
-                <button onclick="toggleMobileSidebar()" class="md:hidden p-2 text-slate-600 hover:bg-slate-100 rounded-lg transition-colors">
-                    <i data-lucide="menu" class="w-6 h-6"></i>
-                </button>
+                <button onclick="toggleMobileSidebar()" class="md:hidden p-2 text-slate-600 hover:bg-slate-100 rounded-lg"><i data-lucide="menu" class="w-6 h-6"></i></button>
                 <h2 id="page-title" class="text-lg md:text-xl font-bold text-slate-800">Dashboard</h2>
             </div>
             
             <div class="relative">
-                <button id="storeMenuBtn" onclick="toggleStoreMenu(event)" class="text-[10px] md:text-xs font-bold text-blue-600 bg-blue-50 px-3 py-1.5 rounded-full border border-blue-100 flex items-center gap-1 opacity-50 pointer-events-none transition-opacity">
-                    <i data-lucide="external-link" class="w-3.5 h-3.5"></i> Ver Loja <i data-lucide="chevron-down" class="w-3 h-3 ml-1"></i>
+                <button id="storeMenuBtn" onclick="toggleStoreMenu(event)" class="text-[10px] md:text-xs font-bold text-blue-600 bg-blue-50 px-4 py-2 rounded-full border border-blue-100 flex items-center gap-2 opacity-50 pointer-events-none transition-all hover:bg-blue-100">
+                    <i data-lucide="external-link" class="w-3.5 h-3.5"></i> Ver Loja <i data-lucide="chevron-down" class="w-3 h-3"></i>
                 </button>
-                <div id="storeDropdown" class="hidden absolute top-full right-0 mt-2 w-64 md:w-72 bg-white border border-slate-100 rounded-xl shadow-xl z-50 overflow-hidden animate-fade-in">
-                    <div class="p-3 bg-slate-50 border-b border-slate-100">
-                        <p class="text-[10px] text-slate-500 uppercase font-bold mb-1">URL DA VITRINE:</p>
+                <div id="storeDropdown" class="hidden absolute top-full right-0 mt-2 w-64 md:w-72 bg-white border border-slate-100 rounded-2xl shadow-2xl z-50 overflow-hidden animate-fade-in">
+                    <div class="p-4 bg-slate-50 border-b">
+                        <p class="text-[10px] text-slate-500 uppercase font-bold mb-1 tracking-wider">Endereço da Vitrine:</p>
                         <p id="urlDisplay" class="text-[10px] text-slate-800 font-mono break-all select-all bg-white p-2 rounded-lg border">...</p>
                     </div>
-                    <div class="p-1">
-                        <button onclick="copyStoreLink()" class="w-full flex items-center gap-2 px-3 py-2.5 text-sm text-slate-600 hover:bg-slate-50 rounded-lg text-left transition-colors"><i data-lucide="copy" class="w-4 h-4"></i> Copiar Link</button>
-                        <button onclick="openStoreLink()" class="w-full flex items-center gap-2 px-3 py-2.5 text-sm text-slate-600 hover:bg-slate-50 rounded-lg text-left transition-colors"><i data-lucide="external-link" class="w-4 h-4"></i> Abrir Site</button>
+                    <div class="p-1.5">
+                        <button onclick="copyStoreLink()" class="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-slate-600 hover:bg-slate-50 rounded-xl text-left transition-colors"><i data-lucide="copy" class="w-4 h-4"></i> Copiar Link</button>
+                        <button onclick="openStoreLink()" class="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-slate-600 hover:bg-slate-50 rounded-xl text-left transition-colors"><i data-lucide="eye" class="w-4 h-4"></i> Visualizar Online</button>
                     </div>
                 </div>
             </div>
         </header>
 
-        <div id="content-area" class="flex-1 overflow-y-auto bg-slate-50 p-4 md:p-8 relative">
-
+        <div id="content-area" class="flex-1 overflow-y-auto bg-slate-50 p-4 md:p-8">
             <!-- DASHBOARD TAB -->
             <div id="content-dashboard" class="max-w-6xl mx-auto space-y-6 animate-fade-in">
-                <div class="bg-white rounded-2xl border border-slate-200 p-6 flex items-center justify-between shadow-sm">
-                    <div class="flex items-center gap-4">
-                        <div class="p-3 bg-blue-50 text-blue-600 rounded-xl"><i data-lucide="store" class="w-6 h-6"></i></div>
-                        <div><h3 class="font-bold text-lg text-slate-800">Status da Loja</h3><p class="text-sm text-slate-500">Controle se os clientes podem fazer pedidos.</p></div>
+                <div class="bg-white rounded-3xl border border-slate-200 p-8 flex flex-col md:flex-row items-center justify-between shadow-sm gap-6">
+                    <div class="flex items-center gap-5">
+                        <div class="p-4 bg-primary-50 text-primary-600 rounded-2xl shadow-inner"><i data-lucide="store" class="w-8 h-8"></i></div>
+                        <div>
+                            <h3 class="font-bold text-xl text-slate-800">Status Operacional</h3>
+                            <p class="text-sm text-slate-500">Controle se a sua loja está aceitando novos pedidos agora.</p>
+                        </div>
                     </div>
-                    <div class="flex items-center gap-3">
-                        <span class="text-sm font-semibold text-slate-600" id="statusLabel">Aberto</span>
+                    <div class="flex items-center gap-4 bg-slate-50 px-6 py-3 rounded-2xl border">
+                        <span class="text-sm font-bold text-slate-600" id="statusLabel">Aberto</span>
                         <label class="toggle-switch"><input type="checkbox" id="dashboardStoreToggle" onchange="toggleStoreStatusQuick(this)"><span class="slider"></span></label>
                     </div>
                 </div>
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-                    <div class="section-card bg-white p-6 border border-slate-100"><p class="text-xs font-semibold text-slate-400 uppercase">Produtos</p><h3 class="text-3xl font-bold text-slate-800" id="dash-total-products">0</h3></div>
-                    <div class="section-card bg-white p-6 border border-slate-100"><p class="text-xs font-semibold text-slate-400 uppercase">Banners Ativos</p><h3 class="text-3xl font-bold text-primary-600" id="dash-total-banners">0</h3></div>
-                    <div class="section-card bg-white p-6 border border-slate-100"><p class="text-xs font-semibold text-slate-400 uppercase">Categorias</p><h3 class="text-3xl font-bold text-slate-800" id="dash-total-cats">0</h3></div>
+                    <div class="section-card bg-white p-6 border border-slate-100"><p class="text-xs font-bold text-slate-400 uppercase tracking-widest mb-2">Total de Produtos</p><h3 class="text-4xl font-bold text-slate-800" id="dash-total-products">0</h3></div>
+                    <div class="section-card bg-white p-6 border border-slate-100"><p class="text-xs font-bold text-slate-400 uppercase tracking-widest mb-2">Banners Ativos</p><h3 class="text-4xl font-bold text-primary-600" id="dash-total-banners">0</h3></div>
+                    <div class="section-card bg-white p-6 border border-slate-100"><p class="text-xs font-bold text-slate-400 uppercase tracking-widest mb-2">Categorias</p><h3 class="text-4xl font-bold text-slate-800" id="dash-total-cats">0</h3></div>
                 </div>
             </div>
 
             <!-- BANNERS TAB -->
             <div id="content-banners" class="max-w-6xl mx-auto space-y-6 hidden animate-fade-in">
-                <div class="flex justify-between items-center">
-                    <h3 class="text-xl font-bold text-slate-800">Gerir Banners Hero</h3>
-                    <button onclick="openBannerModal()" class="bg-primary-600 text-white px-4 py-2 rounded-xl font-bold flex items-center gap-2 shadow-lg active:scale-95 transition-all"><i data-lucide="plus" class="w-4 h-4"></i> Novo Banner</button>
+                <div class="flex justify-between items-center px-2">
+                    <h3 class="text-2xl font-bold text-slate-800">Banners Hero</h3>
+                    <button onclick="openBannerModal()" class="bg-primary-600 hover:bg-primary-700 text-white px-5 py-2.5 rounded-2xl font-bold flex items-center gap-2 shadow-lg transition-all"><i data-lucide="plus" class="w-5 h-5"></i> Novo Banner</button>
                 </div>
                 <div id="bannersList" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"></div>
-                <div id="emptyBannersMsg" class="hidden text-center py-20 text-slate-400 italic">Nenhum banner encontrado.</div>
+                <div id="emptyBannersMsg" class="hidden text-center py-24 text-slate-400 italic">Destaque promoções no topo da sua vitrine.</div>
             </div>
 
             <!-- PRODUCTS TAB -->
             <div id="content-products" class="max-w-6xl mx-auto space-y-6 hidden animate-fade-in">
                 <div class="flex flex-col md:flex-row justify-between items-center gap-4">
                     <div class="relative w-full md:w-96">
-                        <i data-lucide="search" class="absolute left-3 top-3 text-slate-400 w-4 h-4"></i>
-                        <input type="text" id="productSearch" onkeyup="renderProductList()" placeholder="Procurar produto..." class="w-full pl-10 border rounded-xl p-2.5 focus:ring-2 focus:ring-primary-500 outline-none">
+                        <i data-lucide="search" class="absolute left-4 top-3.5 text-slate-400 w-4 h-4"></i>
+                        <input type="text" id="productSearch" onkeyup="renderProductList()" placeholder="Pesquisar no catálogo..." class="w-full pl-12 border rounded-2xl p-3.5 outline-none focus:ring-2 focus:ring-primary-500 transition-all">
                     </div>
-                    <button onclick="openProductModal()" class="w-full md:w-auto bg-primary-600 text-white px-6 py-2.5 rounded-xl font-bold flex justify-center items-center gap-2 shadow-lg active:scale-95 transition-all"><i data-lucide="plus" class="w-4 h-4"></i> Adicionar Produto</button>
+                    <button onclick="openProductModal()" class="w-full md:w-auto bg-slate-900 text-white px-8 py-3.5 rounded-2xl font-bold flex justify-center items-center gap-2 shadow-lg hover:bg-slate-800 transition-all">
+                        <i data-lucide="plus" class="w-5 h-5"></i> Novo Produto
+                    </button>
                 </div>
                 <div id="productList" class="grid grid-cols-1 gap-4"></div>
             </div>
 
             <!-- CATEGORIES TAB -->
             <div id="content-categories" class="max-w-4xl mx-auto space-y-6 hidden animate-fade-in">
-                <div class="section-card bg-white p-6 border border-slate-100">
-                    <h3 class="font-bold mb-4">Nova Categoria</h3>
-                    <form onsubmit="addCategory(event)" class="flex gap-2">
-                        <input type="text" id="catInputName" class="flex-1 border rounded-xl px-4 py-2 outline-none focus:ring-2 focus:ring-primary-500" placeholder="Ex: Pizzas, Bebidas..." required>
-                        <button type="submit" class="bg-slate-900 text-white px-6 py-2 rounded-xl font-bold">Salvar</button>
+                <div class="section-card bg-white p-8 border border-slate-100 shadow-sm">
+                    <h3 class="font-bold text-xl mb-4 text-slate-800">Departamentos</h3>
+                    <form onsubmit="addCategory(event)" class="flex gap-3">
+                        <input type="text" id="catInputName" class="flex-1 border rounded-2xl px-5 py-3 outline-none focus:ring-2 focus:ring-primary-500 transition-all" placeholder="Nome da categoria (ex: Vestuário)" required>
+                        <button type="submit" class="bg-primary-600 text-white px-8 py-3 rounded-2xl font-bold shadow-md hover:bg-primary-700">Criar</button>
                     </form>
                 </div>
-                <div id="categoryList" class="bg-white rounded-2xl border border-slate-200 divide-y divide-slate-100 overflow-hidden shadow-sm"></div>
+                <div id="categoryList" class="bg-white rounded-3xl border border-slate-200 divide-y divide-slate-100 overflow-hidden shadow-xl"></div>
             </div>
 
             <!-- CONFIG TAB -->
-            <div id="content-config" class="max-w-4xl mx-auto space-y-6 hidden animate-fade-in">
-                <form id="storeConfigForm" onsubmit="saveStoreConfig(event)" class="space-y-6">
-                    <div class="section-card bg-white rounded-2xl border border-slate-200 p-6 shadow-sm">
-                        <h3 class="text-lg font-bold text-slate-800 mb-4 text-sm uppercase tracking-widest">Dados da Loja</h3>
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <div><label class="block text-xs font-bold text-slate-400 mb-1 uppercase">Nome da Loja</label><input type="text" id="confStoreName" class="w-full border rounded-xl p-3 focus:ring-2 focus:ring-primary-500 outline-none"></div>
-                            <div><label class="block text-xs font-bold text-slate-400 mb-1 uppercase">WhatsApp</label><input type="text" id="confWhatsapp" class="w-full border rounded-xl p-3 focus:ring-2 focus:ring-primary-500 outline-none"></div>
-                            <div class="md:col-span-2"><label class="block text-xs font-bold text-slate-400 mb-1 uppercase">Descrição Rodapé</label><textarea id="confFooter" class="w-full border rounded-xl p-3 focus:ring-2 focus:ring-primary-500 outline-none" rows="2"></textarea></div>
-                            <div><label class="block text-xs font-bold text-slate-400 mb-1 uppercase">Cor de Destaque</label><input type="color" id="confColorPrimary" class="h-12 w-full rounded-xl border cursor-pointer"></div>
+            <div id="content-config" class="max-w-4xl mx-auto space-y-8 hidden animate-fade-in">
+                
+                <!-- SEGURANÇA -->
+                <div class="section-card bg-white rounded-3xl border border-slate-200 p-8 shadow-sm">
+                    <h3 class="text-xl font-bold text-slate-800 mb-6 flex items-center gap-3">
+                        <span class="p-2 bg-yellow-50 rounded-xl"><i data-lucide="shield-check" class="w-6 h-6 text-yellow-600"></i></span>
+                        Segurança e Acesso
+                    </h3>
+                    <form onsubmit="handleUpdatePassword(event)" class="space-y-5 max-w-sm">
+                        <div>
+                            <label class="block text-xs font-bold uppercase text-slate-400 mb-1.5 tracking-wider">Nova Palavra-passe</label>
+                            <input type="password" id="newPass" required minlength="6" placeholder="Mínimo 6 caracteres" class="w-full border rounded-2xl p-3.5 outline-none focus:ring-2 focus:ring-primary-500 transition-all">
                         </div>
-                    </div>
-                    <div class="flex justify-end pt-2"><button type="submit" class="w-full md:w-auto bg-green-600 text-white font-bold py-3.5 px-10 rounded-2xl shadow-lg active:scale-95 transition-all">Gravar Definições</button></div>
-                </form>
-
-                <div class="section-card bg-white rounded-2xl border border-slate-200 p-6 shadow-sm mt-8">
-                    <h3 class="text-lg font-bold text-slate-800 mb-4 flex items-center gap-2"><i data-lucide="lock" class="w-5 h-5 text-yellow-500"></i> Alterar Senha</h3>
-                    <form onsubmit="handleUpdatePassword(event)" class="space-y-4 max-w-sm">
-                        <input type="password" id="newPass" required minlength="6" placeholder="Nova Senha" class="w-full border rounded-xl p-3 focus:ring-2 focus:ring-primary-500 outline-none">
-                        <input type="password" id="confirmNewPass" required minlength="6" placeholder="Confirmar Nova Senha" class="w-full border rounded-xl p-3 focus:ring-2 focus:ring-primary-500 outline-none">
-                        <div id="passMsg" class="hidden text-xs font-bold"></div>
-                        <button type="submit" id="btnUpdatePass" class="w-full bg-slate-800 text-white py-3 rounded-xl font-bold">Atualizar</button>
+                        <div>
+                            <label class="block text-xs font-bold uppercase text-slate-400 mb-1.5 tracking-wider">Confirmar Nova Palavra-passe</label>
+                            <input type="password" id="confirmNewPass" required minlength="6" placeholder="Repita a nova senha" class="w-full border rounded-2xl p-3.5 outline-none focus:ring-2 focus:ring-primary-500 transition-all">
+                        </div>
+                        <div id="passError" class="hidden p-3 bg-red-50 text-red-500 text-xs font-bold rounded-xl border border-red-100">As palavras-passe não coincidem.</div>
+                        <button type="submit" id="btnUpdatePass" class="w-full bg-slate-900 text-white font-bold py-4 rounded-2xl hover:bg-slate-800 transition-all shadow-lg text-sm">Atualizar Palavra-passe</button>
                     </form>
                 </div>
-            </div>
 
+                <!-- DADOS DA LOJA -->
+                <form id="storeConfigForm" onsubmit="saveStoreConfig(event)" class="space-y-8">
+                    <div class="section-card bg-white rounded-3xl border border-slate-200 p-8 shadow-sm">
+                        <h3 class="text-xl font-bold text-slate-800 mb-6 flex items-center gap-3">
+                            <span class="p-2 bg-blue-50 rounded-xl"><i data-lucide="info" class="w-6 h-6 text-blue-600"></i></span>
+                            Identidade do Negócio
+                        </h3>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div><label class="block text-xs font-bold text-slate-400 mb-1.5 uppercase tracking-wider">Nome da Loja</label><input type="text" id="confStoreName" class="w-full border rounded-xl p-3.5 outline-none focus:ring-2 focus:ring-primary-500"></div>
+                            <div><label class="block text-xs font-bold text-slate-400 mb-1.5 uppercase tracking-wider">WhatsApp Público</label><input type="text" id="confWhatsapp" class="w-full border rounded-xl p-3.5 outline-none focus:ring-2 focus:ring-primary-500"></div>
+                            <div class="md:col-span-2"><label class="block text-xs font-bold text-slate-400 mb-1.5 uppercase tracking-wider">Mensagem do Rodapé</label><textarea id="confFooter" class="w-full border rounded-xl p-3.5 outline-none focus:ring-2 focus:ring-primary-500" rows="2"></textarea></div>
+                            <div><label class="block text-xs font-bold text-slate-400 mb-1.5 uppercase tracking-wider">Cor do Tema</label><input type="color" id="confColorPrimary" class="h-14 w-full rounded-xl border p-1 cursor-pointer"></div>
+                        </div>
+                    </div>
+
+                    <div class="section-card bg-white rounded-3xl border border-slate-200 p-8 shadow-sm">
+                        <h3 class="text-xl font-bold text-slate-800 mb-6">Configuração de Entrega</h3>
+                        <div class="flex flex-col md:flex-row gap-4 mb-6">
+                            <input type="text" id="areaName" placeholder="Nome do Bairro" class="flex-1 border rounded-xl p-3.5 outline-none">
+                            <input type="number" id="areaFee" placeholder="Taxa (R$)" step="0.01" class="md:w-32 border rounded-xl p-3.5 outline-none">
+                            <button type="button" onclick="addDeliveryArea()" class="bg-slate-900 text-white px-6 py-3.5 rounded-xl font-bold shadow-md">Adicionar</button>
+                        </div>
+                        <div id="deliveryAreasList" class="bg-slate-50 rounded-2xl border overflow-hidden divide-y"></div>
+                    </div>
+
+                    <div class="flex justify-end pb-12">
+                        <button type="submit" class="w-full md:w-auto bg-green-600 hover:bg-green-700 text-white font-bold py-4 px-12 rounded-2xl shadow-xl transition-all">Guardar Configurações</button>
+                    </div>
+                </form>
+            </div>
         </div>
     </main>
 
-    <!-- MODAL: BANNER -->
+    <!-- MODAIS -->
+    <div id="toast-container" class="fixed top-5 right-5 z-[100] flex flex-col gap-2 pointer-events-none"></div>
+
+    <!-- MODAL BANNER -->
     <div id="bannerModal" class="modal-overlay fixed inset-0 z-[150] flex items-center justify-center p-4 hidden">
-        <div class="bg-white rounded-3xl shadow-2xl w-full max-w-lg modal-content-wrapper p-6">
-            <h3 class="text-xl font-bold mb-6">Configurar Banner Hero</h3>
-            <form id="bannerForm" onsubmit="handleBannerSubmit(event)" class="space-y-4">
+        <div class="bg-white rounded-3xl shadow-2xl w-full max-w-lg modal-content-wrapper p-8 text-white">
+            <h3 class="text-2xl font-bold mb-6 text-slate-800">Banner da Vitrine</h3>
+            <form id="bannerForm" onsubmit="handleBannerSubmit(event)" class="space-y-5">
                 <input type="hidden" id="bannerId">
-                <div id="bannerPreview" class="h-32 rounded-2xl flex flex-col justify-center p-6 text-white shadow-md transition-all">
-                    <span id="prevTag" class="text-[10px] font-black uppercase tracking-widest opacity-80 mb-1">Tag</span>
-                    <h3 id="prevTitle" class="font-bold text-2xl leading-tight">Título do Card</h3>
+                <div id="bannerPreview" class="h-40 rounded-3xl flex flex-col justify-center p-8 text-white shadow-xl transition-all">
+                    <span id="prevTag" class="text-xs font-bold uppercase tracking-widest opacity-80 mb-2">PROMOÇÃO</span>
+                    <h3 id="prevTitle" class="font-extrabold text-3xl leading-tight text-white">Título Impactante</h3>
                 </div>
                 <div class="grid grid-cols-2 gap-4">
-                    <input type="text" id="bannerTag" placeholder="Tag (Ex: Oferta)" oninput="updateBannerPreview()" required class="border rounded-xl p-3 outline-none">
-                    <select id="bannerTarget" class="border rounded-xl p-3 outline-none bg-white"></select>
+                    <input type="text" id="bannerTag" placeholder="Tag Ex: Oferta" oninput="updateBannerPreview()" required class="text-slate-800 border rounded-2xl p-3.5 outline-none focus:ring-2 focus:ring-primary-500">
+                    <select id="bannerTarget" class="text-slate-800 border rounded-2xl p-3.5 outline-none bg-white focus:ring-2 focus:ring-primary-500"></select>
                 </div>
-                <input type="text" id="bannerTitle" placeholder="Título Principal" oninput="updateBannerPreview()" required class="w-full border rounded-xl p-3 outline-none">
+                <input type="text" id="bannerTitle" placeholder="Frase principal" oninput="updateBannerPreview()" required class="text-slate-800 w-full border rounded-2xl p-3.5 outline-none focus:ring-2 focus:ring-primary-500">
                 <div class="grid grid-cols-2 gap-4">
-                    <div><label class="text-[10px] font-bold text-slate-400 block mb-1 uppercase">Cor Início</label><input type="color" id="bannerColor1" oninput="updateBannerPreview()" class="w-full h-10 rounded-xl cursor-pointer"></div>
-                    <div><label class="text-[10px] font-bold text-slate-400 block mb-1 uppercase">Cor Fim</label><input type="color" id="bannerColor2" oninput="updateBannerPreview()" class="w-full h-10 rounded-xl cursor-pointer"></div>
+                    <div><label class="text-xs font-bold text-slate-400 block mb-2">Cor 1</label><input type="color" id="bannerColor1" oninput="updateBannerPreview()" class="w-full h-12 rounded-xl cursor-pointer"></div>
+                    <div><label class="text-xs font-bold text-slate-400 block mb-2">Cor 2</label><input type="color" id="bannerColor2" oninput="updateBannerPreview()" class="w-full h-12 rounded-xl cursor-pointer"></div>
                 </div>
-                <div class="flex justify-end gap-3 pt-6 border-t">
-                    <button type="button" onclick="document.getElementById('bannerModal').classList.add('hidden')" class="px-4 py-2 text-slate-500 font-bold">Cancelar</button>
-                    <button type="submit" class="bg-primary-600 text-white px-8 py-2.5 rounded-xl font-bold shadow-lg shadow-primary-500/20">Salvar Banner</button>
+                <div class="flex justify-end gap-4 pt-4">
+                    <button type="button" onclick="document.getElementById('bannerModal').classList.add('hidden')" class="px-6 py-3 text-slate-400 font-bold">Cancelar</button>
+                    <button type="submit" class="bg-primary-600 text-white px-8 py-3 rounded-2xl font-bold shadow-lg">Salvar</button>
                 </div>
             </form>
         </div>
     </div>
 
-    <!-- MODAL: PRODUTO -->
+    <!-- MODAL PRODUTO -->
     <div id="productModal" class="modal-overlay fixed inset-0 z-[150] flex items-center justify-center p-4 hidden">
-        <div class="bg-white rounded-3xl shadow-2xl w-full max-w-2xl modal-content-wrapper p-6">
-            <h3 class="text-xl font-bold mb-6">Dados do Produto</h3>
-            <form id="productForm" onsubmit="handleProductSubmit(event)" class="space-y-4">
+        <div class="bg-white rounded-3xl shadow-2xl w-full max-w-2xl modal-content-wrapper p-8">
+            <h3 class="text-2xl font-bold mb-6 text-slate-800">Ficha do Produto</h3>
+            <form id="productForm" onsubmit="handleProductSubmit(event)" class="space-y-5">
                 <input type="hidden" id="prodId">
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div class="md:col-span-2"><input type="text" id="prodName" placeholder="Nome do Produto" required class="w-full border rounded-xl p-3 outline-none focus:ring-2 focus:ring-primary-500"></div>
-                    <select id="prodCategory" class="border rounded-xl p-3 outline-none bg-white focus:ring-2 focus:ring-primary-500" required></select>
-                    <input type="number" step="0.01" id="prodValue" placeholder="Preço (R$)" required class="border rounded-xl p-3 outline-none focus:ring-2 focus:ring-primary-500">
-                    <input type="number" step="0.01" id="prodPromo" placeholder="Preço Promo (Opcional)" class="border rounded-xl p-3 outline-none text-green-600 focus:ring-2 focus:ring-green-500">
-                    <input type="text" id="prodSizes" placeholder="Tamanhos (P, M, G)" class="border rounded-xl p-3 outline-none focus:ring-2 focus:ring-primary-500">
-                    <input type="text" id="prodColors" placeholder="Cores (Azul, Preto)" class="border rounded-xl p-3 outline-none focus:ring-2 focus:ring-primary-500">
-                    <div class="md:col-span-2"><input type="url" id="prodImage" placeholder="URL da Imagem (https://...)" class="w-full border rounded-xl p-3 outline-none focus:ring-2 focus:ring-primary-500"></div>
-                    <div class="md:col-span-2"><textarea id="prodDesc" placeholder="Breve descrição..." class="w-full border rounded-xl p-3 outline-none focus:ring-2 focus:ring-primary-500" rows="3"></textarea></div>
-                    <div class="flex items-center gap-2"><input type="checkbox" id="prodFeatured" class="w-4 h-4 accent-primary-600"><label class="text-sm font-medium">Destaque na vitrine</label></div>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+                    <div class="md:col-span-2"><input type="text" id="prodName" placeholder="Nome do produto" required class="w-full border rounded-2xl p-3.5 outline-none focus:ring-2 focus:ring-primary-500"></div>
+                    <select id="prodCategory" class="border rounded-2xl p-3.5 outline-none bg-white focus:ring-2 focus:ring-primary-500" required></select>
+                    <input type="number" step="0.01" id="prodValue" placeholder="Preço Base (R$)" required class="border rounded-2xl p-3.5 outline-none focus:ring-2 focus:ring-primary-500">
+                    <input type="number" step="0.01" id="prodPromo" placeholder="Preço Promo" class="border rounded-2xl p-3.5 outline-none text-green-600 focus:ring-2 focus:ring-green-500">
+                    <input type="text" id="prodSizes" placeholder="Tamanhos (P, M, G)" class="border rounded-2xl p-3.5 outline-none">
+                    <input type="text" id="prodColors" placeholder="Cores (Ex: Preto)" class="border rounded-2xl p-3.5 outline-none">
+                    <div class="md:col-span-2"><input type="url" id="prodImage" placeholder="Link da imagem (URL)" class="w-full border rounded-2xl p-3.5 outline-none"></div>
+                    <div class="md:col-span-2"><textarea id="prodDesc" placeholder="Descrição completa..." class="w-full border rounded-2xl p-3.5 outline-none" rows="3"></textarea></div>
+                    <div class="flex items-center gap-3 bg-slate-50 p-4 rounded-2xl border"><input type="checkbox" id="prodFeatured" class="w-5 h-5 accent-primary-600"><label class="text-sm font-bold text-slate-600">Produto em Destaque</label></div>
                 </div>
-                <div class="flex justify-end gap-3 pt-6 border-t">
-                    <button type="button" onclick="document.getElementById('productModal').classList.add('hidden')" class="px-4 py-2 text-slate-500 font-bold">Cancelar</button>
-                    <button type="submit" class="bg-primary-600 text-white px-8 py-2.5 rounded-xl font-bold shadow-lg shadow-primary-500/20">Gravar Produto</button>
+                <div class="flex justify-end gap-4 pt-6 border-t">
+                    <button type="button" onclick="document.getElementById('productModal').classList.add('hidden')" class="px-6 py-3 text-slate-400 font-bold">Cancelar</button>
+                    <button type="submit" class="bg-primary-600 text-white px-10 py-3.5 rounded-2xl font-bold shadow-xl">Guardar</button>
                 </div>
             </form>
         </div>
@@ -309,8 +381,8 @@
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-        import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged, updatePassword } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        import { getFirestore, doc, getDoc, setDoc, updateDoc, deleteDoc, onSnapshot, collection, addDoc, query, where, getDocs, serverTimestamp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged, updatePassword, setPersistence, browserLocalPersistence, browserSessionPersistence } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, doc, getDoc, setDoc, updateDoc, deleteDoc, onSnapshot, collection, addDoc, query, where, getDocs } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
         
         const CONFIG = { apiKey: "AIzaSyAdwsGBTApwOwqr37qCv72gdPRbipsZG0Q", authDomain: "meuestoque-1badc.firebaseapp.com", projectId: "meuestoque-1badc", storageBucket: "meuestoque-1badc.appspot.com", messagingSenderId: "730003067834", appId: "1:730003067834:web:b205f1ea59053345960383" };
         
@@ -326,14 +398,18 @@
             e.preventDefault();
             const email = document.getElementById('loginEmail').value;
             const pass = document.getElementById('loginPass').value;
+            const rememberMe = document.getElementById('rememberMe').checked;
             const btn = document.getElementById('btnLogin');
-            btn.disabled = true; btn.textContent = "Verificando...";
-            try { await signInWithEmailAndPassword(auth, email, pass); } 
-            catch(e) { 
-                btn.disabled = false; btn.textContent = "Entrar no Sistema";
-                const err = document.getElementById('loginError');
-                err.textContent = "E-mail ou senha incorretos.";
-                err.classList.remove('hidden');
+            btn.disabled = true; btn.textContent = "Validando...";
+            try {
+                const persistence = rememberMe ? browserLocalPersistence : browserSessionPersistence;
+                await setPersistence(auth, persistence);
+                await signInWithEmailAndPassword(auth, email, pass);
+            } catch(e) { 
+                btn.disabled = false; btn.textContent = "Aceder ao Painel";
+                document.getElementById('loginError').textContent = "Credenciais inválidas.";
+                document.getElementById('loginError').classList.remove('hidden');
+                lucide.createIcons();
             }
         };
 
@@ -345,95 +421,111 @@
             lucide.createIcons();
         };
 
+        window.togglePasswordVisibility = (inputId, iconId) => {
+            const input = document.getElementById(inputId);
+            const icon = document.getElementById(iconId);
+            if (input.type === 'password') {
+                input.type = 'text';
+                icon.setAttribute('data-lucide', 'eye-off');
+            } else {
+                input.type = 'password';
+                icon.setAttribute('data-lucide', 'eye');
+            }
+            lucide.createIcons();
+        };
+
+        window.toggleMobileSidebar = () => {
+            const sidebar = document.getElementById('mobileSidebar');
+            const overlay = document.getElementById('mobileOverlay');
+            if(sidebar.classList.contains('sidebar-hidden')) {
+                sidebar.classList.replace('sidebar-hidden', 'sidebar-visible');
+                overlay.classList.remove('hidden');
+            } else {
+                sidebar.classList.replace('sidebar-visible', 'sidebar-hidden');
+                overlay.classList.add('hidden');
+            }
+        };
+
         window.handlePreRegister = async (e) => {
             e.preventDefault();
             const btn = document.getElementById('btnReg');
-            btn.disabled = true; btn.textContent = "A enviar...";
+            btn.disabled = true; btn.textContent = "Aguarde...";
             const data = {
                 ownerName: document.getElementById('regOwner').value,
                 email: document.getElementById('regEmail').value,
                 storeName: document.getElementById('regStoreName').value,
                 phone: document.getElementById('regPhone').value,
-                timestamp: serverTimestamp(),
-                status: 'pending'
+                status: 'pending',
+                requestDate: new Date().toISOString()
             };
             try {
                 await addDoc(collection(db, "registration_requests"), data);
                 document.getElementById('preRegForm').classList.add('hidden');
-                document.getElementById('regBackLink').classList.add('hidden');
+                document.getElementById('regFooter').classList.add('hidden');
                 document.getElementById('regSuccess').classList.remove('hidden');
                 lucide.createIcons();
             } catch(err) {
                 alert("Erro ao enviar: " + err.message);
-                btn.disabled = false; btn.textContent = "Enviar Solicitação";
+                btn.disabled = false; btn.textContent = "Criar Minha Loja Agora";
             }
         };
 
-        // --- PASSWORD UPDATE ---
+        // --- SEGURANÇA ---
         window.handleUpdatePassword = async (e) => {
             e.preventDefault();
             const newP = document.getElementById('newPass').value;
             const confP = document.getElementById('confirmNewPass').value;
-            const msg = document.getElementById('passMsg');
+            if(newP !== confP) { document.getElementById('passError').classList.remove('hidden'); return; }
+            document.getElementById('passError').classList.add('hidden');
             const btn = document.getElementById('btnUpdatePass');
-
-            if(newP !== confP) {
-                msg.textContent = "As senhas não coincidem!";
-                msg.className = "text-xs font-bold mt-1 text-red-500 block";
-                return;
-            }
-
-            btn.disabled = true; btn.textContent = "A atualizar...";
+            btn.disabled = true; btn.textContent = "Gravando...";
             try {
                 await updatePassword(auth.currentUser, newP);
-                msg.textContent = "Senha atualizada com sucesso!";
-                msg.className = "text-xs font-bold mt-1 text-green-500 block";
+                showToast("Palavra-passe alterada!");
                 document.getElementById('newPass').value = '';
                 document.getElementById('confirmNewPass').value = '';
-                showToast("Sua senha foi alterada.");
             } catch(e) {
-                msg.textContent = "Erro: Re-autenticação necessária.";
-                msg.className = "text-xs font-bold mt-1 text-red-500 block";
+                showToast("Sessão expirada. Refaça o login.");
             } finally {
-                btn.disabled = false; btn.textContent = "Atualizar";
+                btn.disabled = false; btn.textContent = "Atualizar Palavra-passe";
             }
         };
 
-        // --- ESTADO INICIAL ---
+        // --- INICIALIZAÇÃO ---
         onAuthStateChanged(auth, async (user) => {
             if(user) {
                 document.getElementById('auth-screen').classList.add('hidden');
+                document.getElementById('userEmailDisplay').textContent = user.email;
                 let dirDoc = await getDoc(doc(db, "admin_directory", user.uid));
                 
                 if(!dirDoc.exists()){
                     const q = query(collection(db, "stores_registry"), where("ownerEmail", "==", user.email));
                     const snap = await getDocs(q);
-                    if(snap.empty) { alert("Sem loja vinculada."); return handleLogout(); }
+                    if(snap.empty) { alert("Perfil não vinculado."); return handleLogout(); }
                     currentStoreId = snap.docs[0].data().slug;
                 } else {
                     currentStoreId = dirDoc.data().storeId;
                 }
-
                 initStoreData();
             } else {
                 document.getElementById('auth-screen').classList.remove('hidden');
+                lucide.createIcons();
             }
         });
 
         function initStoreData() {
-            // URL Vitrine
-            const origin = window.location.origin;
-            const path = window.location.pathname.substring(0, window.location.pathname.lastIndexOf('/') + 1);
-            const url = `${origin}${path}index.html?id=${currentStoreId}`;
+            // --- CORREÇÃO DO LINK ---
+            const url = `https://danielnqtfreitas-hash.github.io/Vitrine/?id=${currentStoreId}`;
             document.getElementById('urlDisplay').textContent = url;
             document.getElementById('storeMenuBtn').classList.remove('opacity-50', 'pointer-events-none');
 
-            // Listeners
+            // Listeners Real-time
             onSnapshot(doc(db, `stores/${currentStoreId}/config/store`), d => {
                 if(d.exists()) {
                     const data = d.data();
                     if(data.subscriptionStatus === 'suspended') document.getElementById('suspended-screen').classList.remove('hidden');
                     document.getElementById('sidebarStoreName').textContent = data.storeName;
+                    document.getElementById('sidebarStoreNameMobile').textContent = data.storeName;
                     document.getElementById('confStoreName').value = data.storeName || '';
                     document.getElementById('confWhatsapp').value = data.whatsappNumber || '';
                     document.getElementById('confFooter').value = data.footerText || '';
@@ -464,7 +556,7 @@
             });
         }
 
-        // --- BANNER LOGIC ---
+        // --- CRUD HANDLERS ---
         window.updateBannerPreview = () => {
             const tag = document.getElementById('bannerTag').value || 'TAG';
             const title = document.getElementById('bannerTitle').value || 'Título';
@@ -479,7 +571,6 @@
             const select = document.getElementById('bannerTarget');
             select.innerHTML = '<option value="offers">Todas as Ofertas</option>';
             allCategories.forEach(c => select.innerHTML += `<option value="${c.name}">${c.name}</option>`);
-            
             if(b) {
                 document.getElementById('bannerId').value = b.id;
                 document.getElementById('bannerTag').value = b.tag;
@@ -507,15 +598,13 @@
                 color2: document.getElementById('bannerColor2').value,
                 target: document.getElementById('bannerTarget').value
             };
-            try {
-                if(id) await updateDoc(doc(db, `stores/${currentStoreId}/hero_cards`, id), data);
-                else await addDoc(collection(db, `stores/${currentStoreId}/hero_cards`), data);
-                document.getElementById('bannerModal').classList.add('hidden');
-                showToast("Banner salvo com sucesso!");
-            } catch(e) { console.error(e); }
+            if(id) await updateDoc(doc(db, `stores/${currentStoreId}/hero_cards`, id), data);
+            else await addDoc(collection(db, `stores/${currentStoreId}/hero_cards`), data);
+            document.getElementById('bannerModal').classList.add('hidden');
+            showToast("Banner atualizado!");
         };
 
-        window.deleteBanner = async (id) => { if(confirm("Deseja apagar este banner?")) await deleteDoc(doc(db, `stores/${currentStoreId}/hero_cards`, id)); };
+        window.deleteBanner = async (id) => { if(confirm("Apagar banner?")) await deleteDoc(doc(db, `stores/${currentStoreId}/hero_cards`, id)); };
 
         function renderBannerList() {
             const list = document.getElementById('bannersList');
@@ -523,26 +612,24 @@
             document.getElementById('emptyBannersMsg').classList.toggle('hidden', allBanners.length > 0);
             allBanners.forEach(b => {
                 const div = document.createElement('div');
-                div.className = "bg-white p-4 rounded-3xl border border-slate-200 shadow-sm animate-fade-in";
+                div.className = "bg-white p-4 rounded-3xl border shadow-sm";
                 div.innerHTML = `
                     <div class="h-28 rounded-2xl flex flex-col justify-center p-5 text-white mb-4" style="background:linear-gradient(135deg, ${b.color1}, ${b.color2})">
-                        <span class="text-[9px] font-black uppercase opacity-80 tracking-widest">${b.tag}</span>
-                        <h4 class="font-bold text-lg leading-tight">${b.title}</h4>
+                        <span class="text-[9px] font-extrabold uppercase tracking-widest opacity-80">${b.tag}</span>
+                        <h4 class="font-bold text-lg leading-tight text-white">${b.title}</h4>
                     </div>
                     <div class="flex justify-between items-center">
-                        <span class="text-[10px] font-bold text-indigo-600 bg-indigo-50 px-2 py-1 rounded-full border border-indigo-100">${b.target === 'offers' ? 'OFERTAS' : b.target.toUpperCase()}</span>
-                        <div class="flex gap-2">
-                            <button onclick='openBannerModal(${JSON.stringify(b)})' class="p-2 text-blue-600 hover:bg-blue-50 rounded-xl transition-colors"><i data-lucide="pencil" class="w-4 h-4"></i></button>
-                            <button onclick="deleteBanner('${b.id}')" class="p-2 text-red-600 hover:bg-red-50 rounded-xl transition-colors"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
+                        <span class="text-[10px] font-bold text-slate-400 bg-slate-50 px-3 py-1 rounded-full border">${b.target}</span>
+                        <div class="flex gap-1">
+                            <button onclick='openBannerModal(${JSON.stringify(b)})' class="p-2 text-blue-600 hover:bg-blue-50 rounded-xl"><i data-lucide="pencil" class="w-4 h-4"></i></button>
+                            <button onclick="deleteBanner('${b.id}')" class="p-2 text-red-600 hover:bg-red-50 rounded-xl"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
                         </div>
-                    </div>
-                `;
+                    </div>`;
                 list.appendChild(div);
             });
             lucide.createIcons();
         }
 
-        // --- PRODUCT LOGIC ---
         window.openProductModal = (p = null) => {
             const sel = document.getElementById('prodCategory');
             sel.innerHTML = allCategories.map(c => `<option value="${c.name}">${c.name}</option>`).join('');
@@ -582,74 +669,73 @@
             if(id) await updateDoc(doc(db, `stores/${currentStoreId}/products`, id), data);
             else await addDoc(collection(db, `stores/${currentStoreId}/products`), data);
             document.getElementById('productModal').classList.add('hidden');
-            showToast("Produto atualizado!");
+            showToast("Produto guardado.");
         };
 
-        window.deleteProduct = async (id) => { if(confirm("Excluir produto?")) await deleteDoc(doc(db, `stores/${currentStoreId}/products`, id)); };
+        window.deleteProduct = async (id) => { if(confirm("Apagar produto?")) await deleteDoc(doc(db, `stores/${currentStoreId}/products`, id)); };
 
         function renderProductList() {
             const list = document.getElementById('productList');
             const search = document.getElementById('productSearch').value.toLowerCase();
             const filtered = allProducts.filter(p => p.name.toLowerCase().includes(search));
             list.innerHTML = filtered.map(p => `
-                <div class="flex items-center gap-4 bg-white p-3 rounded-3xl border border-slate-100 shadow-sm animate-fade-in">
-                    <img src="${p.images?.[0]||''}" class="w-14 h-14 rounded-2xl bg-slate-100 object-cover border">
+                <div class="flex items-center gap-5 bg-white p-4 rounded-3xl border shadow-sm">
+                    <img src="${p.images?.[0]||''}" class="w-16 h-16 rounded-2xl bg-slate-100 object-cover border" onerror="this.src='https://placehold.co/100x100?text=Prod'">
                     <div class="flex-1">
-                        <p class="font-bold text-slate-800 text-sm leading-tight">${p.name}</p>
-                        <p class="text-[10px] text-slate-400 font-bold uppercase mt-1 tracking-wider">${p.category} • R$ ${p.value.toFixed(2)}</p>
+                        <p class="font-bold text-slate-800 text-base leading-tight">${p.name}</p>
+                        <p class="text-[10px] text-slate-400 font-bold uppercase tracking-wide mt-1">${p.category} • R$ ${p.value.toFixed(2)}</p>
                     </div>
-                    <div class="flex gap-1">
-                        <button onclick='openProductModal(${JSON.stringify(p)})' class="p-2 text-blue-600 hover:bg-blue-50 rounded-xl transition-colors"><i data-lucide="pencil" class="w-4 h-4"></i></button>
-                        <button onclick="deleteProduct('${p.id}')" class="p-2 text-red-600 hover:bg-red-50 rounded-xl transition-colors"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
+                    <div class="flex gap-2">
+                        <button onclick='openProductModal(${JSON.stringify(p).replace(/'/g, "&apos;")})' class="p-3 text-blue-600 hover:bg-blue-50 rounded-2xl"><i data-lucide="pencil" class="w-5 h-5"></i></button>
+                        <button onclick="deleteProduct('${p.id}')" class="p-3 text-red-600 hover:bg-red-50 rounded-2xl"><i data-lucide="trash-2" class="w-5 h-5"></i></button>
                     </div>
-                </div>
-            `).join('');
+                </div>`).join('');
             lucide.createIcons();
         }
 
-        // --- CATEGORIES LOGIC ---
         window.addCategory = async (e) => {
             e.preventDefault();
             const name = document.getElementById('catInputName').value;
             await addDoc(collection(db, `stores/${currentStoreId}/categories`), { name, status: 'active' });
             document.getElementById('catInputName').value = '';
-            showToast("Categoria adicionada!");
+            showToast("Categoria criada.");
         };
 
-        window.deleteCategory = async (id) => { if(confirm("Excluir esta categoria?")) await deleteDoc(doc(db, `stores/${currentStoreId}/categories`, id)); };
+        window.deleteCategory = async (id) => { if(confirm("Apagar categoria?")) await deleteDoc(doc(db, `stores/${currentStoreId}/categories`, id)); };
 
         function renderCategoryList() {
             document.getElementById('categoryList').innerHTML = allCategories.map(c => `
-                <div class="flex justify-between items-center p-4 bg-white">
-                    <span class="font-bold text-slate-700 text-sm">${c.name}</span>
-                    <button onclick="deleteCategory('${c.id}')" class="p-2 text-red-500 hover:bg-red-50 rounded-xl transition-colors"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
-                </div>
-            `).join('');
+                <div class="flex justify-between items-center p-5 bg-white">
+                    <span class="font-bold text-slate-700">${c.name}</span>
+                    <button onclick="deleteCategory('${c.id}')" class="p-2 text-red-500 hover:bg-red-50 rounded-xl"><i data-lucide="trash-2" class="w-5 h-5"></i></button>
+                </div>`).join('');
             lucide.createIcons();
         }
 
-        // --- NAVIGATION & UI ---
+        // --- GERAL ---
         window.changeTab = (id) => {
             ['dashboard','banners','products','categories','config'].forEach(t => {
                 document.getElementById(`content-${t}`).classList.add('hidden');
                 document.getElementById(`nav-${t}`)?.classList.remove('active');
             });
             document.getElementById(`content-${id}`).classList.remove('hidden');
-            document.getElementById(`nav-${id}`).classList.add('active');
-            document.getElementById('page-title').textContent = id.charAt(0).toUpperCase() + id.slice(1).replace('-',' ');
+            const navBtn = document.getElementById(`nav-${id}`);
+            if(navBtn) navBtn.classList.add('active');
+            document.getElementById('page-title').textContent = id.charAt(0).toUpperCase() + id.slice(1);
+            if(document.getElementById('mobileSidebar').classList.contains('sidebar-visible')) toggleMobileSidebar();
         };
 
         window.toggleStoreMenu = (e) => { e.stopPropagation(); document.getElementById('storeDropdown').classList.toggle('hidden'); };
-        window.copyStoreLink = () => { navigator.clipboard.writeText(document.getElementById('urlDisplay').textContent); showToast("Link da vitrine copiado!"); };
+        window.copyStoreLink = () => { navigator.clipboard.writeText(document.getElementById('urlDisplay').textContent); showToast("Link copiado!"); };
         window.openStoreLink = () => { window.open(document.getElementById('urlDisplay').textContent, '_blank'); };
         
         window.showToast = (msg) => {
             const el = document.createElement('div');
-            el.className = "toast bg-slate-900 text-white px-6 py-3 rounded-2xl shadow-2xl flex items-center gap-3 font-bold text-sm pointer-events-auto border border-white/10";
-            el.innerHTML = `<i data-lucide="check-circle" class="w-5 h-5 text-green-400"></i> <span>${msg}</span>`;
+            el.className = "toast bg-slate-900 text-white px-6 py-4 rounded-3xl shadow-2xl flex items-center gap-3 font-bold text-sm";
+            el.innerHTML = `<i data-lucide="bell" class="w-5 h-5 text-primary-400"></i> ${msg}`;
             document.getElementById('toast-container').appendChild(el);
+            setTimeout(() => el.remove(), 4000);
             lucide.createIcons();
-            setTimeout(() => { el.style.opacity = '0'; el.style.transform = 'translateY(-20px)'; setTimeout(() => el.remove(), 300); }, 3000);
         };
 
         window.toggleStoreStatusQuick = async (el) => {
@@ -659,13 +745,18 @@
         window.addDeliveryArea = () => {
             const n = document.getElementById('areaName').value;
             const f = parseFloat(document.getElementById('areaFee').value);
-            if(n && !isNaN(f)) { deliveryAreas.push({name:n, fee:f}); renderDeliveryAreas(); document.getElementById('areaName').value=''; document.getElementById('areaFee').value=''; }
+            if(n && !isNaN(f)) { deliveryAreas.push({name:n, fee:f}); renderDeliveryAreas(); document.getElementById('areaName').value=''; document.getElementById('areaFee').value='';}
         };
         window.removeArea = (i) => { deliveryAreas.splice(i,1); renderDeliveryAreas(); };
         function renderDeliveryAreas() {
             document.getElementById('deliveryAreasList').innerHTML = deliveryAreas.map((a,i) => `
-                <div class="flex justify-between p-3 bg-white"><span>${a.name}</span><b>R$ ${a.fee.toFixed(2)} <button onclick="removeArea(${i})" class="ml-2 text-red-500 hover:bg-red-50 p-1 rounded-lg transition-colors">×</button></b></div>
-            `).join('');
+                <div class="flex justify-between items-center p-4 bg-white">
+                    <span class="text-slate-700 font-medium">${a.name}</span>
+                    <div class="flex items-center gap-4">
+                        <b class="text-slate-900">R$ ${a.fee.toFixed(2)}</b>
+                        <button onclick="removeArea(${i})" class="text-red-500 font-bold hover:bg-red-50 p-2 rounded-lg">×</button>
+                    </div>
+                </div>`).join('');
         }
         window.saveStoreConfig = async (e) => {
             e.preventDefault();
@@ -677,7 +768,7 @@
                 deliveryAreas: deliveryAreas
             };
             await setDoc(doc(db, `stores/${currentStoreId}/config/store`), data, { merge: true });
-            showToast("Definições da loja salvas!");
+            showToast("Alterações gravadas!");
         };
 
         lucide.createIcons();
