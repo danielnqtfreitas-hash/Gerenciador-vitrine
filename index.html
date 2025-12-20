@@ -73,7 +73,7 @@
                     <i data-lucide="store" class="w-8 h-8 text-primary-600"></i>
                 </div>
                 <h2 class="text-2xl font-bold text-slate-800">Painel do Lojista</h2>
-                <p class="text-slate-500 text-sm mt-1">Gestão profissional para o seu negócio.</p>
+                <p class="text-slate-500 text-sm mt-1">Gestão inteligente com planos flexíveis.</p>
             </div>
             <form onsubmit="handleLogin(event)" class="space-y-4">
                 <div>
@@ -171,7 +171,7 @@
         </div>
         <nav class="flex-1 overflow-y-auto py-6 space-y-1">
             <button id="nav-dashboard" onclick="changeTab('dashboard')" class="sidebar-link w-full flex items-center px-6 py-3 text-sm font-medium text-slate-600 active"><i data-lucide="bar-chart-2" class="w-5 h-5 mr-3"></i> Dashboard</button>
-            <button id="nav-banners" onclick="changeTab('banners')" class="sidebar-link w-full flex items-center px-6 py-3 text-sm font-medium text-slate-600"><i data-lucide="layout" class="w-5 h-5 mr-3"></i> Banners (Cards)</button>
+            <button id="nav-banners" onclick="changeTab('banners')" class="sidebar-link w-full flex items-center px-6 py-3 text-sm font-medium text-slate-600"><i data-lucide="layout" class="w-5 h-5 mr-3"></i> Banners</button>
             <button id="nav-products" onclick="changeTab('products')" class="sidebar-link w-full flex items-center px-6 py-3 text-sm font-medium text-slate-600"><i data-lucide="package" class="w-5 h-5 mr-3"></i> Produtos</button>
             <button id="nav-categories" onclick="changeTab('categories')" class="sidebar-link w-full flex items-center px-6 py-3 text-sm font-medium text-slate-600"><i data-lucide="layers" class="w-5 h-5 mr-3"></i> Categorias</button>
             <button id="nav-config" onclick="changeTab('config')" class="sidebar-link w-full flex items-center px-6 py-3 text-sm font-medium text-slate-600"><i data-lucide="settings" class="w-5 h-5 mr-3"></i> Configurações</button>
@@ -219,8 +219,11 @@
                     <div class="flex items-center gap-5">
                         <div class="p-4 bg-primary-50 text-primary-600 rounded-2xl shadow-inner"><i data-lucide="store" class="w-8 h-8"></i></div>
                         <div>
-                            <h3 class="font-bold text-xl text-slate-800">Status Operacional</h3>
-                            <p class="text-sm text-slate-500">Controle se a sua loja está aceitando novos pedidos agora.</p>
+                            <h3 class="font-bold text-xl text-slate-800">Status da Loja</h3>
+                            <div class="flex items-center gap-2 mt-1">
+                                <span class="text-sm text-slate-500">Plano Atual:</span>
+                                <span id="currentPlanBadge" class="text-xs font-bold bg-slate-100 px-2 py-0.5 rounded border uppercase">Carregando...</span>
+                            </div>
                         </div>
                     </div>
                     <div class="flex items-center gap-4 bg-slate-50 px-6 py-3 rounded-2xl border">
@@ -229,9 +232,18 @@
                     </div>
                 </div>
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-                    <div class="section-card bg-white p-6 border border-slate-100"><p class="text-xs font-bold text-slate-400 uppercase tracking-widest mb-2">Total de Produtos</p><h3 class="text-4xl font-bold text-slate-800" id="dash-total-products">0</h3></div>
-                    <div class="section-card bg-white p-6 border border-slate-100"><p class="text-xs font-bold text-slate-400 uppercase tracking-widest mb-2">Banners Ativos</p><h3 class="text-4xl font-bold text-primary-600" id="dash-total-banners">0</h3></div>
-                    <div class="section-card bg-white p-6 border border-slate-100"><p class="text-xs font-bold text-slate-400 uppercase tracking-widest mb-2">Categorias</p><h3 class="text-4xl font-bold text-slate-800" id="dash-total-cats">0</h3></div>
+                    <div class="section-card bg-white p-6 border border-slate-100">
+                        <p class="text-xs font-bold text-slate-400 uppercase tracking-widest mb-2">Produtos</p>
+                        <h3 class="text-4xl font-bold text-slate-800"><span id="dash-total-products">0</span><span class="text-sm text-slate-400 font-normal" id="dash-limit-products">/50</span></h3>
+                    </div>
+                    <div class="section-card bg-white p-6 border border-slate-100">
+                        <p class="text-xs font-bold text-slate-400 uppercase tracking-widest mb-2">Banners</p>
+                        <h3 class="text-4xl font-bold text-primary-600"><span id="dash-total-banners">0</span><span class="text-sm text-slate-400 font-normal" id="dash-limit-banners">/1</span></h3>
+                    </div>
+                    <div class="section-card bg-white p-6 border border-slate-100">
+                        <p class="text-xs font-bold text-slate-400 uppercase tracking-widest mb-2">Categorias</p>
+                        <h3 class="text-4xl font-bold text-slate-800" id="dash-total-cats">0</h3>
+                    </div>
                 </div>
             </div>
 
@@ -330,7 +342,7 @@
                     <!-- UPLOAD DE IMAGENS -->
                     <div class="md:col-span-2">
                         <div class="flex justify-between items-center mb-2">
-                            <label class="block text-xs font-bold uppercase text-slate-400 tracking-wider">Fotos do Produto (Máx. 4)</label>
+                            <label id="photoLabel" class="block text-xs font-bold uppercase text-slate-400 tracking-wider">Fotos do Produto (Máx. 4)</label>
                             <span id="photoCount" class="text-[10px] font-bold text-slate-300">0/4</span>
                         </div>
                         
@@ -408,7 +420,15 @@
 
         let currentStoreId = null;
         let allProducts = [], allCategories = [], allBanners = [], deliveryAreas = [];
-        let currentProductImages = []; // Guardará o array de Base64 das imagens no modal
+        let currentProductImages = []; 
+        let currentPlan = 'basic'; 
+
+        // --- CONFIGURAÇÃO DOS LIMITES DOS PLANOS ---
+        const PLAN_LIMITS = {
+            basic: { products: 50, images: 1, banners: 1 },
+            standard: { products: 150, images: 4, banners: 3 },
+            premium: { products: 500, images: 4, banners: 9999 } // 9999 = ilimitado na prática
+        };
 
         // --- SISTEMA DE COMPRESSÃO E SEGURANÇA DE IMAGEM ---
         window.processImages = async (files) => {
@@ -417,9 +437,10 @@
             const loading = document.getElementById('imageLoading');
             const btn = document.getElementById('btnSaveProd');
             
-            // Verificações de segurança e limite
-            if (currentProductImages.length + files.length > 4) {
-                showToast("Erro: Máximo de 4 fotos por produto.");
+            // VERIFICAÇÃO DE LIMITE DE IMAGEM DO PLANO
+            const imgLimit = PLAN_LIMITS[currentPlan].images;
+            if (currentProductImages.length + files.length > imgLimit) {
+                showToast(`Seu plano permite máximo de ${imgLimit} foto(s) por produto.`);
                 return;
             }
 
@@ -427,15 +448,9 @@
             btn.disabled = true;
 
             for (let file of files) {
-                // Segurança: Tipo de ficheiro
-                if (!file.type.startsWith('image/')) {
-                    showToast(`O ficheiro "${file.name}" não é uma imagem.`);
-                    continue;
-                }
-                
-                // Segurança: Tamanho máximo original (prevenir crashes)
-                if (file.size > 10 * 1024 * 1024) { // 10MB
-                    showToast(`O ficheiro "${file.name}" é demasiado grande (máx 10MB).`);
+                if (!file.type.startsWith('image/')) continue;
+                if (file.size > 10 * 1024 * 1024) { 
+                    showToast(`Imagem muito grande (máx 10MB).`);
                     continue;
                 }
 
@@ -443,7 +458,7 @@
                     const dataUrl = await compressImage(file);
                     currentProductImages.push(dataUrl);
                 } catch (err) {
-                    console.error("Erro ao processar imagem:", err);
+                    console.error(err);
                 }
             }
 
@@ -459,26 +474,12 @@
                     const img = new Image();
                     img.onload = () => {
                         const canvas = document.createElement('canvas');
-                        let width = img.width;
-                        let height = img.height;
-                        const max_size = 800;
-
-                        if (width > height) {
-                            if (width > max_size) {
-                                height *= max_size / width;
-                                width = max_size;
-                            }
-                        } else {
-                            if (height > max_size) {
-                                width *= max_size / height;
-                                height = max_size;
-                            }
-                        }
-
-                        canvas.width = width;
-                        canvas.height = height;
-                        const ctx = canvas.getContext('2d');
-                        ctx.drawImage(img, 0, 0, width, height);
+                        let w = img.width, h = img.height;
+                        const max = 800;
+                        if (w > h) { if (w > max) { h *= max/w; w = max; } } 
+                        else { if (h > max) { w *= max/h; h = max; } }
+                        canvas.width = w; canvas.height = h;
+                        canvas.getContext('2d').drawImage(img, 0, 0, w, h);
                         resolve(canvas.toDataURL('image/jpeg', 0.7));
                     };
                     img.src = e.target.result;
@@ -495,25 +496,21 @@
         function renderImagePreviews() {
             const gallery = document.getElementById('imageGallery');
             const counter = document.getElementById('photoCount');
+            const imgLimit = PLAN_LIMITS[currentPlan].images;
             gallery.innerHTML = '';
             
             currentProductImages.forEach((img, idx) => {
                 const div = document.createElement('div');
                 div.className = "relative h-16 rounded-lg overflow-hidden border border-slate-200";
-                div.innerHTML = `
-                    <img src="${img}" class="w-full h-full object-cover">
-                    <button type="button" onclick="removeImage(${idx})" class="absolute top-0 right-0 bg-red-500 text-white p-1 rounded-bl-lg hover:bg-red-600 transition-colors">
-                        <i data-lucide="trash-2" class="w-3 h-3"></i>
-                    </button>
-                `;
+                div.innerHTML = `<img src="${img}" class="w-full h-full object-cover"><button type="button" onclick="removeImage(${idx})" class="absolute top-0 right-0 bg-red-500 text-white p-1 rounded-bl-lg hover:bg-red-600 transition-colors"><i data-lucide="trash-2" class="w-3 h-3"></i></button>`;
                 gallery.appendChild(div);
             });
             
-            counter.textContent = `${currentProductImages.length}/4`;
+            counter.textContent = `${currentProductImages.length}/${imgLimit}`;
             lucide.createIcons();
         }
 
-        // --- AUTH & LOGIN ---
+        // --- AUTH ---
         window.handleLogin = async (e) => {
             e.preventDefault();
             const email = document.getElementById('loginEmail').value;
@@ -529,107 +526,27 @@
                 btn.disabled = false; btn.textContent = "Aceder ao Painel";
                 document.getElementById('loginError').textContent = "Credenciais inválidas ou conta não autorizada.";
                 document.getElementById('loginError').classList.remove('hidden');
-                lucide.createIcons();
             }
         };
 
         window.handleLogout = async () => { await signOut(auth); window.location.reload(); };
+        window.toggleAuthView = (view) => { document.getElementById('login-card').classList.toggle('hidden', view === 'register'); document.getElementById('register-card').classList.toggle('hidden', view === 'login'); lucide.createIcons(); };
+        window.togglePasswordVisibility = (i, ic) => { const el=document.getElementById(i);const icon=document.getElementById(ic);if(el.type==='password'){el.type='text';icon.setAttribute('data-lucide','eye-off');}else{el.type='password';icon.setAttribute('data-lucide','eye');} lucide.createIcons(); };
 
-        window.toggleAuthView = (view) => {
-            document.getElementById('login-card').classList.toggle('hidden', view === 'register');
-            document.getElementById('register-card').classList.toggle('hidden', view === 'login');
-            lucide.createIcons();
-        };
-
-        window.togglePasswordVisibility = (inputId, iconId) => {
-            const input = document.getElementById(inputId);
-            const icon = document.getElementById(iconId);
-            if (input.type === 'password') {
-                input.type = 'text';
-                icon.setAttribute('data-lucide', 'eye-off');
-            } else {
-                input.type = 'password';
-                icon.setAttribute('data-lucide', 'eye');
-            }
-            lucide.createIcons();
-        };
-
-        window.toggleMobileSidebar = () => {
-            const sidebar = document.getElementById('mobileSidebar');
-            const overlay = document.getElementById('mobileOverlay');
-            if(sidebar.classList.contains('sidebar-hidden')) {
-                sidebar.classList.replace('sidebar-hidden', 'sidebar-visible');
-                overlay.classList.remove('hidden');
-            } else {
-                sidebar.classList.replace('sidebar-visible', 'sidebar-hidden');
-                overlay.classList.add('hidden');
-            }
-        };
-
-        window.handlePreRegister = async (e) => {
-            e.preventDefault();
-            const btn = document.getElementById('btnReg');
-            btn.disabled = true; btn.textContent = "Aguarde...";
-            const data = {
-                ownerName: document.getElementById('regOwner').value,
-                email: document.getElementById('regEmail').value,
-                storeName: document.getElementById('regStoreName').value,
-                phone: document.getElementById('regPhone').value,
-                status: 'pending',
-                requestDate: new Date().toISOString()
-            };
-            try {
-                await addDoc(collection(db, "registration_requests"), data);
-                document.getElementById('preRegForm').classList.add('hidden');
-                document.getElementById('regFooter').classList.add('hidden');
-                document.getElementById('regSuccess').classList.remove('hidden');
-                lucide.createIcons();
-            } catch(err) {
-                alert("Erro: " + err.message);
-                btn.disabled = false; btn.textContent = "Criar Minha Loja Agora";
-            }
-        };
-
-        window.handleUpdatePassword = async (e) => {
-            e.preventDefault();
-            const newP = document.getElementById('newPass').value;
-            const confP = document.getElementById('confirmNewPass').value;
-            if(newP !== confP) { document.getElementById('passError').classList.remove('hidden'); return; }
-            document.getElementById('passError').classList.add('hidden');
-            const btn = document.getElementById('btnUpdatePass');
-            btn.disabled = true; btn.textContent = "Gravando...";
-            try {
-                await updatePassword(auth.currentUser, newP);
-                showToast("Palavra-passe alterada com sucesso!");
-                document.getElementById('newPass').value = '';
-                document.getElementById('confirmNewPass').value = '';
-            } catch(e) {
-                showToast("Erro: Sessão de segurança expirada.");
-            } finally {
-                btn.disabled = false; btn.textContent = "Atualizar Palavra-passe";
-            }
-        };
-
-        // --- INICIALIZAÇÃO ---
+        // --- INIT ---
         onAuthStateChanged(auth, async (user) => {
             if(user) {
                 document.getElementById('auth-screen').classList.add('hidden');
                 document.getElementById('userEmailDisplay').textContent = user.email;
                 let dirDoc = await getDoc(doc(db, "admin_directory", user.uid));
-                
                 if(!dirDoc.exists()){
                     const q = query(collection(db, "stores_registry"), where("ownerEmail", "==", user.email));
                     const snap = await getDocs(q);
                     if(snap.empty) { alert("Perfil não vinculado."); return handleLogout(); }
                     currentStoreId = snap.docs[0].data().slug;
-                } else {
-                    currentStoreId = dirDoc.data().storeId;
-                }
+                } else { currentStoreId = dirDoc.data().storeId; }
                 initStoreData();
-            } else {
-                document.getElementById('auth-screen').classList.remove('hidden');
-                lucide.createIcons();
-            }
+            } else { document.getElementById('auth-screen').classList.remove('hidden'); lucide.createIcons(); }
         });
 
         function initStoreData() {
@@ -641,6 +558,11 @@
                 if(d.exists()) {
                     const data = d.data();
                     if(data.subscriptionStatus === 'suspended') document.getElementById('suspended-screen').classList.remove('hidden');
+                    
+                    // Definição do Plano
+                    currentPlan = data.plan || 'basic';
+                    updateUIForPlan();
+
                     document.getElementById('sidebarStoreName').textContent = data.storeName;
                     document.getElementById('sidebarStoreNameMobile').textContent = data.storeName;
                     document.getElementById('confStoreName').value = data.storeName || '';
@@ -673,8 +595,33 @@
             });
         }
 
+        function updateUIForPlan() {
+            const limits = PLAN_LIMITS[currentPlan];
+            
+            // Badge no Dashboard
+            const badge = document.getElementById('currentPlanBadge');
+            badge.textContent = currentPlan === 'premium' ? 'Premium (Completo)' : (currentPlan === 'standard' ? 'Padrão' : 'Básico');
+            badge.className = `text-xs font-bold px-2 py-0.5 rounded border uppercase ${currentPlan === 'premium' ? 'bg-purple-50 text-purple-600 border-purple-200' : (currentPlan === 'standard' ? 'bg-blue-50 text-blue-600 border-blue-200' : 'bg-slate-100 text-slate-600 border-slate-200')}`;
+
+            // Textos de Limite no Dashboard
+            document.getElementById('dash-limit-products').textContent = `/${limits.products}`;
+            document.getElementById('dash-limit-banners').textContent = limits.banners > 100 ? '/∞' : `/${limits.banners}`;
+
+            // Texto no Modal de Produto
+            document.getElementById('photoLabel').textContent = `Fotos do Produto (Máx. ${limits.images})`;
+        }
+
         // --- CRUD PRODUTOS ---
         window.openProductModal = (p = null) => {
+            // VERIFICAÇÃO DE LIMITE DO PLANO (Se for criação)
+            if(!p) {
+                const prodLimit = PLAN_LIMITS[currentPlan].products;
+                if(allProducts.length >= prodLimit) {
+                    showToast(`Limite do plano atingido (${prodLimit} produtos).`);
+                    return;
+                }
+            }
+
             const sel = document.getElementById('prodCategory');
             sel.innerHTML = allCategories.map(c => `<option value="${c.name}">${c.name}</option>`).join('');
             
@@ -700,11 +647,7 @@
 
         window.handleProductSubmit = async (e) => {
             e.preventDefault();
-            
-            if (currentProductImages.length === 0) {
-                showToast("Adicione pelo menos uma foto ao produto.");
-                return;
-            }
+            if (currentProductImages.length === 0) { showToast("Adicione pelo menos uma foto ao produto."); return; }
 
             const id = document.getElementById('prodId').value;
             const data = {
@@ -719,15 +662,12 @@
                 isFeatured: document.getElementById('prodFeatured').checked,
                 status: 'active'
             };
-            
             try {
                 if(id) await updateDoc(doc(db, `stores/${currentStoreId}/products`, id), data);
                 else await addDoc(collection(db, `stores/${currentStoreId}/products`), data);
                 document.getElementById('productModal').classList.add('hidden');
                 showToast("Catálogo atualizado com sucesso!");
-            } catch (err) {
-                showToast("Erro ao guardar: " + err.message);
-            }
+            } catch (err) { showToast("Erro ao guardar: " + err.message); }
         };
 
         window.deleteProduct = async (id) => { if(confirm("Apagar produto definitivamente?")) await deleteDoc(doc(db, `stores/${currentStoreId}/products`, id)); };
@@ -751,18 +691,17 @@
             lucide.createIcons();
         }
 
-        // --- BANNERS & CATEGORIES ---
-        window.updateBannerPreview = () => {
-            const tag = document.getElementById('bannerTag').value || 'TAG';
-            const title = document.getElementById('bannerTitle').value || 'Título';
-            const c1 = document.getElementById('bannerColor1').value;
-            const c2 = document.getElementById('bannerColor2').value;
-            document.getElementById('prevTag').textContent = tag;
-            document.getElementById('prevTitle').textContent = title;
-            document.getElementById('bannerPreview').style.background = `linear-gradient(135deg, ${c1}, ${c2})`;
-        };
-
+        // --- BANNERS ---
         window.openBannerModal = (b = null) => {
+             // VERIFICAÇÃO DE LIMITE DO PLANO (Se for criação)
+             if(!b) {
+                const bannerLimit = PLAN_LIMITS[currentPlan].banners;
+                if(allBanners.length >= bannerLimit) {
+                    showToast(`Limite de banners do plano atingido (${bannerLimit}).`);
+                    return;
+                }
+            }
+
             const select = document.getElementById('bannerTarget');
             select.innerHTML = '<option value="offers">Todas as Ofertas</option>';
             allCategories.forEach(c => select.innerHTML += `<option value="${c.name}">${c.name}</option>`);
@@ -781,6 +720,16 @@
             }
             updateBannerPreview();
             document.getElementById('bannerModal').classList.remove('hidden');
+        };
+
+        window.updateBannerPreview = () => {
+            const tag = document.getElementById('bannerTag').value || 'TAG';
+            const title = document.getElementById('bannerTitle').value || 'Título';
+            const c1 = document.getElementById('bannerColor1').value;
+            const c2 = document.getElementById('bannerColor2').value;
+            document.getElementById('prevTag').textContent = tag;
+            document.getElementById('prevTitle').textContent = title;
+            document.getElementById('bannerPreview').style.background = `linear-gradient(135deg, ${c1}, ${c2})`;
         };
 
         window.handleBannerSubmit = async (e) => {
@@ -825,40 +774,18 @@
             lucide.createIcons();
         }
 
-        window.addCategory = async (e) => {
-            e.preventDefault();
-            const name = document.getElementById('catInputName').value;
-            await addDoc(collection(db, `stores/${currentStoreId}/categories`), { name, status: 'active' });
-            document.getElementById('catInputName').value = '';
-            showToast("Nova categoria adicionada.");
-        };
-
-        window.deleteCategory = async (id) => { if(confirm("Deseja apagar esta categoria?")) await deleteDoc(doc(db, `stores/${currentStoreId}/categories`, id)); };
-
-        function renderCategoryList() {
-            document.getElementById('categoryList').innerHTML = allCategories.map(c => `
-                <div class="flex justify-between items-center p-5 bg-white hover:bg-slate-50 transition-colors">
-                    <span class="font-bold text-slate-700">${c.name}</span>
-                    <button onclick="deleteCategory('${c.id}')" class="p-2 text-red-500 hover:bg-red-50 rounded-xl transition-colors"><i data-lucide="trash-2" class="w-5 h-5"></i></button>
-                </div>`).join('');
-            lucide.createIcons();
-        }
-
-        // --- GERAL & HELPERS ---
+        // --- GERAL ---
         window.changeTab = (id) => {
-            ['dashboard','banners','products','categories','config'].forEach(t => {
-                document.getElementById(`content-${t}`).classList.add('hidden');
-                document.getElementById(`nav-${t}`)?.classList.remove('active');
-            });
+            ['dashboard','banners','products','categories','config'].forEach(t => { document.getElementById(`content-${t}`).classList.add('hidden'); document.getElementById(`nav-${t}`)?.classList.remove('active'); });
             document.getElementById(`content-${id}`).classList.remove('hidden');
-            const navBtn = document.getElementById(`nav-${id}`);
-            if(navBtn) navBtn.classList.add('active');
+            if(document.getElementById(`nav-${id}`)) document.getElementById(`nav-${id}`).classList.add('active');
             document.getElementById('page-title').textContent = id.charAt(0).toUpperCase() + id.slice(1);
             if(document.getElementById('mobileSidebar').classList.contains('sidebar-visible')) toggleMobileSidebar();
         };
 
+        window.toggleMobileSidebar = () => { const sb=document.getElementById('mobileSidebar'); const ov=document.getElementById('mobileOverlay'); if(sb.classList.contains('sidebar-hidden')){sb.classList.replace('sidebar-hidden','sidebar-visible');ov.classList.remove('hidden');}else{sb.classList.replace('sidebar-visible','sidebar-hidden');ov.classList.add('hidden');} };
         window.toggleStoreMenu = (e) => { e.stopPropagation(); document.getElementById('storeDropdown').classList.toggle('hidden'); };
-        window.copyStoreLink = () => { navigator.clipboard.writeText(document.getElementById('urlDisplay').textContent); showToast("Link copiado para a área de transferência."); };
+        window.copyStoreLink = () => { navigator.clipboard.writeText(document.getElementById('urlDisplay').textContent); showToast("Link copiado."); };
         window.openStoreLink = () => { window.open(document.getElementById('urlDisplay').textContent, '_blank'); };
         
         window.showToast = (msg) => {
@@ -870,38 +797,19 @@
             lucide.createIcons();
         };
 
-        window.toggleStoreStatusQuick = async (el) => {
-            await updateDoc(doc(db, `stores/${currentStoreId}/config/store`), { isStoreOpen: el.checked });
-        };
+        window.toggleStoreStatusQuick = async (el) => { await updateDoc(doc(db, `stores/${currentStoreId}/config/store`), { isStoreOpen: el.checked }); };
+        window.addCategory = async (e) => { e.preventDefault(); const name=document.getElementById('catInputName').value; await addDoc(collection(db, `stores/${currentStoreId}/categories`), { name, status: 'active' }); document.getElementById('catInputName').value=''; showToast("Categoria adicionada."); };
+        window.deleteCategory = async (id) => { if(confirm("Apagar categoria?")) await deleteDoc(doc(db, `stores/${currentStoreId}/categories`, id)); };
+        function renderCategoryList() { document.getElementById('categoryList').innerHTML = allCategories.map(c => `<div class="flex justify-between items-center p-5 bg-white hover:bg-slate-50 transition-colors"><span class="font-bold text-slate-700">${c.name}</span><button onclick="deleteCategory('${c.id}')" class="p-2 text-red-500 hover:bg-red-50 rounded-xl transition-colors"><i data-lucide="trash-2" class="w-5 h-5"></i></button></div>`).join(''); lucide.createIcons(); }
 
-        window.addDeliveryArea = () => {
-            const n = document.getElementById('areaName').value;
-            const f = parseFloat(document.getElementById('areaFee').value);
-            if(n && !isNaN(f)) { deliveryAreas.push({name:n, fee:f}); renderDeliveryAreas(); document.getElementById('areaName').value=''; document.getElementById('areaFee').value='';}
-        };
+        window.addDeliveryArea = () => { const n=document.getElementById('areaName').value; const f=parseFloat(document.getElementById('areaFee').value); if(n&&!isNaN(f)) { deliveryAreas.push({name:n, fee:f}); renderDeliveryAreas(); document.getElementById('areaName').value=''; document.getElementById('areaFee').value=''; } };
         window.removeArea = (i) => { deliveryAreas.splice(i,1); renderDeliveryAreas(); };
-        function renderDeliveryAreas() {
-            document.getElementById('deliveryAreasList').innerHTML = deliveryAreas.map((a,i) => `
-                <div class="flex justify-between items-center p-4 bg-white">
-                    <span class="text-slate-700 font-medium text-sm">${a.name}</span>
-                    <div class="flex items-center gap-4">
-                        <b class="text-slate-900 text-sm">R$ ${a.fee.toFixed(2)}</b>
-                        <button onclick="removeArea(${i})" class="text-red-500 font-bold hover:bg-red-50 p-2 rounded-lg transition-colors">×</button>
-                    </div>
-                </div>`).join('');
-        }
-        window.saveStoreConfig = async (e) => {
-            e.preventDefault();
-            const data = {
-                storeName: document.getElementById('confStoreName').value,
-                whatsappNumber: document.getElementById('confWhatsapp').value,
-                footerText: document.getElementById('confFooter').value,
-                primaryColor: document.getElementById('confColorPrimary').value,
-                deliveryAreas: deliveryAreas
-            };
-            await setDoc(doc(db, `stores/${currentStoreId}/config/store`), data, { merge: true });
-            showToast("Definições da loja guardadas com sucesso.");
-        };
+        function renderDeliveryAreas() { document.getElementById('deliveryAreasList').innerHTML = deliveryAreas.map((a,i) => `<div class="flex justify-between items-center p-4 bg-white"><span class="text-slate-700 font-medium text-sm">${a.name}</span><div class="flex items-center gap-4"><b class="text-slate-900 text-sm">R$ ${a.fee.toFixed(2)}</b><button onclick="removeArea(${i})" class="text-red-500 font-bold hover:bg-red-50 p-2 rounded-lg transition-colors">×</button></div></div>`).join(''); }
+
+        window.saveStoreConfig = async (e) => { e.preventDefault(); const data={ storeName: document.getElementById('confStoreName').value, whatsappNumber: document.getElementById('confWhatsapp').value, footerText: document.getElementById('confFooter').value, primaryColor: document.getElementById('confColorPrimary').value, deliveryAreas: deliveryAreas }; await setDoc(doc(db, `stores/${currentStoreId}/config/store`), data, { merge: true }); showToast("Definições guardadas."); };
+
+        window.handlePreRegister = async (e) => { e.preventDefault(); const data={ ownerName: document.getElementById('regOwner').value, email: document.getElementById('regEmail').value, storeName: document.getElementById('regStoreName').value, phone: document.getElementById('regPhone').value, status: 'pending', requestDate: new Date().toISOString() }; try { await addDoc(collection(db, "registration_requests"), data); document.getElementById('preRegForm').classList.add('hidden'); document.getElementById('regFooter').classList.add('hidden'); document.getElementById('regSuccess').classList.remove('hidden'); } catch(err){ alert("Erro: " + err.message); } };
+        window.handleUpdatePassword = async (e) => { e.preventDefault(); const n=document.getElementById('newPass').value; const c=document.getElementById('confirmNewPass').value; if(n!==c){document.getElementById('passError').classList.remove('hidden'); return;} try{ await updatePassword(auth.currentUser, n); showToast("Senha alterada."); document.getElementById('newPass').value=''; document.getElementById('confirmNewPass').value=''; document.getElementById('passError').classList.add('hidden'); } catch(e){ showToast("Erro: " + e.message); } };
 
         lucide.createIcons();
     </script>
