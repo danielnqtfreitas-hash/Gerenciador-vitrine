@@ -73,7 +73,7 @@
                     <i data-lucide="store" class="w-8 h-8 text-primary-600"></i>
                 </div>
                 <h2 class="text-2xl font-bold text-slate-800">Painel do Lojista</h2>
-                <p class="text-slate-500 text-sm mt-1">Gestão inteligente com planos flexíveis.</p>
+                <p class="text-slate-500 text-sm mt-1">Gestão inteligente da sua vitrine.</p>
             </div>
             <form onsubmit="handleLogin(event)" class="space-y-4">
                 <div>
@@ -102,7 +102,7 @@
             </form>
             <div class="mt-8 pt-6 border-t border-slate-100 text-center">
                 <p class="text-sm text-slate-500">Ainda não vende connosco? <br>
-                <button onclick="toggleAuthView('register')" class="text-primary-600 font-bold hover:underline mt-1">Torne-se um Parceiro ShopWave</button></p>
+                <button onclick="toggleAuthView('register')" class="text-primary-600 font-bold hover:underline mt-1">Torne-se um Parceiro</button></p>
             </div>
         </div>
 
@@ -153,7 +153,7 @@
         </div>
         <nav class="flex-1 overflow-y-auto py-4">
             <button onclick="changeTab('dashboard')" class="w-full flex items-center px-6 py-4 text-slate-600 font-medium hover:bg-slate-50">Dashboard</button>
-            <button onclick="changeTab('banners')" class="w-full flex items-center px-6 py-4 text-slate-600 font-medium hover:bg-slate-50">Banners</button>
+            <button id="mob-nav-banners" onclick="changeTab('banners')" class="w-full flex items-center px-6 py-4 text-slate-600 font-medium hover:bg-slate-50">Banners</button>
             <button onclick="changeTab('products')" class="w-full flex items-center px-6 py-4 text-slate-600 font-medium hover:bg-slate-50">Produtos</button>
             <button onclick="changeTab('categories')" class="w-full flex items-center px-6 py-4 text-slate-600 font-medium hover:bg-slate-50">Categorias</button>
             <button onclick="changeTab('config')" class="w-full flex items-center px-6 py-4 text-slate-600 font-medium hover:bg-slate-50">Configurações</button>
@@ -234,11 +234,11 @@
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
                     <div class="section-card bg-white p-6 border border-slate-100">
                         <p class="text-xs font-bold text-slate-400 uppercase tracking-widest mb-2">Produtos</p>
-                        <h3 class="text-4xl font-bold text-slate-800"><span id="dash-total-products">0</span><span class="text-sm text-slate-400 font-normal" id="dash-limit-products">/50</span></h3>
+                        <h3 class="text-4xl font-bold text-slate-800"><span id="dash-total-products">0</span><span class="text-sm text-slate-400 font-normal" id="dash-limit-products">/--</span></h3>
                     </div>
                     <div class="section-card bg-white p-6 border border-slate-100">
                         <p class="text-xs font-bold text-slate-400 uppercase tracking-widest mb-2">Banners</p>
-                        <h3 class="text-4xl font-bold text-primary-600"><span id="dash-total-banners">0</span><span class="text-sm text-slate-400 font-normal" id="dash-limit-banners">/1</span></h3>
+                        <h3 class="text-4xl font-bold text-primary-600"><span id="dash-total-banners">0</span><span class="text-sm text-slate-400 font-normal" id="dash-limit-banners">/--</span></h3>
                     </div>
                     <div class="section-card bg-white p-6 border border-slate-100">
                         <p class="text-xs font-bold text-slate-400 uppercase tracking-widest mb-2">Categorias</p>
@@ -421,13 +421,13 @@
         let currentStoreId = null;
         let allProducts = [], allCategories = [], allBanners = [], deliveryAreas = [];
         let currentProductImages = []; 
-        let currentPlan = 'basic'; 
-
-        // --- CONFIGURAÇÃO DOS LIMITES DOS PLANOS ---
-        const PLAN_LIMITS = {
-            basic: { products: 50, images: 1, banners: 1 },
-            standard: { products: 150, images: 4, banners: 3 },
-            premium: { products: 500, images: 4, banners: 9999 } // 9999 = ilimitado na prática
+        
+        // Estado Global da Loja
+        let storeConfig = {
+            planId: 'basic',
+            maxProducts: 50,
+            maxBanners: 1,
+            hasCarousel: false
         };
 
         // --- SISTEMA DE COMPRESSÃO E SEGURANÇA DE IMAGEM ---
@@ -437,10 +437,11 @@
             const loading = document.getElementById('imageLoading');
             const btn = document.getElementById('btnSaveProd');
             
-            // VERIFICAÇÃO DE LIMITE DE IMAGEM DO PLANO
-            const imgLimit = PLAN_LIMITS[currentPlan].images;
+            // Limite padrão de 4 imagens por produto para todos
+            const imgLimit = 4;
+            
             if (currentProductImages.length + files.length > imgLimit) {
-                showToast(`Seu plano permite máximo de ${imgLimit} foto(s) por produto.`);
+                showToast(`Máximo de ${imgLimit} foto(s) por produto.`);
                 return;
             }
 
@@ -496,7 +497,6 @@
         function renderImagePreviews() {
             const gallery = document.getElementById('imageGallery');
             const counter = document.getElementById('photoCount');
-            const imgLimit = PLAN_LIMITS[currentPlan].images;
             gallery.innerHTML = '';
             
             currentProductImages.forEach((img, idx) => {
@@ -506,7 +506,7 @@
                 gallery.appendChild(div);
             });
             
-            counter.textContent = `${currentProductImages.length}/${imgLimit}`;
+            counter.textContent = `${currentProductImages.length}/4`;
             lucide.createIcons();
         }
 
@@ -554,13 +554,18 @@
             document.getElementById('urlDisplay').textContent = url;
             document.getElementById('storeMenuBtn').classList.remove('opacity-50', 'pointer-events-none');
 
+            // 1. CARREGAR CONFIGURAÇÃO DA LOJA (INCLUINDO LIMITES DO PLANO)
             onSnapshot(doc(db, `stores/${currentStoreId}/config/store`), d => {
                 if(d.exists()) {
                     const data = d.data();
                     if(data.subscriptionStatus === 'suspended') document.getElementById('suspended-screen').classList.remove('hidden');
                     
-                    // Definição do Plano
-                    currentPlan = data.plan || 'basic';
+                    // --- CARREGAR LIMITES DO PLANO SALVOS NO SUPER ADMIN ---
+                    storeConfig.planId = data.planId || data.plan || 'basic'; // Compatibilidade
+                    storeConfig.maxProducts = data.maxProducts || 50;
+                    storeConfig.maxBanners = data.maxBanners || 1;
+                    storeConfig.hasCarousel = data.hasCarousel ?? false;
+
                     updateUIForPlan();
 
                     document.getElementById('sidebarStoreName').textContent = data.storeName;
@@ -596,28 +601,37 @@
         }
 
         function updateUIForPlan() {
-            const limits = PLAN_LIMITS[currentPlan];
-            
-            // Badge no Dashboard
+            // Badge no Dashboard (Só exibe o ID/Nome do plano, ex: "iniciante", "premium")
             const badge = document.getElementById('currentPlanBadge');
-            badge.textContent = currentPlan === 'premium' ? 'Premium (Completo)' : (currentPlan === 'standard' ? 'Padrão' : 'Básico');
-            badge.className = `text-xs font-bold px-2 py-0.5 rounded border uppercase ${currentPlan === 'premium' ? 'bg-purple-50 text-purple-600 border-purple-200' : (currentPlan === 'standard' ? 'bg-blue-50 text-blue-600 border-blue-200' : 'bg-slate-100 text-slate-600 border-slate-200')}`;
-
+            badge.textContent = storeConfig.planId.toUpperCase();
+            
             // Textos de Limite no Dashboard
-            document.getElementById('dash-limit-products').textContent = `/${limits.products}`;
-            document.getElementById('dash-limit-banners').textContent = limits.banners > 100 ? '/∞' : `/${limits.banners}`;
+            document.getElementById('dash-limit-products').textContent = `/${storeConfig.maxProducts}`;
+            document.getElementById('dash-limit-banners').textContent = `/${storeConfig.maxBanners}`;
 
-            // Texto no Modal de Produto
-            document.getElementById('photoLabel').textContent = `Fotos do Produto (Máx. ${limits.images})`;
+            // Controle da Aba Banners (Esconder se não tiver carrossel)
+            const navBanners = document.getElementById('nav-banners');
+            const mobNavBanners = document.getElementById('mob-nav-banners');
+            
+            if(!storeConfig.hasCarousel) {
+                if(navBanners) navBanners.classList.add('hidden');
+                if(mobNavBanners) mobNavBanners.classList.add('hidden');
+                // Se estiver na aba banners, volta pro dash
+                if(!document.getElementById('content-banners').classList.contains('hidden')) {
+                    changeTab('dashboard');
+                }
+            } else {
+                if(navBanners) navBanners.classList.remove('hidden');
+                if(mobNavBanners) mobNavBanners.classList.remove('hidden');
+            }
         }
 
         // --- CRUD PRODUTOS ---
         window.openProductModal = (p = null) => {
             // VERIFICAÇÃO DE LIMITE DO PLANO (Se for criação)
             if(!p) {
-                const prodLimit = PLAN_LIMITS[currentPlan].products;
-                if(allProducts.length >= prodLimit) {
-                    showToast(`Limite do plano atingido (${prodLimit} produtos).`);
+                if(allProducts.length >= storeConfig.maxProducts) {
+                    showToast(`Limite do plano atingido (${storeConfig.maxProducts} produtos).`);
                     return;
                 }
             }
@@ -695,9 +709,8 @@
         window.openBannerModal = (b = null) => {
              // VERIFICAÇÃO DE LIMITE DO PLANO (Se for criação)
              if(!b) {
-                const bannerLimit = PLAN_LIMITS[currentPlan].banners;
-                if(allBanners.length >= bannerLimit) {
-                    showToast(`Limite de banners do plano atingido (${bannerLimit}).`);
+                if(allBanners.length >= storeConfig.maxBanners) {
+                    showToast(`Limite de banners do plano atingido (${storeConfig.maxBanners}).`);
                     return;
                 }
             }
@@ -815,4 +828,5 @@
     </script>
 </body>
 </html>
+
 
