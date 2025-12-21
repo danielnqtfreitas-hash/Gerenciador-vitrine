@@ -67,17 +67,8 @@
             box-shadow: 0 10px 30px -10px rgba(124, 58, 237, 0.3);
         }
         
-        .plan-card.selected .selection-indicator {
-            background-color: #7c3aed;
-            color: white;
-            border-color: #7c3aed;
-        }
-
-        .selection-indicator {
-            width: 24px; height: 24px; border: 2px solid #e2e8f0; border-radius: 50%;
-            display: flex; align-items: center; justify-content: center; background: #fff;
-            transition: all 0.2s;
-        }
+        .plan-card.selected .selection-indicator { background-color: #7c3aed; color: white; border-color: #7c3aed; }
+        .selection-indicator { width: 24px; height: 24px; border: 2px solid #e2e8f0; border-radius: 50%; display: flex; align-items: center; justify-content: center; background: #fff; transition: all 0.2s; }
 
         .toggle-switch { width: 44px; height: 24px; position: relative; display: inline-block; }
         .toggle-switch input { opacity: 0; width: 0; height: 0; }
@@ -86,12 +77,13 @@
         input:checked + .slider { background-color: #22c55e; }
         input:checked + .slider:before { transform: translateX(20px); }
 
-        .input-pro {
-            @apply w-full border border-slate-200 rounded-xl p-3 outline-none focus:ring-2 focus:ring-primary-500 bg-slate-50/50 transition-all;
-        }
+        .input-pro { @apply w-full border border-slate-200 rounded-xl p-3 outline-none focus:ring-2 focus:ring-primary-500 bg-slate-50/50 transition-all; }
 
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
         .animate-fade-in { animation: fadeIn 0.4s ease-out forwards; }
+
+        .category-group.collapsed .category-content { display: none; }
+        .category-group.collapsed .chevron-icon { transform: rotate(-90deg); }
     </style>
 </head>
 <body class="text-slate-800 antialiased h-screen overflow-hidden flex bg-slate-50">
@@ -157,7 +149,10 @@
                         </button>
                     </div>
                     <div id="reg-step-2" class="space-y-8 hidden animate-fade-in pb-12">
-                        <div id="plansGridSelection" class="grid grid-cols-1 md:grid-cols-2 gap-6"></div>
+                        <div id="plansGridSelection" class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div class="h-64 bg-slate-50 rounded-2xl animate-pulse"></div>
+                            <div class="h-64 bg-slate-50 rounded-2xl animate-pulse"></div>
+                        </div>
                         <input type="hidden" id="selectedPlanId" required>
                         <div class="flex flex-col md:flex-row gap-4 pt-6">
                             <button type="button" onclick="goToRegStep(1)" class="w-full md:w-1/3 text-slate-400 font-bold py-4 rounded-2xl hover:bg-slate-50 transition-all uppercase tracking-widest text-[10px] flex items-center justify-center gap-2">
@@ -258,13 +253,7 @@
                 <div class="bg-white rounded-3xl border border-slate-200 p-8 flex flex-col md:flex-row items-center justify-between shadow-sm gap-6">
                     <div class="flex items-center gap-5">
                         <div class="p-4 bg-primary-50 text-primary-600 rounded-2xl shadow-inner"><i data-lucide="store" class="w-8 h-8"></i></div>
-                        <div>
-                            <h3 class="font-bold text-xl text-slate-800">Status da Loja</h3>
-                            <div class="flex items-center gap-2 mt-1">
-                                <span class="text-sm text-slate-500">Plano Atual:</span>
-                                <span id="currentPlanBadge" class="text-xs font-bold bg-slate-100 px-2 py-0.5 rounded border uppercase">Carregando...</span>
-                            </div>
-                        </div>
+                        <div><h3 class="font-bold text-xl text-slate-800">Status da Loja</h3><div class="flex items-center gap-2 mt-1"><span class="text-sm text-slate-500">Plano Atual:</span><span id="currentPlanBadge" class="text-xs font-bold bg-slate-100 px-2 py-0.5 rounded border uppercase">Carregando...</span></div></div>
                     </div>
                     <div class="flex items-center gap-4 bg-slate-50 px-6 py-3 rounded-2xl border">
                         <span class="text-sm font-bold text-slate-600" id="statusLabel">Aberto</span>
@@ -272,61 +261,46 @@
                     </div>
                 </div>
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-                    <div class="bg-white p-6 border border-slate-100 rounded-3xl shadow-sm">
-                        <p class="text-xs font-bold text-slate-400 uppercase tracking-widest mb-2">Produtos</p>
-                        <h3 class="text-4xl font-bold text-slate-800"><span id="dash-total-products">0</span><span class="text-sm text-slate-400 font-normal ml-1" id="dash-limit-products">/--</span></h3>
-                    </div>
-                    <div class="bg-white p-6 border border-slate-100 rounded-3xl shadow-sm">
-                        <p class="text-xs font-bold text-slate-400 uppercase tracking-widest mb-2">Banners</p>
-                        <h3 class="text-4xl font-bold text-primary-600"><span id="dash-total-banners">0</span><span class="text-sm text-slate-400 font-normal ml-1" id="dash-limit-banners">/--</span></h3>
-                    </div>
-                    <div class="bg-white p-6 border border-slate-100 rounded-3xl shadow-sm">
-                        <p class="text-xs font-bold text-slate-400 uppercase tracking-widest mb-2">Categorias</p>
-                        <h3 class="text-4xl font-bold text-slate-800" id="dash-total-cats">0</h3>
-                    </div>
+                    <div class="bg-white p-6 border border-slate-100 rounded-3xl shadow-sm"><p class="text-xs font-bold text-slate-400 uppercase tracking-widest mb-2">Produtos</p><h3 class="text-4xl font-bold text-slate-800"><span id="dash-total-products">0</span><span class="text-sm text-slate-400 font-normal ml-1" id="dash-limit-products">/--</span></h3></div>
+                    <div class="bg-white p-6 border border-slate-100 rounded-3xl shadow-sm"><p class="text-xs font-bold text-slate-400 uppercase tracking-widest mb-2">Banners</p><h3 class="text-4xl font-bold text-primary-600"><span id="dash-total-banners">0</span><span class="text-sm text-slate-400 font-normal ml-1" id="dash-limit-banners">/--</span></h3></div>
+                    <div class="bg-white p-6 border border-slate-100 rounded-3xl shadow-sm"><p class="text-xs font-bold text-slate-400 uppercase tracking-widest mb-2">Categorias</p><h3 class="text-4xl font-bold text-slate-800" id="dash-total-cats">0</h3></div>
                 </div>
             </div>
 
             <!-- BANNERS TAB -->
             <div id="content-banners" class="max-w-6xl mx-auto space-y-6 hidden animate-fade-in">
                 <div class="flex justify-between items-center px-2">
-                    <div>
-                        <h3 class="text-2xl font-bold text-slate-800">Banners Hero</h3>
-                        <p class="text-xs text-slate-400 font-medium">Capacidade do plano: <span id="bannerQuotaText">--/--</span></p>
-                    </div>
+                    <div><h3 class="text-2xl font-bold text-slate-800">Banners Hero</h3><p class="text-xs text-slate-400 font-medium">Capacidade do plano: <span id="bannerQuotaText">--/--</span></p></div>
                     <button id="btnNewBanner" onclick="openBannerModal()" class="bg-primary-600 hover:bg-primary-700 text-white px-5 py-2.5 rounded-2xl font-bold flex items-center gap-2 shadow-lg transition-all"><i data-lucide="plus" class="w-5 h-5"></i> Novo Banner</button>
                 </div>
                 <div id="bannersList" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"></div>
                 <div id="emptyBannersMsg" class="hidden text-center py-24 text-slate-400 italic">Destaque promoções no topo da sua vitrine.</div>
             </div>
 
-            <!-- PRODUCTS TAB -->
+            <!-- PRODUCTS TAB (AGRUPADO POR CATEGORIA) -->
             <div id="content-products" class="max-w-6xl mx-auto space-y-6 hidden animate-fade-in">
                 <div class="flex flex-col md:flex-row justify-between items-center gap-4">
-                    <div class="relative w-full md:w-96">
-                        <i data-lucide="search" class="absolute left-4 top-3.5 text-slate-400 w-4 h-4"></i>
-                        <input type="text" id="productSearch" onkeyup="renderProductList()" placeholder="Pesquisar no catálogo..." class="w-full pl-12 border rounded-2xl p-3.5 outline-none focus:ring-2 focus:ring-primary-500 transition-all bg-white">
-                    </div>
+                    <div class="relative w-full md:w-96"><i data-lucide="search" class="absolute left-4 top-3.5 text-slate-400 w-4 h-4"></i><input type="text" id="productSearch" onkeyup="renderProductList()" placeholder="Pesquisar no catálogo..." class="w-full pl-12 border rounded-2xl p-3.5 outline-none focus:ring-2 focus:ring-primary-500 transition-all bg-white"></div>
                     <div class="flex items-center gap-4 w-full md:w-auto">
-                        <div class="hidden md:block text-right">
-                            <p class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Espaço no Plano</p>
-                            <p class="text-sm font-bold text-slate-700" id="productQuotaText">--/--</p>
-                        </div>
-                        <button id="btnNewProduct" onclick="openProductModal()" class="flex-1 md:flex-none bg-slate-900 text-white px-8 py-3.5 rounded-2xl font-bold flex justify-center items-center gap-2 shadow-lg hover:bg-slate-800 transition-all uppercase tracking-wide text-sm">
-                            <i data-lucide="plus" class="w-5 h-5"></i> Novo Produto
-                        </button>
+                        <div class="hidden md:block text-right"><p class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Espaço no Plano</p><p class="text-sm font-bold text-slate-700" id="productQuotaText">--/--</p></div>
+                        <button id="btnNewProduct" onclick="openProductModal()" class="flex-1 md:flex-none bg-slate-900 text-white px-8 py-3.5 rounded-2xl font-bold flex justify-center items-center gap-2 shadow-lg hover:bg-slate-800 transition-all uppercase tracking-wide text-sm"><i data-lucide="plus" class="w-5 h-5"></i> Novo Produto</button>
                     </div>
                 </div>
-                <div id="productList" class="grid grid-cols-1 gap-4"></div>
+                <!-- ÁREA DE LISTAGEM AGRUPADA -->
+                <div id="productListGrouped" class="space-y-4 pb-12"></div>
             </div>
 
             <!-- CATEGORIES TAB -->
             <div id="content-categories" class="max-w-4xl mx-auto space-y-6 hidden animate-fade-in">
                 <div class="bg-white p-6 md:p-8 border border-slate-100 rounded-3xl shadow-sm">
-                    <h3 class="font-bold text-xl mb-4 text-slate-800">Departamentos</h3>
-                    <form onsubmit="addCategory(event)" class="flex flex-col sm:flex-row gap-3">
+                    <h3 class="font-bold text-xl mb-4 text-slate-800" id="catFormTitle">Departamentos</h3>
+                    <form onsubmit="handleCategorySubmit(event)" class="flex flex-col sm:flex-row gap-3">
                         <input type="text" id="catInputName" class="flex-1 border rounded-2xl px-5 py-3 outline-none focus:ring-2 focus:ring-primary-500 transition-all bg-slate-50" placeholder="Ex: Calçados, Eletrônicos" required>
-                        <button type="submit" class="bg-primary-600 text-white px-8 py-3 rounded-2xl font-bold shadow-md hover:bg-primary-700 uppercase text-xs tracking-widest whitespace-nowrap">Criar Categoria</button>
+                        <input type="hidden" id="editingCategoryId" value="">
+                        <div class="flex gap-2">
+                            <button type="submit" id="btnCatSubmit" class="flex-1 bg-primary-600 text-white px-8 py-3 rounded-2xl font-bold shadow-md hover:bg-primary-700 uppercase text-xs tracking-widest whitespace-nowrap">Criar Categoria</button>
+                            <button type="button" id="btnCancelEditCat" onclick="cancelCategoryEdit()" class="hidden bg-slate-200 text-slate-600 px-4 py-3 rounded-2xl font-bold uppercase text-xs">Cancelar</button>
+                        </div>
                     </form>
                 </div>
                 <div id="categoryList" class="bg-white rounded-3xl border border-slate-200 divide-y divide-slate-100 overflow-hidden shadow-xl"></div>
@@ -334,6 +308,7 @@
 
             <!-- CONFIG TAB -->
             <div id="content-config" class="max-w-4xl mx-auto space-y-8 hidden animate-fade-in">
+                <!-- SEGURANÇA E OUTROS... (Conteúdo padrão mantido) -->
                 <div class="bg-white rounded-3xl border border-slate-200 p-8 shadow-sm">
                     <h3 class="text-xl font-bold text-slate-800 mb-6 flex items-center gap-3"><span class="p-2 bg-yellow-50 rounded-xl"><i data-lucide="shield-check" class="w-6 h-6 text-yellow-600"></i></span> Segurança</h3>
                     <form onsubmit="handleUpdatePassword(event)" class="space-y-5 max-w-sm">
@@ -353,6 +328,7 @@
                             <div><label class="block text-xs font-bold text-slate-400 mb-1.5 uppercase tracking-wider">Cor do Tema</label><input type="color" id="confColorPrimary" class="h-14 w-full rounded-xl border p-1 cursor-pointer"></div>
                         </div>
                     </div>
+                    <!-- ENTREGA... (Omitido para brevidade, mas deve ser mantido) -->
                     <div class="bg-white rounded-3xl border border-slate-200 p-8 shadow-sm">
                         <h3 class="text-xl font-bold text-slate-800 mb-6">Entrega</h3>
                         <div class="flex flex-col md:flex-row gap-4 mb-6"><input type="text" id="areaName" placeholder="Bairro" class="flex-1 input-pro"><input type="number" id="areaFee" placeholder="Taxa R$" step="0.01" class="md:w-32 input-pro"><button type="button" onclick="addDeliveryArea()" class="bg-slate-900 text-white px-6 py-3.5 rounded-xl font-bold text-xs uppercase tracking-widest">Adicionar</button></div>
@@ -368,85 +344,43 @@
     <div id="productModal" class="modal-overlay fixed inset-0 z-[150] flex items-center justify-center p-4 hidden">
         <div class="bg-white rounded-[2.5rem] shadow-2xl w-full max-w-3xl auth-card-container overflow-hidden">
             <div class="bg-slate-900 p-6 flex items-center justify-between">
-                <div class="flex items-center gap-3">
-                    <div class="bg-primary-500/20 p-2 rounded-xl"><i data-lucide="package" class="w-6 h-6 text-primary-400"></i></div>
-                    <h3 class="text-xl font-bold text-white" id="prodModalTitle">Novo Produto</h3>
-                </div>
-                <button onclick="document.getElementById('productModal').classList.add('hidden')" class="p-2 text-slate-400 hover:text-white transition-colors">
-                    <i data-lucide="x" class="w-6 h-6"></i>
-                </button>
+                <div class="flex items-center gap-3"><div class="bg-primary-500/20 p-2 rounded-xl"><i data-lucide="package" class="w-6 h-6 text-primary-400"></i></div><h3 class="text-xl font-bold text-white" id="prodModalTitle">Novo Produto</h3></div>
+                <button onclick="document.getElementById('productModal').classList.add('hidden')" class="p-2 text-slate-400 hover:text-white transition-colors"><i data-lucide="x" class="w-6 h-6"></i></button>
             </div>
             <div class="auth-card-content p-8">
                 <form id="productForm" onsubmit="handleProductSubmit(event)" class="space-y-10">
                     <input type="hidden" id="prodId">
                     <div class="space-y-4">
-                        <div class="flex justify-between items-end border-b border-slate-100 pb-2">
-                            <h4 class="text-[11px] font-black uppercase text-slate-400 tracking-widest">Galeria de Imagens</h4>
-                            <span id="photoCount" class="text-[10px] font-bold text-primary-600 bg-primary-50 px-2 py-0.5 rounded-full">0/4 fotos</span>
-                        </div>
+                        <div class="flex justify-between items-end border-b border-slate-100 pb-2"><h4 class="text-[11px] font-black uppercase text-slate-400 tracking-widest">Galeria de Imagens</h4><span id="photoCount" class="text-[10px] font-bold text-primary-600 bg-primary-50 px-2 py-0.5 rounded-full">0/1 fotos</span></div>
                         <div class="grid grid-cols-2 md:grid-cols-5 gap-4">
-                            <div id="imageDropZone" class="relative aspect-square rounded-2xl border-2 border-dashed border-slate-200 flex flex-col items-center justify-center cursor-pointer hover:border-primary-400 hover:bg-primary-50/30 transition-all group overflow-hidden">
-                                <input type="file" id="prodImageInput" accept="image/*" multiple class="absolute inset-0 opacity-0 cursor-pointer z-10" onchange="processImages(this.files)">
-                                <i data-lucide="camera" class="w-6 h-6 text-slate-300 group-hover:text-primary-500 mb-1"></i>
-                                <span class="text-[9px] text-slate-400 font-bold uppercase text-center px-2">Adicionar</span>
-                                <div id="imageLoading" class="absolute inset-0 bg-white/90 flex items-center justify-center hidden z-20">
-                                    <div class="w-5 h-5 border-2 border-primary-500 border-t-transparent rounded-full animate-spin"></div>
-                                </div>
-                            </div>
+                            <div id="imageDropZone" class="relative aspect-square rounded-2xl border-2 border-dashed border-slate-200 flex flex-col items-center justify-center cursor-pointer hover:border-primary-400 hover:bg-primary-50/30 transition-all group overflow-hidden"><input type="file" id="prodImageInput" accept="image/*" multiple class="absolute inset-0 opacity-0 cursor-pointer z-10" onchange="processImages(this.files)"><i data-lucide="camera" class="w-6 h-6 text-slate-300 group-hover:text-primary-500 mb-1"></i><span class="text-[9px] text-slate-400 font-bold uppercase text-center px-2">Adicionar</span><div id="imageLoading" class="absolute inset-0 bg-white/90 flex items-center justify-center hidden z-20"><div class="w-5 h-5 border-2 border-primary-500 border-t-transparent rounded-full animate-spin"></div></div></div>
                             <div id="imageGallery" class="col-span-1 md:col-span-4 grid grid-cols-2 md:grid-cols-4 gap-4"></div>
                         </div>
+                        <p id="photoLimitNotice" class="text-[9px] text-slate-400 font-medium italic"></p>
                     </div>
                     <div class="space-y-6">
                         <h4 class="text-[11px] font-black uppercase text-slate-400 tracking-widest border-b border-slate-100 pb-2">Detalhes do Produto</h4>
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
-                            <div class="md:col-span-2 space-y-1">
-                                <label class="text-[10px] font-bold text-slate-500 uppercase ml-1">Nome Comercial</label>
-                                <input type="text" id="prodName" placeholder="Ex: Camiseta Oversized Algodão" required class="input-pro !bg-white border-slate-300 text-lg font-semibold">
-                            </div>
-                            <div class="space-y-1">
-                                <label class="text-[10px] font-bold text-slate-500 uppercase ml-1">Categoria / Departamento</label>
-                                <select id="prodCategory" class="input-pro bg-white" required></select>
-                            </div>
-                            <div class="space-y-1">
-                                <label class="text-[10px] font-bold text-slate-500 uppercase ml-1">Destaque na Home?</label>
-                                <div class="flex items-center gap-3 bg-slate-50 p-3 rounded-xl border border-slate-200">
-                                    <input type="checkbox" id="prodFeatured" class="w-5 h-5 accent-primary-600">
-                                    <span class="text-xs font-bold text-slate-600">Sim, exibir no topo</span>
-                                </div>
-                            </div>
+                            <div class="md:col-span-2 space-y-1"><label class="text-[10px] font-bold text-slate-500 uppercase ml-1">Nome Comercial</label><input type="text" id="prodName" required class="input-pro !bg-white border-slate-300 text-lg font-semibold"></div>
+                            <div class="space-y-1"><label class="text-[10px] font-bold text-slate-500 uppercase ml-1">Categoria</label><select id="prodCategory" class="input-pro bg-white" required></select></div>
+                            <div class="space-y-1"><label class="text-[10px] font-bold text-slate-500 uppercase ml-1">Destaque?</label><div class="flex items-center gap-3 bg-slate-50 p-3 rounded-xl border border-slate-200"><input type="checkbox" id="prodFeatured" class="w-5 h-5 accent-primary-600"><span class="text-xs font-bold text-slate-600">Exibir no topo</span></div></div>
                         </div>
                     </div>
-                    <div class="space-y-6">
-                        <h4 class="text-[11px] font-black uppercase text-slate-400 tracking-widest border-b border-slate-100 pb-2">Valores e Ofertas</h4>
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
-                            <div class="space-y-1">
-                                <label class="text-[10px] font-bold text-slate-500 uppercase ml-1">Preço Normal (R$)</label>
-                                <div class="relative"><span class="absolute left-4 top-3.5 text-slate-400 font-bold text-sm">R$</span><input type="number" step="0.01" id="prodValue" placeholder="0,00" required class="input-pro !pl-11 bg-white"></div>
-                            </div>
-                            <div class="space-y-1">
-                                <label class="text-[10px] font-bold text-green-600 uppercase ml-1">Preço Promocional (Opcional)</label>
-                                <div class="relative"><span class="absolute left-4 top-3.5 text-green-400 font-bold text-sm">R$</span><input type="number" step="0.01" id="prodPromo" placeholder="0,00" class="input-pro !pl-11 bg-white text-green-600 font-bold border-green-100"></div>
-                            </div>
-                        </div>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+                        <div class="space-y-1"><label class="text-[10px] font-bold text-slate-500 uppercase ml-1">Preço (R$)</label><input type="number" step="0.01" id="prodValue" required class="input-pro bg-white"></div>
+                        <div class="space-y-1"><label class="text-[10px] font-bold text-green-600 uppercase ml-1">Promoção (R$)</label><input type="number" step="0.01" id="prodPromo" class="input-pro bg-white"></div>
                     </div>
-                    <div class="space-y-6">
-                        <h4 class="text-[11px] font-black uppercase text-slate-400 tracking-widest border-b border-slate-100 pb-2">Variantes (Tamanho e Cor)</h4>
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
-                            <div class="space-y-1"><label class="text-[10px] font-bold text-slate-500 uppercase ml-1">Tamanhos Disponíveis</label><input type="text" id="prodSizes" placeholder="Ex: P, M, G, GG" class="input-pro bg-white"></div>
-                            <div class="space-y-1"><label class="text-[10px] font-bold text-slate-500 uppercase ml-1">Cores / Opções</label><input type="text" id="prodColors" placeholder="Ex: Preto, Azul, Branco" class="input-pro bg-white"></div>
-                            <div class="md:col-span-2 space-y-1"><label class="text-[10px] font-bold text-slate-500 uppercase ml-1">Descrição do Produto</label><textarea id="prodDesc" placeholder="Descreva os benefícios, material e diferenciais..." class="input-pro bg-white" rows="4"></textarea></div>
-                        </div>
-                    </div>
+                    <div class="space-y-1"><label class="text-[10px] font-bold text-slate-500 uppercase ml-1">Descrição</label><textarea id="prodDesc" class="input-pro bg-white" rows="3"></textarea></div>
                     <div class="flex items-center justify-between pt-6 border-t gap-4">
-                        <button type="button" onclick="document.getElementById('productModal').classList.add('hidden')" class="px-8 py-3 text-slate-400 font-bold hover:text-slate-600">Descartar</button>
-                        <button type="submit" id="btnSaveProd" class="flex-1 md:flex-none bg-primary-600 text-white px-12 py-4 rounded-2xl font-bold shadow-xl hover:bg-primary-700 transition-all uppercase tracking-widest text-xs">Publicar Produto</button>
+                        <button type="button" onclick="document.getElementById('productModal').classList.add('hidden')" class="px-8 py-3 text-slate-400 font-bold">Descartar</button>
+                        <button type="submit" class="flex-1 md:flex-none bg-primary-600 text-white px-12 py-4 rounded-2xl font-bold shadow-xl hover:bg-primary-700 uppercase tracking-widest text-xs">Publicar Produto</button>
                     </div>
                 </form>
             </div>
         </div>
     </div>
 
-    <!-- MODAL BANNER -->
+    <!-- MODAL BANNER... (Conteúdo mantido) -->
     <div id="bannerModal" class="modal-overlay fixed inset-0 z-[150] flex items-center justify-center p-4 hidden">
         <div class="bg-white rounded-3xl shadow-2xl w-full max-w-lg auth-card-container p-8">
             <div class="auth-card-content">
@@ -491,25 +425,24 @@
         let allProducts = [], allCategories = [], allBanners = [], deliveryAreas = [];
         let currentProductImages = []; 
         let storeConfig = { planId: 'basic', maxProducts: 50, maxBanners: 1, hasCarousel: false };
+        let cachedPublicPlans = null;
+        let expandedCategories = new Set(); // Para controlar o estado de expansão
 
         // --- SISTEMA DE IMAGENS ---
         window.processImages = async (files) => {
             if (!files || files.length === 0) return;
             const loading = document.getElementById('imageLoading');
             const btn = document.getElementById('btnSaveProd');
-            if (currentProductImages.length + files.length > 4) { showToast("Máximo de 4 fotos."); return; }
+            const maxPhotos = storeConfig.hasCarousel ? 4 : 1;
+            if (currentProductImages.length + files.length > maxPhotos) { showToast(`Limite: ${maxPhotos} foto(s).`); return; }
             loading.classList.remove('hidden');
             btn.disabled = true;
             for (let file of files) {
                 if (!file.type.startsWith('image/')) continue;
-                try {
-                    const dataUrl = await compressImage(file);
-                    currentProductImages.push(dataUrl);
-                } catch (err) { console.error(err); }
+                try { const dataUrl = await compressImage(file); currentProductImages.push(dataUrl); } catch (err) {}
             }
             renderImagePreviews();
-            loading.classList.add('hidden');
-            btn.disabled = false;
+            loading.classList.add('hidden'); btn.disabled = false;
         };
 
         function compressImage(file) {
@@ -537,6 +470,7 @@
         function renderImagePreviews() {
             const gallery = document.getElementById('imageGallery');
             const counter = document.getElementById('photoCount');
+            const max = storeConfig.hasCarousel ? 4 : 1;
             gallery.innerHTML = '';
             currentProductImages.forEach((img, idx) => {
                 const div = document.createElement('div');
@@ -544,7 +478,7 @@
                 div.innerHTML = `<img src="${img}" class="w-full h-full object-cover"><button type="button" onclick="removeImage(${idx})" class="absolute top-1 right-1 bg-red-500 text-white p-1 rounded-lg transition-opacity"><i data-lucide="x" class="w-3 h-3"></i></button>`;
                 gallery.appendChild(div);
             });
-            counter.textContent = `${currentProductImages.length}/4 fotos`;
+            counter.textContent = `${currentProductImages.length}/${max} fotos`;
             lucide.createIcons();
         }
 
@@ -568,75 +502,48 @@
         };
 
         window.handleLogout = async () => { await signOut(auth); window.location.reload(); };
-        window.toggleAuthView = (view) => { document.getElementById('login-card').classList.toggle('hidden', view === 'register'); document.getElementById('register-card').classList.toggle('hidden', view === 'login'); if(view === 'register') { loadPlansForRegistration(); goToRegStep(1); } lucide.createIcons(); };
+        window.toggleAuthView = (view) => { 
+            document.getElementById('login-card').classList.toggle('hidden', view === 'register'); 
+            document.getElementById('register-card').classList.toggle('hidden', view === 'login'); 
+            if(view === 'register') { renderPlansInGrid(); goToRegStep(1); }
+            lucide.createIcons(); 
+        };
         window.goToRegStep = (step) => { const s1 = document.getElementById('reg-step-1'); const s2 = document.getElementById('reg-step-2'); if (step === 2) { const f = ['regOwner', 'regEmail', 'regStoreName', 'regPhone']; if(!f.every(id => document.getElementById(id).value.trim() !== "")) { showToast("Preencha todos os campos."); return; } s1.classList.add('hidden'); s2.classList.remove('hidden'); } else { s1.classList.remove('hidden'); s2.classList.add('hidden'); } lucide.createIcons(); };
         window.togglePasswordVisibility = (i, ic) => { const el=document.getElementById(i);const icon=document.getElementById(ic);if(el.type==='password'){el.type='text';icon.setAttribute('data-lucide','eye-off');}else{el.type='password';icon.setAttribute('data-lucide','eye');} lucide.createIcons(); };
 
-        // --- CARREGAR PLANOS COM BENEFÍCIOS ---
-        async function loadPlansForRegistration() {
-            const grid = document.getElementById('plansGridSelection');
+        async function fetchPublicPlansEagerly() {
             try {
                 const q = query(collection(db, "public_plans"));
                 const snap = await getDocs(q);
-                if(snap.empty) { grid.innerHTML = '<p class="text-xs text-slate-400 col-span-full text-center">Nenhum plano publicado.</p>'; return; }
-                grid.innerHTML = '';
-                snap.forEach(d => {
-                    const p = d.data();
-                    const isPopular = p.price >= 50;
-                    
-                    // Processar benefícios (features)
-                    const featuresList = p.features ? p.features.split('\n').filter(f => f.trim() !== "").map(f => `
-                        <li class="flex items-start gap-2 text-[10px] text-slate-600">
-                            <i data-lucide="check" class="w-3 h-3 text-green-500 mt-0.5 flex-shrink-0"></i>
-                            <span>${f.trim()}</span>
-                        </li>
-                    `).join('') : '';
+                cachedPublicPlans = snap.docs.map(d => ({id: d.id, ...d.data()}));
+                if(!document.getElementById('register-card').classList.contains('hidden')) renderPlansInGrid();
+            } catch(e) {}
+        }
 
-                    const card = document.createElement('div');
-                    card.className = `plan-card p-6 rounded-2xl border-2 flex flex-col h-full`;
-                    card.id = `plan-card-${d.id}`;
-                    card.onclick = () => selectPlanForReg(d.id);
-                    card.innerHTML = `
-                        ${isPopular ? '<div class="absolute top-0 right-0 bg-primary-600 text-white text-[8px] font-black px-3 py-1 rounded-bl-xl uppercase tracking-tighter z-10">Popular</div>' : ''}
-                        
-                        <div class="flex justify-between items-center mb-4">
-                            <div class="selection-indicator"><i data-lucide="check" class="w-3 h-3"></i></div>
-                            <div class="text-right">
-                                <span class="block text-lg font-extrabold text-slate-900 leading-none">R$ ${p.price.toFixed(0)}</span>
-                                <span class="text-[9px] text-slate-400 font-bold uppercase">mensal</span>
-                            </div>
-                        </div>
-
-                        <div class="mb-5">
-                            <h4 class="font-bold text-sm text-slate-800 uppercase tracking-wide">${p.name}</h4>
-                        </div>
-
-                        <div class="space-y-3 mb-6">
-                            <div class="flex items-center gap-2 text-[10px] font-bold text-slate-700 bg-slate-50 p-2 rounded-lg border border-slate-100">
-                                <i data-lucide="box" class="w-3.5 h-3.5 text-primary-500"></i>
-                                <span>Até ${p.maxProducts} Produtos</span>
-                            </div>
-                            <div class="flex items-center gap-2 text-[10px] font-bold text-slate-700 bg-slate-50 p-2 rounded-lg border border-slate-100">
-                                <i data-lucide="${p.hasCarousel ? 'zap' : 'minus'}" class="w-3.5 h-3.5 ${p.hasCarousel ? 'text-yellow-500' : 'text-slate-300'}"></i>
-                                <span>${p.hasCarousel ? `Até ${p.maxBanners} Banners Hero` : 'Sem Banners Hero'}</span>
-                            </div>
-                        </div>
-
-                        <div class="flex-1">
-                            <p class="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-3">Benefícios inclusos:</p>
-                            <ul class="space-y-2.5">
-                                ${featuresList}
-                                <li class="flex items-start gap-2 text-[10px] text-slate-600">
-                                    <i data-lucide="check" class="w-3 h-3 text-green-500 mt-0.5 flex-shrink-0"></i>
-                                    <span>Painel Administrativo Pro</span>
-                                </li>
-                            </ul>
-                        </div>
-                    `;
-                    grid.appendChild(card);
-                });
-                lucide.createIcons();
-            } catch(e) { console.error(e); }
+        function renderPlansInGrid() {
+            const grid = document.getElementById('plansGridSelection');
+            if(!cachedPublicPlans) { fetchPublicPlansEagerly().then(renderPlansInGrid); return; }
+            grid.innerHTML = '';
+            cachedPublicPlans.forEach(p => {
+                const isPopular = p.price >= 50;
+                const featuresList = p.features ? p.features.split('\n').filter(f => f.trim() !== "").map(f => `<li class="flex items-start gap-2 text-[10px] text-slate-600"><i data-lucide="check" class="w-3 h-3 text-green-500 mt-0.5 flex-shrink-0"></i><span>${f.trim()}</span></li>`).join('') : '';
+                const card = document.createElement('div');
+                card.className = `plan-card p-6 rounded-2xl border-2 flex flex-col h-full animate-fade-in`;
+                card.id = `plan-card-${p.id}`;
+                card.onclick = () => selectPlanForReg(p.id);
+                card.innerHTML = `
+                    ${isPopular ? '<div class="absolute top-0 right-0 bg-primary-600 text-white text-[8px] font-black px-3 py-1 rounded-bl-xl uppercase tracking-tighter z-10">Popular</div>' : ''}
+                    <div class="flex justify-between items-center mb-4"><div class="selection-indicator"><i data-lucide="check" class="w-3 h-3"></i></div><div class="text-right"><span class="block text-lg font-extrabold text-slate-900 leading-none">R$ ${p.price.toFixed(0)}</span><span class="text-[9px] text-slate-400 font-bold uppercase">mensal</span></div></div>
+                    <div class="mb-5"><h4 class="font-bold text-sm text-slate-800 uppercase tracking-wide">${p.name}</h4></div>
+                    <div class="space-y-3 mb-6">
+                        <div class="flex items-center gap-2 text-[10px] font-bold text-slate-700 bg-slate-50 p-2 rounded-lg border border-slate-100"><i data-lucide="box" class="w-3.5 h-3.5 text-primary-500"></i><span>Até ${p.maxProducts} Produtos</span></div>
+                        <div class="flex items-center gap-2 text-[10px] font-bold text-slate-700 bg-slate-50 p-2 rounded-lg border border-slate-100"><i data-lucide="${p.hasCarousel ? 'zap' : 'minus'}" class="w-3.5 h-3.5 ${p.hasCarousel ? 'text-yellow-500' : 'text-slate-300'}"></i><span>${p.hasCarousel ? `Até ${p.maxBanners} Banners Hero` : 'Sem Banners'}</span></div>
+                    </div>
+                    <div class="flex-1"><p class="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-3">Benefícios:</p><ul class="space-y-2.5">${featuresList}</ul></div>
+                `;
+                grid.appendChild(card);
+            });
+            lucide.createIcons();
         }
 
         window.selectPlanForReg = (id) => { document.querySelectorAll('.plan-card').forEach(c => c.classList.remove('selected')); document.getElementById(`plan-card-${id}`).classList.add('selected'); document.getElementById('selectedPlanId').value = id; };
@@ -647,12 +554,13 @@
             if(!planId) { showToast("Selecione um plano."); return; }
             try {
                 await addDoc(collection(db, "registration_requests"), { ownerName: document.getElementById('regOwner').value, email: document.getElementById('regEmail').value, storeName: document.getElementById('regStoreName').value, phone: document.getElementById('regPhone').value, planId: planId, status: 'pending', requestDate: new Date().toISOString() });
-                document.getElementById('preRegForm').classList.add('hidden'); document.getElementById('regFooter').classList.add('hidden'); document.getElementById('regSuccess').classList.remove('hidden'); lucide.createIcons();
-            } catch(e) { alert("Erro ao processar."); }
+                document.getElementById('preRegForm').classList.add('hidden'); document.getElementById('register-card').classList.add('hidden'); document.getElementById('regSuccess').classList.remove('hidden'); lucide.createIcons();
+            } catch(e) {}
         };
 
         // --- INIT DATA ---
         onAuthStateChanged(auth, async (user) => {
+            fetchPublicPlansEagerly();
             if(user) {
                 document.getElementById('auth-screen').classList.add('hidden');
                 document.getElementById('userEmailDisplay').textContent = user.email;
@@ -704,6 +612,7 @@
             onSnapshot(collection(db, `stores/${currentStoreId}/categories`), s => {
                 allCategories = s.docs.map(d => ({id: d.id, ...d.data()}));
                 document.getElementById('dash-total-cats').textContent = allCategories.length;
+                renderProductList(); // Re-renderiza para atualizar nomes de categorias se mudarem
                 renderCategoryList();
             });
         }
@@ -725,18 +634,17 @@
             document.getElementById('productQuotaText').textContent = pText;
             document.getElementById('bannerQuotaText').textContent = bText;
             const pBtn = document.getElementById('btnNewProduct');
-            if(allProducts.length >= storeConfig.maxProducts) {
-                pBtn.classList.replace('bg-slate-900', 'bg-slate-200'); pBtn.classList.replace('text-white', 'text-slate-400');
-            } else { pBtn.classList.replace('bg-slate-200', 'bg-slate-900'); pBtn.classList.replace('text-slate-400', 'text-white'); }
-            const bBtn = document.getElementById('btnNewBanner');
-            if(allBanners.length >= storeConfig.maxBanners) {
-                bBtn.classList.replace('bg-primary-600', 'bg-slate-200'); bBtn.classList.replace('text-white', 'text-slate-400');
-            } else { bBtn.classList.replace('bg-slate-200', 'bg-primary-600'); bBtn.classList.replace('text-slate-400', 'text-white'); }
+            if(allProducts.length >= storeConfig.maxProducts) { pBtn.classList.replace('bg-slate-900', 'bg-slate-200'); pBtn.classList.replace('text-white', 'text-slate-400'); }
+            else { pBtn.classList.replace('bg-slate-200', 'bg-slate-900'); pBtn.classList.replace('text-slate-400', 'text-white'); }
         }
 
+        // --- GESTÃO DE PRODUTOS ---
         window.openProductModal = (p = null) => {
-            if(!p && allProducts.length >= storeConfig.maxProducts) { showToast(`Limite atingido (${storeConfig.maxProducts}).`); return; }
+            if(!p && allProducts.length >= storeConfig.maxProducts) { showToast(`Limite do plano (${storeConfig.maxProducts}) atingido.`); return; }
             document.getElementById('prodCategory').innerHTML = allCategories.map(c => `<option value="${c.name}">${c.name}</option>`).join('');
+            const max = storeConfig.hasCarousel ? 4 : 1;
+            document.getElementById('photoLimitNotice').textContent = storeConfig.hasCarousel ? "* O seu plano permite até 4 fotos." : "* O seu plano permite apenas 1 foto.";
+            document.getElementById('photoCount').textContent = `0/${max} fotos`;
             if(p) {
                 document.getElementById('prodModalTitle').textContent = "Editar Produto";
                 document.getElementById('prodId').value = p.id; document.getElementById('prodName').value = p.name;
@@ -752,36 +660,182 @@
             document.getElementById('productModal').classList.remove('hidden');
         };
 
+        window.toggleProductStatus = async (id, currentStatus) => {
+            const newStatus = currentStatus === 'paused' ? 'active' : 'paused';
+            await updateDoc(doc(db, `stores/${currentStoreId}/products`, id), { status: newStatus });
+            showToast(newStatus === 'paused' ? "Produto pausado." : "Produto ativado.");
+        };
+
+        // --- NOVO: PAUSA EM MASSA POR CATEGORIA ---
+        window.pauseCategoryProducts = async (categoryName) => {
+            const productsToPause = allProducts.filter(p => p.category === categoryName && p.status !== 'paused');
+            if(productsToPause.length === 0) { showToast("Não há produtos ativos nesta categoria."); return; }
+            
+            if(confirm(`Pausar todos os ${productsToPause.length} produtos desta categoria?`)) {
+                for(let p of productsToPause) {
+                    await updateDoc(doc(db, `stores/${currentStoreId}/products`, p.id), { status: 'paused' });
+                }
+                showToast(`Categoria ${categoryName} pausada.`);
+            }
+        };
+
+        window.toggleCategoryAccordion = (catName) => {
+            const group = document.getElementById(`cat-group-${catName.replace(/\s+/g, '-')}`);
+            if (expandedCategories.has(catName)) {
+                expandedCategories.delete(catName);
+                group.classList.add('collapsed');
+            } else {
+                expandedCategories.add(catName);
+                group.classList.remove('collapsed');
+            }
+            lucide.createIcons();
+        };
+
         window.handleProductSubmit = async (e) => {
             e.preventDefault();
             if(currentProductImages.length === 0) { showToast("Adicione uma foto."); return; }
             const id = document.getElementById('prodId').value;
-            const data = { name: document.getElementById('prodName').value, category: document.getElementById('prodCategory').value, value: parseFloat(document.getElementById('prodValue').value), promoValue: parseFloat(document.getElementById('prodPromo').value) || null, sizes: document.getElementById('prodSizes').value.split(',').map(s=>s.trim()).filter(Boolean), colors: document.getElementById('prodColors').value.split(',').map(s=>s.trim()).filter(Boolean), images: currentProductImages, description: document.getElementById('prodDesc').value, isFeatured: document.getElementById('prodFeatured').checked, status: 'active' };
+            const data = { 
+                name: document.getElementById('prodName').value, category: document.getElementById('prodCategory').value, 
+                value: parseFloat(document.getElementById('prodValue').value), promoValue: parseFloat(document.getElementById('prodPromo').value) || null, 
+                sizes: document.getElementById('prodSizes').value.split(',').map(s=>s.trim()).filter(Boolean), 
+                colors: document.getElementById('prodColors').value.split(',').map(s=>s.trim()).filter(Boolean), 
+                images: currentProductImages, description: document.getElementById('prodDesc').value, 
+                isFeatured: document.getElementById('prodFeatured').checked, 
+                status: id ? allProducts.find(p => p.id === id).status || 'active' : 'active' 
+            };
             if(id) await updateDoc(doc(db, `stores/${currentStoreId}/products`, id), data);
             else await addDoc(collection(db, `stores/${currentStoreId}/products`), data);
             document.getElementById('productModal').classList.add('hidden');
             showToast("Produto guardado.");
         };
 
-        window.deleteProduct = async (id) => { if(confirm("Apagar produto?")) await deleteDoc(doc(db, `stores/${currentStoreId}/products`, id)); };
+        window.deleteProduct = async (id) => { if(confirm("Apagar definitivamente?")) await deleteDoc(doc(db, `stores/${currentStoreId}/products`, id)); };
+
+        // --- RENDERIZAÇÃO AGRUPADA ---
         function renderProductList() {
             const search = document.getElementById('productSearch').value.toLowerCase();
-            document.getElementById('productList').innerHTML = allProducts.filter(p => p.name.toLowerCase().includes(search)).map(p => `
-                <div class="flex items-center gap-5 bg-white p-4 rounded-3xl border shadow-sm group hover:border-primary-200 transition-all">
-                    <img src="${p.images?.[0]||''}" class="w-20 h-20 rounded-2xl bg-slate-50 object-cover border">
-                    <div class="flex-1">
-                        <p class="font-bold text-slate-800 text-base leading-tight">${p.name}</p>
-                        <p class="text-[10px] text-slate-400 font-bold uppercase mt-1 tracking-wider">${p.category}</p>
-                        <div class="flex items-center gap-3 mt-1.5"><span class="text-sm font-bold text-slate-900">R$ ${p.value.toFixed(2)}</span></div>
+            const container = document.getElementById('productListGrouped');
+            container.innerHTML = '';
+
+            // 1. Agrupar produtos
+            const grouped = {};
+            // Criar chaves para todas as categorias existentes
+            allCategories.forEach(c => grouped[c.name] = []);
+            grouped["Sem Categoria"] = [];
+
+            allProducts.forEach(p => {
+                if (p.name.toLowerCase().includes(search)) {
+                    if (grouped[p.category]) grouped[p.category].push(p);
+                    else grouped["Sem Categoria"].push(p);
+                }
+            });
+
+            // 2. Renderizar grupos
+            Object.keys(grouped).forEach(catName => {
+                const products = grouped[catName];
+                if (products.length === 0 && catName === "Sem Categoria") return; // Oculta "Sem Categoria" se vazio
+
+                const isCollapsed = !expandedCategories.has(catName);
+                const safeId = catName.replace(/\s+/g, '-');
+                
+                const groupDiv = document.createElement('div');
+                groupDiv.id = `cat-group-${safeId}`;
+                groupDiv.className = `category-group bg-white rounded-3xl border shadow-sm overflow-hidden mb-4 ${isCollapsed ? 'collapsed' : ''}`;
+                
+                groupDiv.innerHTML = `
+                    <div class="p-4 md:p-5 flex items-center justify-between cursor-pointer hover:bg-slate-50 transition-colors" onclick="toggleCategoryAccordion('${catName}')">
+                        <div class="flex items-center gap-4">
+                            <i data-lucide="chevron-down" class="chevron-icon w-5 h-5 text-slate-400 transition-transform"></i>
+                            <div>
+                                <h4 class="font-extrabold text-slate-800 uppercase tracking-wider text-xs md:text-sm">${catName}</h4>
+                                <span class="text-[10px] text-slate-400 font-bold">${products.length} produtos</span>
+                            </div>
+                        </div>
+                        <div class="flex items-center gap-2" onclick="event.stopPropagation()">
+                            <button onclick="pauseCategoryProducts('${catName}')" class="p-2 text-amber-500 hover:bg-amber-50 rounded-xl transition-colors flex items-center gap-1.5" title="Pausar todos">
+                                <i data-lucide="pause-circle" class="w-4 h-4"></i>
+                                <span class="hidden md:inline text-[10px] font-black uppercase">Pausar Tudo</span>
+                            </button>
+                        </div>
                     </div>
-                    <div class="flex gap-1 pr-2 opacity-40 group-hover:opacity-100 transition-opacity">
-                        <button onclick='openProductModal(${JSON.stringify(p).replace(/'/g, "&apos;")})' class="p-2.5 text-blue-600 hover:bg-blue-50 rounded-xl transition-colors"><i data-lucide="pencil" class="w-5 h-5"></i></button>
-                        <button onclick="deleteProduct('${p.id}')" class="p-2.5 text-red-500 hover:bg-red-50 rounded-xl transition-colors"><i data-lucide="trash-2" class="w-5 h-5"></i></button>
+                    <div class="category-content border-t border-slate-50 p-4 space-y-3">
+                        ${products.length > 0 ? products.map(p => {
+                            const isPaused = p.status === 'paused';
+                            return `
+                            <div class="flex items-center gap-4 p-3 rounded-2xl border border-slate-100 hover:border-primary-100 transition-all ${isPaused ? 'opacity-60 bg-slate-50' : ''}">
+                                <img src="${p.images?.[0]||''}" class="w-14 h-14 rounded-xl object-cover border">
+                                <div class="flex-1 min-w-0">
+                                    <p class="font-bold text-slate-800 text-sm truncate">${p.name}</p>
+                                    <p class="text-[10px] font-bold text-slate-900 mt-0.5">R$ ${p.value.toFixed(2)}</p>
+                                </div>
+                                <div class="flex gap-1 flex-shrink-0">
+                                    <button onclick="toggleProductStatus('${p.id}', '${p.status || 'active'}')" class="p-2 ${isPaused ? 'text-green-600' : 'text-amber-500'} hover:bg-slate-100 rounded-lg">
+                                        <i data-lucide="${isPaused ? 'eye' : 'eye-off'}" class="w-4 h-4"></i>
+                                    </button>
+                                    <button onclick='openProductModal(${JSON.stringify(p).replace(/'/g, "&apos;")})' class="p-2 text-blue-500 hover:bg-blue-50 rounded-lg">
+                                        <i data-lucide="pencil" class="w-4 h-4"></i>
+                                    </button>
+                                    <button onclick="deleteProduct('${p.id}')" class="p-2 text-red-500 hover:bg-red-50 rounded-lg">
+                                        <i data-lucide="trash-2" class="w-4 h-4"></i>
+                                    </button>
+                                </div>
+                            </div>`;
+                        }).join('') : '<p class="text-center text-xs text-slate-400 py-4 italic">Nenhum produto nesta categoria.</p>'}
                     </div>
-                </div>`).join('');
+                `;
+                container.appendChild(groupDiv);
+            });
             lucide.createIcons();
         }
 
+        // --- GESTÃO DE CATEGORIAS (EDIÇÃO) ---
+        window.handleCategorySubmit = async (e) => {
+            e.preventDefault();
+            const name = document.getElementById('catInputName').value;
+            const editId = document.getElementById('editingCategoryId').value;
+            if(editId) {
+                await updateDoc(doc(db, `stores/${currentStoreId}/categories`, editId), { name });
+                showToast("Categoria atualizada.");
+                cancelCategoryEdit();
+            } else {
+                await addDoc(collection(db, `stores/${currentStoreId}/categories`), { name, status: 'active' });
+                showToast("Categoria criada.");
+                document.getElementById('catInputName').value = '';
+            }
+        };
+
+        window.openEditCategory = (id, name) => {
+            document.getElementById('catFormTitle').textContent = "Editar Departamento";
+            document.getElementById('catInputName').value = name;
+            document.getElementById('editingCategoryId').value = id;
+            document.getElementById('btnCatSubmit').textContent = "Atualizar Categoria";
+            document.getElementById('btnCancelEditCat').classList.remove('hidden');
+            document.getElementById('catInputName').focus();
+        };
+
+        window.cancelCategoryEdit = () => {
+            document.getElementById('catFormTitle').textContent = "Departamentos";
+            document.getElementById('catInputName').value = '';
+            document.getElementById('editingCategoryId').value = '';
+            document.getElementById('btnCatSubmit').textContent = "Criar Categoria";
+            document.getElementById('btnCancelEditCat').classList.add('hidden');
+        };
+
+        window.deleteCategory = async (id) => { if(confirm("Apagar categoria?")) await deleteDoc(doc(db, `stores/${currentStoreId}/categories`, id)); };
+        function renderCategoryList() { 
+            document.getElementById('categoryList').innerHTML = allCategories.map(c => `
+                <div class="flex justify-between items-center p-4 md:p-5 bg-white gap-4">
+                    <div class="flex-1 min-w-0"><span class="font-bold text-slate-700 block truncate">${c.name}</span></div>
+                    <div class="flex gap-2">
+                        <button onclick="openEditCategory('${c.id}', '${c.name}')" class="p-2 text-blue-500 hover:bg-blue-50 rounded-lg transition-colors"><i data-lucide="pencil" class="w-5 h-5"></i></button>
+                        <button onclick="deleteCategory('${c.id}')" class="p-2 text-red-500 hover:bg-red-50 rounded-lg transition-colors"><i data-lucide="trash-2" class="w-5 h-5"></i></button>
+                    </div>
+                </div>`).join(''); 
+            lucide.createIcons(); 
+        }
+
+        // --- BANNERS ---
         window.openBannerModal = (b = null) => {
             if(!b && allBanners.length >= storeConfig.maxBanners) { showToast(`Limite de banners atingido.`); return; }
             const select = document.getElementById('bannerTarget');
@@ -825,25 +879,15 @@
                     <div class="flex justify-between items-center pr-1">
                         <span class="text-[10px] font-bold text-slate-400 bg-slate-50 px-2 py-1 rounded-full border">Alvo: ${b.target}</span>
                         <div class="flex gap-1">
-                            <button onclick='openBannerModal(${JSON.stringify(b)})' class="p-2 text-blue-600 hover:bg-blue-50 rounded-lg"><i data-lucide="pencil" class="w-4 h-4"></i></button>
-                            <button onclick="deleteBanner('${b.id}')" class="p-2 text-red-600 hover:bg-red-50 rounded-lg"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
+                            <button onclick='openBannerModal(${JSON.stringify(b)})' class="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"><i data-lucide="pencil" class="w-4 h-4"></i></button>
+                            <button onclick="deleteBanner('${b.id}')" class="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
                         </div>
                     </div>
                 </div>`).join('');
             lucide.createIcons();
         }
 
-        window.addCategory = async (e) => { e.preventDefault(); const name=document.getElementById('catInputName').value; await addDoc(collection(db, `stores/${currentStoreId}/categories`), { name, status: 'active' }); document.getElementById('catInputName').value=''; showToast("Categoria criada."); };
-        window.deleteCategory = async (id) => { if(confirm("Apagar categoria?")) await deleteDoc(doc(db, `stores/${currentStoreId}/categories`, id)); };
-        function renderCategoryList() { 
-            document.getElementById('categoryList').innerHTML = allCategories.map(c => `
-                <div class="flex justify-between items-center p-4 md:p-5 bg-white gap-4">
-                    <div class="flex-1 min-w-0"><span class="font-bold text-slate-700 block truncate" title="${c.name}">${c.name}</span></div>
-                    <button onclick="deleteCategory('${c.id}')" class="p-2 text-red-500 hover:bg-red-50 rounded-lg flex-shrink-0 transition-colors"><i data-lucide="trash-2" class="w-5 h-5"></i></button>
-                </div>`).join(''); 
-            lucide.createIcons(); 
-        }
-
+        // --- GERAL ---
         window.changeTab = (id) => {
             ['dashboard','banners','products','categories','config'].forEach(t => { document.getElementById(`content-${t}`).classList.add('hidden'); document.getElementById(`nav-${t}`)?.classList.remove('active'); });
             document.getElementById(`content-${id}`).classList.remove('hidden');
