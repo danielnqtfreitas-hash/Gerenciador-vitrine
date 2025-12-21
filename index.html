@@ -84,12 +84,15 @@
 
         .category-group.collapsed .category-content { display: none; }
         .category-group.collapsed .chevron-icon { transform: rotate(-90deg); }
+        
+        button:disabled { opacity: 0.5; cursor: not-allowed; filter: grayscale(1); }
     </style>
 </head>
 <body class="text-slate-800 antialiased h-screen overflow-hidden flex bg-slate-50">
 
     <!-- LOGIN / REGISTER SCREEN -->
     <div id="auth-screen" class="fixed inset-0 z-[200] bg-slate-900 flex items-center justify-center p-4">
+        <!-- LOGIN CARD -->
         <div id="login-card" class="bg-white w-full max-w-md p-8 rounded-3xl shadow-2xl relative overflow-hidden animate-fade-in">
             <div class="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-primary-500 to-indigo-600"></div>
             <div class="mb-8 text-center">
@@ -128,14 +131,15 @@
             </div>
         </div>
 
-        <!-- CARD PRÉ-CADASTRO -->
+        <!-- REGISTER CARD -->
         <div id="register-card" class="bg-white w-full max-w-2xl rounded-3xl shadow-2xl relative overflow-hidden hidden animate-fade-in auth-card-container">
             <div class="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-green-500 to-teal-600"></div>
             <div class="auth-card-content p-6 md:p-10">
-                <div class="mb-8 text-center">
+                <div id="regHeader" class="mb-8 text-center">
                     <h2 class="text-3xl font-extrabold text-slate-900 tracking-tight">Cresça com a ShopWave</h2>
                     <p class="text-slate-500 text-sm mt-1">Crie a sua vitrine profissional em minutos.</p>
                 </div>
+                
                 <form id="preRegForm" onsubmit="handlePreRegister(event)" class="space-y-6">
                     <div id="reg-step-1" class="space-y-6">
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
@@ -148,22 +152,23 @@
                             Escolher Plano de Assinatura <i data-lucide="chevron-right" class="w-4 h-4"></i>
                         </button>
                     </div>
+
                     <div id="reg-step-2" class="space-y-8 hidden animate-fade-in pb-12">
-                        <div id="plansGridSelection" class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                            <div class="h-64 bg-slate-50 rounded-2xl animate-pulse"></div>
-                            <div class="h-64 bg-slate-50 rounded-2xl animate-pulse"></div>
+                        <div id="plansGridSelection" class="grid grid-cols-1 md:grid-cols-2 gap-6 min-h-[300px] flex items-center justify-center">
+                            <!-- JS Inject Loading or Plans -->
                         </div>
                         <input type="hidden" id="selectedPlanId" required>
                         <div class="flex flex-col md:flex-row gap-4 pt-6">
                             <button type="button" onclick="goToRegStep(1)" class="w-full md:w-1/3 text-slate-400 font-bold py-4 rounded-2xl hover:bg-slate-50 transition-all uppercase tracking-widest text-[10px] flex items-center justify-center gap-2">
                                 <i data-lucide="arrow-left" class="w-3 h-3"></i> Voltar
                             </button>
-                            <button type="submit" id="btnReg" class="w-full md:w-2/3 bg-green-600 hover:bg-green-700 text-white font-bold py-4 rounded-2xl shadow-xl transition-all uppercase tracking-widest text-xs h-14">
+                            <button type="submit" id="btnReg" disabled class="w-full md:w-2/3 bg-green-600 hover:bg-green-700 text-white font-bold py-4 rounded-2xl shadow-xl transition-all uppercase tracking-widest text-xs h-14 disabled:opacity-50 disabled:cursor-not-allowed">
                                 Finalizar Pedido <i data-lucide="check-circle" class="w-5 h-5 ml-2"></i>
                             </button>
                         </div>
                     </div>
                 </form>
+
                 <div id="regSuccess" class="hidden text-center py-10">
                     <div class="bg-green-50 w-24 h-24 rounded-[2rem] flex items-center justify-center mx-auto mb-8 shadow-inner rotate-3"><i data-lucide="party-popper" class="w-12 h-12 text-green-500"></i></div>
                     <h3 class="font-bold text-slate-900 text-3xl tracking-tight">Solicitação Recebida!</h3>
@@ -277,7 +282,7 @@
                 <div id="emptyBannersMsg" class="hidden text-center py-24 text-slate-400 italic">Destaque promoções no topo da sua vitrine.</div>
             </div>
 
-            <!-- PRODUCTS TAB (AGRUPADO POR CATEGORIA) -->
+            <!-- PRODUCTS TAB -->
             <div id="content-products" class="max-w-6xl mx-auto space-y-6 hidden animate-fade-in">
                 <div class="flex flex-col md:flex-row justify-between items-center gap-4">
                     <div class="relative w-full md:w-96"><i data-lucide="search" class="absolute left-4 top-3.5 text-slate-400 w-4 h-4"></i><input type="text" id="productSearch" onkeyup="renderProductList()" placeholder="Pesquisar no catálogo..." class="w-full pl-12 border rounded-2xl p-3.5 outline-none focus:ring-2 focus:ring-primary-500 transition-all bg-white"></div>
@@ -286,7 +291,6 @@
                         <button id="btnNewProduct" onclick="openProductModal()" class="flex-1 md:flex-none bg-slate-900 text-white px-8 py-3.5 rounded-2xl font-bold flex justify-center items-center gap-2 shadow-lg hover:bg-slate-800 transition-all uppercase tracking-wide text-sm"><i data-lucide="plus" class="w-5 h-5"></i> Novo Produto</button>
                     </div>
                 </div>
-                <!-- ÁREA DE LISTAGEM AGRUPADA -->
                 <div id="productListGrouped" class="space-y-4 pb-12"></div>
             </div>
 
@@ -308,7 +312,6 @@
 
             <!-- CONFIG TAB -->
             <div id="content-config" class="max-w-4xl mx-auto space-y-8 hidden animate-fade-in">
-                <!-- SEGURANÇA E OUTROS... (Conteúdo padrão mantido) -->
                 <div class="bg-white rounded-3xl border border-slate-200 p-8 shadow-sm">
                     <h3 class="text-xl font-bold text-slate-800 mb-6 flex items-center gap-3"><span class="p-2 bg-yellow-50 rounded-xl"><i data-lucide="shield-check" class="w-6 h-6 text-yellow-600"></i></span> Segurança</h3>
                     <form onsubmit="handleUpdatePassword(event)" class="space-y-5 max-w-sm">
@@ -328,7 +331,6 @@
                             <div><label class="block text-xs font-bold text-slate-400 mb-1.5 uppercase tracking-wider">Cor do Tema</label><input type="color" id="confColorPrimary" class="h-14 w-full rounded-xl border p-1 cursor-pointer"></div>
                         </div>
                     </div>
-                    <!-- ENTREGA... (Omitido para brevidade, mas deve ser mantido) -->
                     <div class="bg-white rounded-3xl border border-slate-200 p-8 shadow-sm">
                         <h3 class="text-xl font-bold text-slate-800 mb-6">Entrega</h3>
                         <div class="flex flex-col md:flex-row gap-4 mb-6"><input type="text" id="areaName" placeholder="Bairro" class="flex-1 input-pro"><input type="number" id="areaFee" placeholder="Taxa R$" step="0.01" class="md:w-32 input-pro"><button type="button" onclick="addDeliveryArea()" class="bg-slate-900 text-white px-6 py-3.5 rounded-xl font-bold text-xs uppercase tracking-widest">Adicionar</button></div>
@@ -373,14 +375,14 @@
                     <div class="space-y-1"><label class="text-[10px] font-bold text-slate-500 uppercase ml-1">Descrição</label><textarea id="prodDesc" class="input-pro bg-white" rows="3"></textarea></div>
                     <div class="flex items-center justify-between pt-6 border-t gap-4">
                         <button type="button" onclick="document.getElementById('productModal').classList.add('hidden')" class="px-8 py-3 text-slate-400 font-bold">Descartar</button>
-                        <button type="submit" class="flex-1 md:flex-none bg-primary-600 text-white px-12 py-4 rounded-2xl font-bold shadow-xl hover:bg-primary-700 uppercase tracking-widest text-xs">Publicar Produto</button>
+                        <button type="submit" id="btnSaveProd" class="flex-1 md:flex-none bg-primary-600 text-white px-12 py-4 rounded-2xl font-bold shadow-xl hover:bg-primary-700 uppercase tracking-widest text-xs">Publicar Produto</button>
                     </div>
                 </form>
             </div>
         </div>
     </div>
 
-    <!-- MODAL BANNER... (Conteúdo mantido) -->
+    <!-- MODAL BANNER -->
     <div id="bannerModal" class="modal-overlay fixed inset-0 z-[150] flex items-center justify-center p-4 hidden">
         <div class="bg-white rounded-3xl shadow-2xl w-full max-w-lg auth-card-container p-8">
             <div class="auth-card-content">
@@ -426,7 +428,7 @@
         let currentProductImages = []; 
         let storeConfig = { planId: 'basic', maxProducts: 50, maxBanners: 1, hasCarousel: false };
         let cachedPublicPlans = null;
-        let expandedCategories = new Set(); // Para controlar o estado de expansão
+        let expandedCategories = new Set();
 
         // --- SISTEMA DE IMAGENS ---
         window.processImages = async (files) => {
@@ -436,13 +438,14 @@
             const maxPhotos = storeConfig.hasCarousel ? 4 : 1;
             if (currentProductImages.length + files.length > maxPhotos) { showToast(`Limite: ${maxPhotos} foto(s).`); return; }
             loading.classList.remove('hidden');
-            btn.disabled = true;
+            if(btn) btn.disabled = true;
             for (let file of files) {
                 if (!file.type.startsWith('image/')) continue;
                 try { const dataUrl = await compressImage(file); currentProductImages.push(dataUrl); } catch (err) {}
             }
             renderImagePreviews();
-            loading.classList.add('hidden'); btn.disabled = false;
+            loading.classList.add('hidden'); 
+            if(btn) btn.disabled = false;
         };
 
         function compressImage(file) {
@@ -505,7 +508,18 @@
         window.toggleAuthView = (view) => { 
             document.getElementById('login-card').classList.toggle('hidden', view === 'register'); 
             document.getElementById('register-card').classList.toggle('hidden', view === 'login'); 
-            if(view === 'register') { renderPlansInGrid(); goToRegStep(1); }
+            if(view === 'register') { 
+                renderPlansInGrid(); 
+                goToRegStep(1); 
+                document.getElementById('regHeader').classList.remove('hidden');
+                document.getElementById('preRegForm').classList.remove('hidden');
+                document.getElementById('regFooter').classList.remove('hidden');
+                document.getElementById('regSuccess').classList.add('hidden');
+                
+                // RESET DO BOTÃO DE FINALIZAR
+                document.getElementById('selectedPlanId').value = '';
+                document.getElementById('btnReg').disabled = true;
+            }
             lucide.createIcons(); 
         };
         window.goToRegStep = (step) => { const s1 = document.getElementById('reg-step-1'); const s2 = document.getElementById('reg-step-2'); if (step === 2) { const f = ['regOwner', 'regEmail', 'regStoreName', 'regPhone']; if(!f.every(id => document.getElementById(id).value.trim() !== "")) { showToast("Preencha todos os campos."); return; } s1.classList.add('hidden'); s2.classList.remove('hidden'); } else { s1.classList.remove('hidden'); s2.classList.add('hidden'); } lucide.createIcons(); };
@@ -520,9 +534,26 @@
             } catch(e) {}
         }
 
+        // --- NOVO: RENDERIZAÇÃO DOS PLANOS COM LOADING ---
         function renderPlansInGrid() {
             const grid = document.getElementById('plansGridSelection');
-            if(!cachedPublicPlans) { fetchPublicPlansEagerly().then(renderPlansInGrid); return; }
+            
+            if(!cachedPublicPlans) { 
+                grid.innerHTML = `
+                    <div class="col-span-full flex flex-col items-center justify-center py-12 text-slate-400">
+                        <div class="w-10 h-10 border-4 border-primary-500 border-t-transparent rounded-full animate-spin mb-4"></div>
+                        <p class="font-bold text-sm uppercase tracking-widest">Carregando planos disponíveis...</p>
+                    </div>
+                `;
+                fetchPublicPlansEagerly().then(renderPlansInGrid); 
+                return; 
+            }
+
+            if(cachedPublicPlans.length === 0) {
+                grid.innerHTML = `<p class="col-span-full text-center text-slate-400 py-10">Nenhum plano disponível no momento.</p>`;
+                return;
+            }
+
             grid.innerHTML = '';
             cachedPublicPlans.forEach(p => {
                 const isPopular = p.price >= 50;
@@ -546,16 +577,46 @@
             lucide.createIcons();
         }
 
-        window.selectPlanForReg = (id) => { document.querySelectorAll('.plan-card').forEach(c => c.classList.remove('selected')); document.getElementById(`plan-card-${id}`).classList.add('selected'); document.getElementById('selectedPlanId').value = id; };
+        // --- NOVO: SELEÇÃO E DESBLOQUEIO DO BOTÃO ---
+        window.selectPlanForReg = (id) => { 
+            document.querySelectorAll('.plan-card').forEach(c => c.classList.remove('selected')); 
+            document.getElementById(`plan-card-${id}`).classList.add('selected'); 
+            document.getElementById('selectedPlanId').value = id; 
+            
+            // DESBLOQUEIA O BOTÃO
+            document.getElementById('btnReg').disabled = false;
+        };
 
         window.handlePreRegister = async (e) => {
             e.preventDefault();
             const planId = document.getElementById('selectedPlanId').value;
             if(!planId) { showToast("Selecione um plano."); return; }
+            
+            const btn = document.getElementById('btnReg');
+            btn.disabled = true;
+            btn.innerHTML = `<div class="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>`;
+            
             try {
-                await addDoc(collection(db, "registration_requests"), { ownerName: document.getElementById('regOwner').value, email: document.getElementById('regEmail').value, storeName: document.getElementById('regStoreName').value, phone: document.getElementById('regPhone').value, planId: planId, status: 'pending', requestDate: new Date().toISOString() });
-                document.getElementById('preRegForm').classList.add('hidden'); document.getElementById('register-card').classList.add('hidden'); document.getElementById('regSuccess').classList.remove('hidden'); lucide.createIcons();
-            } catch(e) {}
+                await addDoc(collection(db, "registration_requests"), { 
+                    ownerName: document.getElementById('regOwner').value, 
+                    email: document.getElementById('regEmail').value, 
+                    storeName: document.getElementById('regStoreName').value, 
+                    phone: document.getElementById('regPhone').value, 
+                    planId: planId, 
+                    status: 'pending', 
+                    requestDate: new Date().toISOString() 
+                });
+                document.getElementById('regHeader').classList.add('hidden');
+                document.getElementById('preRegForm').classList.add('hidden');
+                document.getElementById('regFooter').classList.add('hidden');
+                document.getElementById('regSuccess').classList.remove('hidden'); 
+                lucide.createIcons();
+            } catch(e) {
+                showToast("Erro ao processar solicitação.");
+                btn.disabled = false;
+                btn.innerHTML = `Finalizar Pedido <i data-lucide="check-circle" class="w-5 h-5 ml-2"></i>`;
+                lucide.createIcons();
+            }
         };
 
         // --- INIT DATA ---
@@ -612,7 +673,7 @@
             onSnapshot(collection(db, `stores/${currentStoreId}/categories`), s => {
                 allCategories = s.docs.map(d => ({id: d.id, ...d.data()}));
                 document.getElementById('dash-total-cats').textContent = allCategories.length;
-                renderProductList(); // Re-renderiza para atualizar nomes de categorias se mudarem
+                renderProductList();
                 renderCategoryList();
             });
         }
@@ -623,8 +684,13 @@
             document.getElementById('dash-limit-banners').textContent = `/${storeConfig.maxBanners}`;
             const bNav = document.getElementById('nav-banners');
             const bMob = document.getElementById('mob-nav-banners');
-            if(!storeConfig.hasCarousel) { bNav?.classList.add('hidden'); bMob?.classList.add('hidden'); }
-            else { bNav?.classList.remove('hidden'); bMob?.classList.remove('hidden'); }
+            if(storeConfig.maxBanners > 0) { 
+                bNav?.classList.remove('hidden'); 
+                bMob?.classList.remove('hidden'); 
+            } else { 
+                bNav?.classList.add('hidden'); 
+                bMob?.classList.add('hidden'); 
+            }
             updateQuotas();
         }
 
@@ -649,8 +715,7 @@
                 document.getElementById('prodModalTitle').textContent = "Editar Produto";
                 document.getElementById('prodId').value = p.id; document.getElementById('prodName').value = p.name;
                 document.getElementById('prodCategory').value = p.category; document.getElementById('prodValue').value = p.value;
-                document.getElementById('prodPromo').value = p.promoValue || ''; document.getElementById('prodSizes').value = p.sizes?.join(', ') || '';
-                document.getElementById('prodColors').value = p.colors?.join(', ') || ''; document.getElementById('prodDesc').value = p.description || '';
+                document.getElementById('prodPromo').value = p.promoValue || ''; document.getElementById('prodDesc').value = p.description || '';
                 document.getElementById('prodFeatured').checked = p.isFeatured; currentProductImages = p.images ? [...p.images] : [];
             } else {
                 document.getElementById('prodModalTitle').textContent = "Novo Produto";
@@ -666,27 +731,24 @@
             showToast(newStatus === 'paused' ? "Produto pausado." : "Produto ativado.");
         };
 
-        // --- NOVO: PAUSA EM MASSA POR CATEGORIA ---
         window.pauseCategoryProducts = async (categoryName) => {
             const productsToPause = allProducts.filter(p => p.category === categoryName && p.status !== 'paused');
             if(productsToPause.length === 0) { showToast("Não há produtos ativos nesta categoria."); return; }
-            
             if(confirm(`Pausar todos os ${productsToPause.length} produtos desta categoria?`)) {
-                for(let p of productsToPause) {
-                    await updateDoc(doc(db, `stores/${currentStoreId}/products`, p.id), { status: 'paused' });
-                }
+                for(let p of productsToPause) { await updateDoc(doc(db, `stores/${currentStoreId}/products`, p.id), { status: 'paused' }); }
                 showToast(`Categoria ${categoryName} pausada.`);
             }
         };
 
         window.toggleCategoryAccordion = (catName) => {
-            const group = document.getElementById(`cat-group-${catName.replace(/\s+/g, '-')}`);
+            const safeId = catName.replace(/\s+/g, '-');
+            const group = document.getElementById(`cat-group-${safeId}`);
             if (expandedCategories.has(catName)) {
                 expandedCategories.delete(catName);
-                group.classList.add('collapsed');
+                if(group) group.classList.add('collapsed');
             } else {
                 expandedCategories.add(catName);
-                group.classList.remove('collapsed');
+                if(group) group.classList.remove('collapsed');
             }
             lucide.createIcons();
         };
@@ -698,8 +760,6 @@
             const data = { 
                 name: document.getElementById('prodName').value, category: document.getElementById('prodCategory').value, 
                 value: parseFloat(document.getElementById('prodValue').value), promoValue: parseFloat(document.getElementById('prodPromo').value) || null, 
-                sizes: document.getElementById('prodSizes').value.split(',').map(s=>s.trim()).filter(Boolean), 
-                colors: document.getElementById('prodColors').value.split(',').map(s=>s.trim()).filter(Boolean), 
                 images: currentProductImages, description: document.getElementById('prodDesc').value, 
                 isFeatured: document.getElementById('prodFeatured').checked, 
                 status: id ? allProducts.find(p => p.id === id).status || 'active' : 'active' 
@@ -712,37 +772,27 @@
 
         window.deleteProduct = async (id) => { if(confirm("Apagar definitivamente?")) await deleteDoc(doc(db, `stores/${currentStoreId}/products`, id)); };
 
-        // --- RENDERIZAÇÃO AGRUPADA ---
         function renderProductList() {
             const search = document.getElementById('productSearch').value.toLowerCase();
             const container = document.getElementById('productListGrouped');
             container.innerHTML = '';
-
-            // 1. Agrupar produtos
             const grouped = {};
-            // Criar chaves para todas as categorias existentes
             allCategories.forEach(c => grouped[c.name] = []);
             grouped["Sem Categoria"] = [];
-
             allProducts.forEach(p => {
                 if (p.name.toLowerCase().includes(search)) {
                     if (grouped[p.category]) grouped[p.category].push(p);
                     else grouped["Sem Categoria"].push(p);
                 }
             });
-
-            // 2. Renderizar grupos
             Object.keys(grouped).forEach(catName => {
                 const products = grouped[catName];
-                if (products.length === 0 && catName === "Sem Categoria") return; // Oculta "Sem Categoria" se vazio
-
+                if (products.length === 0 && catName === "Sem Categoria") return;
                 const isCollapsed = !expandedCategories.has(catName);
                 const safeId = catName.replace(/\s+/g, '-');
-                
                 const groupDiv = document.createElement('div');
                 groupDiv.id = `cat-group-${safeId}`;
                 groupDiv.className = `category-group bg-white rounded-3xl border shadow-sm overflow-hidden mb-4 ${isCollapsed ? 'collapsed' : ''}`;
-                
                 groupDiv.innerHTML = `
                     <div class="p-4 md:p-5 flex items-center justify-between cursor-pointer hover:bg-slate-50 transition-colors" onclick="toggleCategoryAccordion('${catName}')">
                         <div class="flex items-center gap-4">
@@ -782,14 +832,13 @@
                                 </div>
                             </div>`;
                         }).join('') : '<p class="text-center text-xs text-slate-400 py-4 italic">Nenhum produto nesta categoria.</p>'}
-                    </div>
-                `;
+                    </div>`;
                 container.appendChild(groupDiv);
             });
             lucide.createIcons();
         }
 
-        // --- GESTÃO DE CATEGORIAS (EDIÇÃO) ---
+        // --- GESTÃO DE CATEGORIAS ---
         window.handleCategorySubmit = async (e) => {
             e.preventDefault();
             const name = document.getElementById('catInputName').value;
