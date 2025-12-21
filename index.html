@@ -41,43 +41,49 @@
 
         .modal-overlay { background-color: rgba(15, 23, 42, 0.7); backdrop-filter: blur(5px); }
         
-        .auth-card-scrollable { 
-            max-height: 90vh; 
-            overflow-y: auto; 
-            scrollbar-width: none; 
+        /* Ajuste Dinâmico do Card de Auth */
+        .auth-card-container { 
+            max-height: 85vh; 
+            display: flex;
+            flex-direction: column;
         }
-        .auth-card-scrollable::-webkit-scrollbar { display: none; }
+        .auth-card-content { 
+            overflow-y: auto; 
+            flex: 1;
+            scrollbar-width: thin;
+        }
 
-        /* Estilo Profissional dos Planos */
+        /* Design Profissional de Planos */
         .plan-card {
             border: 2px solid #f1f5f9;
-            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            transition: all 0.3s ease;
             cursor: pointer;
-            position: relative;
             background: #fff;
+            display: flex;
+            flex-direction: column;
+            position: relative;
         }
-        .plan-card:hover {
-            border-color: #e2e8f0;
-            transform: translateY(-4px);
-            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05);
-        }
+        .plan-card:hover { border-color: #e2e8f0; transform: translateY(-2px); }
         .plan-card.selected {
             border-color: #8b5cf6;
             background-color: #f5f3ff;
-            transform: translateY(-4px);
-            box-shadow: 0 20px 25px -5px rgba(139, 92, 246, 0.15);
+            box-shadow: 0 10px 20px -5px rgba(139, 92, 246, 0.2);
         }
-        .plan-card.selected .check-badge { 
-            background-color: #8b5cf6;
-            color: white;
+        .plan-card.selected .check-dot { background-color: #8b5cf6; border-color: #8b5cf6; }
+        .plan-card.selected .check-dot i { display: block; }
+        
+        .check-dot {
+            width: 20px;
+            height: 20px;
+            border: 2px solid #e2e8f0;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: white;
+            transition: all 0.2s;
         }
-        .plan-card.selected .price-tag { color: #6d28d9; }
-
-        .check-badge {
-            transition: all 0.3s;
-            background-color: #f1f5f9;
-            color: #94a3b8;
-        }
+        .check-dot i { display: none; color: white; }
 
         .toggle-switch { width: 44px; height: 24px; position: relative; display: inline-block; }
         .toggle-switch input { opacity: 0; width: 0; height: 0; }
@@ -86,15 +92,8 @@
         input:checked + .slider { background-color: #22c55e; }
         input:checked + .slider:before { transform: translateX(20px); }
 
-        .section-card { border-radius: 1.5rem; box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1); }
-        
-        .drop-zone { border: 2px dashed #cbd5e1; transition: all 0.3s; }
-        .drop-zone.active { border-color: #8b5cf6; background-color: #f5f3ff; }
-
-        @keyframes slideIn { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
-        .toast { animation: slideIn 0.3s ease-out forwards; }
-        .animate-fade-in { animation: fadeIn 0.4s ease-out forwards; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        .animate-fade-in { animation: fadeIn 0.4s ease-out forwards; }
     </style>
 </head>
 <body class="text-slate-800 antialiased h-screen overflow-hidden flex bg-slate-50">
@@ -126,12 +125,10 @@
                         </button>
                     </div>
                 </div>
-                
                 <div class="flex items-center gap-2 py-1">
                     <input type="checkbox" id="rememberMe" class="w-4 h-4 rounded border-slate-300 text-primary-600 focus:ring-primary-500 cursor-pointer">
                     <label for="rememberMe" class="text-sm text-slate-600 cursor-pointer select-none font-medium">Manter sessão iniciada</label>
                 </div>
-
                 <div id="loginError" class="hidden p-3 bg-red-50 text-red-600 text-xs font-bold rounded-lg text-center border border-red-100"></div>
                 <button type="submit" id="btnLogin" class="w-full bg-slate-900 hover:bg-slate-800 text-white font-bold py-4 rounded-xl shadow-lg transition-all flex justify-center items-center gap-2 text-sm uppercase tracking-wider">
                     Aceder ao Painel <i data-lucide="arrow-right" class="w-4 h-4"></i>
@@ -143,64 +140,63 @@
             </div>
         </div>
 
-        <!-- CARD PRÉ-CADASTRO (OTIMIZADO) -->
-        <div id="register-card" class="bg-white w-full max-w-2xl rounded-3xl shadow-2xl relative overflow-hidden hidden animate-fade-in flex flex-col auth-card-scrollable">
-            <div class="sticky top-0 left-0 w-full h-2 bg-gradient-to-r from-green-500 to-teal-600 z-10"></div>
+        <!-- CARD PRÉ-CADASTRO OTIMIZADO -->
+        <div id="register-card" class="bg-white w-full max-w-2xl rounded-3xl shadow-2xl relative overflow-hidden hidden animate-fade-in auth-card-container">
+            <div class="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-green-500 to-teal-600"></div>
             
-            <div class="p-6 md:p-10">
-                <div class="mb-8 text-center">
-                    <h2 class="text-3xl font-bold text-slate-900">Seja um Parceiro</h2>
-                    <p class="text-slate-500 mt-1">Transforme o seu negócio com uma vitrine digital.</p>
+            <div class="auth-card-content p-6 md:p-10">
+                <div class="mb-6 text-center">
+                    <h2 class="text-2xl font-extrabold text-slate-900">Torne-se Parceiro</h2>
+                    <p class="text-slate-500 text-sm">Preencha os dados da sua nova vitrine digital.</p>
                 </div>
                 
                 <form id="preRegForm" onsubmit="handlePreRegister(event)" class="space-y-6">
                     
-                    <!-- ETAPA 1: DADOS -->
+                    <!-- PASSO 1: DADOS -->
                     <div id="reg-step-1" class="space-y-6">
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <div class="space-y-1">
                                 <label class="block text-[10px] font-bold uppercase text-slate-400 ml-1">Seu Nome</label>
-                                <input type="text" id="regOwner" placeholder="Nome Completo" required class="w-full border border-slate-200 rounded-xl p-3.5 outline-none focus:ring-2 focus:ring-green-500 transition-all bg-slate-50/50">
+                                <input type="text" id="regOwner" placeholder="Nome Completo" required class="w-full border border-slate-200 rounded-xl p-3 outline-none focus:ring-2 focus:ring-green-500 transition-all bg-slate-50/50">
                             </div>
                             <div class="space-y-1">
                                 <label class="block text-[10px] font-bold uppercase text-slate-400 ml-1">E-mail Profissional</label>
-                                <input type="email" id="regEmail" placeholder="exemplo@email.com" required class="w-full border border-slate-200 rounded-xl p-3.5 outline-none focus:ring-2 focus:ring-green-500 transition-all bg-slate-50/50">
+                                <input type="email" id="regEmail" placeholder="exemplo@email.com" required class="w-full border border-slate-200 rounded-xl p-3 outline-none focus:ring-2 focus:ring-green-500 transition-all bg-slate-50/50">
                             </div>
                             <div class="space-y-1">
                                 <label class="block text-[10px] font-bold uppercase text-slate-400 ml-1">Nome da Loja</label>
-                                <input type="text" id="regStoreName" placeholder="Ex: Boutique da Maria" required class="w-full border border-slate-200 rounded-xl p-3.5 outline-none focus:ring-2 focus:ring-green-500 transition-all bg-slate-50/50">
+                                <input type="text" id="regStoreName" placeholder="Ex: Boutique da Maria" required class="w-full border border-slate-200 rounded-xl p-3 outline-none focus:ring-2 focus:ring-green-500 transition-all bg-slate-50/50">
                             </div>
                             <div class="space-y-1">
                                 <label class="block text-[10px] font-bold uppercase text-slate-400 ml-1">WhatsApp</label>
-                                <input type="text" id="regPhone" placeholder="5511999999999" required class="w-full border border-slate-200 rounded-xl p-3.5 outline-none focus:ring-2 focus:ring-green-500 transition-all bg-slate-50/50">
+                                <input type="text" id="regPhone" placeholder="5511999999999" required class="w-full border border-slate-200 rounded-xl p-3 outline-none focus:ring-2 focus:ring-green-500 transition-all bg-slate-50/50">
                             </div>
                         </div>
-                        <button type="button" onclick="goToRegStep(2)" class="w-full bg-slate-900 text-white font-bold py-5 rounded-2xl shadow-xl flex justify-center items-center gap-2 uppercase tracking-widest text-xs hover:bg-slate-800 transition-all">
-                            Selecionar Plano <i data-lucide="chevron-right" class="w-4 h-4"></i>
+                        <button type="button" onclick="goToRegStep(2)" class="w-full bg-slate-900 text-white font-bold py-4 rounded-xl shadow-lg flex justify-center items-center gap-2 uppercase tracking-widest text-xs hover:scale-[1.01] transition-all">
+                            Prosseguir para Planos <i data-lucide="chevron-right" class="w-4 h-4"></i>
                         </button>
                     </div>
 
-                    <!-- ETAPA 2: PLANOS (DESIGN MELHORADO) -->
-                    <div id="reg-step-2" class="space-y-8 hidden animate-fade-in">
+                    <!-- PASSO 2: PLANOS (Design Compacto) -->
+                    <div id="reg-step-2" class="space-y-6 hidden animate-fade-in pb-12">
                         <div class="space-y-4">
-                            <div class="flex items-center justify-center gap-2 mb-2">
-                                <span class="h-1 w-8 bg-slate-200 rounded-full"></span>
-                                <span class="text-[10px] font-bold uppercase text-slate-400 tracking-[0.2em]">Assinatura</span>
-                                <span class="h-1 w-8 bg-slate-200 rounded-full"></span>
+                            <div class="flex items-center justify-between">
+                                <h3 class="text-xs font-bold uppercase text-slate-400 tracking-wider">Escolha o seu plano</h3>
+                                <span class="text-[10px] font-medium text-slate-400 bg-slate-100 px-2 py-1 rounded-md">Passo 2 de 2</span>
                             </div>
-                            <div id="plansGridSelection" class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                <!-- Os cartões serão injetados aqui via JS -->
-                                <div class="col-span-full py-12 text-center text-slate-400 text-xs italic">A carregar planos profissionais...</div>
+                            
+                            <div id="plansGridSelection" class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                                <!-- Cards dinâmicos -->
                             </div>
                             <input type="hidden" id="selectedPlanId" required>
                         </div>
 
-                        <div class="flex flex-col md:flex-row gap-4">
-                            <button type="button" onclick="goToRegStep(1)" class="w-full md:w-1/3 text-slate-400 font-bold py-4 rounded-2xl hover:text-slate-600 transition-all uppercase tracking-widest text-[10px]">
-                                <i data-lucide="arrow-left" class="w-3 h-3 inline mr-1"></i> Voltar
+                        <div class="flex flex-col md:flex-row gap-3 pt-4 border-t border-slate-100">
+                            <button type="button" onclick="goToRegStep(1)" class="w-full md:w-1/3 text-slate-400 font-bold py-4 rounded-xl hover:bg-slate-50 transition-all uppercase tracking-widest text-[10px]">
+                                Voltar
                             </button>
-                            <button type="submit" id="btnReg" class="w-full md:w-2/3 bg-green-600 hover:bg-green-700 text-white font-bold py-5 rounded-2xl shadow-xl transition-all uppercase tracking-widest text-xs flex justify-center items-center gap-3">
-                                Finalizar Registo <i data-lucide="check-circle" class="w-4 h-4"></i>
+                            <button type="submit" id="btnReg" class="w-full md:w-2/3 bg-green-600 hover:bg-green-700 text-white font-bold py-4 rounded-xl shadow-xl transition-all uppercase tracking-widest text-xs flex justify-center items-center gap-2">
+                                Enviar Pedido <i data-lucide="check-circle" class="w-4 h-4"></i>
                             </button>
                         </div>
                     </div>
@@ -208,16 +204,16 @@
 
                 <div id="regSuccess" class="hidden text-center py-10">
                     <div class="bg-green-50 w-20 h-20 rounded-3xl flex items-center justify-center mx-auto mb-6 shadow-inner">
-                        <i data-lucide="party-popper" class="w-10 h-10 text-green-500"></i>
+                        <i data-lucide="check" class="w-10 h-10 text-green-500"></i>
                     </div>
-                    <h3 class="font-bold text-slate-900 text-2xl">Pedido Enviado!</h3>
-                    <p class="text-slate-500 mt-3 px-6 leading-relaxed">A nossa equipa analisará o seu pedido. Em breve receberá os dados de acesso no seu e-mail.</p>
-                    <button onclick="toggleAuthView('login')" class="mt-10 bg-primary-50 text-primary-600 px-8 py-4 rounded-2xl font-bold hover:bg-primary-100 transition-all text-sm uppercase tracking-wider">Voltar ao Início</button>
+                    <h3 class="font-bold text-slate-900 text-2xl">Quase lá!</h3>
+                    <p class="text-slate-500 mt-3 px-6 leading-relaxed">Recebemos a sua solicitação. Verifique o seu e-mail nos próximos minutos para os detalhes de acesso.</p>
+                    <button onclick="toggleAuthView('login')" class="mt-8 bg-slate-900 text-white px-8 py-4 rounded-2xl font-bold hover:bg-slate-800 transition-all text-sm uppercase tracking-wider">Voltar ao Login</button>
                 </div>
-                
-                <div class="mt-8 text-center" id="regFooter">
-                    <button onclick="toggleAuthView('login')" class="text-xs text-slate-400 font-semibold hover:text-slate-900 transition-colors uppercase tracking-widest">Já tenho uma conta ativa</button>
-                </div>
+            </div>
+
+            <div class="p-4 bg-slate-50 border-t border-slate-100 text-center" id="regFooter">
+                <button onclick="toggleAuthView('login')" class="text-[10px] text-slate-400 font-bold hover:text-slate-600 uppercase tracking-[0.2em] transition-colors">Já sou parceiro</button>
             </div>
         </div>
     </div>
@@ -273,7 +269,6 @@
         </div>
     </aside>
 
-    <!-- MAIN CONTENT -->
     <main class="flex-1 flex flex-col h-screen overflow-hidden relative">
         <header class="h-16 bg-white border-b flex items-center justify-between px-4 md:px-8 flex-shrink-0 z-20 shadow-sm">
             <div class="flex items-center gap-3">
@@ -418,69 +413,73 @@
 
     <!-- MODAL PRODUTO -->
     <div id="productModal" class="modal-overlay fixed inset-0 z-[150] flex items-center justify-center p-4 hidden">
-        <div class="bg-white rounded-3xl shadow-2xl w-full max-w-2xl auth-card-scrollable p-8">
-            <h3 class="text-2xl font-bold mb-6 text-slate-800">Ficha do Produto</h3>
-            <form id="productForm" onsubmit="handleProductSubmit(event)" class="space-y-5">
-                <input type="hidden" id="prodId">
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
-                    <div class="md:col-span-2">
-                        <div class="flex justify-between items-center mb-2">
-                            <label id="photoLabel" class="block text-xs font-bold uppercase text-slate-400 tracking-wider">Fotos do Produto (Máx. 4)</label>
-                            <span id="photoCount" class="text-[10px] font-bold text-slate-300">0/4</span>
-                        </div>
-                        <div id="imageDropZone" class="drop-zone relative h-32 rounded-2xl flex flex-col items-center justify-center cursor-pointer overflow-hidden bg-slate-50 group mb-4">
-                            <input type="file" id="prodImageInput" accept="image/*" multiple class="absolute inset-0 opacity-0 cursor-pointer z-10" onchange="processImages(this.files)">
-                            <div class="flex flex-col items-center group-hover:scale-105 transition-transform">
-                                <i data-lucide="cloud-upload" class="w-8 h-8 text-slate-300 mb-1"></i>
-                                <span class="text-[11px] text-slate-400 font-medium">Clique para adicionar fotos</span>
+        <div class="bg-white rounded-3xl shadow-2xl w-full max-w-2xl auth-card-container p-8">
+            <div class="auth-card-content">
+                <h3 class="text-2xl font-bold mb-6 text-slate-800">Ficha do Produto</h3>
+                <form id="productForm" onsubmit="handleProductSubmit(event)" class="space-y-5">
+                    <input type="hidden" id="prodId">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+                        <div class="md:col-span-2">
+                            <div class="flex justify-between items-center mb-2">
+                                <label id="photoLabel" class="block text-xs font-bold uppercase text-slate-400 tracking-wider">Fotos do Produto (Máx. 4)</label>
+                                <span id="photoCount" class="text-[10px] font-bold text-slate-300">0/4</span>
                             </div>
-                            <div id="imageLoading" class="absolute inset-0 bg-white/90 flex flex-col items-center justify-center hidden z-20">
-                                <div class="w-6 h-6 border-4 border-primary-500 border-t-transparent rounded-full animate-spin"></div>
+                            <div id="imageDropZone" class="drop-zone relative h-32 rounded-2xl flex flex-col items-center justify-center cursor-pointer overflow-hidden bg-slate-50 group mb-4">
+                                <input type="file" id="prodImageInput" accept="image/*" multiple class="absolute inset-0 opacity-0 cursor-pointer z-10" onchange="processImages(this.files)">
+                                <div class="flex flex-col items-center group-hover:scale-105 transition-transform">
+                                    <i data-lucide="cloud-upload" class="w-8 h-8 text-slate-300 mb-1"></i>
+                                    <span class="text-[11px] text-slate-400 font-medium">Clique para adicionar fotos</span>
+                                </div>
+                                <div id="imageLoading" class="absolute inset-0 bg-white/90 flex flex-col items-center justify-center hidden z-20">
+                                    <div class="w-6 h-6 border-4 border-primary-500 border-t-transparent rounded-full animate-spin"></div>
+                                </div>
                             </div>
+                            <div id="imageGallery" class="grid grid-cols-4 gap-3"></div>
                         </div>
-                        <div id="imageGallery" class="grid grid-cols-4 gap-3"></div>
+                        <div class="md:col-span-2"><input type="text" id="prodName" placeholder="Nome comercial" required class="w-full border rounded-2xl p-3.5 outline-none focus:ring-2 focus:ring-primary-500"></div>
+                        <select id="prodCategory" class="border rounded-2xl p-3.5 outline-none bg-white focus:ring-2 focus:ring-primary-500" required></select>
+                        <input type="number" step="0.01" id="prodValue" placeholder="Preço Base (R$)" required class="border rounded-2xl p-3.5 outline-none focus:ring-2 focus:ring-primary-500">
+                        <input type="number" step="0.01" id="prodPromo" placeholder="Preço Promo" class="border rounded-2xl p-3.5 outline-none text-green-600 focus:ring-2 focus:ring-green-500">
+                        <input type="text" id="prodSizes" placeholder="Tamanhos (P, M, G)" class="border rounded-2xl p-3.5 outline-none">
+                        <input type="text" id="prodColors" placeholder="Cores (Ex: Preto)" class="border rounded-2xl p-3.5 outline-none">
+                        <div class="md:col-span-2"><textarea id="prodDesc" placeholder="Descrição detalhada..." class="w-full border rounded-2xl p-3.5 outline-none" rows="3"></textarea></div>
+                        <div class="flex items-center gap-3 bg-slate-50 p-4 rounded-2xl border"><input type="checkbox" id="prodFeatured" class="w-5 h-5 accent-primary-600"><label class="text-sm font-bold text-slate-600">Produto em Destaque</label></div>
                     </div>
-                    <div class="md:col-span-2"><input type="text" id="prodName" placeholder="Nome comercial" required class="w-full border rounded-2xl p-3.5 outline-none focus:ring-2 focus:ring-primary-500"></div>
-                    <select id="prodCategory" class="border rounded-2xl p-3.5 outline-none bg-white focus:ring-2 focus:ring-primary-500" required></select>
-                    <input type="number" step="0.01" id="prodValue" placeholder="Preço Base (R$)" required class="border rounded-2xl p-3.5 outline-none focus:ring-2 focus:ring-primary-500">
-                    <input type="number" step="0.01" id="prodPromo" placeholder="Preço Promo" class="border rounded-2xl p-3.5 outline-none text-green-600 focus:ring-2 focus:ring-green-500">
-                    <input type="text" id="prodSizes" placeholder="Tamanhos (P, M, G)" class="border rounded-2xl p-3.5 outline-none">
-                    <input type="text" id="prodColors" placeholder="Cores (Ex: Preto)" class="border rounded-2xl p-3.5 outline-none">
-                    <div class="md:col-span-2"><textarea id="prodDesc" placeholder="Descrição detalhada..." class="w-full border rounded-2xl p-3.5 outline-none" rows="3"></textarea></div>
-                    <div class="flex items-center gap-3 bg-slate-50 p-4 rounded-2xl border"><input type="checkbox" id="prodFeatured" class="w-5 h-5 accent-primary-600"><label class="text-sm font-bold text-slate-600">Produto em Destaque</label></div>
-                </div>
-                <div class="flex justify-end gap-4 pt-6 border-t">
-                    <button type="button" onclick="document.getElementById('productModal').classList.add('hidden')" class="px-6 py-3 text-slate-400 font-bold">Cancelar</button>
-                    <button type="submit" id="btnSaveProd" class="bg-primary-600 text-white px-10 py-3.5 rounded-2xl font-bold shadow-xl hover:bg-primary-700 transition-all uppercase tracking-widest text-xs">Guardar Produto</button>
-                </div>
-            </form>
+                    <div class="flex justify-end gap-4 pt-6 border-t">
+                        <button type="button" onclick="document.getElementById('productModal').classList.add('hidden')" class="px-6 py-3 text-slate-400 font-bold">Cancelar</button>
+                        <button type="submit" id="btnSaveProd" class="bg-primary-600 text-white px-10 py-3.5 rounded-2xl font-bold shadow-xl hover:bg-primary-700 transition-all uppercase tracking-widest text-xs">Guardar Produto</button>
+                    </div>
+                </form>
+            </div>
         </div>
     </div>
 
     <!-- MODAL BANNER -->
     <div id="bannerModal" class="modal-overlay fixed inset-0 z-[150] flex items-center justify-center p-4 hidden">
-        <div class="bg-white rounded-3xl shadow-2xl w-full max-w-lg auth-card-scrollable p-8">
-            <h3 class="text-2xl font-bold mb-6 text-slate-800">Banner da Vitrine</h3>
-            <form id="bannerForm" onsubmit="handleBannerSubmit(event)" class="space-y-5">
-                <input type="hidden" id="bannerId">
-                <div id="bannerPreview" class="h-40 rounded-3xl flex flex-col justify-center p-8 text-white shadow-xl transition-all">
-                    <span id="prevTag" class="text-xs font-bold uppercase tracking-widest opacity-80 mb-2">PROMOÇÃO</span>
-                    <h3 id="prevTitle" class="font-extrabold text-3xl leading-tight text-white">Título do Banner</h3>
-                </div>
-                <div class="grid grid-cols-2 gap-4">
-                    <input type="text" id="bannerTag" placeholder="Tag Ex: Oferta" oninput="updateBannerPreview()" required class="border rounded-2xl p-3.5 outline-none focus:ring-2 focus:ring-primary-500">
-                    <select id="bannerTarget" class="border rounded-2xl p-3.5 outline-none bg-white focus:ring-2 focus:ring-primary-500"></select>
-                </div>
-                <input type="text" id="bannerTitle" placeholder="Frase principal" oninput="updateBannerPreview()" required class="w-full border rounded-2xl p-3.5 outline-none focus:ring-2 focus:ring-primary-500">
-                <div class="grid grid-cols-2 gap-4">
-                    <div><label class="text-xs font-bold text-slate-400 block mb-2">Cor 1</label><input type="color" id="bannerColor1" oninput="updateBannerPreview()" class="w-full h-12 rounded-xl cursor-pointer"></div>
-                    <div><label class="text-xs font-bold text-slate-400 block mb-2">Cor 2</label><input type="color" id="bannerColor2" oninput="updateBannerPreview()" class="w-full h-12 rounded-xl cursor-pointer"></div>
-                </div>
-                <div class="flex justify-end gap-4 pt-4">
-                    <button type="button" onclick="document.getElementById('bannerModal').classList.add('hidden')" class="px-6 py-3 text-slate-400 font-bold">Cancelar</button>
-                    <button type="submit" class="bg-primary-600 text-white px-8 py-3 rounded-2xl font-bold shadow-lg uppercase text-xs tracking-widest">Salvar</button>
-                </div>
-            </form>
+        <div class="bg-white rounded-3xl shadow-2xl w-full max-w-lg auth-card-container p-8">
+            <div class="auth-card-content">
+                <h3 class="text-2xl font-bold mb-6 text-slate-800">Banner da Vitrine</h3>
+                <form id="bannerForm" onsubmit="handleBannerSubmit(event)" class="space-y-5">
+                    <input type="hidden" id="bannerId">
+                    <div id="bannerPreview" class="h-40 rounded-3xl flex flex-col justify-center p-8 text-white shadow-xl transition-all">
+                        <span id="prevTag" class="text-xs font-bold uppercase tracking-widest opacity-80 mb-2">PROMOÇÃO</span>
+                        <h3 id="prevTitle" class="font-extrabold text-3xl leading-tight text-white">Título do Banner</h3>
+                    </div>
+                    <div class="grid grid-cols-2 gap-4">
+                        <input type="text" id="bannerTag" placeholder="Tag Ex: Oferta" oninput="updateBannerPreview()" required class="border rounded-2xl p-3.5 outline-none focus:ring-2 focus:ring-primary-500">
+                        <select id="bannerTarget" class="border rounded-2xl p-3.5 outline-none bg-white focus:ring-2 focus:ring-primary-500"></select>
+                    </div>
+                    <input type="text" id="bannerTitle" placeholder="Frase principal" oninput="updateBannerPreview()" required class="w-full border rounded-2xl p-3.5 outline-none focus:ring-2 focus:ring-primary-500">
+                    <div class="grid grid-cols-2 gap-4">
+                        <div><label class="text-xs font-bold text-slate-400 block mb-2">Cor 1</label><input type="color" id="bannerColor1" oninput="updateBannerPreview()" class="w-full h-12 rounded-xl cursor-pointer"></div>
+                        <div><label class="text-xs font-bold text-slate-400 block mb-2">Cor 2</label><input type="color" id="bannerColor2" oninput="updateBannerPreview()" class="w-full h-12 rounded-xl cursor-pointer"></div>
+                    </div>
+                    <div class="flex justify-end gap-4 pt-4">
+                        <button type="button" onclick="document.getElementById('bannerModal').classList.add('hidden')" class="px-6 py-3 text-slate-400 font-bold">Cancelar</button>
+                        <button type="submit" class="bg-primary-600 text-white px-8 py-3 rounded-2xl font-bold shadow-lg uppercase text-xs tracking-widest">Salvar</button>
+                    </div>
+                </form>
+            </div>
         </div>
     </div>
 
@@ -556,7 +555,7 @@
             lucide.createIcons();
         }
 
-        // --- AUTH & NAVIGATION ---
+        // --- AUTH & NAV ---
         window.handleLogin = async (e) => {
             e.preventDefault();
             const email = document.getElementById('loginEmail').value;
@@ -580,10 +579,7 @@
         window.toggleAuthView = (view) => { 
             document.getElementById('login-card').classList.toggle('hidden', view === 'register'); 
             document.getElementById('register-card').classList.toggle('hidden', view === 'login'); 
-            if(view === 'register') {
-                loadPlansForRegistration();
-                goToRegStep(1); 
-            }
+            if(view === 'register') { loadPlansForRegistration(); goToRegStep(1); }
             lucide.createIcons(); 
         };
 
@@ -603,12 +599,12 @@
                 step2.classList.add('hidden');
             }
             lucide.createIcons();
-            document.querySelector('.auth-card-scrollable').scrollTo({ top: 0, behavior: 'smooth' });
+            document.querySelector('.auth-card-content').scrollTo({ top: 0, behavior: 'smooth' });
         };
 
         window.togglePasswordVisibility = (i, ic) => { const el=document.getElementById(i);const icon=document.getElementById(ic);if(el.type==='password'){el.type='text';icon.setAttribute('data-lucide','eye-off');}else{el.type='password';icon.setAttribute('data-lucide','eye');} lucide.createIcons(); };
 
-        // --- PRÉ-REGISTO COM PLANOS PROFISSIONAIS ---
+        // --- PLANOS DINÂMICOS ---
         async function loadPlansForRegistration() {
             const grid = document.getElementById('plansGridSelection');
             try {
@@ -619,35 +615,23 @@
                 snap.forEach(d => {
                     const p = d.data();
                     const card = document.createElement('div');
-                    card.className = "plan-card p-6 rounded-3xl flex flex-col group";
+                    card.className = "plan-card p-4 rounded-2xl group border border-slate-100";
                     card.id = `plan-card-${d.id}`;
                     card.onclick = () => selectPlanForReg(d.id);
                     card.innerHTML = `
-                        <div class="flex justify-between items-start mb-4">
-                            <div class="check-badge w-8 h-8 rounded-full flex items-center justify-center">
-                                <i data-lucide="check" class="w-4 h-4"></i>
-                            </div>
-                            ${p.price > 40 ? '<span class="bg-primary-500 text-white text-[9px] font-extrabold px-3 py-1 rounded-full uppercase tracking-tighter shadow-sm">Mais Popular</span>' : ''}
+                        <div class="flex justify-between items-start mb-3">
+                            <div class="check-dot"><i data-lucide="check" class="w-3 h-3"></i></div>
+                            ${p.price > 40 ? '<span class="bg-primary-500 text-white text-[8px] font-bold px-2 py-0.5 rounded uppercase tracking-tighter">Popular</span>' : ''}
                         </div>
-                        <h4 class="text-slate-400 text-[10px] font-bold uppercase tracking-widest mb-1">${p.name}</h4>
-                        <div class="flex items-baseline gap-1 mb-5">
-                            <span class="text-2xl font-black text-slate-900 price-tag transition-colors">R$ ${p.price.toFixed(0)}</span>
-                            <span class="text-slate-400 text-[10px] font-medium">/mês</span>
+                        <h4 class="text-slate-400 text-[9px] font-bold uppercase tracking-widest">${p.name}</h4>
+                        <div class="flex items-baseline gap-1 my-1">
+                            <span class="text-xl font-bold text-slate-900">R$ ${p.price.toFixed(0)}</span>
+                            <span class="text-slate-400 text-[9px]">/mês</span>
                         </div>
-                        <ul class="space-y-3 mt-auto border-t border-slate-50 pt-5">
-                            <li class="flex items-center gap-3 text-xs text-slate-600 font-medium">
-                                <i data-lucide="package" class="w-4 h-4 text-slate-300"></i>
-                                Até ${p.maxProducts} Produtos
-                            </li>
-                            <li class="flex items-center gap-3 text-xs text-slate-600 font-medium">
-                                <i data-lucide="${p.hasCarousel ? 'zap' : 'minus-circle'}" class="w-4 h-4 ${p.hasCarousel ? 'text-primary-400' : 'text-slate-300'}"></i>
-                                ${p.hasCarousel ? 'Banners Dinâmicos' : 'Sem Banners'}
-                            </li>
-                            <li class="flex items-center gap-3 text-xs text-slate-600 font-medium">
-                                <i data-lucide="smartphone" class="w-4 h-4 text-slate-300"></i>
-                                Layout Responsivo
-                            </li>
-                        </ul>
+                        <div class="text-[9px] text-slate-500 font-medium pt-2 border-t border-slate-50 space-y-1">
+                           <div class="flex items-center gap-2"><i data-lucide="package" class="w-3 h-3 text-slate-300"></i> ${p.maxProducts} Produtos</div>
+                           <div class="flex items-center gap-2"><i data-lucide="${p.hasCarousel ? 'zap' : 'minus'}" class="w-3 h-3 ${p.hasCarousel ? 'text-primary-400' : 'text-slate-200'}"></i> ${p.hasCarousel ? 'Banners' : 'Sem Banners'}</div>
+                        </div>
                     `;
                     grid.appendChild(card);
                 });
@@ -756,21 +740,12 @@
             if(!p && allProducts.length >= storeConfig.maxProducts) { showToast("Limite atingido."); return; }
             document.getElementById('prodCategory').innerHTML = allCategories.map(c => `<option value="${c.name}">${c.name}</option>`).join('');
             if(p) {
-                document.getElementById('prodId').value = p.id;
-                document.getElementById('prodName').value = p.name;
-                document.getElementById('prodCategory').value = p.category;
-                document.getElementById('prodValue').value = p.value;
-                document.getElementById('prodPromo').value = p.promoValue || '';
-                document.getElementById('prodSizes').value = p.sizes?.join(', ') || '';
-                document.getElementById('prodColors').value = p.colors?.join(', ') || '';
-                document.getElementById('prodDesc').value = p.description || '';
-                document.getElementById('prodFeatured').checked = p.isFeatured;
-                currentProductImages = p.images ? [...p.images] : [];
-            } else {
-                document.getElementById('productForm').reset();
-                document.getElementById('prodId').value = '';
-                currentProductImages = [];
-            }
+                document.getElementById('prodId').value = p.id; document.getElementById('prodName').value = p.name;
+                document.getElementById('prodCategory').value = p.category; document.getElementById('prodValue').value = p.value;
+                document.getElementById('prodPromo').value = p.promoValue || ''; document.getElementById('prodSizes').value = p.sizes?.join(', ') || '';
+                document.getElementById('prodColors').value = p.colors?.join(', ') || ''; document.getElementById('prodDesc').value = p.description || '';
+                document.getElementById('prodFeatured').checked = p.isFeatured; currentProductImages = p.images ? [...p.images] : [];
+            } else { document.getElementById('productForm').reset(); document.getElementById('prodId').value = ''; currentProductImages = []; }
             renderImagePreviews();
             document.getElementById('productModal').classList.remove('hidden');
         };
@@ -779,18 +754,7 @@
             e.preventDefault();
             if(currentProductImages.length === 0) { showToast("Adicione uma foto."); return; }
             const id = document.getElementById('prodId').value;
-            const data = {
-                name: document.getElementById('prodName').value,
-                category: document.getElementById('prodCategory').value,
-                value: parseFloat(document.getElementById('prodValue').value),
-                promoValue: parseFloat(document.getElementById('prodPromo').value) || null,
-                sizes: document.getElementById('prodSizes').value.split(',').map(s=>s.trim()).filter(Boolean),
-                colors: document.getElementById('prodColors').value.split(',').map(s=>s.trim()).filter(Boolean),
-                images: currentProductImages,
-                description: document.getElementById('prodDesc').value,
-                isFeatured: document.getElementById('prodFeatured').checked,
-                status: 'active'
-            };
+            const data = { name: document.getElementById('prodName').value, category: document.getElementById('prodCategory').value, value: parseFloat(document.getElementById('prodValue').value), promoValue: parseFloat(document.getElementById('prodPromo').value) || null, sizes: document.getElementById('prodSizes').value.split(',').map(s=>s.trim()).filter(Boolean), colors: document.getElementById('prodColors').value.split(',').map(s=>s.trim()).filter(Boolean), images: currentProductImages, description: document.getElementById('prodDesc').value, isFeatured: document.getElementById('prodFeatured').checked, status: 'active' };
             if(id) await updateDoc(doc(db, `stores/${currentStoreId}/products`, id), data);
             else await addDoc(collection(db, `stores/${currentStoreId}/products`), data);
             document.getElementById('productModal').classList.add('hidden');
@@ -831,10 +795,8 @@
         window.updateBannerPreview = () => {
             const tag = document.getElementById('bannerTag').value || 'TAG';
             const title = document.getElementById('bannerTitle').value || 'Título';
-            const c1 = document.getElementById('bannerColor1').value;
-            const c2 = document.getElementById('bannerColor2').value;
-            document.getElementById('prevTag').textContent = tag;
-            document.getElementById('prevTitle').textContent = title;
+            const c1 = document.getElementById('bannerColor1').value; const c2 = document.getElementById('bannerColor2').value;
+            document.getElementById('prevTag').textContent = tag; document.getElementById('prevTitle').textContent = title;
             document.getElementById('bannerPreview').style.background = `linear-gradient(135deg, ${c1}, ${c2})`;
         };
 
