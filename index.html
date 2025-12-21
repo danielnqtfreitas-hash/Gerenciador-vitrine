@@ -199,7 +199,7 @@
         </div>
         <nav class="flex-1 overflow-y-auto py-4">
             <button onclick="changeTab('dashboard')" class="w-full flex items-center px-6 py-4 text-slate-600 font-medium hover:bg-slate-50">Dashboard</button>
-            <button id="mob-nav-banners" onclick="changeTab('banners')" class="w-full flex items-center px-6 py-4 text-slate-600 font-medium hover:bg-slate-50">Banners</button>
+            <button id="mob-nav-banners" onclick="changeTab('banners')" class="w-full flex items-center px-6 py-4 text-slate-600 font-medium hover:bg-slate-50">Banners de Destaque</button>
             <button onclick="changeTab('products')" class="w-full flex items-center px-6 py-4 text-slate-600 font-medium hover:bg-slate-50">Produtos</button>
             <button onclick="changeTab('categories')" class="w-full flex items-center px-6 py-4 text-slate-600 font-medium hover:bg-slate-50">Categorias</button>
             <button onclick="changeTab('config')" class="w-full flex items-center px-6 py-4 text-slate-600 font-medium hover:bg-slate-50">Configurações</button>
@@ -215,7 +215,7 @@
         </div>
         <nav class="flex-1 overflow-y-auto py-6 space-y-1">
             <button id="nav-dashboard" onclick="changeTab('dashboard')" class="sidebar-link w-full flex items-center px-6 py-3 text-sm font-medium text-slate-600 active"><i data-lucide="bar-chart-2" class="w-5 h-5 mr-3"></i> Dashboard</button>
-            <button id="nav-banners" onclick="changeTab('banners')" class="sidebar-link w-full flex items-center px-6 py-3 text-sm font-medium text-slate-600"><i data-lucide="layout" class="w-5 h-5 mr-3"></i> Banners</button>
+            <button id="nav-banners" onclick="changeTab('banners')" class="sidebar-link w-full flex items-center px-6 py-3 text-sm font-medium text-slate-600"><i data-lucide="layout" class="w-5 h-5 mr-3"></i> Banners de Destaque</button>
             <button id="nav-products" onclick="changeTab('products')" class="sidebar-link w-full flex items-center px-6 py-3 text-sm font-medium text-slate-600"><i data-lucide="package" class="w-5 h-5 mr-3"></i> Produtos</button>
             <button id="nav-categories" onclick="changeTab('categories')" class="sidebar-link w-full flex items-center px-6 py-3 text-sm font-medium text-slate-600"><i data-lucide="layers" class="w-5 h-5 mr-3"></i> Categorias</button>
             <button id="nav-config" onclick="changeTab('config')" class="sidebar-link w-full flex items-center px-6 py-3 text-sm font-medium text-slate-600"><i data-lucide="settings" class="w-5 h-5 mr-3"></i> Configurações</button>
@@ -267,7 +267,7 @@
                 </div>
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
                     <div class="bg-white p-6 border border-slate-100 rounded-3xl shadow-sm"><p class="text-xs font-bold text-slate-400 uppercase tracking-widest mb-2">Produtos</p><h3 class="text-4xl font-bold text-slate-800"><span id="dash-total-products">0</span><span class="text-sm text-slate-400 font-normal ml-1" id="dash-limit-products">/--</span></h3></div>
-                    <div class="bg-white p-6 border border-slate-100 rounded-3xl shadow-sm"><p class="text-xs font-bold text-slate-400 uppercase tracking-widest mb-2">Banners</p><h3 class="text-4xl font-bold text-primary-600"><span id="dash-total-banners">0</span><span class="text-sm text-slate-400 font-normal ml-1" id="dash-limit-banners">/--</span></h3></div>
+                    <div class="bg-white p-6 border border-slate-100 rounded-3xl shadow-sm"><p class="text-xs font-bold text-slate-400 uppercase tracking-widest mb-2">Banners de Destaque</p><h3 class="text-4xl font-bold text-primary-600"><span id="dash-total-banners">0</span><span class="text-sm text-slate-400 font-normal ml-1" id="dash-limit-banners">/--</span></h3></div>
                     <div class="bg-white p-6 border border-slate-100 rounded-3xl shadow-sm"><p class="text-xs font-bold text-slate-400 uppercase tracking-widest mb-2">Categorias</p><h3 class="text-4xl font-bold text-slate-800" id="dash-total-cats">0</h3></div>
                 </div>
             </div>
@@ -275,7 +275,7 @@
             <!-- BANNERS TAB -->
             <div id="content-banners" class="max-w-6xl mx-auto space-y-6 hidden animate-fade-in">
                 <div class="flex justify-between items-center px-2">
-                    <div><h3 class="text-2xl font-bold text-slate-800">Banners Hero</h3><p class="text-xs text-slate-400 font-medium">Capacidade do plano: <span id="bannerQuotaText">--/--</span></p></div>
+                    <div><h3 class="text-2xl font-bold text-slate-800">Banners de Destaque</h3><p class="text-xs text-slate-400 font-medium">Capacidade do plano: <span id="bannerQuotaText">--/--</span></p></div>
                     <button id="btnNewBanner" onclick="openBannerModal()" class="bg-primary-600 hover:bg-primary-700 text-white px-5 py-2.5 rounded-2xl font-bold flex items-center gap-2 shadow-lg transition-all"><i data-lucide="plus" class="w-5 h-5"></i> Novo Banner</button>
                 </div>
                 <div id="bannersList" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"></div>
@@ -352,30 +352,84 @@
             <div class="auth-card-content p-8">
                 <form id="productForm" onsubmit="handleProductSubmit(event)" class="space-y-10">
                     <input type="hidden" id="prodId">
+                    
+                    <!-- FOTOS E CÂMERA -->
                     <div class="space-y-4">
-                        <div class="flex justify-between items-end border-b border-slate-100 pb-2"><h4 class="text-[11px] font-black uppercase text-slate-400 tracking-widest">Galeria de Imagens</h4><span id="photoCount" class="text-[10px] font-bold text-primary-600 bg-primary-50 px-2 py-0.5 rounded-full">0/1 fotos</span></div>
+                        <div class="flex justify-between items-end border-b border-slate-100 pb-2"><h4 class="text-[11px] font-black uppercase text-slate-400 tracking-widest">Fotos do Produto</h4><span id="photoCount" class="text-[10px] font-bold text-primary-600 bg-primary-50 px-2 py-0.5 rounded-full">0/1 fotos</span></div>
                         <div class="grid grid-cols-2 md:grid-cols-5 gap-4">
-                            <div id="imageDropZone" class="relative aspect-square rounded-2xl border-2 border-dashed border-slate-200 flex flex-col items-center justify-center cursor-pointer hover:border-primary-400 hover:bg-primary-50/30 transition-all group overflow-hidden"><input type="file" id="prodImageInput" accept="image/*" multiple class="absolute inset-0 opacity-0 cursor-pointer z-10" onchange="processImages(this.files)"><i data-lucide="camera" class="w-6 h-6 text-slate-300 group-hover:text-primary-500 mb-1"></i><span class="text-[9px] text-slate-400 font-bold uppercase text-center px-2">Adicionar</span><div id="imageLoading" class="absolute inset-0 bg-white/90 flex items-center justify-center hidden z-20"><div class="w-5 h-5 border-2 border-primary-500 border-t-transparent rounded-full animate-spin"></div></div></div>
-                            <div id="imageGallery" class="col-span-1 md:col-span-4 grid grid-cols-2 md:grid-cols-4 gap-4"></div>
+                            <!-- Botão Upload -->
+                            <div class="relative aspect-square rounded-2xl border-2 border-dashed border-slate-200 flex flex-col items-center justify-center cursor-pointer hover:border-primary-400 hover:bg-primary-50/30 transition-all group overflow-hidden">
+                                <input type="file" id="prodImageInput" accept="image/*" multiple class="absolute inset-0 opacity-0 cursor-pointer z-10" onchange="processImages(this.files)">
+                                <i data-lucide="upload-cloud" class="w-6 h-6 text-slate-300 group-hover:text-primary-500 mb-1"></i>
+                                <span class="text-[9px] text-slate-400 font-bold uppercase text-center px-2">Galeria</span>
+                            </div>
+                            <!-- Botão Tirar Foto (Câmera) -->
+                            <div class="relative aspect-square rounded-2xl border-2 border-slate-200 flex flex-col items-center justify-center cursor-pointer hover:bg-slate-50 transition-all group overflow-hidden bg-slate-50/50" onclick="document.getElementById('cameraCaptureInput').click()">
+                                <input type="file" id="cameraCaptureInput" accept="image/*" capture="environment" class="hidden" onchange="processImages(this.files)">
+                                <i data-lucide="camera" class="w-6 h-6 text-slate-400 group-hover:text-primary-600 mb-1"></i>
+                                <span class="text-[9px] text-slate-400 font-bold uppercase text-center px-2">Tirar Foto</span>
+                            </div>
+                            <div id="imageGallery" class="col-span-1 md:col-span-3 grid grid-cols-2 md:grid-cols-3 gap-4"></div>
                         </div>
-                        <p id="photoLimitNotice" class="text-[9px] text-slate-400 font-medium italic"></p>
+                        <p id="photoLimitNotice" class="text-[9px] text-slate-400 font-medium italic">Selecione uma imagem nítida para sua vitrine.</p>
+                        <div id="imageLoading" class="absolute inset-0 bg-white/90 flex items-center justify-center hidden z-20"><div class="w-5 h-5 border-2 border-primary-500 border-t-transparent rounded-full animate-spin"></div></div>
                     </div>
+
+                    <!-- CAMPOS DO PRODUTO -->
                     <div class="space-y-6">
-                        <h4 class="text-[11px] font-black uppercase text-slate-400 tracking-widest border-b border-slate-100 pb-2">Detalhes do Produto</h4>
+                        <h4 class="text-[11px] font-black uppercase text-slate-400 tracking-widest border-b border-slate-100 pb-2">Identificação do Produto</h4>
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
-                            <div class="md:col-span-2 space-y-1"><label class="text-[10px] font-bold text-slate-500 uppercase ml-1">Nome Comercial</label><input type="text" id="prodName" required class="input-pro !bg-white border-slate-300 text-lg font-semibold"></div>
-                            <div class="space-y-1"><label class="text-[10px] font-bold text-slate-500 uppercase ml-1">Categoria</label><select id="prodCategory" class="input-pro bg-white" required></select></div>
-                            <div class="space-y-1"><label class="text-[10px] font-bold text-slate-500 uppercase ml-1">Destaque?</label><div class="flex items-center gap-3 bg-slate-50 p-3 rounded-xl border border-slate-200"><input type="checkbox" id="prodFeatured" class="w-5 h-5 accent-primary-600"><span class="text-xs font-bold text-slate-600">Exibir no topo</span></div></div>
+                            <div class="md:col-span-2 space-y-1">
+                                <label class="text-[10px] font-bold text-slate-500 uppercase ml-1">Título do Produto</label>
+                                <input type="text" id="prodName" required placeholder="Ex: Camisa Polo Slim Azul" class="input-pro !bg-white border-slate-300 text-lg font-semibold">
+                            </div>
+                            <div class="space-y-1">
+                                <label class="text-[10px] font-bold text-slate-500 uppercase ml-1">Categoria</label>
+                                <select id="prodCategory" class="input-pro bg-white" required></select>
+                            </div>
+                            <div class="space-y-1">
+                                <label class="text-[10px] font-bold text-slate-500 uppercase ml-1">Destaque na Vitrine?</label>
+                                <div class="flex items-center gap-3 bg-slate-50 p-3 rounded-xl border border-slate-200">
+                                    <input type="checkbox" id="prodFeatured" class="w-5 h-5 accent-primary-600">
+                                    <span class="text-xs font-bold text-slate-600">Exibir no topo da página</span>
+                                </div>
+                            </div>
                         </div>
                     </div>
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
-                        <div class="space-y-1"><label class="text-[10px] font-bold text-slate-500 uppercase ml-1">Preço (R$)</label><input type="number" step="0.01" id="prodValue" required class="input-pro bg-white"></div>
-                        <div class="space-y-1"><label class="text-[10px] font-bold text-green-600 uppercase ml-1">Promoção (R$)</label><input type="number" step="0.01" id="prodPromo" class="input-pro bg-white"></div>
+
+                    <!-- VALORES E TAMANHOS -->
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                        <div class="space-y-5">
+                            <h4 class="text-[11px] font-black uppercase text-slate-400 tracking-widest border-b border-slate-100 pb-2">Precificação</h4>
+                            <div class="grid grid-cols-2 gap-4">
+                                <div class="space-y-1">
+                                    <label class="text-[10px] font-bold text-slate-500 uppercase ml-1">Preço Normal (R$)</label>
+                                    <input type="number" step="0.01" id="prodValue" required placeholder="0.00" class="input-pro bg-white">
+                                </div>
+                                <div class="space-y-1">
+                                    <label class="text-[10px] font-bold text-green-600 uppercase ml-1">Preço Promo (R$)</label>
+                                    <input type="number" step="0.01" id="prodPromo" placeholder="Opcional" class="input-pro bg-white">
+                                </div>
+                            </div>
+                        </div>
+                        <div class="space-y-5">
+                            <h4 class="text-[11px] font-black uppercase text-slate-400 tracking-widest border-b border-slate-100 pb-2">Tamanhos Disponíveis</h4>
+                            <div class="space-y-1">
+                                <label class="text-[10px] font-bold text-slate-500 uppercase ml-1">Tamanhos (Separe por vírgula)</label>
+                                <input type="text" id="prodSizesInput" placeholder="Ex: P, M, G, 42, Único" class="input-pro bg-white">
+                                <p class="text-[9px] text-slate-400 italic mt-1">Digite os tamanhos e separe com uma vírgula.</p>
+                            </div>
+                        </div>
                     </div>
-                    <div class="space-y-1"><label class="text-[10px] font-bold text-slate-500 uppercase ml-1">Descrição</label><textarea id="prodDesc" class="input-pro bg-white" rows="3"></textarea></div>
+
+                    <div class="space-y-1">
+                        <label class="text-[10px] font-bold text-slate-500 uppercase ml-1">Breve Descrição</label>
+                        <textarea id="prodDesc" class="input-pro bg-white" rows="3" placeholder="Informações extras como tecido ou medidas..."></textarea>
+                    </div>
+
                     <div class="flex items-center justify-between pt-6 border-t gap-4">
-                        <button type="button" onclick="document.getElementById('productModal').classList.add('hidden')" class="px-8 py-3 text-slate-400 font-bold">Descartar</button>
-                        <button type="submit" id="btnSaveProd" class="flex-1 md:flex-none bg-primary-600 text-white px-12 py-4 rounded-2xl font-bold shadow-xl hover:bg-primary-700 uppercase tracking-widest text-xs">Publicar Produto</button>
+                        <button type="button" onclick="document.getElementById('productModal').classList.add('hidden')" class="px-8 py-3 text-slate-400 font-bold hover:text-slate-600">Cancelar</button>
+                        <button type="submit" id="btnSaveProd" class="flex-1 md:flex-none bg-primary-600 text-white px-12 py-4 rounded-2xl font-bold shadow-xl hover:bg-primary-700 uppercase tracking-widest text-xs transition-all">Publicar Produto</button>
                     </div>
                 </form>
             </div>
@@ -386,7 +440,7 @@
     <div id="bannerModal" class="modal-overlay fixed inset-0 z-[150] flex items-center justify-center p-4 hidden">
         <div class="bg-white rounded-3xl shadow-2xl w-full max-w-lg auth-card-container p-8">
             <div class="auth-card-content">
-                <h3 class="text-2xl font-bold mb-6 text-slate-800">Banner da Vitrine</h3>
+                <h3 class="text-2xl font-bold mb-6 text-slate-800">Banner de Destaque</h3>
                 <form id="bannerForm" onsubmit="handleBannerSubmit(event)" class="space-y-5">
                     <input type="hidden" id="bannerId">
                     <div id="bannerPreview" class="h-40 rounded-3xl flex flex-col justify-center p-8 text-white shadow-xl transition-all">
@@ -429,6 +483,33 @@
         let storeConfig = { planId: 'basic', maxProducts: 50, maxBanners: 1, hasCarousel: false };
         let cachedPublicPlans = null;
         let expandedCategories = new Set();
+
+        // MAPEAMENTO DE NOMES AMIGÁVEIS PARA OS PLANOS
+        // Adicione aqui os IDs técnicos que aparecem no seu Firestore
+        const PLAN_DISPLAY_NAMES = {
+            'basic': 'Plano Gratuito',
+            'pro': 'Plano Business',
+            'premium': 'Plano Pro Master',
+            'Básico': 'Plano Essencial',
+            'Padrão': 'Plano Padrão',
+            'Profissional': 'Plano Profissional'
+        };
+
+        // Função auxiliar para traduzir o plano baseado no ID ou no que vem do Firestore
+        function getFriendlyPlanName(planId) {
+            if (!planId) return "Sem Plano";
+            // Se o ID já estiver mapeado no objeto acima, usa a tradução
+            if (PLAN_DISPLAY_NAMES[planId]) return PLAN_DISPLAY_NAMES[planId];
+            
+            // Caso seja um ID técnico desconhecido (ex: plan_63882), tenta limpar
+            if (planId.includes('plan_')) {
+                // Tenta ver se é um dos planos comuns baseado no preço ou features se tivéssemos essa info
+                // Como fallback para IDs aleatórios, vamos mostrar "Plano Ativo" ou similar
+                return "Plano Premium"; 
+            }
+            
+            return planId; // Retorna o original se for amigável mas não mapeado
+        }
 
         // --- SISTEMA DE IMAGENS ---
         window.processImages = async (files) => {
@@ -515,8 +596,6 @@
                 document.getElementById('preRegForm').classList.remove('hidden');
                 document.getElementById('regFooter').classList.remove('hidden');
                 document.getElementById('regSuccess').classList.add('hidden');
-                
-                // RESET DO BOTÃO DE FINALIZAR
                 document.getElementById('selectedPlanId').value = '';
                 document.getElementById('btnReg').disabled = true;
             }
@@ -534,26 +613,10 @@
             } catch(e) {}
         }
 
-        // --- NOVO: RENDERIZAÇÃO DOS PLANOS COM LOADING ---
         function renderPlansInGrid() {
             const grid = document.getElementById('plansGridSelection');
-            
-            if(!cachedPublicPlans) { 
-                grid.innerHTML = `
-                    <div class="col-span-full flex flex-col items-center justify-center py-12 text-slate-400">
-                        <div class="w-10 h-10 border-4 border-primary-500 border-t-transparent rounded-full animate-spin mb-4"></div>
-                        <p class="font-bold text-sm uppercase tracking-widest">Carregando planos disponíveis...</p>
-                    </div>
-                `;
-                fetchPublicPlansEagerly().then(renderPlansInGrid); 
-                return; 
-            }
-
-            if(cachedPublicPlans.length === 0) {
-                grid.innerHTML = `<p class="col-span-full text-center text-slate-400 py-10">Nenhum plano disponível no momento.</p>`;
-                return;
-            }
-
+            if(!cachedPublicPlans) { grid.innerHTML = `<div class="col-span-full py-12 text-slate-400 text-sm font-bold animate-pulse">CARREGANDO PLANOS DISPONÍVEIS...</div>`; fetchPublicPlansEagerly().then(renderPlansInGrid); return; }
+            if(cachedPublicPlans.length === 0) { grid.innerHTML = `<p class="col-span-full text-center text-slate-400 py-10">Nenhum plano disponível.</p>`; return; }
             grid.innerHTML = '';
             cachedPublicPlans.forEach(p => {
                 const isPopular = p.price >= 50;
@@ -568,34 +631,29 @@
                     <div class="mb-5"><h4 class="font-bold text-sm text-slate-800 uppercase tracking-wide">${p.name}</h4></div>
                     <div class="space-y-3 mb-6">
                         <div class="flex items-center gap-2 text-[10px] font-bold text-slate-700 bg-slate-50 p-2 rounded-lg border border-slate-100"><i data-lucide="box" class="w-3.5 h-3.5 text-primary-500"></i><span>Até ${p.maxProducts} Produtos</span></div>
-                        <div class="flex items-center gap-2 text-[10px] font-bold text-slate-700 bg-slate-50 p-2 rounded-lg border border-slate-100"><i data-lucide="${p.hasCarousel ? 'zap' : 'minus'}" class="w-3.5 h-3.5 ${p.hasCarousel ? 'text-yellow-500' : 'text-slate-300'}"></i><span>${p.hasCarousel ? `Até ${p.maxBanners} Banners Hero` : 'Sem Banners'}</span></div>
+                        <div class="flex items-center gap-2 text-[10px] font-bold text-slate-700 bg-slate-50 p-2 rounded-lg border border-slate-100"><i data-lucide="${p.hasCarousel ? 'zap' : 'minus'}" class="w-3.5 h-3.5 ${p.hasCarousel ? 'text-yellow-500' : 'text-slate-300'}"></i><span>${p.hasCarousel ? `Até ${p.maxBanners} Banners de Destaque` : 'Sem Banners'}</span></div>
                     </div>
-                    <div class="flex-1"><p class="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-3">Benefícios:</p><ul class="space-y-2.5">${featuresList}</ul></div>
+                    <div class="flex-1"><ul class="space-y-2.5">${featuresList}</ul></div>
                 `;
                 grid.appendChild(card);
             });
             lucide.createIcons();
         }
 
-        // --- NOVO: SELEÇÃO E DESBLOQUEIO DO BOTÃO ---
         window.selectPlanForReg = (id) => { 
             document.querySelectorAll('.plan-card').forEach(c => c.classList.remove('selected')); 
             document.getElementById(`plan-card-${id}`).classList.add('selected'); 
             document.getElementById('selectedPlanId').value = id; 
-            
-            // DESBLOQUEIA O BOTÃO
             document.getElementById('btnReg').disabled = false;
         };
 
         window.handlePreRegister = async (e) => {
             e.preventDefault();
             const planId = document.getElementById('selectedPlanId').value;
-            if(!planId) { showToast("Selecione um plano."); return; }
-            
+            if(!planId) return;
             const btn = document.getElementById('btnReg');
             btn.disabled = true;
-            btn.innerHTML = `<div class="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>`;
-            
+            btn.innerHTML = `Processando...`;
             try {
                 await addDoc(collection(db, "registration_requests"), { 
                     ownerName: document.getElementById('regOwner').value, 
@@ -615,7 +673,6 @@
                 showToast("Erro ao processar solicitação.");
                 btn.disabled = false;
                 btn.innerHTML = `Finalizar Pedido <i data-lucide="check-circle" class="w-5 h-5 ml-2"></i>`;
-                lucide.createIcons();
             }
         };
 
@@ -679,18 +736,16 @@
         }
 
         function updateUIByPlan() {
-            document.getElementById('currentPlanBadge').textContent = storeConfig.planId.toUpperCase();
+            // AQUI É ONDE CONSERTAMOS O NOME DO PLANO
+            const friendlyName = getFriendlyPlanName(storeConfig.planId);
+            document.getElementById('currentPlanBadge').textContent = friendlyName.toUpperCase();
+            
             document.getElementById('dash-limit-products').textContent = `/${storeConfig.maxProducts}`;
             document.getElementById('dash-limit-banners').textContent = `/${storeConfig.maxBanners}`;
             const bNav = document.getElementById('nav-banners');
             const bMob = document.getElementById('mob-nav-banners');
-            if(storeConfig.maxBanners > 0) { 
-                bNav?.classList.remove('hidden'); 
-                bMob?.classList.remove('hidden'); 
-            } else { 
-                bNav?.classList.add('hidden'); 
-                bMob?.classList.add('hidden'); 
-            }
+            if(storeConfig.maxBanners > 0) { bNav?.classList.remove('hidden'); bMob?.classList.remove('hidden'); }
+            else { bNav?.classList.add('hidden'); bMob?.classList.add('hidden'); }
             updateQuotas();
         }
 
@@ -706,20 +761,29 @@
 
         // --- GESTÃO DE PRODUTOS ---
         window.openProductModal = (p = null) => {
-            if(!p && allProducts.length >= storeConfig.maxProducts) { showToast(`Limite do plano (${storeConfig.maxProducts}) atingido.`); return; }
+            if(!p && allProducts.length >= storeConfig.maxProducts) { showToast(`Limite do plano atingido.`); return; }
             document.getElementById('prodCategory').innerHTML = allCategories.map(c => `<option value="${c.name}">${c.name}</option>`).join('');
             const max = storeConfig.hasCarousel ? 4 : 1;
             document.getElementById('photoLimitNotice').textContent = storeConfig.hasCarousel ? "* O seu plano permite até 4 fotos." : "* O seu plano permite apenas 1 foto.";
             document.getElementById('photoCount').textContent = `0/${max} fotos`;
+            
             if(p) {
-                document.getElementById('prodModalTitle').textContent = "Editar Produto";
-                document.getElementById('prodId').value = p.id; document.getElementById('prodName').value = p.name;
-                document.getElementById('prodCategory').value = p.category; document.getElementById('prodValue').value = p.value;
-                document.getElementById('prodPromo').value = p.promoValue || ''; document.getElementById('prodDesc').value = p.description || '';
-                document.getElementById('prodFeatured').checked = p.isFeatured; currentProductImages = p.images ? [...p.images] : [];
+                document.getElementById('prodModalTitle').textContent = "Editar Produto Existente";
+                document.getElementById('prodId').value = p.id; 
+                document.getElementById('prodName').value = p.name;
+                document.getElementById('prodCategory').value = p.category; 
+                document.getElementById('prodValue').value = p.value;
+                document.getElementById('prodPromo').value = p.promoValue || ''; 
+                document.getElementById('prodDesc').value = p.description || '';
+                document.getElementById('prodFeatured').checked = p.isFeatured; 
+                document.getElementById('prodSizesInput').value = p.sizes ? p.sizes.join(', ') : '';
+                currentProductImages = p.images ? [...p.images] : [];
             } else {
-                document.getElementById('prodModalTitle').textContent = "Novo Produto";
-                document.getElementById('productForm').reset(); document.getElementById('prodId').value = ''; currentProductImages = []; 
+                document.getElementById('prodModalTitle').textContent = "Adicionar Novo Produto";
+                document.getElementById('productForm').reset(); 
+                document.getElementById('prodId').value = ''; 
+                document.getElementById('prodSizesInput').value = '';
+                currentProductImages = []; 
             }
             renderImagePreviews();
             document.getElementById('productModal').classList.remove('hidden');
@@ -728,12 +792,12 @@
         window.toggleProductStatus = async (id, currentStatus) => {
             const newStatus = currentStatus === 'paused' ? 'active' : 'paused';
             await updateDoc(doc(db, `stores/${currentStoreId}/products`, id), { status: newStatus });
-            showToast(newStatus === 'paused' ? "Produto pausado." : "Produto ativado.");
+            showToast(newStatus === 'paused' ? "Pausado." : "Ativado.");
         };
 
         window.pauseCategoryProducts = async (categoryName) => {
             const productsToPause = allProducts.filter(p => p.category === categoryName && p.status !== 'paused');
-            if(productsToPause.length === 0) { showToast("Não há produtos ativos nesta categoria."); return; }
+            if(productsToPause.length === 0) return;
             if(confirm(`Pausar todos os ${productsToPause.length} produtos desta categoria?`)) {
                 for(let p of productsToPause) { await updateDoc(doc(db, `stores/${currentStoreId}/products`, p.id), { status: 'paused' }); }
                 showToast(`Categoria ${categoryName} pausada.`);
@@ -757,11 +821,20 @@
             e.preventDefault();
             if(currentProductImages.length === 0) { showToast("Adicione uma foto."); return; }
             const id = document.getElementById('prodId').value;
+            
+            // Processa a string de tamanhos para Array
+            const sizesRaw = document.getElementById('prodSizesInput').value;
+            const sizesArray = sizesRaw ? sizesRaw.split(',').map(s => s.trim().toUpperCase()).filter(s => s !== '') : [];
+
             const data = { 
-                name: document.getElementById('prodName').value, category: document.getElementById('prodCategory').value, 
-                value: parseFloat(document.getElementById('prodValue').value), promoValue: parseFloat(document.getElementById('prodPromo').value) || null, 
-                images: currentProductImages, description: document.getElementById('prodDesc').value, 
+                name: document.getElementById('prodName').value, 
+                category: document.getElementById('prodCategory').value, 
+                value: parseFloat(document.getElementById('prodValue').value), 
+                promoValue: parseFloat(document.getElementById('prodPromo').value) || null, 
+                images: currentProductImages, 
+                description: document.getElementById('prodDesc').value, 
                 isFeatured: document.getElementById('prodFeatured').checked, 
+                sizes: sizesArray,
                 status: id ? allProducts.find(p => p.id === id).status || 'active' : 'active' 
             };
             if(id) await updateDoc(doc(db, `stores/${currentStoreId}/products`, id), data);
@@ -817,7 +890,8 @@
                                 <img src="${p.images?.[0]||''}" class="w-14 h-14 rounded-xl object-cover border">
                                 <div class="flex-1 min-w-0">
                                     <p class="font-bold text-slate-800 text-sm truncate">${p.name}</p>
-                                    <p class="text-[10px] font-bold text-slate-900 mt-0.5">R$ ${p.value.toFixed(2)}</p>
+                                    <p class="text-[10px] font-bold text-slate-900 mt-0.5">R$ ${p.value.toFixed(2)} ${p.promoValue ? `<span class="text-green-600 ml-2">Promo: R$ ${p.promoValue.toFixed(2)}</span>` : ''}</p>
+                                    <p class="text-[8px] text-slate-400 font-bold mt-1 uppercase">${p.sizes && p.sizes.length > 0 ? `Tam: ${p.sizes.join(', ')}` : ''}</p>
                                 </div>
                                 <div class="flex gap-1 flex-shrink-0">
                                     <button onclick="toggleProductStatus('${p.id}', '${p.status || 'active'}')" class="p-2 ${isPaused ? 'text-green-600' : 'text-amber-500'} hover:bg-slate-100 rounded-lg">
@@ -845,22 +919,20 @@
             const editId = document.getElementById('editingCategoryId').value;
             if(editId) {
                 await updateDoc(doc(db, `stores/${currentStoreId}/categories`, editId), { name });
-                showToast("Categoria atualizada.");
                 cancelCategoryEdit();
             } else {
                 await addDoc(collection(db, `stores/${currentStoreId}/categories`), { name, status: 'active' });
-                showToast("Categoria criada.");
                 document.getElementById('catInputName').value = '';
             }
+            showToast("Categoria guardada.");
         };
 
         window.openEditCategory = (id, name) => {
             document.getElementById('catFormTitle').textContent = "Editar Departamento";
             document.getElementById('catInputName').value = name;
             document.getElementById('editingCategoryId').value = id;
-            document.getElementById('btnCatSubmit').textContent = "Atualizar Categoria";
+            document.getElementById('btnCatSubmit').textContent = "Atualizar";
             document.getElementById('btnCancelEditCat').classList.remove('hidden');
-            document.getElementById('catInputName').focus();
         };
 
         window.cancelCategoryEdit = () => {
@@ -941,7 +1013,7 @@
             ['dashboard','banners','products','categories','config'].forEach(t => { document.getElementById(`content-${t}`).classList.add('hidden'); document.getElementById(`nav-${t}`)?.classList.remove('active'); });
             document.getElementById(`content-${id}`).classList.remove('hidden');
             if(document.getElementById(`nav-${id}`)) document.getElementById(`nav-${id}`).classList.add('active');
-            document.getElementById('page-title').textContent = id.charAt(0).toUpperCase() + id.slice(1);
+            document.getElementById('page-title').textContent = id === 'banners' ? 'Banners de Destaque' : id.charAt(0).toUpperCase() + id.slice(1);
             if(document.getElementById('mobileSidebar').classList.contains('sidebar-visible')) toggleMobileSidebar();
         };
         window.toggleMobileSidebar = () => { const sb=document.getElementById('mobileSidebar'); const ov=document.getElementById('mobileOverlay'); if(sb.classList.contains('sidebar-hidden')){sb.classList.replace('sidebar-hidden','sidebar-visible');ov.classList.remove('hidden');}else{sb.classList.replace('sidebar-visible','sidebar-hidden');ov.classList.add('hidden');} };
