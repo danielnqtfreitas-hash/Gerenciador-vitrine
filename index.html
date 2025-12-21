@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Painel do Lojista | ShopWave</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <script src="https://unpkg.com/lucide@latest"></script>
     <script>
         tailwind.config = {
@@ -41,9 +41,8 @@
 
         .modal-overlay { background-color: rgba(15, 23, 42, 0.7); backdrop-filter: blur(5px); }
         
-        /* Ajuste Dinâmico do Card de Auth */
         .auth-card-container { 
-            max-height: 85vh; 
+            max-height: 90vh; 
             display: flex;
             flex-direction: column;
         }
@@ -53,37 +52,42 @@
             scrollbar-width: thin;
         }
 
-        /* Design Profissional de Planos */
+        /* --- Design Profissional de Planos v2 --- */
         .plan-card {
-            border: 2px solid #f1f5f9;
-            transition: all 0.3s ease;
+            border: 2px solid #e2e8f0;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
             cursor: pointer;
             background: #fff;
-            display: flex;
-            flex-direction: column;
             position: relative;
+            overflow: hidden;
         }
-        .plan-card:hover { border-color: #e2e8f0; transform: translateY(-2px); }
+        .plan-card:hover { 
+            border-color: #cbd5e1;
+            transform: translateY(-2px);
+        }
         .plan-card.selected {
-            border-color: #8b5cf6;
-            background-color: #f5f3ff;
-            box-shadow: 0 10px 20px -5px rgba(139, 92, 246, 0.2);
+            border-color: #7c3aed;
+            background-color: #faf9ff;
+            box-shadow: 0 10px 30px -10px rgba(124, 58, 237, 0.3);
         }
-        .plan-card.selected .check-dot { background-color: #8b5cf6; border-color: #8b5cf6; }
-        .plan-card.selected .check-dot i { display: block; }
         
-        .check-dot {
-            width: 20px;
-            height: 20px;
+        .plan-card.selected .selection-indicator {
+            background-color: #7c3aed;
+            color: white;
+            border-color: #7c3aed;
+        }
+
+        .selection-indicator {
+            width: 24px;
+            height: 24px;
             border: 2px solid #e2e8f0;
             border-radius: 50%;
             display: flex;
             align-items: center;
             justify-content: center;
-            background: white;
+            background: #fff;
             transition: all 0.2s;
         }
-        .check-dot i { display: none; color: white; }
 
         .toggle-switch { width: 44px; height: 24px; position: relative; display: inline-block; }
         .toggle-switch input { opacity: 0; width: 0; height: 0; }
@@ -145,75 +149,78 @@
             <div class="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-green-500 to-teal-600"></div>
             
             <div class="auth-card-content p-6 md:p-10">
-                <div class="mb-6 text-center">
-                    <h2 class="text-2xl font-extrabold text-slate-900">Torne-se Parceiro</h2>
-                    <p class="text-slate-500 text-sm">Preencha os dados da sua nova vitrine digital.</p>
+                <div class="mb-8 text-center">
+                    <h2 class="text-3xl font-extrabold text-slate-900 tracking-tight">Cresça com a ShopWave</h2>
+                    <p class="text-slate-500 text-sm mt-1">Crie a sua vitrine profissional em minutos.</p>
                 </div>
                 
                 <form id="preRegForm" onsubmit="handlePreRegister(event)" class="space-y-6">
                     
                     <!-- PASSO 1: DADOS -->
                     <div id="reg-step-1" class="space-y-6">
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <div class="space-y-1">
-                                <label class="block text-[10px] font-bold uppercase text-slate-400 ml-1">Seu Nome</label>
-                                <input type="text" id="regOwner" placeholder="Nome Completo" required class="w-full border border-slate-200 rounded-xl p-3 outline-none focus:ring-2 focus:ring-green-500 transition-all bg-slate-50/50">
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+                            <div class="space-y-1.5">
+                                <label class="block text-[11px] font-bold uppercase text-slate-500 tracking-wider ml-1">Seu Nome</label>
+                                <input type="text" id="regOwner" placeholder="Nome Completo" required class="w-full border border-slate-200 rounded-xl p-3.5 outline-none focus:ring-2 focus:ring-green-500 transition-all bg-slate-50/30">
                             </div>
-                            <div class="space-y-1">
-                                <label class="block text-[10px] font-bold uppercase text-slate-400 ml-1">E-mail Profissional</label>
-                                <input type="email" id="regEmail" placeholder="exemplo@email.com" required class="w-full border border-slate-200 rounded-xl p-3 outline-none focus:ring-2 focus:ring-green-500 transition-all bg-slate-50/50">
+                            <div class="space-y-1.5">
+                                <label class="block text-[11px] font-bold uppercase text-slate-500 tracking-wider ml-1">E-mail Profissional</label>
+                                <input type="email" id="regEmail" placeholder="exemplo@email.com" required class="w-full border border-slate-200 rounded-xl p-3.5 outline-none focus:ring-2 focus:ring-green-500 transition-all bg-slate-50/30">
                             </div>
-                            <div class="space-y-1">
-                                <label class="block text-[10px] font-bold uppercase text-slate-400 ml-1">Nome da Loja</label>
-                                <input type="text" id="regStoreName" placeholder="Ex: Boutique da Maria" required class="w-full border border-slate-200 rounded-xl p-3 outline-none focus:ring-2 focus:ring-green-500 transition-all bg-slate-50/50">
+                            <div class="space-y-1.5">
+                                <label class="block text-[11px] font-bold uppercase text-slate-500 tracking-wider ml-1">Nome da Loja</label>
+                                <input type="text" id="regStoreName" placeholder="Ex: Boutique da Maria" required class="w-full border border-slate-200 rounded-xl p-3.5 outline-none focus:ring-2 focus:ring-green-500 transition-all bg-slate-50/30">
                             </div>
-                            <div class="space-y-1">
-                                <label class="block text-[10px] font-bold uppercase text-slate-400 ml-1">WhatsApp</label>
-                                <input type="text" id="regPhone" placeholder="5511999999999" required class="w-full border border-slate-200 rounded-xl p-3 outline-none focus:ring-2 focus:ring-green-500 transition-all bg-slate-50/50">
+                            <div class="space-y-1.5">
+                                <label class="block text-[11px] font-bold uppercase text-slate-500 tracking-wider ml-1">WhatsApp de Contato</label>
+                                <input type="text" id="regPhone" placeholder="Ex: 5511999999999" required class="w-full border border-slate-200 rounded-xl p-3.5 outline-none focus:ring-2 focus:ring-green-500 transition-all bg-slate-50/30">
                             </div>
                         </div>
-                        <button type="button" onclick="goToRegStep(2)" class="w-full bg-slate-900 text-white font-bold py-4 rounded-xl shadow-lg flex justify-center items-center gap-2 uppercase tracking-widest text-xs hover:scale-[1.01] transition-all">
-                            Prosseguir para Planos <i data-lucide="chevron-right" class="w-4 h-4"></i>
+                        <button type="button" onclick="goToRegStep(2)" class="w-full bg-slate-900 text-white font-bold py-4.5 rounded-2xl shadow-xl flex justify-center items-center gap-2 uppercase tracking-widest text-xs hover:bg-slate-800 hover:shadow-2xl transition-all h-14">
+                            Escolher Plano de Assinatura <i data-lucide="chevron-right" class="w-4 h-4"></i>
                         </button>
                     </div>
 
-                    <!-- PASSO 2: PLANOS (Design Compacto) -->
-                    <div id="reg-step-2" class="space-y-6 hidden animate-fade-in pb-12">
-                        <div class="space-y-4">
-                            <div class="flex items-center justify-between">
-                                <h3 class="text-xs font-bold uppercase text-slate-400 tracking-wider">Escolha o seu plano</h3>
-                                <span class="text-[10px] font-medium text-slate-400 bg-slate-100 px-2 py-1 rounded-md">Passo 2 de 2</span>
+                    <!-- PASSO 2: PLANOS (Design High-End) -->
+                    <div id="reg-step-2" class="space-y-8 hidden animate-fade-in pb-12">
+                        <div class="space-y-5">
+                            <div class="flex items-center justify-between border-b border-slate-100 pb-4">
+                                <div class="flex flex-col">
+                                    <h3 class="text-sm font-bold text-slate-800 uppercase tracking-widest">Planos Profissionais</h3>
+                                    <p class="text-[10px] text-slate-400 font-medium">Selecione a melhor opção para o seu volume de vendas.</p>
+                                </div>
+                                <span class="text-[10px] font-bold text-slate-400 bg-slate-100 px-3 py-1.5 rounded-full uppercase tracking-tighter">Etapa 2/2</span>
                             </div>
                             
-                            <div id="plansGridSelection" class="grid grid-cols-1 md:grid-cols-2 gap-3">
-                                <!-- Cards dinâmicos -->
+                            <div id="plansGridSelection" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <!-- Cards dinâmicos injetados via JS -->
                             </div>
                             <input type="hidden" id="selectedPlanId" required>
                         </div>
 
-                        <div class="flex flex-col md:flex-row gap-3 pt-4 border-t border-slate-100">
-                            <button type="button" onclick="goToRegStep(1)" class="w-full md:w-1/3 text-slate-400 font-bold py-4 rounded-xl hover:bg-slate-50 transition-all uppercase tracking-widest text-[10px]">
-                                Voltar
+                        <div class="flex flex-col md:flex-row gap-4 pt-6">
+                            <button type="button" onclick="goToRegStep(1)" class="w-full md:w-1/3 text-slate-400 font-bold py-4 rounded-2xl hover:bg-slate-50 hover:text-slate-600 transition-all uppercase tracking-widest text-[10px] flex items-center justify-center gap-2 border border-transparent hover:border-slate-200">
+                                <i data-lucide="arrow-left" class="w-3 h-3"></i> Voltar
                             </button>
-                            <button type="submit" id="btnReg" class="w-full md:w-2/3 bg-green-600 hover:bg-green-700 text-white font-bold py-4 rounded-xl shadow-xl transition-all uppercase tracking-widest text-xs flex justify-center items-center gap-2">
-                                Enviar Pedido <i data-lucide="check-circle" class="w-4 h-4"></i>
+                            <button type="submit" id="btnReg" class="w-full md:w-2/3 bg-green-600 hover:bg-green-700 text-white font-bold py-4 rounded-2xl shadow-xl transition-all uppercase tracking-widest text-xs flex justify-center items-center gap-3 h-14">
+                                Finalizar Pedido <i data-lucide="check-circle" class="w-5 h-5"></i>
                             </button>
                         </div>
                     </div>
                 </form>
 
                 <div id="regSuccess" class="hidden text-center py-10">
-                    <div class="bg-green-50 w-20 h-20 rounded-3xl flex items-center justify-center mx-auto mb-6 shadow-inner">
-                        <i data-lucide="check" class="w-10 h-10 text-green-500"></i>
+                    <div class="bg-green-50 w-24 h-24 rounded-[2rem] flex items-center justify-center mx-auto mb-8 shadow-inner rotate-3">
+                        <i data-lucide="party-popper" class="w-12 h-12 text-green-500"></i>
                     </div>
-                    <h3 class="font-bold text-slate-900 text-2xl">Quase lá!</h3>
-                    <p class="text-slate-500 mt-3 px-6 leading-relaxed">Recebemos a sua solicitação. Verifique o seu e-mail nos próximos minutos para os detalhes de acesso.</p>
-                    <button onclick="toggleAuthView('login')" class="mt-8 bg-slate-900 text-white px-8 py-4 rounded-2xl font-bold hover:bg-slate-800 transition-all text-sm uppercase tracking-wider">Voltar ao Login</button>
+                    <h3 class="font-bold text-slate-900 text-3xl tracking-tight">Solicitação Recebida!</h3>
+                    <p class="text-slate-500 mt-4 px-6 leading-relaxed max-w-sm mx-auto">Em instantes, nossa equipe entrará em contato via WhatsApp/E-mail para liberar seu acesso.</p>
+                    <button onclick="toggleAuthView('login')" class="mt-10 bg-slate-900 text-white px-10 py-4.5 rounded-2xl font-bold hover:bg-slate-800 transition-all text-sm uppercase tracking-widest shadow-lg">Entendido</button>
                 </div>
             </div>
 
-            <div class="p-4 bg-slate-50 border-t border-slate-100 text-center" id="regFooter">
-                <button onclick="toggleAuthView('login')" class="text-[10px] text-slate-400 font-bold hover:text-slate-600 uppercase tracking-[0.2em] transition-colors">Já sou parceiro</button>
+            <div class="p-5 bg-slate-50/50 border-t border-slate-100 text-center" id="regFooter">
+                <button onclick="toggleAuthView('login')" class="text-[10px] text-slate-400 font-bold hover:text-slate-900 uppercase tracking-[0.2em] transition-colors">Já possui uma vitrine ativa?</button>
             </div>
         </div>
     </div>
@@ -275,7 +282,6 @@
                 <button onclick="toggleMobileSidebar()" class="md:hidden p-2 text-slate-600 hover:bg-slate-100 rounded-lg"><i data-lucide="menu" class="w-6 h-6"></i></button>
                 <h2 id="page-title" class="text-lg md:text-xl font-bold text-slate-800">Dashboard</h2>
             </div>
-            
             <div class="relative">
                 <button id="storeMenuBtn" onclick="toggleStoreMenu(event)" class="text-[10px] md:text-xs font-bold text-blue-600 bg-blue-50 px-4 py-2 rounded-full border border-blue-100 flex items-center gap-2 opacity-50 pointer-events-none transition-all hover:bg-blue-100">
                     <i data-lucide="external-link" class="w-3.5 h-3.5"></i> Ver Loja <i data-lucide="chevron-down" class="w-3 h-3"></i>
@@ -589,7 +595,7 @@
             if (step === 2) {
                 const fields = ['regOwner', 'regEmail', 'regStoreName', 'regPhone'];
                 if(!fields.every(id => document.getElementById(id).value.trim() !== "")) {
-                    showToast("Preencha todos os campos.");
+                    showToast("Por favor, preencha todos os campos.");
                     return;
                 }
                 step1.classList.add('hidden');
@@ -604,7 +610,7 @@
 
         window.togglePasswordVisibility = (i, ic) => { const el=document.getElementById(i);const icon=document.getElementById(ic);if(el.type==='password'){el.type='text';icon.setAttribute('data-lucide','eye-off');}else{el.type='password';icon.setAttribute('data-lucide','eye');} lucide.createIcons(); };
 
-        // --- PLANOS DINÂMICOS ---
+        // --- PLANOS DINÂMICOS (DESIGN REFORMULADO) ---
         async function loadPlansForRegistration() {
             const grid = document.getElementById('plansGridSelection');
             try {
@@ -614,29 +620,43 @@
                 grid.innerHTML = '';
                 snap.forEach(d => {
                     const p = d.data();
+                    const isPopular = p.price > 40;
                     const card = document.createElement('div');
-                    card.className = "plan-card p-4 rounded-2xl group border border-slate-100";
+                    card.className = `plan-card p-5 rounded-2xl group border-2 ${isPopular ? 'relative' : ''}`;
                     card.id = `plan-card-${d.id}`;
                     card.onclick = () => selectPlanForReg(d.id);
                     card.innerHTML = `
-                        <div class="flex justify-between items-start mb-3">
-                            <div class="check-dot"><i data-lucide="check" class="w-3 h-3"></i></div>
-                            ${p.price > 40 ? '<span class="bg-primary-500 text-white text-[8px] font-bold px-2 py-0.5 rounded uppercase tracking-tighter">Popular</span>' : ''}
+                        ${isPopular ? '<div class="absolute top-0 right-0 bg-primary-600 text-white text-[8px] font-black px-3 py-1 rounded-bl-xl uppercase tracking-tighter">Mais Vendido</div>' : ''}
+                        
+                        <div class="flex justify-between items-start mb-4">
+                            <div class="selection-indicator"><i data-lucide="check" class="w-3.5 h-3.5"></i></div>
+                            <span class="text-slate-900 font-bold text-xl leading-none">R$ ${p.price.toFixed(0)}<span class="text-[10px] text-slate-400 ml-1 font-medium">/mês</span></span>
                         </div>
-                        <h4 class="text-slate-400 text-[9px] font-bold uppercase tracking-widest">${p.name}</h4>
-                        <div class="flex items-baseline gap-1 my-1">
-                            <span class="text-xl font-bold text-slate-900">R$ ${p.price.toFixed(0)}</span>
-                            <span class="text-slate-400 text-[9px]">/mês</span>
+                        
+                        <div class="mb-4">
+                            <h4 class="text-slate-800 font-extrabold text-sm uppercase tracking-wide">${p.name}</h4>
+                            <p class="text-[10px] text-slate-500 font-medium">Ideal para o crescimento da sua marca.</p>
                         </div>
-                        <div class="text-[9px] text-slate-500 font-medium pt-2 border-t border-slate-50 space-y-1">
-                           <div class="flex items-center gap-2"><i data-lucide="package" class="w-3 h-3 text-slate-300"></i> ${p.maxProducts} Produtos</div>
-                           <div class="flex items-center gap-2"><i data-lucide="${p.hasCarousel ? 'zap' : 'minus'}" class="w-3 h-3 ${p.hasCarousel ? 'text-primary-400' : 'text-slate-200'}"></i> ${p.hasCarousel ? 'Banners' : 'Sem Banners'}</div>
+                        
+                        <div class="space-y-2.5 pt-4 border-t border-slate-100">
+                            <div class="flex items-center gap-2.5 text-[10px] font-bold text-slate-700">
+                                <div class="p-1 bg-slate-100 rounded-lg text-slate-500"><i data-lucide="box" class="w-3 h-3"></i></div>
+                                Até ${p.maxProducts} Produtos
+                            </div>
+                            <div class="flex items-center gap-2.5 text-[10px] font-bold text-slate-700">
+                                <div class="p-1 ${p.hasCarousel ? 'bg-primary-50 text-primary-600' : 'bg-slate-100 text-slate-400'} rounded-lg"><i data-lucide="${p.hasCarousel ? 'zap' : 'lock'}" class="w-3 h-3"></i></div>
+                                ${p.hasCarousel ? 'Banners de Destaque' : 'Sem Banners'}
+                            </div>
+                            <div class="flex items-center gap-2.5 text-[10px] font-bold text-slate-700">
+                                <div class="p-1 bg-slate-100 rounded-lg text-slate-500"><i data-lucide="smartphone" class="w-3 h-3"></i></div>
+                                Painel Mobile Completo
+                            </div>
                         </div>
                     `;
                     grid.appendChild(card);
                 });
                 lucide.createIcons();
-            } catch(e) { grid.innerHTML = '<p class="text-red-400 text-xs">Erro ao carregar planos.</p>'; }
+            } catch(e) { grid.innerHTML = '<p class="text-red-400 text-xs text-center col-span-full">Erro ao carregar planos.</p>'; }
         }
 
         window.selectPlanForReg = (id) => {
@@ -648,7 +668,7 @@
         window.handlePreRegister = async (e) => {
             e.preventDefault();
             const planId = document.getElementById('selectedPlanId').value;
-            if(!planId) { showToast("Escolha um plano de assinatura."); return; }
+            if(!planId) { showToast("Selecione um plano antes de continuar."); return; }
             const data = {
                 ownerName: document.getElementById('regOwner').value,
                 email: document.getElementById('regEmail').value,
@@ -664,7 +684,7 @@
                 document.getElementById('regFooter').classList.add('hidden');
                 document.getElementById('regSuccess').classList.remove('hidden');
                 lucide.createIcons();
-            } catch(e) { alert("Erro: " + e.message); }
+            } catch(e) { alert("Erro ao processar: " + e.message); }
         };
 
         // --- INIT DATA ---
