@@ -471,11 +471,14 @@
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
         import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged, updatePassword, setPersistence, browserLocalPersistence, browserSessionPersistence } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
         import { getFirestore, doc, getDoc, setDoc, updateDoc, deleteDoc, onSnapshot, collection, addDoc, query, where, getDocs } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        // IMPORTAÇÃO DO STORAGE
+        import { getStorage, ref, uploadString, getDownloadURL, deleteObject } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-storage.js";
         
-        const CONFIG = { apiKey: "AIzaSyAdwsGBTApwOwqr37qCv72gdPRbipsZG0Q", authDomain: "meuestoque-1badc.firebasestorage.app", projectId: "meuestoque-1badc", storageBucket: "meuestoque-1badc.appspot.com", messagingSenderId: "730003067834", appId: "1:730003067834:web:b205f1ea59053345960383" };
+        const CONFIG = { apiKey: "AIzaSyAdwsGBTApwOwqr37qCv72gdPRbipsZG0Q", authDomain: "meuestoque-1badc.firebaseapp.com", projectId: "meuestoque-1badc", storageBucket: "meuestoque-1badc.appspot.com", messagingSenderId: "730003067834", appId: "1:730003067834:web:b205f1ea59053345960383" };
         const app = initializeApp(CONFIG);
         const db = getFirestore(app);
         const auth = getAuth(app);
+        const storage = getStorage(app); // INICIALIZAÇÃO DO STORAGE
 
         let currentStoreId = null;
         let allProducts = [], allCategories = [], allBanners = [], deliveryAreas = [];
@@ -484,8 +487,6 @@
         let cachedPublicPlans = null;
         let expandedCategories = new Set();
 
-        // MAPEAMENTO DE NOMES AMIGÁVEIS PARA OS PLANOS
-        // Adicione aqui os IDs técnicos que aparecem no seu Firestore
         const PLAN_DISPLAY_NAMES = {
             'basic': 'Plano Gratuito',
             'pro': 'Plano Business',
@@ -495,20 +496,11 @@
             'Profissional': 'Plano Profissional'
         };
 
-        // Função auxiliar para traduzir o plano baseado no ID ou no que vem do Firestore
         function getFriendlyPlanName(planId) {
             if (!planId) return "Sem Plano";
-            // Se o ID já estiver mapeado no objeto acima, usa a tradução
             if (PLAN_DISPLAY_NAMES[planId]) return PLAN_DISPLAY_NAMES[planId];
-            
-            // Caso seja um ID técnico desconhecido (ex: plan_63882), tenta limpar
-            if (planId.includes('plan_')) {
-                // Tenta ver se é um dos planos comuns baseado no preço ou features se tivéssemos essa info
-                // Como fallback para IDs aleatórios, vamos mostrar "Plano Ativo" ou similar
-                return "Plano Premium"; 
-            }
-            
-            return planId; // Retorna o original se for amigável mas não mapeado
+            if (planId.includes('plan_')) return "Plano Premium"; 
+            return planId; 
         }
 
         // --- SISTEMA DE IMAGENS ---
@@ -736,10 +728,8 @@
         }
 
         function updateUIByPlan() {
-            // AQUI É ONDE CONSERTAMOS O NOME DO PLANO
             const friendlyName = getFriendlyPlanName(storeConfig.planId);
             document.getElementById('currentPlanBadge').textContent = friendlyName.toUpperCase();
-            
             document.getElementById('dash-limit-products').textContent = `/${storeConfig.maxProducts}`;
             document.getElementById('dash-limit-banners').textContent = `/${storeConfig.maxBanners}`;
             const bNav = document.getElementById('nav-banners');
@@ -759,7 +749,7 @@
             else { pBtn.classList.replace('bg-slate-200', 'bg-slate-900'); pBtn.classList.replace('text-slate-400', 'text-white'); }
         }
 
-        // --- GESTÃO DE PRODUTOS ---
+        // --- GESTÃO DE PRODUTOS (COM STORAGE) ---
         window.openProductModal = (p = null) => {
             if(!p && allProducts.length >= storeConfig.maxProducts) { showToast(`Limite do plano atingido.`); return; }
             document.getElementById('prodCategory').innerHTML = allCategories.map(c => `<option value="${c.name}">${c.name}</option>`).join('');
@@ -789,6 +779,82 @@
             document.getElementById('productModal').classList.remove('hidden');
         };
 
+        window.handleProductSubmit = async (e) => {
+            e.preventDefault();
+            if(currentProductImages.length === 0) { showToast("Adicione uma foto."); return; }
+            
+            const btn = document.getElementById('btnSaveProd');
+            const id = document.getElementById('prodId').value;
+            const finalId = id || 'prod_' + Date.now();
+            
+            btn.disabled = true;
+            btn.innerHTML = "Guardando...";
+
+            try {
+                const imageUrls = [];
+
+                // Lógica de Upload para Storage
+                for (let i = 0; i < currentProductImages.length; i++) {
+                    const img = currentProductImages[i];
+                    if (img.startsWith('http')) {
+                        imageUrls.push(img); // Já é URL
+                    } else {
+                        // Novo Upload (Base64 -> Storage)
+                        const fileRef = ref(storage, `stores/${currentStoreId}/products/${finalId}_${i}.jpg`);
+                        await uploadString(fileRef, img, 'data_url');
+                        const url = await getDownloadURL(fileRef);
+                        imageUrls.push(url);
+                    }
+                }
+
+                const sizesRaw = document.getElementById('prodSizesInput').value;
+                const sizesArray = sizesRaw ? sizesRaw.split(',').map(s => s.trim().toUpperCase()).filter(s => s !== '') : [];
+
+                const data = { 
+                    name: document.getElementById('prodName').value, 
+                    category: document.getElementById('prodCategory').value, 
+                    value: parseFloat(document.getElementById('prodValue').value), 
+                    promoValue: parseFloat(document.getElementById('prodPromo').value) || null, 
+                    images: imageUrls, // Salva URLs no Firestore
+                    description: document.getElementById('prodDesc').value, 
+                    isFeatured: document.getElementById('prodFeatured').checked, 
+                    sizes: sizesArray,
+                    status: id ? allProducts.find(p => p.id === id).status || 'active' : 'active' 
+                };
+
+                if(id) await updateDoc(doc(db, `stores/${currentStoreId}/products`, id), data);
+                else await setDoc(doc(db, `stores/${currentStoreId}/products`, finalId), data);
+
+                document.getElementById('productModal').classList.add('hidden');
+                showToast("Produto guardado.");
+            } catch (err) {
+                showToast("Erro ao processar imagens.");
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = "Publicar Produto";
+            }
+        };
+
+        window.deleteProduct = async (id) => { 
+            if(!confirm("Apagar definitivamente? Isso também removerá as fotos do servidor.")) return;
+            
+            const product = allProducts.find(p => p.id === id);
+            
+            try {
+                // Remove fotos do Storage antes de apagar o documento
+                if (product && product.images) {
+                    for (let i = 0; i < product.images.length; i++) {
+                        const fileRef = ref(storage, `stores/${currentStoreId}/products/${id}_${i}.jpg`);
+                        await deleteObject(fileRef).catch(() => {}); // Ignora se falhar
+                    }
+                }
+                await deleteDoc(doc(db, `stores/${currentStoreId}/products`, id));
+                showToast("Removido com sucesso.");
+            } catch(e) {
+                showToast("Erro ao excluir.");
+            }
+        };
+
         window.toggleProductStatus = async (id, currentStatus) => {
             const newStatus = currentStatus === 'paused' ? 'active' : 'paused';
             await updateDoc(doc(db, `stores/${currentStoreId}/products`, id), { status: newStatus });
@@ -816,34 +882,6 @@
             }
             lucide.createIcons();
         };
-
-        window.handleProductSubmit = async (e) => {
-            e.preventDefault();
-            if(currentProductImages.length === 0) { showToast("Adicione uma foto."); return; }
-            const id = document.getElementById('prodId').value;
-            
-            // Processa a string de tamanhos para Array
-            const sizesRaw = document.getElementById('prodSizesInput').value;
-            const sizesArray = sizesRaw ? sizesRaw.split(',').map(s => s.trim().toUpperCase()).filter(s => s !== '') : [];
-
-            const data = { 
-                name: document.getElementById('prodName').value, 
-                category: document.getElementById('prodCategory').value, 
-                value: parseFloat(document.getElementById('prodValue').value), 
-                promoValue: parseFloat(document.getElementById('prodPromo').value) || null, 
-                images: currentProductImages, 
-                description: document.getElementById('prodDesc').value, 
-                isFeatured: document.getElementById('prodFeatured').checked, 
-                sizes: sizesArray,
-                status: id ? allProducts.find(p => p.id === id).status || 'active' : 'active' 
-            };
-            if(id) await updateDoc(doc(db, `stores/${currentStoreId}/products`, id), data);
-            else await addDoc(collection(db, `stores/${currentStoreId}/products`), data);
-            document.getElementById('productModal').classList.add('hidden');
-            showToast("Produto guardado.");
-        };
-
-        window.deleteProduct = async (id) => { if(confirm("Apagar definitivamente?")) await deleteDoc(doc(db, `stores/${currentStoreId}/products`, id)); };
 
         function renderProductList() {
             const search = document.getElementById('productSearch').value.toLowerCase();
@@ -1039,4 +1077,5 @@
     </script>
 </body>
 </html>
+
 
