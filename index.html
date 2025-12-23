@@ -397,7 +397,7 @@
                         </div>
                     </div>
 
-                    <!-- VALORES E TAMANHOS -->
+                    <!-- VALORES E TAMANHOS / CORES -->
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
                         <div class="space-y-5">
                             <h4 class="text-[11px] font-black uppercase text-slate-400 tracking-widest border-b border-slate-100 pb-2">Precificação</h4>
@@ -413,11 +413,17 @@
                             </div>
                         </div>
                         <div class="space-y-5">
-                            <h4 class="text-[11px] font-black uppercase text-slate-400 tracking-widest border-b border-slate-100 pb-2">Tamanhos Disponíveis</h4>
-                            <div class="space-y-1">
-                                <label class="text-[10px] font-bold text-slate-500 uppercase ml-1">Tamanhos (Separe por vírgula)</label>
-                                <input type="text" id="prodSizesInput" placeholder="Ex: P, M, G, 42, Único" class="input-pro bg-white">
-                                <p class="text-[9px] text-slate-400 italic mt-1">Digite os tamanhos e separe com uma vírgula.</p>
+                            <h4 class="text-[11px] font-black uppercase text-slate-400 tracking-widest border-b border-slate-100 pb-2">Variações Disponíveis</h4>
+                            <div class="grid grid-cols-1 gap-4">
+                                <div class="space-y-1">
+                                    <label class="text-[10px] font-bold text-slate-500 uppercase ml-1">Tamanhos (Separe por vírgula)</label>
+                                    <input type="text" id="prodSizesInput" placeholder="Ex: P, M, G, 42" class="input-pro bg-white">
+                                </div>
+                                <div class="space-y-1">
+                                    <label class="text-[10px] font-bold text-slate-500 uppercase ml-1">Cores (Separe por vírgula)</label>
+                                    <input type="text" id="prodColorsInput" placeholder="Ex: Azul, Branco, Preto" class="input-pro bg-white">
+                                    <p class="text-[9px] text-slate-400 italic mt-1">Digite as cores e separe com uma vírgula.</p>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -471,14 +477,20 @@
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
         import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged, updatePassword, setPersistence, browserLocalPersistence, browserSessionPersistence } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
         import { getFirestore, doc, getDoc, setDoc, updateDoc, deleteDoc, onSnapshot, collection, addDoc, query, where, getDocs } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
-        // IMPORTAÇÃO DO STORAGE
         import { getStorage, ref, uploadString, getDownloadURL, deleteObject } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-storage.js";
         
-        const CONFIG = { apiKey: "AIzaSyAdwsGBTApwOwqr37qCv72gdPRbipsZG0Q", authDomain: "meuestoque-1badc.firebaseapp.com", projectId: "meuestoque-1badc", storageBucket: "meuestoque-1badc.appspot.com", messagingSenderId: "730003067834", appId: "1:730003067834:web:b205f1ea59053345960383" };
+        const CONFIG = { 
+            apiKey: "AIzaSyAdwsGBTApwOwqr37qCv72gdPRbipsZG0Q", 
+            authDomain: "meuestoque-1badc.firebaseapp.com", 
+            projectId: "meuestoque-1badc", 
+            storageBucket: "meuestoque-1badc.firebasestorage.app", 
+            messagingSenderId: "730003067834", 
+            appId: "1:730003067834:web:b205f1ea59053345960383" 
+        };
         const app = initializeApp(CONFIG);
         const db = getFirestore(app);
         const auth = getAuth(app);
-        const storage = getStorage(app); // INICIALIZAÇÃO DO STORAGE
+        const storage = getStorage(app);
 
         let currentStoreId = null;
         let allProducts = [], allCategories = [], allBanners = [], deliveryAreas = [];
@@ -749,7 +761,7 @@
             else { pBtn.classList.replace('bg-slate-200', 'bg-slate-900'); pBtn.classList.replace('text-slate-400', 'text-white'); }
         }
 
-        // --- GESTÃO DE PRODUTOS (COM STORAGE) ---
+        // --- GESTÃO DE PRODUTOS ---
         window.openProductModal = (p = null) => {
             if(!p && allProducts.length >= storeConfig.maxProducts) { showToast(`Limite do plano atingido.`); return; }
             document.getElementById('prodCategory').innerHTML = allCategories.map(c => `<option value="${c.name}">${c.name}</option>`).join('');
@@ -767,12 +779,14 @@
                 document.getElementById('prodDesc').value = p.description || '';
                 document.getElementById('prodFeatured').checked = p.isFeatured; 
                 document.getElementById('prodSizesInput').value = p.sizes ? p.sizes.join(', ') : '';
+                document.getElementById('prodColorsInput').value = p.colors ? p.colors.join(', ') : '';
                 currentProductImages = p.images ? [...p.images] : [];
             } else {
                 document.getElementById('prodModalTitle').textContent = "Adicionar Novo Produto";
                 document.getElementById('productForm').reset(); 
                 document.getElementById('prodId').value = ''; 
                 document.getElementById('prodSizesInput').value = '';
+                document.getElementById('prodColorsInput').value = '';
                 currentProductImages = []; 
             }
             renderImagePreviews();
@@ -788,7 +802,7 @@
             const finalId = id || 'prod_' + Date.now();
             
             btn.disabled = true;
-            btn.innerHTML = "Guardando...";
+            btn.innerHTML = "Publicando...";
 
             try {
                 const imageUrls = [];
@@ -797,9 +811,8 @@
                 for (let i = 0; i < currentProductImages.length; i++) {
                     const img = currentProductImages[i];
                     if (img.startsWith('http')) {
-                        imageUrls.push(img); // Já é URL
+                        imageUrls.push(img); 
                     } else {
-                        // Novo Upload (Base64 -> Storage)
                         const fileRef = ref(storage, `stores/${currentStoreId}/products/${finalId}_${i}.jpg`);
                         await uploadString(fileRef, img, 'data_url');
                         const url = await getDownloadURL(fileRef);
@@ -807,28 +820,36 @@
                     }
                 }
 
+                // Variações
                 const sizesRaw = document.getElementById('prodSizesInput').value;
+                const colorsRaw = document.getElementById('prodColorsInput').value;
                 const sizesArray = sizesRaw ? sizesRaw.split(',').map(s => s.trim().toUpperCase()).filter(s => s !== '') : [];
+                const colorsArray = colorsRaw ? colorsRaw.split(',').map(c => c.trim()).filter(c => c !== '') : [];
 
                 const data = { 
                     name: document.getElementById('prodName').value, 
                     category: document.getElementById('prodCategory').value, 
                     value: parseFloat(document.getElementById('prodValue').value), 
                     promoValue: parseFloat(document.getElementById('prodPromo').value) || null, 
-                    images: imageUrls, // Salva URLs no Firestore
+                    images: imageUrls, 
                     description: document.getElementById('prodDesc').value, 
                     isFeatured: document.getElementById('prodFeatured').checked, 
                     sizes: sizesArray,
+                    colors: colorsArray,
                     status: id ? allProducts.find(p => p.id === id).status || 'active' : 'active' 
                 };
 
-                if(id) await updateDoc(doc(db, `stores/${currentStoreId}/products`, id), data);
-                else await setDoc(doc(db, `stores/${currentStoreId}/products`, finalId), data);
+                if(id) {
+                    await updateDoc(doc(db, `stores/${currentStoreId}/products`, id), data);
+                } else {
+                    await setDoc(doc(db, `stores/${currentStoreId}/products`, finalId), data);
+                }
 
                 document.getElementById('productModal').classList.add('hidden');
                 showToast("Produto guardado.");
             } catch (err) {
-                showToast("Erro ao processar imagens.");
+                console.error(err);
+                showToast("Erro ao processar.");
             } finally {
                 btn.disabled = false;
                 btn.innerHTML = "Publicar Produto";
@@ -836,20 +857,17 @@
         };
 
         window.deleteProduct = async (id) => { 
-            if(!confirm("Apagar definitivamente? Isso também removerá as fotos do servidor.")) return;
-            
+            if(!confirm("Apagar definitivamente?")) return;
             const product = allProducts.find(p => p.id === id);
-            
             try {
-                // Remove fotos do Storage antes de apagar o documento
                 if (product && product.images) {
                     for (let i = 0; i < product.images.length; i++) {
                         const fileRef = ref(storage, `stores/${currentStoreId}/products/${id}_${i}.jpg`);
-                        await deleteObject(fileRef).catch(() => {}); // Ignora se falhar
+                        await deleteObject(fileRef).catch(() => {}); 
                     }
                 }
                 await deleteDoc(doc(db, `stores/${currentStoreId}/products`, id));
-                showToast("Removido com sucesso.");
+                showToast("Produto removido.");
             } catch(e) {
                 showToast("Erro ao excluir.");
             }
@@ -929,7 +947,10 @@
                                 <div class="flex-1 min-w-0">
                                     <p class="font-bold text-slate-800 text-sm truncate">${p.name}</p>
                                     <p class="text-[10px] font-bold text-slate-900 mt-0.5">R$ ${p.value.toFixed(2)} ${p.promoValue ? `<span class="text-green-600 ml-2">Promo: R$ ${p.promoValue.toFixed(2)}</span>` : ''}</p>
-                                    <p class="text-[8px] text-slate-400 font-bold mt-1 uppercase">${p.sizes && p.sizes.length > 0 ? `Tam: ${p.sizes.join(', ')}` : ''}</p>
+                                    <p class="text-[8px] text-slate-400 font-bold mt-1 uppercase">
+                                        ${p.sizes && p.sizes.length > 0 ? `Tam: ${p.sizes.join(', ')}` : ''}
+                                        ${p.colors && p.colors.length > 0 ? ` | Cores: ${p.colors.join(', ')}` : ''}
+                                    </p>
                                 </div>
                                 <div class="flex gap-1 flex-shrink-0">
                                     <button onclick="toggleProductStatus('${p.id}', '${p.status || 'active'}')" class="p-2 ${isPaused ? 'text-green-600' : 'text-amber-500'} hover:bg-slate-100 rounded-lg">
