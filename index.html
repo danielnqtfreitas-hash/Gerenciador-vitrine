@@ -806,6 +806,8 @@
 
             try {
                 const imageUrls = [];
+                // [OTIMIZAÇÃO] Configuração de Metadata para Cache do Navegador (30 dias)
+                const metadata = { cacheControl: 'public,max-age=2592000' };
 
                 // Lógica de Upload para Storage
                 for (let i = 0; i < currentProductImages.length; i++) {
@@ -814,7 +816,8 @@
                         imageUrls.push(img); 
                     } else {
                         const fileRef = ref(storage, `stores/${currentStoreId}/products/${finalId}_${i}.jpg`);
-                        await uploadString(fileRef, img, 'data_url');
+                        // [OTIMIZAÇÃO] Aplicando metadata durante o upload para economizar banda (Egress)
+                        await uploadString(fileRef, img, 'data_url', metadata);
                         const url = await getDownloadURL(fileRef);
                         imageUrls.push(url);
                     }
@@ -845,6 +848,10 @@
                     await setDoc(doc(db, `stores/${currentStoreId}/products`, finalId), data);
                 }
 
+                // [OTIMIZAÇÃO] Gatilho de Versão para a Vitrine invalidar cache local
+                const configRef = doc(db, `stores/${currentStoreId}/config/store`);
+                await updateDoc(configRef, { lastUpdate: Date.now() });
+
                 document.getElementById('productModal').classList.add('hidden');
                 showToast("Produto guardado.");
             } catch (err) {
@@ -867,6 +874,11 @@
                     }
                 }
                 await deleteDoc(doc(db, `stores/${currentStoreId}/products`, id));
+                
+                // [OTIMIZAÇÃO] Atualiza versão ao excluir produto
+                const configRef = doc(db, `stores/${currentStoreId}/config/store`);
+                await updateDoc(configRef, { lastUpdate: Date.now() });
+
                 showToast("Produto removido.");
             } catch(e) {
                 showToast("Erro ao excluir.");
@@ -876,6 +888,11 @@
         window.toggleProductStatus = async (id, currentStatus) => {
             const newStatus = currentStatus === 'paused' ? 'active' : 'paused';
             await updateDoc(doc(db, `stores/${currentStoreId}/products`, id), { status: newStatus });
+            
+            // [OTIMIZAÇÃO] Atualiza versão ao alterar status
+            const configRef = doc(db, `stores/${currentStoreId}/config/store`);
+            await updateDoc(configRef, { lastUpdate: Date.now() });
+            
             showToast(newStatus === 'paused' ? "Pausado." : "Ativado.");
         };
 
@@ -884,6 +901,11 @@
             if(productsToPause.length === 0) return;
             if(confirm(`Pausar todos os ${productsToPause.length} produtos desta categoria?`)) {
                 for(let p of productsToPause) { await updateDoc(doc(db, `stores/${currentStoreId}/products`, p.id), { status: 'paused' }); }
+                
+                // [OTIMIZAÇÃO] Atualiza versão após alteração em massa
+                const configRef = doc(db, `stores/${currentStoreId}/config/store`);
+                await updateDoc(configRef, { lastUpdate: Date.now() });
+
                 showToast(`Categoria ${categoryName} pausada.`);
             }
         };
@@ -983,6 +1005,11 @@
                 await addDoc(collection(db, `stores/${currentStoreId}/categories`), { name, status: 'active' });
                 document.getElementById('catInputName').value = '';
             }
+            
+            // [OTIMIZAÇÃO] Atualiza versão ao gerir categorias
+            const configRef = doc(db, `stores/${currentStoreId}/config/store`);
+            await updateDoc(configRef, { lastUpdate: Date.now() });
+
             showToast("Categoria guardada.");
         };
 
@@ -1002,7 +1029,15 @@
             document.getElementById('btnCancelEditCat').classList.add('hidden');
         };
 
-        window.deleteCategory = async (id) => { if(confirm("Apagar categoria?")) await deleteDoc(doc(db, `stores/${currentStoreId}/categories`, id)); };
+        window.deleteCategory = async (id) => { 
+            if(confirm("Apagar categoria?")) {
+                await deleteDoc(doc(db, `stores/${currentStoreId}/categories`, id));
+                // [OTIMIZAÇÃO] Atualiza versão ao excluir categoria
+                const configRef = doc(db, `stores/${currentStoreId}/config/store`);
+                await updateDoc(configRef, { lastUpdate: Date.now() });
+            }
+        };
+
         function renderCategoryList() { 
             document.getElementById('categoryList').innerHTML = allCategories.map(c => `
                 <div class="flex justify-between items-center p-4 md:p-5 bg-white gap-4">
@@ -1043,11 +1078,24 @@
             const data = { tag: document.getElementById('bannerTag').value, title: document.getElementById('bannerTitle').value, color1: document.getElementById('bannerColor1').value, color2: document.getElementById('bannerColor2').value, target: document.getElementById('bannerTarget').value };
             if(id) await updateDoc(doc(db, `stores/${currentStoreId}/hero_cards`, id), data);
             else await addDoc(collection(db, `stores/${currentStoreId}/hero_cards`), data);
+
+            // [OTIMIZAÇÃO] Atualiza versão após alteração de banner
+            const configRef = doc(db, `stores/${currentStoreId}/config/store`);
+            await updateDoc(configRef, { lastUpdate: Date.now() });
+
             document.getElementById('bannerModal').classList.add('hidden');
             showToast("Banner salvo.");
         };
 
-        window.deleteBanner = async (id) => { if(confirm("Apagar banner?")) await deleteDoc(doc(db, `stores/${currentStoreId}/hero_cards`, id)); };
+        window.deleteBanner = async (id) => { 
+            if(confirm("Apagar banner?")) {
+                await deleteDoc(doc(db, `stores/${currentStoreId}/hero_cards`, id));
+                // [OTIMIZAÇÃO] Atualiza versão ao excluir banner
+                const configRef = doc(db, `stores/${currentStoreId}/config/store`);
+                await updateDoc(configRef, { lastUpdate: Date.now() });
+            }
+        };
+
         function renderBannerList() {
             document.getElementById('emptyBannersMsg').classList.toggle('hidden', allBanners.length > 0);
             document.getElementById('bannersList').innerHTML = allBanners.map(b => `
