@@ -86,7 +86,19 @@
         .category-group.collapsed .chevron-icon { transform: rotate(-90deg); }
         
         button:disabled { opacity: 0.5; cursor: not-allowed; filter: grayscale(1); }
-    </style>
+            /* Correção para o card de visitas não cortar */
+        #content-dashboard .grid > div {
+            min-width: 0 !important;
+            overflow: visible !important;
+        }
+
+        #dash-total-visits {
+            line-height: 1 !important;
+            display: inline-block !important;
+            padding-bottom: 5px;
+            margin-bottom: -5px;
+        }
+        </style>
 </head>
 <body class="text-slate-800 antialiased h-screen overflow-hidden flex bg-slate-50">
 
