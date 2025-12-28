@@ -266,17 +266,19 @@
                     </div>
                 </div>
                 <!-- Grid de Cartões Alterado para md:grid-cols-4 -->
-                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 w-full">
                     <div class="bg-white p-6 border border-slate-100 rounded-3xl shadow-sm"><p class="text-xs font-bold text-slate-400 uppercase tracking-widest mb-2">Produtos</p><h3 class="text-4xl font-bold text-slate-800"><span id="dash-total-products">0</span><span class="text-sm text-slate-400 font-normal ml-1" id="dash-limit-products">/--</span></h3></div>
                     <div class="bg-white p-6 border border-slate-100 rounded-3xl shadow-sm"><p class="text-xs font-bold text-slate-400 uppercase tracking-widest mb-2">Banners de Destaque</p><h3 class="text-4xl font-bold text-primary-600"><span id="dash-total-banners">0</span><span class="text-sm text-slate-400 font-normal ml-1" id="dash-limit-banners">/--</span></h3></div>
                     <div class="bg-white p-6 border border-slate-100 rounded-3xl shadow-sm"><p class="text-xs font-bold text-slate-400 uppercase tracking-widest mb-2">Categorias</p><h3 class="text-4xl font-bold text-slate-800" id="dash-total-cats">0</h3></div>
                     <!-- Novo Card: Visitas Totais -->
-                    <div class="bg-white p-6 border border-slate-100 rounded-3xl shadow-sm">
-                        <div class="flex justify-between items-start mb-2">
-                            <p class="text-xs font-bold text-slate-400 uppercase tracking-widest">Visitas Totais</p>
-                            <i data-lucide="eye" class="w-4 h-4 text-primary-500"></i>
+                                        <div class="bg-white p-5 border border-slate-100 rounded-3xl shadow-sm flex flex-col justify-between min-w-0">
+                        <div class="flex justify-between items-start mb-1">
+                            <p class="text-[10px] font-black text-slate-400 uppercase tracking-tighter truncate">Visitas Totais</p>
+                            <i data-lucide="eye" class="w-4 h-4 text-primary-500 flex-shrink-0"></i>
                         </div>
-                        <h3 class="text-4xl font-bold text-slate-800" id="dash-total-visits">0</h3>
+                        <div class="flex items-baseline overflow-hidden">
+                            <h3 class="text-3xl md:text-4xl font-black text-slate-800 truncate" id="dash-total-visits">0</h3>
+                        </div>
                     </div>
                 </div>
             </div>
