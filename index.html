@@ -265,10 +265,19 @@
                         <label class="toggle-switch"><input type="checkbox" id="dashboardStoreToggle" onchange="toggleStoreStatusQuick(this)"><span class="slider"></span></label>
                     </div>
                 </div>
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <!-- Grid de Cartões Alterado para md:grid-cols-4 -->
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                     <div class="bg-white p-6 border border-slate-100 rounded-3xl shadow-sm"><p class="text-xs font-bold text-slate-400 uppercase tracking-widest mb-2">Produtos</p><h3 class="text-4xl font-bold text-slate-800"><span id="dash-total-products">0</span><span class="text-sm text-slate-400 font-normal ml-1" id="dash-limit-products">/--</span></h3></div>
                     <div class="bg-white p-6 border border-slate-100 rounded-3xl shadow-sm"><p class="text-xs font-bold text-slate-400 uppercase tracking-widest mb-2">Banners de Destaque</p><h3 class="text-4xl font-bold text-primary-600"><span id="dash-total-banners">0</span><span class="text-sm text-slate-400 font-normal ml-1" id="dash-limit-banners">/--</span></h3></div>
                     <div class="bg-white p-6 border border-slate-100 rounded-3xl shadow-sm"><p class="text-xs font-bold text-slate-400 uppercase tracking-widest mb-2">Categorias</p><h3 class="text-4xl font-bold text-slate-800" id="dash-total-cats">0</h3></div>
+                    <!-- Novo Card: Visitas Totais -->
+                    <div class="bg-white p-6 border border-slate-100 rounded-3xl shadow-sm">
+                        <div class="flex justify-between items-start mb-2">
+                            <p class="text-xs font-bold text-slate-400 uppercase tracking-widest">Visitas Totais</p>
+                            <i data-lucide="eye" class="w-4 h-4 text-primary-500"></i>
+                        </div>
+                        <h3 class="text-4xl font-bold text-slate-800" id="dash-total-visits">0</h3>
+                    </div>
                 </div>
             </div>
 
@@ -736,6 +745,22 @@
                 document.getElementById('dash-total-cats').textContent = allCategories.length;
                 renderProductList();
                 renderCategoryList();
+            });
+
+            // --- ESCUTADOR DE VISITAS REAIS (Alteração Cirúrgica) ---
+            const visitsDocRef = doc(db, 'stores/' + currentStoreId + '/analytics/global');
+            onSnapshot(visitsDocRef, (docSnap) => {
+                const dashVisitsElem = document.getElementById('dash-total-visits');
+                if (dashVisitsElem) {
+                    if (docSnap.exists()) {
+                        const data = docSnap.data();
+                        dashVisitsElem.innerText = data.totalVisits || 0;
+                    } else {
+                        dashVisitsElem.innerText = '0';
+                    }
+                }
+            }, (error) => {
+                console.error("Erro ao escutar visitas:", error);
             });
         }
 
