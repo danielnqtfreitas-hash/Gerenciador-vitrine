@@ -843,27 +843,150 @@ analyticsChartInstance = new Chart(ctx, {
             const d = new Date();
             d.setDate(d.getDate() - i);
             labels.push(
-                d.toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' })
-            );
-            values.push(0);
-        }
-    } else {
-        rawData.forEach(item => {
-            labels.push(
-                item.date.toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' })
-            );
-            values.push(item.visits);
-        });
-    }
-}
+try {
+    let labels = [];
+    let values = [];
 
-                analyticsChartInstance.data.labels = labels;
-                analyticsChartInstance.data.datasets[0].data = values;
-                analyticsChartInstance.update();
-            } catch (err) {
-                console.error("Erro ao carregar analytics:", err);
-            } finally {
-                loader?.classList.add('hidden');
+    /* =========================
+       🔹 HOJE → POR HORA
+    ========================= */
+    if (range === 'day') {
+        const now = new Date();
+        const currentHour = now.getHours();
+        const todayId = now.toISOString().split('T')[0];
+
+        const docSnap = await getDoc(
+            doc(db, `stores/${currentStoreId}/analytics_history`, todayId)
+        );
+
+        const hoursData = docSnap.exists()
+            ? docSnap.data().hours || {}
+            : {};
+
+        for (let h = 0; h <= currentHour; h++) {
+            labels.push(`${h.toString().padStart(2, '0')}h`);
+            values.push(hoursData[h] || 0);
+        }
+
+    /* =========================
+       🔹 SEMANA / MÊS → POR DIA
+    ========================= */
+    } else {
+        const daysToFetch = range === 'week' ? 7 : 30;
+        const historyRef = collection(
+            db,
+            `stores/${currentStoreId}/analytics_history`
+        );
+
+        const q = query(
+            historyRef,
+            orderBy('date', 'desc'),
+            limit(daysToFetch)
+        );
+
+        const snap = await getDocs(q);
+
+        const rawData = snap.docs
+            .map(d => ({
+                date: d.data().date instanceof Timestamp
+                    ? d.data().date.toDate()
+                    : new Date(d.data().date),
+                visits: d.data().visits || 0
+            }))
+            .reverse();
+
+        if (rawData.length === 0) {
+            for (let i = daysToFetch - 1; i >= 0; i--) {
+                const d = new Date();
+                d.setDate(d.getDate() - i);
+
+                labels.push(
+                    d.toLocaleDateString('pt-BR', {
+                        day: '2-digit',
+                        month: 'short'
+                    })
+                );
+                values.push(0);
+            }
+        } else {
+            rawData.forEach(item => {
+                labels.push(
+                    item.date.toLocaleDateString('pt-BR', {
+                        day: '2-digit',
+                        month: 'short'
+                    })
+                );
+                values.push(item.visits);
+            });
+        }
+    }
+
+    /* =========================
+       🔹 CRIA / ATUALIZA GRÁFICO
+    ========================= */
+    if (analyticsChartInstance) {
+        analyticsChartInstance.destroy();
+    }
+
+    analyticsChartInstance = new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: labels,
+            datasets: [{
+                label: 'Visitas',
+                data: values,
+                borderColor: '#7c3aed',
+                borderWidth: 3,
+                fill: true,
+                backgroundColor: gradient,
+                tension: 0.4,
+                pointRadius: 4,
+                pointHoverRadius: 6,
+                pointHoverBackgroundColor: '#7c3aed',
+                pointHoverBorderColor: '#fff',
+                pointHoverBorderWidth: 3,
+                pointBackgroundColor: '#fff'
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: { legend: { display: false } },
+            scales: {
+                x: {
+                    grid: { display: false },
+                    ticks: {
+                        font: { size: 10, family: 'Inter' },
+                        color: '#94a3b8'
+                    }
+                },
+                y: {
+                    beginAtZero: true,
+                    grid: {
+                        borderDash: [5, 5],
+                        color: '#f1f5f9'
+                    },
+                    ticks: {
+                        font: { size: 10 },
+                        color: '#94a3b8',
+                        stepSize: 1,
+                        precision: 0
+                    }
+                }
+            },
+            interaction: { intersect: false, mode: 'index' },
+            animation: {
+                duration: 800,
+                easing: 'easeOutQuart'
+            }
+        }
+    });
+
+} catch (err) {
+    console.error("Erro ao carregar analytics:", err);
+} finally {
+    loader?.classList.add('hidden');
+}
             }
         };
 
