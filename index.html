@@ -786,44 +786,52 @@
                 let values = [];
 
                 if (range === 'day') {
-    // 1. Pega a data de hoje no formato do seu banco (ex: 2025-12-29)
+    // 1. Data de hoje
     const hojeStr = new Date().toISOString().split('T')[0];
-    
-    // 2. Procura o documento real de hoje no histórico
-    const docSnap = await getDoc(doc(db, `stores/${currentStoreId}/analytics_history`, hojeStr));
-    
-    // 3. Pega o total de visitas ou zero se ninguém entrou
+
+    // 2. Documento do dia
+    const docSnap = await getDoc(
+        doc(db, `stores/${currentStoreId}/analytics_history`, hojeStr)
+    );
+
+    // 3. Total de visitas
     const totalHoje = docSnap.exists() ? docSnap.data().visits : 0;
-    
-    // 4. Exibe no gráfico uma linha do início do dia até ao total atual
+
+    // 4. Dados do gráfico
     labels = ['Início do Dia', 'Agora'];
-    values = [0, totalHoje]; }
-                
-                } else {
-                    const daysToFetch = range === 'week' ? 7 : 30;
-                    const historyRef = collection(db, `stores/${currentStoreId}/analytics_history`);
-                    const q = query(historyRef, orderBy('date', 'desc'), limit(daysToFetch));
-                    const snap = await getDocs(q);
+    values = [0, totalHoje];
 
-                    const rawData = snap.docs.map(d => ({
-                        date: d.data().date instanceof Timestamp ? d.data().date.toDate() : new Date(d.data().date),
-                        visits: d.data().visits || 0
-                    })).reverse();
+} else {
+    const daysToFetch = range === 'week' ? 7 : 30;
+    const historyRef = collection(db, `stores/${currentStoreId}/analytics_history`);
+    const q = query(historyRef, orderBy('date', 'desc'), limit(daysToFetch));
+    const snap = await getDocs(q);
 
-                    if(rawData.length === 0) {
-                        for(let i = daysToFetch - 1; i >= 0; i--) {
-                            const d = new Date();
-                            d.setDate(d.getDate() - i);
-                            labels.push(d.toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' }));
-                            values.push(0);
-                        }
-                    } else {
-                        rawData.forEach(item => {
-                            labels.push(item.date.toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' }));
-                            values.push(item.visits);
-                        });
-                    }
-                }
+    const rawData = snap.docs.map(d => ({
+        date: d.data().date instanceof Timestamp
+            ? d.data().date.toDate()
+            : new Date(d.data().date),
+        visits: d.data().visits || 0
+    })).reverse();
+
+    if (rawData.length === 0) {
+        for (let i = daysToFetch - 1; i >= 0; i--) {
+            const d = new Date();
+            d.setDate(d.getDate() - i);
+            labels.push(
+                d.toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' })
+            );
+            values.push(0);
+        }
+    } else {
+        rawData.forEach(item => {
+            labels.push(
+                item.date.toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' })
+            );
+            values.push(item.visits);
+        });
+    }
+}
 
                 analyticsChartInstance.data.labels = labels;
                 analyticsChartInstance.data.datasets[0].data = values;
