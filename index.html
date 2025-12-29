@@ -786,10 +786,16 @@
                 let values = [];
 
                 if (range === 'day') {
-                    // Para o dia atual, pegamos os dados mockados de hora ou apenas um ponto 
-                    // (Lógica opcional: se tiver log por hora, use aqui)
-                    labels = ['08h', '10h', '12h', '14h', '16h', '18h', '20h'];
-                    values = [0, 0, 0, 0, 0, 0, 0]; // Exemplo estático para 'Hoje'
+    // Busca a data de hoje para encontrar o documento certo
+    const hojeStr = new Date().toISOString().split('T')[0];
+    const docSnap = await getDoc(doc(db, `stores/${currentStoreId}/analytics_history`, hojeStr));
+    
+    // Se o documento existir, usa o valor real. Se não, é 0.
+    const totalHoje = docSnap.exists() ? docSnap.data().visits : 0;
+    
+    labels = ['Início do Dia', 'Agora'];
+    values = [0, totalHoje]; 
+}
                 } else {
                     const daysToFetch = range === 'week' ? 7 : 30;
                     const historyRef = collection(db, `stores/${currentStoreId}/analytics_history`);
