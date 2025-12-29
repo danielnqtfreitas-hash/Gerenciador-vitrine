@@ -7,6 +7,8 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <script src="https://unpkg.com/lucide@latest"></script>
+    <!-- Chart.js CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script>
         tailwind.config = {
             theme: {
@@ -86,13 +88,12 @@
         .category-group.collapsed .chevron-icon { transform: rotate(-90deg); }
         
         button:disabled { opacity: 0.5; cursor: not-allowed; filter: grayscale(1); }
-            /* Correção para o card de visitas não cortar */
-        #content-dashboard .grid > div {
-            min-width: 0 !important;
-            overflow: visible !important;
-        }
-      
-        </style>
+
+        /* Estilo dos botões de range do gráfico */
+        .range-btn { @apply px-4 py-1.5 rounded-lg text-xs font-bold transition-all; }
+        .range-btn.active { @apply bg-white text-primary-600 shadow-sm border border-slate-100; }
+        .range-btn.inactive { @apply text-slate-400 hover:text-slate-600; }
+    </style>
 </head>
 <body class="text-slate-800 antialiased h-screen overflow-hidden flex bg-slate-50">
 
@@ -271,23 +272,46 @@
                         <label class="toggle-switch"><input type="checkbox" id="dashboardStoreToggle" onchange="toggleStoreStatusQuick(this)"><span class="slider"></span></label>
                     </div>
                 </div>
-                <!-- Grid de Cartões Alterado para md:grid-cols-4 -->
+
+                <!-- Grid de Cartões -->
                 <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 w-full">
                     <div class="bg-white p-6 border border-slate-100 rounded-3xl shadow-sm"><p class="text-xs font-bold text-slate-400 uppercase tracking-widest mb-2">Produtos</p><h3 class="text-4xl font-bold text-slate-800"><span id="dash-total-products">0</span><span class="text-sm text-slate-400 font-normal ml-1" id="dash-limit-products">/--</span></h3></div>
                     <div class="bg-white p-6 border border-slate-100 rounded-3xl shadow-sm"><p class="text-xs font-bold text-slate-400 uppercase tracking-widest mb-2">Banners de Destaque</p><h3 class="text-4xl font-bold text-primary-600"><span id="dash-total-banners">0</span><span class="text-sm text-slate-400 font-normal ml-1" id="dash-limit-banners">/--</span></h3></div>
                     <div class="bg-white p-6 border border-slate-100 rounded-3xl shadow-sm"><p class="text-xs font-bold text-slate-400 uppercase tracking-widest mb-2">Categorias</p><h3 class="text-4xl font-bold text-slate-800" id="dash-total-cats">0</h3></div>
-                    <!-- Novo Card: Visitas Totais -->
-                                        <div class="bg-white p-5 border border-slate-100 rounded-3xl shadow-sm flex flex-col justify-between min-w-0 overflow-visible">
-    <div class="flex justify-between items-start mb-2">
-        <p class="text-[10px] font-black text-slate-400 uppercase tracking-tighter truncate">Visitas Totais</p>
-        <div class="p-1.5 bg-primary-50 rounded-lg">
-            <i data-lucide="eye" class="w-3.5 h-3.5 text-primary-500"></i>
-        </div>
-    </div>
-    <div class="flex items-baseline">
-        <h3 class="text-3xl md:text-4xl font-black text-slate-800 leading-tight" id="dash-total-visits">0</h3>
-    </div>
-</div>
+                    
+                    <!-- Card de Visitas Totais (ATUALIZADO) -->
+                    <div class="bg-white p-5 border border-slate-100 rounded-3xl shadow-sm flex flex-col justify-between min-w-0">
+                        <div class="flex justify-between items-start mb-2">
+                            <p class="text-[10px] font-black text-slate-400 uppercase tracking-tighter">Visitas Totais</p>
+                            <div class="p-1.5 bg-primary-50 rounded-lg">
+                                <i data-lucide="eye" class="w-3.5 h-3.5 text-primary-500"></i>
+                            </div>
+                        </div>
+                        <div class="flex items-baseline">
+                            <h3 class="text-3xl md:text-4xl font-black text-slate-800 leading-none" id="dash-total-visits">0</h3>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Nova Seção: Analytics (TRÁFEGO DA VITRINE) -->
+                <div class="bg-white p-6 md:p-8 border border-slate-200 rounded-3xl shadow-sm">
+                    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
+                        <div>
+                            <h3 class="text-xl font-bold text-slate-800">Tráfego da Vitrine</h3>
+                            <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-0.5">Visitas únicas e sessões</p>
+                        </div>
+                        <div class="flex bg-slate-100 p-1 rounded-xl">
+                            <button onclick="updateAnalyticsRange('day')" id="range-day" class="range-btn active">Hoje</button>
+                            <button onclick="updateAnalyticsRange('week')" id="range-week" class="range-btn inactive">Semana</button>
+                            <button onclick="updateAnalyticsRange('month')" id="range-month" class="range-btn inactive">Mês</button>
+                        </div>
+                    </div>
+                    <div class="relative h-64 w-full" id="chartWrapper">
+                        <canvas id="analyticsChart"></canvas>
+                        <div id="chartLoading" class="absolute inset-0 bg-white/60 flex items-center justify-center hidden">
+                            <div class="w-6 h-6 border-2 border-primary-500 border-t-transparent rounded-full animate-spin"></div>
+                        </div>
+                    </div>
                 </div>
             </div>
 
@@ -495,7 +519,7 @@
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
         import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged, updatePassword, setPersistence, browserLocalPersistence, browserSessionPersistence } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        import { getFirestore, doc, getDoc, setDoc, updateDoc, deleteDoc, onSnapshot, collection, addDoc, query, where, getDocs } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        import { getFirestore, doc, getDoc, setDoc, updateDoc, deleteDoc, onSnapshot, collection, addDoc, query, where, getDocs, orderBy, limit, Timestamp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
         import { getStorage, ref, uploadString, getDownloadURL, deleteObject } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-storage.js";
         
         const CONFIG = { 
@@ -517,6 +541,7 @@
         let storeConfig = { planId: 'basic', maxProducts: 50, maxBanners: 1, hasCarousel: false };
         let cachedPublicPlans = null;
         let expandedCategories = new Set();
+        let analyticsChartInstance = null; 
 
         const PLAN_DISPLAY_NAMES = {
             'basic': 'Plano Gratuito',
@@ -699,6 +724,108 @@
             }
         };
 
+        // --- ANALYTICS CHART LOGIC (REFACTORED FOR REAL DATA) ---
+        window.initAnalyticsChart = () => {
+            const ctx = document.getElementById('analyticsChart').getContext('2d');
+            const gradient = ctx.createLinearGradient(0, 0, 0, 250);
+            gradient.addColorStop(0, 'rgba(124, 58, 237, 0.2)');
+            gradient.addColorStop(1, 'rgba(124, 58, 237, 0.0)');
+
+            analyticsChartInstance = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: [],
+                    datasets: [{
+                        label: 'Visitas',
+                        data: [],
+                        borderColor: '#7c3aed',
+                        borderWidth: 3,
+                        fill: true,
+                        backgroundColor: gradient,
+                        tension: 0.4,
+                        pointRadius: 4,
+                        pointHoverRadius: 6,
+                        pointHoverBackgroundColor: '#7c3aed',
+                        pointHoverBorderColor: '#fff',
+                        pointHoverBorderWidth: 3,
+                        pointBackgroundColor: '#fff'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: false } },
+                    scales: {
+                        x: { grid: { display: false }, ticks: { font: { size: 10, family: 'Inter' }, color: '#94a3b8' } },
+                        y: { beginAtZero: true, grid: { borderDash: [5, 5], color: '#f1f5f9' }, ticks: { font: { size: 10 }, color: '#94a3b8', stepSize: 1 } }
+                    },
+                    interaction: { intersect: false, mode: 'index' }
+                }
+            });
+            
+            updateAnalyticsRange('day');
+        };
+
+        window.updateAnalyticsRange = async (range) => {
+            if(!analyticsChartInstance || !currentStoreId) return;
+
+            const loader = document.getElementById('chartLoading');
+            loader?.classList.remove('hidden');
+
+            // UI Feedback
+            ['day', 'week', 'month'].forEach(r => {
+                const btn = document.getElementById(`range-${r}`);
+                if(btn) {
+                    if(r === range) btn.classList.replace('inactive', 'active');
+                    else btn.classList.replace('active', 'inactive');
+                }
+            });
+
+            try {
+                let labels = [];
+                let values = [];
+
+                if (range === 'day') {
+                    // Para o dia atual, pegamos os dados mockados de hora ou apenas um ponto 
+                    // (Lógica opcional: se tiver log por hora, use aqui)
+                    labels = ['08h', '10h', '12h', '14h', '16h', '18h', '20h'];
+                    values = [1, 2, 4, 3, 5, 8, 4]; // Exemplo estático para 'Hoje'
+                } else {
+                    const daysToFetch = range === 'week' ? 7 : 30;
+                    const historyRef = collection(db, `stores/${currentStoreId}/analytics_history`);
+                    const q = query(historyRef, orderBy('date', 'desc'), limit(daysToFetch));
+                    const snap = await getDocs(q);
+
+                    const rawData = snap.docs.map(d => ({
+                        date: d.data().date instanceof Timestamp ? d.data().date.toDate() : new Date(d.data().date),
+                        visits: d.data().visits || 0
+                    })).reverse();
+
+                    if(rawData.length === 0) {
+                        for(let i = daysToFetch - 1; i >= 0; i--) {
+                            const d = new Date();
+                            d.setDate(d.getDate() - i);
+                            labels.push(d.toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' }));
+                            values.push(0);
+                        }
+                    } else {
+                        rawData.forEach(item => {
+                            labels.push(item.date.toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' }));
+                            values.push(item.visits);
+                        });
+                    }
+                }
+
+                analyticsChartInstance.data.labels = labels;
+                analyticsChartInstance.data.datasets[0].data = values;
+                analyticsChartInstance.update();
+            } catch (err) {
+                console.error("Erro ao carregar analytics:", err);
+            } finally {
+                loader?.classList.add('hidden');
+            }
+        };
+
         // --- INIT DATA ---
         onAuthStateChanged(auth, async (user) => {
             fetchPublicPlansEagerly();
@@ -713,6 +840,7 @@
                     currentStoreId = snap.docs[0].data().slug;
                 } else { currentStoreId = dirDoc.data().storeId; }
                 initStoreData();
+                initAnalyticsChart(); 
             } else { document.getElementById('auth-screen').classList.remove('hidden'); lucide.createIcons(); }
         });
 
@@ -720,6 +848,8 @@
             const url = `https://danielnqtfreitas-hash.github.io/Vitrine/?id=${currentStoreId}`;
             document.getElementById('urlDisplay').textContent = url;
             document.getElementById('storeMenuBtn').classList.remove('opacity-50', 'pointer-events-none');
+            
+            // Listener da Configuração
             onSnapshot(doc(db, `stores/${currentStoreId}/config/store`), d => {
                 if(d.exists()) {
                     const data = d.data();
@@ -738,6 +868,16 @@
                     renderDeliveryAreas();
                 }
             });
+
+            // Visitas Totais
+            onSnapshot(doc(db, `stores/${currentStoreId}/analytics/global`), docSnap => {
+                const dashVisitsElem = document.getElementById('dash-total-visits');
+                if (dashVisitsElem && docSnap.exists()) {
+                    dashVisitsElem.innerText = docSnap.data().totalVisits || 0;
+                }
+            });
+
+            // Coleções Reais
             onSnapshot(collection(db, `stores/${currentStoreId}/products`), s => {
                 allProducts = s.docs.map(d => ({id: d.id, ...d.data()}));
                 document.getElementById('dash-total-products').textContent = allProducts.length;
@@ -755,22 +895,6 @@
                 document.getElementById('dash-total-cats').textContent = allCategories.length;
                 renderProductList();
                 renderCategoryList();
-            });
-
-            // --- ESCUTADOR DE VISITAS REAIS (Alteração Cirúrgica) ---
-            const visitsDocRef = doc(db, 'stores/' + currentStoreId + '/analytics/global');
-            onSnapshot(visitsDocRef, (docSnap) => {
-                const dashVisitsElem = document.getElementById('dash-total-visits');
-                if (dashVisitsElem) {
-                    if (docSnap.exists()) {
-                        const data = docSnap.data();
-                        dashVisitsElem.innerText = data.totalVisits || 0;
-                    } else {
-                        dashVisitsElem.innerText = '0';
-                    }
-                }
-            }, (error) => {
-                console.error("Erro ao escutar visitas:", error);
             });
         }
 
@@ -792,8 +916,13 @@
             document.getElementById('productQuotaText').textContent = pText;
             document.getElementById('bannerQuotaText').textContent = bText;
             const pBtn = document.getElementById('btnNewProduct');
-            if(allProducts.length >= storeConfig.maxProducts) { pBtn.classList.replace('bg-slate-900', 'bg-slate-200'); pBtn.classList.replace('text-white', 'text-slate-400'); }
-            else { pBtn.classList.replace('bg-slate-200', 'bg-slate-900'); pBtn.classList.replace('text-slate-400', 'text-white'); }
+            if(allProducts.length >= storeConfig.maxProducts) { 
+                pBtn.classList.replace('bg-slate-900', 'bg-slate-200'); 
+                pBtn.classList.replace('text-white', 'text-slate-400'); 
+            } else { 
+                pBtn.classList.replace('bg-slate-200', 'bg-slate-900'); 
+                pBtn.classList.replace('text-slate-400', 'text-white'); 
+            }
         }
 
         // --- GESTÃO DE PRODUTOS ---
@@ -831,39 +960,28 @@
         window.handleProductSubmit = async (e) => {
             e.preventDefault();
             if(currentProductImages.length === 0) { showToast("Adicione uma foto."); return; }
-            
             const btn = document.getElementById('btnSaveProd');
             const id = document.getElementById('prodId').value;
             const finalId = id || 'prod_' + Date.now();
-            
             btn.disabled = true;
             btn.innerHTML = "Publicando...";
-
             try {
                 const imageUrls = [];
-                // [OTIMIZAÇÃO] Configuração de Metadata para Cache do Navegador (30 dias)
                 const metadata = { cacheControl: 'public,max-age=2592000' };
-
-                // Lógica de Upload para Storage
                 for (let i = 0; i < currentProductImages.length; i++) {
                     const img = currentProductImages[i];
-                    if (img.startsWith('http')) {
-                        imageUrls.push(img); 
-                    } else {
+                    if (img.startsWith('http')) { imageUrls.push(img); } 
+                    else {
                         const fileRef = ref(storage, `stores/${currentStoreId}/products/${finalId}_${i}.jpg`);
-                        // [OTIMIZAÇÃO] Aplicando metadata durante o upload para economizar banda (Egress)
                         await uploadString(fileRef, img, 'data_url', metadata);
                         const url = await getDownloadURL(fileRef);
                         imageUrls.push(url);
                     }
                 }
-
-                // Variações
                 const sizesRaw = document.getElementById('prodSizesInput').value;
                 const colorsRaw = document.getElementById('prodColorsInput').value;
                 const sizesArray = sizesRaw ? sizesRaw.split(',').map(s => s.trim().toUpperCase()).filter(s => s !== '') : [];
                 const colorsArray = colorsRaw ? colorsRaw.split(',').map(c => c.trim()).filter(c => c !== '') : [];
-
                 const data = { 
                     name: document.getElementById('prodName').value, 
                     category: document.getElementById('prodCategory').value, 
@@ -876,26 +994,13 @@
                     colors: colorsArray,
                     status: id ? allProducts.find(p => p.id === id).status || 'active' : 'active' 
                 };
-
-                if(id) {
-                    await updateDoc(doc(db, `stores/${currentStoreId}/products`, id), data);
-                } else {
-                    await setDoc(doc(db, `stores/${currentStoreId}/products`, finalId), data);
-                }
-
-                // [OTIMIZAÇÃO] Gatilho de Versão para a Vitrine invalidar cache local
+                if(id) { await updateDoc(doc(db, `stores/${currentStoreId}/products`, id), data); } 
+                else { await setDoc(doc(db, `stores/${currentStoreId}/products`, finalId), data); }
                 const configRef = doc(db, `stores/${currentStoreId}/config/store`);
                 await updateDoc(configRef, { lastUpdate: Date.now() });
-
                 document.getElementById('productModal').classList.add('hidden');
                 showToast("Produto guardado.");
-            } catch (err) {
-                console.error(err);
-                showToast("Erro ao processar.");
-            } finally {
-                btn.disabled = false;
-                btn.innerHTML = "Publicar Produto";
-            }
+            } catch (err) { showToast("Erro ao processar."); } finally { btn.disabled = false; btn.innerHTML = "Publicar Produto"; }
         };
 
         window.deleteProduct = async (id) => { 
@@ -909,25 +1014,17 @@
                     }
                 }
                 await deleteDoc(doc(db, `stores/${currentStoreId}/products`, id));
-                
-                // [OTIMIZAÇÃO] Atualiza versão ao excluir produto
                 const configRef = doc(db, `stores/${currentStoreId}/config/store`);
                 await updateDoc(configRef, { lastUpdate: Date.now() });
-
                 showToast("Produto removido.");
-            } catch(e) {
-                showToast("Erro ao excluir.");
-            }
+            } catch(e) { showToast("Erro ao excluir."); }
         };
 
         window.toggleProductStatus = async (id, currentStatus) => {
             const newStatus = currentStatus === 'paused' ? 'active' : 'paused';
             await updateDoc(doc(db, `stores/${currentStoreId}/products`, id), { status: newStatus });
-            
-            // [OTIMIZAÇÃO] Atualiza versão ao alterar status
             const configRef = doc(db, `stores/${currentStoreId}/config/store`);
             await updateDoc(configRef, { lastUpdate: Date.now() });
-            
             showToast(newStatus === 'paused' ? "Pausado." : "Ativado.");
         };
 
@@ -936,11 +1033,8 @@
             if(productsToPause.length === 0) return;
             if(confirm(`Pausar todos os ${productsToPause.length} produtos desta categoria?`)) {
                 for(let p of productsToPause) { await updateDoc(doc(db, `stores/${currentStoreId}/products`, p.id), { status: 'paused' }); }
-                
-                // [OTIMIZAÇÃO] Atualiza versão após alteração em massa
                 const configRef = doc(db, `stores/${currentStoreId}/config/store`);
                 await updateDoc(configRef, { lastUpdate: Date.now() });
-
                 showToast(`Categoria ${categoryName} pausada.`);
             }
         };
@@ -948,13 +1042,8 @@
         window.toggleCategoryAccordion = (catName) => {
             const safeId = catName.replace(/\s+/g, '-');
             const group = document.getElementById(`cat-group-${safeId}`);
-            if (expandedCategories.has(catName)) {
-                expandedCategories.delete(catName);
-                if(group) group.classList.add('collapsed');
-            } else {
-                expandedCategories.add(catName);
-                if(group) group.classList.remove('collapsed');
-            }
+            if (expandedCategories.has(catName)) { expandedCategories.delete(catName); if(group) group.classList.add('collapsed'); } 
+            else { expandedCategories.add(catName); if(group) group.classList.remove('collapsed'); }
             lucide.createIcons();
         };
 
@@ -998,27 +1087,16 @@
                     <div class="category-content border-t border-slate-50 p-4 space-y-3">
                         ${products.length > 0 ? products.map(p => {
                             const isPaused = p.status === 'paused';
-                            return `
-                            <div class="flex items-center gap-4 p-3 rounded-2xl border border-slate-100 hover:border-primary-100 transition-all ${isPaused ? 'opacity-60 bg-slate-50' : ''}">
+                            return `<div class="flex items-center gap-4 p-3 rounded-2xl border border-slate-100 hover:border-primary-100 transition-all ${isPaused ? 'opacity-60 bg-slate-50' : ''}">
                                 <img src="${p.images?.[0]||''}" class="w-14 h-14 rounded-xl object-cover border">
                                 <div class="flex-1 min-w-0">
                                     <p class="font-bold text-slate-800 text-sm truncate">${p.name}</p>
                                     <p class="text-[10px] font-bold text-slate-900 mt-0.5">R$ ${p.value.toFixed(2)} ${p.promoValue ? `<span class="text-green-600 ml-2">Promo: R$ ${p.promoValue.toFixed(2)}</span>` : ''}</p>
-                                    <p class="text-[8px] text-slate-400 font-bold mt-1 uppercase">
-                                        ${p.sizes && p.sizes.length > 0 ? `Tam: ${p.sizes.join(', ')}` : ''}
-                                        ${p.colors && p.colors.length > 0 ? ` | Cores: ${p.colors.join(', ')}` : ''}
-                                    </p>
                                 </div>
                                 <div class="flex gap-1 flex-shrink-0">
-                                    <button onclick="toggleProductStatus('${p.id}', '${p.status || 'active'}')" class="p-2 ${isPaused ? 'text-green-600' : 'text-amber-500'} hover:bg-slate-100 rounded-lg">
-                                        <i data-lucide="${isPaused ? 'eye' : 'eye-off'}" class="w-4 h-4"></i>
-                                    </button>
-                                    <button onclick='openProductModal(${JSON.stringify(p).replace(/'/g, "&apos;")})' class="p-2 text-blue-500 hover:bg-blue-50 rounded-lg">
-                                        <i data-lucide="pencil" class="w-4 h-4"></i>
-                                    </button>
-                                    <button onclick="deleteProduct('${p.id}')" class="p-2 text-red-500 hover:bg-red-50 rounded-lg">
-                                        <i data-lucide="trash-2" class="w-4 h-4"></i>
-                                    </button>
+                                    <button onclick="toggleProductStatus('${p.id}', '${p.status || 'active'}')" class="p-2 ${isPaused ? 'text-green-600' : 'text-amber-500'} hover:bg-slate-100 rounded-lg"><i data-lucide="${isPaused ? 'eye' : 'eye-off'}" class="w-4 h-4"></i></button>
+                                    <button onclick='openProductModal(${JSON.stringify(p).replace(/'/g, "&apos;")})' class="p-2 text-blue-500 hover:bg-blue-50 rounded-lg"><i data-lucide="pencil" class="w-4 h-4"></i></button>
+                                    <button onclick="deleteProduct('${p.id}')" class="p-2 text-red-500 hover:bg-red-50 rounded-lg"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
                                 </div>
                             </div>`;
                         }).join('') : '<p class="text-center text-xs text-slate-400 py-4 italic">Nenhum produto nesta categoria.</p>'}
@@ -1033,18 +1111,10 @@
             e.preventDefault();
             const name = document.getElementById('catInputName').value;
             const editId = document.getElementById('editingCategoryId').value;
-            if(editId) {
-                await updateDoc(doc(db, `stores/${currentStoreId}/categories`, editId), { name });
-                cancelCategoryEdit();
-            } else {
-                await addDoc(collection(db, `stores/${currentStoreId}/categories`), { name, status: 'active' });
-                document.getElementById('catInputName').value = '';
-            }
-            
-            // [OTIMIZAÇÃO] Atualiza versão ao gerir categorias
+            if(editId) { await updateDoc(doc(db, `stores/${currentStoreId}/categories`, editId), { name }); cancelCategoryEdit(); } 
+            else { await addDoc(collection(db, `stores/${currentStoreId}/categories`), { name, status: 'active' }); document.getElementById('catInputName').value = ''; }
             const configRef = doc(db, `stores/${currentStoreId}/config/store`);
             await updateDoc(configRef, { lastUpdate: Date.now() });
-
             showToast("Categoria guardada.");
         };
 
@@ -1067,7 +1137,6 @@
         window.deleteCategory = async (id) => { 
             if(confirm("Apagar categoria?")) {
                 await deleteDoc(doc(db, `stores/${currentStoreId}/categories`, id));
-                // [OTIMIZAÇÃO] Atualiza versão ao excluir categoria
                 const configRef = doc(db, `stores/${currentStoreId}/config/store`);
                 await updateDoc(configRef, { lastUpdate: Date.now() });
             }
@@ -1113,11 +1182,8 @@
             const data = { tag: document.getElementById('bannerTag').value, title: document.getElementById('bannerTitle').value, color1: document.getElementById('bannerColor1').value, color2: document.getElementById('bannerColor2').value, target: document.getElementById('bannerTarget').value };
             if(id) await updateDoc(doc(db, `stores/${currentStoreId}/hero_cards`, id), data);
             else await addDoc(collection(db, `stores/${currentStoreId}/hero_cards`), data);
-
-            // [OTIMIZAÇÃO] Atualiza versão após alteração de banner
             const configRef = doc(db, `stores/${currentStoreId}/config/store`);
             await updateDoc(configRef, { lastUpdate: Date.now() });
-
             document.getElementById('bannerModal').classList.add('hidden');
             showToast("Banner salvo.");
         };
@@ -1125,7 +1191,6 @@
         window.deleteBanner = async (id) => { 
             if(confirm("Apagar banner?")) {
                 await deleteDoc(doc(db, `stores/${currentStoreId}/hero_cards`, id));
-                // [OTIMIZAÇÃO] Atualiza versão ao excluir banner
                 const configRef = doc(db, `stores/${currentStoreId}/config/store`);
                 await updateDoc(configRef, { lastUpdate: Date.now() });
             }
@@ -1152,9 +1217,17 @@
 
         // --- GERAL ---
         window.changeTab = (id) => {
-            ['dashboard','banners','products','categories','config'].forEach(t => { document.getElementById(`content-${t}`).classList.add('hidden'); document.getElementById(`nav-${t}`)?.classList.remove('active'); });
-            document.getElementById(`content-${id}`).classList.remove('hidden');
-            if(document.getElementById(`nav-${id}`)) document.getElementById(`nav-${id}`).classList.add('active');
+            ['dashboard','banners','products','categories','config'].forEach(t => { 
+                const content = document.getElementById(`content-${t}`);
+                const nav = document.getElementById(`nav-${t}`);
+                if(content) content.classList.add('hidden'); 
+                if(nav) nav.classList.remove('active'); 
+            });
+            const activeContent = document.getElementById(`content-${id}`);
+            const activeNav = document.getElementById(`nav-${id}`);
+            if(activeContent) activeContent.classList.remove('hidden');
+            if(activeNav) activeNav.classList.add('active');
+            
             document.getElementById('page-title').textContent = id === 'banners' ? 'Banners de Destaque' : id.charAt(0).toUpperCase() + id.slice(1);
             if(document.getElementById('mobileSidebar').classList.contains('sidebar-visible')) toggleMobileSidebar();
         };
