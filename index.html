@@ -888,120 +888,7 @@ try {
 
         const rawData = snap.docs
             .map(d => ({
-window.updateAnalyticsRange = async (range) => {
-    if (!currentStoreId) return;
-
-    const loader = document.getElementById('chartLoading');
-    loader?.classList.remove('hidden');
-
-    // Botões ativos
-    ['day', 'week', 'month'].forEach(r => {
-        const btn = document.getElementById(`range-${r}`);
-        if (!btn) return;
-        btn.classList.toggle('active', r === range);
-        btn.classList.toggle('inactive', r !== range);
-    });
-
-    try {
-        const labels = [];
-        const values = [];
-
-        /* ======================
-           📅 HOJE → POR HORA
-        ====================== */
-        if (range === 'day') {
-            const now = new Date();
-            const currentHour = now.getHours();
-            const todayId = now.toISOString().split('T')[0];
-
-            const snap = await getDoc(
-                doc(db, `stores/${currentStoreId}/analytics_history`, todayId)
-            );
-
-            const hours = snap.exists() ? snap.data().hours || {} : {};
-
-            for (let h = 0; h <= currentHour; h++) {
-                labels.push(`${String(h).padStart(2, '0')}h`);
-                values.push(hours[h] || 0);
-            }
-
-        /* ======================
-           📆 SEMANA / MÊS
-        ====================== */
-        } else {
-            const days = range === 'week' ? 7 : 30;
-
-            const q = query(
-                collection(db, `stores/${currentStoreId}/analytics_history`),
-                orderBy('date', 'desc'),
-                limit(days)
-            );
-
-            const snap = await getDocs(q);
-
-            const map = {};
-            snap.docs.forEach(d => {
-                const date = d.data().date instanceof Timestamp
-                    ? d.data().date.toDate()
-                    : new Date(d.data().date);
-
-                map[date.toDateString()] = d.data().visits || 0;
-            });
-
-            for (let i = days - 1; i >= 0; i--) {
-                const d = new Date();
-                d.setDate(d.getDate() - i);
-
-                labels.push(
-                    d.toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' })
-                );
-                values.push(map[d.toDateString()] || 0);
-            }
-        }
-
-        /* ======================
-           📊 GRÁFICO
-        ====================== */
-        const canvas = document.getElementById('analyticsChart');
-        const ctx = canvas.getContext('2d');
-
-        const gradient = ctx.createLinearGradient(0, 0, 0, 250);
-        gradient.addColorStop(0, 'rgba(124,58,237,0.25)');
-        gradient.addColorStop(1, 'rgba(124,58,237,0)');
-
-        if (analyticsChartInstance) {
-            analyticsChartInstance.destroy();
-        }
-
-        analyticsChartInstance = new Chart(ctx, {
-            type: 'line',
-            data: {
-                labels,
-                datasets: [{
-                    data: values,
-                    borderColor: '#7c3aed',
-                    backgroundColor: gradient,
-                    fill: true,
-                    tension: 0.4,
-                    pointRadius: 4
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: { legend: { display: false } },
-                scales: {
-                    y: { beginAtZero: true, ticks: { stepSize: 1 } }
-                }
-            }
-        });
-
-    } catch (err) {
-        console.error('Erro no analytics:', err);
-    } finally {
-        loader?.classList.add('hidden');
-    }
-};                date: d.data().date instanceof Timestamp
+                date: d.data().date instanceof Timestamp
                     ? d.data().date.toDate()
                     : new Date(d.data().date),
                 visits: d.data().visits || 0
@@ -1026,7 +913,80 @@ window.updateAnalyticsRange = async (range) => {
                 labels.push(
                     item.date.toLocaleDateString('pt-BR', {
                         day: '2-digit',
+                        month: 'short'
+                    })
+                );
+                values.push(item.visits);
+            });
+        }
+    }
 
+    /* =========================
+       🔹 CRIA / ATUALIZA GRÁFICO
+    ========================= */
+    if (analyticsChartInstance) {
+        analyticsChartInstance.destroy();
+    }
+
+    analyticsChartInstance = new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: labels,
+            datasets: [{
+                label: 'Visitas',
+                data: values,
+                borderColor: '#7c3aed',
+                borderWidth: 3,
+                fill: true,
+                backgroundColor: gradient,
+                tension: 0.4,
+                pointRadius: 4,
+                pointHoverRadius: 6,
+                pointHoverBackgroundColor: '#7c3aed',
+                pointHoverBorderColor: '#fff',
+                pointHoverBorderWidth: 3,
+                pointBackgroundColor: '#fff'
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: { legend: { display: false } },
+            scales: {
+                x: {
+                    grid: { display: false },
+                    ticks: {
+                        font: { size: 10, family: 'Inter' },
+                        color: '#94a3b8'
+                    }
+                },
+                y: {
+                    beginAtZero: true,
+                    grid: {
+                        borderDash: [5, 5],
+                        color: '#f1f5f9'
+                    },
+                    ticks: {
+                        font: { size: 10 },
+                        color: '#94a3b8',
+                        stepSize: 1,
+                        precision: 0
+                    }
+                }
+            },
+            interaction: { intersect: false, mode: 'index' },
+            animation: {
+                duration: 800,
+                easing: 'easeOutQuart'
+            }
+        }
+    });
+
+} catch (err) {
+    console.error("Erro ao carregar analytics:", err);
+} finally {
+    loader?.classList.add('hidden');
+        };
 
         // --- INIT DATA ---
         onAuthStateChanged(auth, async (user) => {
