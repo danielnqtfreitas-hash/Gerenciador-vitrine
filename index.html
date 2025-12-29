@@ -782,31 +782,32 @@
             });
 
             try {
-                let labels = [];
-                let values = [];
+    let labels = [];
+    let values = [];
 
-                if (range === 'day') {
-    // 1. Data de hoje
-    const hojeStr = new Date().toISOString().split('T')[0];
+    if (range === 'day') {
+        const now = new Date();
+        const currentHour = now.getHours();
+        const todayId = now.toISOString().split('T')[0];
 
-    // 2. Documento do dia
-    const docSnap = await getDoc(
-        doc(db, `stores/${currentStoreId}/analytics_history`, hojeStr)
-    );
+        const docSnap = await getDoc(
+            doc(db, `stores/${currentStoreId}/analytics_history`, todayId)
+        );
 
-    // 3. Total de visitas
-    const totalHoje = docSnap.exists() ? docSnap.data().visits : 0;
+        const hoursData = docSnap.exists()
+            ? docSnap.data().hours || {}
+            : {};
 
-    // 4. Dados do gráfico
-    labels = ['Início do Dia', 'Agora'];
-    values = [0, totalHoje];
+        for (let h = 0; h <= currentHour; h++) {
+            labels.push(`${h.toString().padStart(2, '0')}h`);
+            values.push(hoursData[h] || 0);
+        }
 
-} else {
-    const daysToFetch = range === 'week' ? 7 : 30;
-    const historyRef = collection(db, `stores/${currentStoreId}/analytics_history`);
-    const q = query(historyRef, orderBy('date', 'desc'), limit(daysToFetch));
-    const snap = await getDocs(q);
-
+    } else {
+        const daysToFetch = range === 'week' ? 7 : 30;
+        const historyRef = collection(db, `stores/${currentStoreId}/analytics_history`);
+        const q = query(historyRef, orderBy('date', 'desc'), limit(daysToFetch));
+        const snap = await getDocs(q);
     const rawData = snap.docs.map(d => ({
         date: d.data().date instanceof Timestamp
             ? d.data().date.toDate()
