@@ -797,8 +797,8 @@
     
     // 4. Exibe no gráfico uma linha do início do dia até ao total atual
     labels = ['Início do Dia', 'Agora'];
-    values = [0, totalHoje]; 
-}
+    values = [0, totalHoje]; }
+                
                 } else {
                     const daysToFetch = range === 'week' ? 7 : 30;
                     const historyRef = collection(db, `stores/${currentStoreId}/analytics_history`);
