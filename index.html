@@ -731,37 +731,7 @@
             gradient.addColorStop(0, 'rgba(124, 58, 237, 0.2)');
             gradient.addColorStop(1, 'rgba(124, 58, 237, 0.0)');
 
-            analyticsChartInstance = new Chart(ctx, {
-                type: 'line',
-                data: {
-                    labels: [],
-                    datasets: [{
-                        label: 'Visitas',
-                        data: [],
-                        borderColor: '#7c3aed',
-                        borderWidth: 3,
-                        fill: true,
-                        backgroundColor: gradient,
-                        tension: 0.4,
-                        pointRadius: 4,
-                        pointHoverRadius: 6,
-                        pointHoverBackgroundColor: '#7c3aed',
-                        pointHoverBorderColor: '#fff',
-                        pointHoverBorderWidth: 3,
-                        pointBackgroundColor: '#fff'
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: { legend: { display: false } },
-                    scales: {
-                        x: { grid: { display: false }, ticks: { font: { size: 10, family: 'Inter' }, color: '#94a3b8' } },
-                        y: { beginAtZero: true, grid: { borderDash: [5, 5], color: '#f1f5f9' }, ticks: { font: { size: 10 }, color: '#94a3b8', stepSize: 1 } }
-                    },
-                    interaction: { intersect: false, mode: 'index' }
-                }
-            });
+            
             
             updateAnalyticsRange('day');
         };
@@ -815,7 +785,60 @@
         visits: d.data().visits || 0
     })).reverse();
 
-    if (rawData.length === 0) {
+    if (rawData.len// 🔥 destrói gráfico anterior
+if (analyticsChartInstance) {
+    analyticsChartInstance.destroy();
+}
+
+// 🔥 cria novamente com dados reais
+analyticsChartInstance = new Chart(ctx, {
+    type: 'line',
+    data: {
+        labels: labels,      // ⬅️ usa o array calculado
+        datasets: [{
+            label: 'Visitas',
+            data: values,    // ⬅️ usa o array calculado
+            borderColor: '#7c3aed',
+            borderWidth: 3,
+            fill: true,
+            backgroundColor: gradient,
+            tension: 0.4,
+            pointRadius: 4,
+            pointHoverRadius: 6,
+            pointHoverBackgroundColor: '#7c3aed',
+            pointHoverBorderColor: '#fff',
+            pointHoverBorderWidth: 3,
+            pointBackgroundColor: '#fff'
+        }]
+    },
+    options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: { legend: { display: false } },
+        scales: {
+            x: {
+                grid: { display: false },
+                ticks: { font: { size: 10, family: 'Inter' }, color: '#94a3b8' }
+            },
+            y: {
+                beginAtZero: true,
+                grid: { borderDash: [5, 5], color: '#f1f5f9' },
+                ticks: {
+                    font: { size: 10 },
+                    color: '#94a3b8',
+                    stepSize: 1,
+                    precision: 0
+                }
+            }
+        },
+        interaction: { intersect: false, mode: 'index' },
+        animation: {
+            duration: 800,
+            easing: 'easeOutQuart'
+        }
+    }
+});
+        gth === 0) {
         for (let i = daysToFetch - 1; i >= 0; i--) {
             const d = new Date();
             d.setDate(d.getDate() - i);
