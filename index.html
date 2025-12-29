@@ -786,13 +786,16 @@
                 let values = [];
 
                 if (range === 'day') {
-    // Busca a data de hoje para encontrar o documento certo
+    // 1. Pega a data de hoje no formato do seu banco (ex: 2025-12-29)
     const hojeStr = new Date().toISOString().split('T')[0];
+    
+    // 2. Procura o documento real de hoje no histórico
     const docSnap = await getDoc(doc(db, `stores/${currentStoreId}/analytics_history`, hojeStr));
     
-    // Se o documento existir, usa o valor real. Se não, é 0.
+    // 3. Pega o total de visitas ou zero se ninguém entrou
     const totalHoje = docSnap.exists() ? docSnap.data().visits : 0;
     
+    // 4. Exibe no gráfico uma linha do início do dia até ao total atual
     labels = ['Início do Dia', 'Agora'];
     values = [0, totalHoje]; 
 }
@@ -1260,5 +1263,3 @@
     </script>
 </body>
 </html>
-
-
