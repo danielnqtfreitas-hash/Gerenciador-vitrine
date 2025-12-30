@@ -767,82 +767,101 @@
         };
 
         window.updateAnalyticsRange = async (range) => {
-            if(!analyticsChartInstance || !currentStoreId) return;
+    if (!analyticsChartInstance || !currentStoreId) return;
 
-            const loader = document.getElementById('chartLoading');
-            loader?.classList.remove('hidden');
+    const loader = document.getElementById('chartLoading');
+    loader?.classList.remove('hidden');
 
-            // UI Feedback
-            ['day', 'week', 'month'].forEach(r => {
-                const btn = document.getElementById(`range-${r}`);
-                if(btn) {
-                    if(r === range) btn.classList.replace('inactive', 'active');
-                    else btn.classList.replace('active', 'inactive');
-                }
-            });
-
-            try {
-    let labels = [];
-    let values = [];
-
-    if (range === 'day') {
-        const now = new Date();
-        const currentHour = now.getHours();
-        const todayId = now.toISOString().split('T')[0];
-
-        const docSnap = await getDoc(
-            doc(db, `stores/${currentStoreId}/analytics_history`, todayId)
-        );
-
-        const hoursData = docSnap.exists()
-            ? docSnap.data().hours || {}
-            : {};
-
-        for (let h = 0; h <= currentHour; h++) {
-            labels.push(`${h.toString().padStart(2, '0')}h`);
-            values.push(hoursData[h] || 0);
-        }
-
-    } else {
-        const daysToFetch = range === 'week' ? 7 : 30;
-        const historyRef = collection(db, `stores/${currentStoreId}/analytics_history`);
-        const q = query(historyRef, orderBy('date', 'desc'), limit(daysToFetch));
-        const snap = await getDocs(q);
-    const rawData = snap.docs.map(d => ({
-        date: d.data().date instanceof Timestamp
-            ? d.data().date.toDate()
-            : new Date(d.data().date),
-        visits: d.data().visits || 0
-    })).reverse();
-
-    if (rawData.length === 0) {
-        for (let i = daysToFetch - 1; i >= 0; i--) {
-            const d = new Date();
-            d.setDate(d.getDate() - i);
-            labels.push(
-                d.toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' })
-            );
-            values.push(0);
-        }
-    } else {
-        rawData.forEach(item => {
-            labels.push(
-                item.date.toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' })
-            );
-            values.push(item.visits);
-        });
-    }
-}
-
-                analyticsChartInstance.data.labels = labels;
-                analyticsChartInstance.data.datasets[0].data = values;
-                analyticsChartInstance.update();
-            } catch (err) {
-                console.error("Erro ao carregar analytics:", err);
-            } finally {
-                loader?.classList.add('hidden');
+    // Atualização visual dos botões
+    ['day', 'week', 'month'].forEach(r => {
+        const btn = document.getElementById(`range-${r}`);
+        if (btn) {
+            if (r === range) {
+                btn.classList.remove('inactive');
+                btn.classList.add('active');
+            } else {
+                btn.classList.remove('active');
+                btn.classList.add('inactive');
             }
-        };
+        }
+    });
+
+    try {
+        let labels = [];
+        let values = [];
+
+        if (range === 'day') {
+            const now = new Date();
+            const currentHour = now.getHours();
+            
+            // Formata data local YYYY-MM-DD para evitar erros de fuso horário do toISOString
+            const year = now.getFullYear();
+            const month = String(now.getMonth() + 1).padStart(2, '0');
+            const day = String(now.getDate()).padStart(2, '0');
+            const todayId = `${year}-${month}-${day}`;
+
+            const docRef = doc(db, `stores/${currentStoreId}/analytics_history`, todayId);
+            const docSnap = await getDoc(docRef);
+
+            const hoursData = docSnap.exists() ? (docSnap.data().hours || {}) : {};
+
+            // Gera labels e valores de 0h até a hora atual
+            for (let h = 0; h <= currentHour; h++) {
+                labels.push(`${h.toString().padStart(2, '0')}h`);
+                // Se não houver dado para aquela hora, coloca 0 (cria o efeito de descer a linha)
+                values.push(hoursData[h] || 0);
+            }
+        } else {
+            const daysToFetch = range === 'week' ? 7 : 30;
+            const historyRef = collection(db, `stores/${currentStoreId}/analytics_history`);
+            
+            // Busca os últimos dias ordenados
+            const q = query(historyRef, orderBy('date', 'desc'), limit(daysToFetch));
+            const snap = await getDocs(q);
+
+            const rawData = snap.docs.map(d => {
+                const data = d.data();
+                let dateObj;
+                
+                // Trata se a data é Timestamp do Firebase ou String/Date
+                if (data.date && typeof data.date.toDate === 'function') {
+                    dateObj = data.date.toDate();
+                } else {
+                    dateObj = new Date(data.date);
+                }
+
+                return {
+                    date: dateObj,
+                    visits: data.visits || 0
+                };
+            }).reverse();
+
+            if (rawData.length === 0) {
+                // Preenche com zeros se estiver vazio
+                for (let i = daysToFetch - 1; i >= 0; i--) {
+                    const d = new Date();
+                    d.setDate(d.getDate() - i);
+                    labels.push(d.toLocaleDateString('pt-PT', { day: '2-digit', month: 'short' }));
+                    values.push(0);
+                }
+            } else {
+                rawData.forEach(item => {
+                    labels.push(item.date.toLocaleDateString('pt-PT', { day: '2-digit', month: 'short' }));
+                    values.push(item.visits);
+                });
+            }
+        }
+
+        // Atualiza os dados no gráfico existente
+        analyticsChartInstance.data.labels = labels;
+        analyticsChartInstance.data.datasets[0].data = values;
+        analyticsChartInstance.update();
+
+    } catch (err) {
+        console.error("Erro ao carregar analytics:", err);
+    } finally {
+        loader?.classList.add('hidden');
+    };
 
         // --- INIT DATA ---
         onAuthStateChanged(auth, async (user) => {
