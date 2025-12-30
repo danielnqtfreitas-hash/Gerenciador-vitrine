@@ -1249,6 +1249,27 @@
 
         
         // --- GERAL ---
+                // --- LÓGICA DA LOGO (ADICIONADO PARA FUNCIONAR) ---
+        let currentLogoData = null; 
+
+        window.handleLogoSelect = (files) => {
+            if (!files.length) return;
+            const file = files[0];
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                const previewImg = document.getElementById('logoPreviewImg');
+                const placeholderIcon = document.getElementById('logoPlaceholderIcon');
+                if(previewImg) {
+                    previewImg.src = e.target.result;
+                    previewImg.classList.remove('hidden');
+                }
+                if(placeholderIcon) placeholderIcon.classList.add('hidden');
+                currentLogoData = e.target.result; 
+            };
+            reader.readAsDataURL(file);
+        };
+
+        // --- GERAL ---
         window.changeTab = (id) => {
             ['dashboard','banners','products','categories','config'].forEach(t => { 
                 const content = document.getElementById(`content-${t}`);
@@ -1323,10 +1344,9 @@
                 </div>`).join(''); 
         }
 
-                // --- FUNÇÃO DE SALVAMENTO ÚNICA (CONFIGURAÇÃO + LOGO) ---
         window.saveStoreConfig = async (e) => {
             e.preventDefault();
-            const btn = e.target.querySelector('button[type="submit"]');
+            const btn = document.getElementById('btnSaveConfig');
             const originalText = btn.textContent;
             btn.disabled = true;
             btn.textContent = "Salvando alterações...";
@@ -1334,7 +1354,6 @@
             try {
                 let logoUrl = storeConfig.logoUrl || ""; 
 
-                // Faz o upload da logo se houver uma nova imagem selecionada
                 if (currentLogoData && currentLogoData.startsWith('data:image')) {
                     const logoRef = ref(storage, `stores/${currentStoreId}/config/logo.jpg`);
                     await uploadString(logoRef, currentLogoData, 'data_url');
@@ -1352,7 +1371,6 @@
                 };
 
                 await setDoc(doc(db, `stores/${currentStoreId}/config/store`), data, { merge: true });
-                
                 storeConfig.logoUrl = logoUrl;
                 currentLogoData = null;
                 showToast("Configurações atualizadas com sucesso! ✅");
@@ -1362,11 +1380,10 @@
                 showToast("Erro ao salvar configurações.");
             } finally {
                 btn.disabled = false;
-                btn.textContent = originalText;
+                btn.textContent = "Guardar Alterações";
             }
         };
 
-        // --- FUNÇÃO DE ATUALIZAÇÃO DE SENHA ---
         window.handleUpdatePassword = async (e) => { 
             e.preventDefault(); 
             const n = document.getElementById('newPass').value; 
@@ -1389,7 +1406,7 @@
                 document.getElementById('passError').classList.add('hidden'); 
             } catch(error) { 
                 console.error(error);
-                showToast("Erro: Saia e entre novamente para mudar a senha."); 
+                showToast("Erro: Saia e entre novamente."); 
             } finally {
                 btn.disabled = false;
                 btn.textContent = "Atualizar Senha";
