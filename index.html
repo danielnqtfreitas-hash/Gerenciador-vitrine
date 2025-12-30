@@ -892,16 +892,55 @@
             
             // Listener da Configuração
             
-                    document.getElementById('confStoreName').value = data.storeName || '';
-                    document.getElementById('confWhatsapp').value = data.whatsappNumber || '';
-                    document.getElementById('confFooter').value = data.footerText || '';
-                    document.getElementById('confColorPrimary').value = data.primaryColor || '#8b5cf6';
-                    document.getElementById('dashboardStoreToggle').checked = data.isStoreOpen !== false;
-                    document.getElementById('statusLabel').textContent = (data.isStoreOpen !== false) ? 'Aberto' : 'Fechado';
-                    deliveryAreas = data.deliveryAreas || [];
-                    renderDeliveryAreas();
-                }
-            });
+                    // Listener da Configuração da Loja
+onSnapshot(doc(db, `stores/${currentStoreId}/config/store`), (d) => {
+    if (!d.exists()) return;
+
+    const data = d.data();
+
+    // Configurações básicas
+    document.getElementById('confStoreName').value = data.storeName || '';
+    document.getElementById('confWhatsapp').value = data.whatsappNumber || '';
+    document.getElementById('confFooter').value = data.footerText || '';
+    document.getElementById('confColorPrimary').value = data.primaryColor || '#8b5cf6';
+
+    // Status da loja
+    const isOpen = data.isStoreOpen !== false;
+    document.getElementById('dashboardStoreToggle').checked = isOpen;
+    document.getElementById('statusLabel').textContent = isOpen ? 'Aberto' : 'Fechado';
+
+    // Áreas de entrega
+    deliveryAreas = data.deliveryAreas || [];
+    renderDeliveryAreas();
+
+    // Logo da loja
+    const logoUrl = data.logoUrl || null;
+
+    const logoImg = document.getElementById('sidebarStoreLogo');
+    const logoImgMob = document.getElementById('sidebarStoreLogoMobile');
+    const logoCont = document.getElementById('sidebarLogoContainer');
+    const logoContMob = document.getElementById('sidebarLogoContainerMobile');
+    const defaultIcon = document.getElementById('sidebarDefaultIcon');
+
+    if (logoUrl) {
+        logoImg.src = logoUrl;
+        logoImgMob.src = logoUrl;
+
+        logoImg.classList.remove('hidden');
+        logoImgMob.classList.remove('hidden');
+        logoCont.classList.remove('hidden');
+        logoContMob.classList.remove('hidden');
+
+        defaultIcon.classList.add('hidden');
+    } else {
+        logoImg.classList.add('hidden');
+        logoImgMob.classList.add('hidden');
+        logoCont.classList.add('hidden');
+        logoContMob.classList.add('hidden');
+
+        defaultIcon.classList.remove('hidden');
+    }
+});
 
             // Visitas Totais
             onSnapshot(doc(db, `stores/${currentStoreId}/analytics/global`), docSnap => {
