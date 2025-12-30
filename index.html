@@ -1347,8 +1347,8 @@
                 </div>`).join(''); 
         }
 
-        window.saveStoreConfig = async (e) => {
-            e.preventDefault();
+                window.saveStoreConfig = async (e) => {
+            if(e) e.preventDefault();
             const btn = document.getElementById('btnSaveConfig');
             if(!btn) return;
             
@@ -1357,35 +1357,56 @@
             btn.textContent = "Gravando...";
 
             try {
-                if(!currentStoreId) throw new Error("Loja não identificada.");
+                if(!currentStoreId) throw new Error("ID da loja não identificado.");
                 
                 let logoUrl = storeConfig.logoUrl || ""; 
 
-                // Upload da logo apenas se houver imagem nova
+                // ETAPA 1: TENTAR UPLOAD DA LOGO (Se houver imagem nova)
                 if (currentLogoData && currentLogoData.startsWith('data:image')) {
-                    const logoRef = ref(storage, `stores/${currentStoreId}/config/logo.jpg`);
-                    await uploadString(logoRef, currentLogoData, 'data_url');
-                    logoUrl = await getDownloadURL(logoRef);
+                    try {
+                        const logoRef = ref(storage, `stores/${currentStoreId}/config/logo.jpg`);
+                        const uploadResult = await uploadString(logoRef, currentLogoData, 'data_url');
+                        logoUrl = await getDownloadURL(uploadResult.ref);
+                    } catch (storageErr) {
+                        console.error("Erro no Storage:", storageErr);
+                        // Se o storage falhar, avisamos mas continuamos para salvar o texto
+                        showToast("Aviso: Erro ao salvar foto. Permissão negada no Storage.");
+                    }
+                }
+
+                // ETAPA 2: PREPARAR DADOS
+                const storeName = document.getElementById('confStoreName').value.trim();
+                const whatsappNumber = document.getElementById('confWhatsapp').value.trim();
+
+                if(!storeName) {
+                    showToast("O nome da loja é obrigatório.");
+                    btn.disabled = false;
+                    btn.textContent = originalText;
+                    return;
                 }
 
                 const data = { 
-                    storeName: document.getElementById('confStoreName').value, 
-                    whatsappNumber: document.getElementById('confWhatsapp').value, 
-                    footerText: document.getElementById('confFooter').value, 
-                    primaryColor: document.getElementById('confColorPrimary').value, 
-                    deliveryAreas: deliveryAreas,
+                    storeName: storeName, 
+                    whatsappNumber: whatsappNumber, 
+                    footerText: document.getElementById('confFooter').value || "", 
+                    primaryColor: document.getElementById('confColorPrimary').value || "#8b5cf6", 
+                    deliveryAreas: deliveryAreas, // Os bairros que você disse que salvam
                     logoUrl: logoUrl,
                     lastUpdate: Date.now()
                 };
 
-                await setDoc(doc(db, `stores/${currentStoreId}/config/store`), data, { merge: true });
+                // ETAPA 3: SALVAR NO FIRESTORE
+                // Usamos o caminho exato que o seu banco espera
+                const docRef = doc(db, "stores", currentStoreId, "config", "store");
+                await setDoc(docRef, data, { merge: true });
+                
                 storeConfig.logoUrl = logoUrl;
                 currentLogoData = null;
-                showToast("Configurações atualizadas com sucesso! ✅");
+                showToast("Configurações guardadas com sucesso! ✅");
 
             } catch (err) {
-                console.error("Erro ao salvar:", err);
-                showToast("Erro ao salvar. Verifique se você está logado.");
+                console.error("Erro crítico ao salvar:", err);
+                showToast("Erro de permissão. Verifique se sua sessão expirou.");
             } finally {
                 btn.disabled = false;
                 btn.textContent = "Guardar Alterações";
