@@ -1323,16 +1323,18 @@
                 </div>`).join(''); 
         }
 
+                // --- FUNÇÃO DE SALVAMENTO ÚNICA (CONFIGURAÇÃO + LOGO) ---
         window.saveStoreConfig = async (e) => {
             e.preventDefault();
             const btn = e.target.querySelector('button[type="submit"]');
             const originalText = btn.textContent;
             btn.disabled = true;
-            btn.textContent = "Salvando...";
+            btn.textContent = "Salvando alterações...";
 
             try {
                 let logoUrl = storeConfig.logoUrl || ""; 
 
+                // Faz o upload da logo se houver uma nova imagem selecionada
                 if (currentLogoData && currentLogoData.startsWith('data:image')) {
                     const logoRef = ref(storage, `stores/${currentStoreId}/config/logo.jpg`);
                     await uploadString(logoRef, currentLogoData, 'data_url');
@@ -1350,19 +1352,21 @@
                 };
 
                 await setDoc(doc(db, `stores/${currentStoreId}/config/store`), data, { merge: true });
+                
                 storeConfig.logoUrl = logoUrl;
                 currentLogoData = null;
-                showToast("Configurações atualizadas!");
+                showToast("Configurações atualizadas com sucesso! ✅");
+
             } catch (err) {
-                console.error(err);
-                showToast("Erro ao salvar.");
+                console.error("Erro ao salvar:", err);
+                showToast("Erro ao salvar configurações.");
             } finally {
                 btn.disabled = false;
                 btn.textContent = originalText;
             }
         };
 
-        // --- SEGURANÇA: ATUALIZAÇÃO DE SENHA ---
+        // --- FUNÇÃO DE ATUALIZAÇÃO DE SENHA ---
         window.handleUpdatePassword = async (e) => { 
             e.preventDefault(); 
             const n = document.getElementById('newPass').value; 
@@ -1379,9 +1383,9 @@
 
             try { 
                 await updatePassword(auth.currentUser, n); 
-                showToast("Senha alterada com sucesso."); 
-                document.getElementById('newPass').value=''; 
-                document.getElementById('confirmNewPass').value=''; 
+                showToast("Senha alterada com sucesso! 🛡️"); 
+                document.getElementById('newPass').value = ''; 
+                document.getElementById('confirmNewPass').value = ''; 
                 document.getElementById('passError').classList.add('hidden'); 
             } catch(error) { 
                 console.error(error);
