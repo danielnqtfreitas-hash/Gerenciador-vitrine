@@ -356,24 +356,33 @@
             <!-- CONFIG TAB -->
             <div id="content-config" class="max-w-4xl mx-auto space-y-8 hidden animate-fade-in">
                 <div class="bg-white rounded-3xl border border-slate-200 p-8 shadow-sm">
-                    <h3 class="text-xl font-bold text-slate-800 mb-6 flex items-center gap-3"><span class="p-2 bg-yellow-50 rounded-xl"><i data-lucide="shield-check" class="w-6 h-6 text-yellow-600"></i></span> Segurança</h3>
-                    <form onsubmit="handleUpdatePassword(event)" class="space-y-5 max-w-sm">
-                        <input type="password" id="newPass" required minlength="6" placeholder="Nova Palavra-passe" class="input-pro">
-                        <input type="password" id="confirmNewPass" required minlength="6" placeholder="Repita a senha" class="input-pro">
-                        <div id="passError" class="hidden p-3 bg-red-50 text-red-600 text-xs font-bold rounded-xl border border-red-100">As senhas não coincidem.</div>
-                        <button type="submit" id="btnUpdatePass" class="w-full bg-slate-900 text-white font-bold py-4 rounded-2xl hover:bg-slate-800 transition-all text-sm uppercase tracking-wider">Atualizar Senha</button>
-                    </form>
+    <h3 class="text-xl font-bold text-slate-800 mb-6 flex items-center gap-3"><span class="p-2 bg-blue-50 rounded-xl"><i data-lucide="info" class="w-6 h-6 text-blue-600"></i></span> Identidade</h3>
+    
+    <div class="mb-8 pb-8 border-b border-slate-100">
+        <label class="block text-[10px] font-black text-slate-400 mb-3 uppercase tracking-widest">Logomarca da Loja</label>
+        <div class="flex items-center gap-6">
+            <div id="logoPreviewContainer" class="w-24 h-24 rounded-2xl border-2 border-dashed border-slate-200 flex items-center justify-center overflow-hidden bg-slate-50 relative group">
+                <img id="logoPreviewImg" src="" class="hidden w-full h-full object-contain p-2">
+                <i id="logoPlaceholderIcon" data-lucide="image" class="w-8 h-8 text-slate-300"></i>
+            </div>
+            <div class="flex-1">
+                <input type="file" id="logoInput" accept="image/*" class="hidden" onchange="handleLogoSelect(this.files)">
+                <button type="button" onclick="document.getElementById('logoInput').click()" class="bg-slate-900 text-white px-6 py-3 rounded-xl font-bold text-xs uppercase tracking-widest hover:bg-slate-800 transition-all shadow-sm">
+                    Selecionar Imagem
+                </button>
+                <p class="text-[10px] text-slate-400 mt-3 leading-relaxed">Recomendamos uma imagem quadrada (PNG ou JPG) com fundo branco ou transparente.</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div><label class="block text-xs font-bold text-slate-400 mb-1.5 uppercase tracking-wider">Nome da Loja</label><input type="text" id="confStoreName" class="input-pro"></div>
+        <div><label class="block text-xs font-bold text-slate-400 mb-1.5 uppercase tracking-wider">WhatsApp Público</label><input type="text" id="confWhatsapp" class="input-pro"></div>
+        <div class="md:col-span-2"><label class="block text-xs font-bold text-slate-400 mb-1.5 uppercase tracking-wider">Rodapé</label><textarea id="confFooter" class="input-pro" rows="2"></textarea></div>
+        <div><label class="block text-xs font-bold text-slate-400 mb-1.5 uppercase tracking-wider">Cor do Tema</label><input type="color" id="confColorPrimary" class="h-14 w-full rounded-xl border p-1 cursor-pointer"></div>
+    </div>
                 </div>
-                <form id="storeConfigForm" onsubmit="saveStoreConfig(event)" class="space-y-8">
-                    <div class="bg-white rounded-3xl border border-slate-200 p-8 shadow-sm">
-                        <h3 class="text-xl font-bold text-slate-800 mb-6 flex items-center gap-3"><span class="p-2 bg-blue-50 rounded-xl"><i data-lucide="info" class="w-6 h-6 text-blue-600"></i></span> Identidade</h3>
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                            <div><label class="block text-xs font-bold text-slate-400 mb-1.5 uppercase tracking-wider">Nome da Loja</label><input type="text" id="confStoreName" class="input-pro"></div>
-                            <div><label class="block text-xs font-bold text-slate-400 mb-1.5 uppercase tracking-wider">WhatsApp Público</label><input type="text" id="confWhatsapp" class="input-pro"></div>
-                            <div class="md:col-span-2"><label class="block text-xs font-bold text-slate-400 mb-1.5 uppercase tracking-wider">Rodapé</label><textarea id="confFooter" class="input-pro" rows="2"></textarea></div>
-                            <div><label class="block text-xs font-bold text-slate-400 mb-1.5 uppercase tracking-wider">Cor do Tema</label><input type="color" id="confColorPrimary" class="h-14 w-full rounded-xl border p-1 cursor-pointer"></div>
-                        </div>
-                    </div>
+            
                     <div class="bg-white rounded-3xl border border-slate-200 p-8 shadow-sm">
                         <h3 class="text-xl font-bold text-slate-800 mb-6">Entrega</h3>
                         <div class="flex flex-col md:flex-row gap-4 mb-6"><input type="text" id="areaName" placeholder="Bairro" class="flex-1 input-pro"><input type="number" id="areaFee" placeholder="Taxa R$" step="0.01" class="md:w-32 input-pro"><button type="button" onclick="addDeliveryArea()" class="bg-slate-900 text-white px-6 py-3.5 rounded-xl font-bold text-xs uppercase tracking-widest">Adicionar</button></div>
@@ -1213,6 +1222,27 @@
         }
 
         // --- GERAL ---
+                // --- LÓGICA DA LOGOMARCA ---
+        let currentLogoData = null;
+
+        window.handleLogoSelect = (files) => {
+            if (!files.length) return;
+            const file = files[0];
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                const previewImg = document.getElementById('logoPreviewImg');
+                const placeholderIcon = document.getElementById('logoPlaceholderIcon');
+                if(previewImg) {
+                    previewImg.src = e.target.result;
+                    previewImg.classList.remove('hidden');
+                }
+                if(placeholderIcon) placeholderIcon.classList.add('hidden');
+                currentLogoData = e.target.result; 
+            };
+            reader.readAsDataURL(file);
+        };
+
+        // --- GERAL ---
         window.changeTab = (id) => {
             ['dashboard','banners','products','categories','config'].forEach(t => { 
                 const content = document.getElementById(`content-${t}`);
@@ -1225,27 +1255,125 @@
             if(activeContent) activeContent.classList.remove('hidden');
             if(activeNav) activeNav.classList.add('active');
             
-            document.getElementById('page-title').textContent = id === 'banners' ? 'Banners de Destaque' : id.charAt(0).toUpperCase() + id.slice(1);
+            const titleEl = document.getElementById('page-title');
+            if(titleEl) titleEl.textContent = id === 'banners' ? 'Banners de Destaque' : id.charAt(0).toUpperCase() + id.slice(1);
             if(document.getElementById('mobileSidebar').classList.contains('sidebar-visible')) toggleMobileSidebar();
         };
-        window.toggleMobileSidebar = () => { const sb=document.getElementById('mobileSidebar'); const ov=document.getElementById('mobileOverlay'); if(sb.classList.contains('sidebar-hidden')){sb.classList.replace('sidebar-hidden','sidebar-visible');ov.classList.remove('hidden');}else{sb.classList.replace('sidebar-visible','sidebar-hidden');ov.classList.add('hidden');} };
+
+        window.toggleMobileSidebar = () => { 
+            const sb = document.getElementById('mobileSidebar'); 
+            const ov = document.getElementById('mobileOverlay'); 
+            if(sb.classList.contains('sidebar-hidden')){
+                sb.classList.replace('sidebar-hidden','sidebar-visible');
+                ov.classList.remove('hidden');
+            } else {
+                sb.classList.replace('sidebar-visible','sidebar-hidden');
+                ov.classList.add('hidden');
+            } 
+        };
+
         window.toggleStoreMenu = (e) => { e.stopPropagation(); document.getElementById('storeDropdown').classList.toggle('hidden'); };
         window.copyStoreLink = () => { navigator.clipboard.writeText(document.getElementById('urlDisplay').textContent); showToast("Link copiado."); };
         window.openStoreLink = () => { window.open(document.getElementById('urlDisplay').textContent, '_blank'); };
+        
         window.showToast = (msg) => {
+            const container = document.getElementById('toast-container');
             const el = document.createElement('div');
             el.className = "toast bg-slate-900 text-white px-6 py-4 rounded-2xl shadow-2xl flex items-center gap-3 font-bold text-sm border border-slate-700 animate-fade-in";
             el.innerHTML = `<i data-lucide="bell" class="w-5 h-5 text-primary-400"></i> ${msg}`;
-            document.getElementById('toast-container').appendChild(el);
+            container.appendChild(el);
             setTimeout(() => el.remove(), 4000);
             lucide.createIcons();
         };
-        window.toggleStoreStatusQuick = async (el) => { await updateDoc(doc(db, `stores/${currentStoreId}/config/store`), { isStoreOpen: el.checked }); };
-        window.addDeliveryArea = () => { const n=document.getElementById('areaName').value; const f=parseFloat(document.getElementById('areaFee').value); if(n&&!isNaN(f)) { deliveryAreas.push({name:n, fee:f}); renderDeliveryAreas(); document.getElementById('areaName').value=''; document.getElementById('areaFee').value=''; } };
+
+        window.toggleStoreStatusQuick = async (el) => { 
+            await updateDoc(doc(db, `stores/${currentStoreId}/config/store`), { 
+                isStoreOpen: el.checked,
+                lastUpdate: Date.now()
+            }); 
+        };
+
+        window.addDeliveryArea = () => { 
+            const n = document.getElementById('areaName').value; 
+            const f = parseFloat(document.getElementById('areaFee').value); 
+            if(n && !isNaN(f)) { 
+                deliveryAreas.push({name:n, fee:f}); 
+                renderDeliveryAreas(); 
+                document.getElementById('areaName').value=''; 
+                document.getElementById('areaFee').value=''; 
+            } 
+        };
+
         window.removeArea = (i) => { deliveryAreas.splice(i,1); renderDeliveryAreas(); };
-        function renderDeliveryAreas() { document.getElementById('deliveryAreasList').innerHTML = deliveryAreas.map((a,i) => `<div class="flex justify-between items-center p-4 bg-white"><span class="text-slate-700 font-medium text-sm">${a.name}</span><div class="flex items-center gap-4"><b class="text-slate-900 text-sm">R$ ${a.fee.toFixed(2)}</b><button onclick="removeArea(${i})" class="text-red-500 font-bold p-2 hover:bg-red-50 px-3 rounded-lg">×</button></div></div>`).join(''); }
-        window.saveStoreConfig = async (e) => { e.preventDefault(); const data={ storeName: document.getElementById('confStoreName').value, whatsappNumber: document.getElementById('confWhatsapp').value, footerText: document.getElementById('confFooter').value, primaryColor: document.getElementById('confColorPrimary').value, deliveryAreas: deliveryAreas }; await setDoc(doc(db, `stores/${currentStoreId}/config/store`), data, { merge: true }); showToast("Configurações atualizadas."); };
-        window.handleUpdatePassword = async (e) => { e.preventDefault(); const n=document.getElementById('newPass').value; const c=document.getElementById('confirmNewPass').value; if(n!==c){document.getElementById('passError').classList.remove('hidden'); return;} try{ await updatePassword(auth.currentUser, n); showToast("Senha alterada."); document.getElementById('newPass').value=''; document.getElementById('confirmNewPass').value=''; document.getElementById('passError').classList.add('hidden'); } catch(e){ showToast("Erro ao alterar senha."); } };
+
+        function renderDeliveryAreas() { 
+            document.getElementById('deliveryAreasList').innerHTML = deliveryAreas.map((a,i) => `
+                <div class="flex justify-between items-center p-4 bg-white">
+                    <span class="text-slate-700 font-medium text-sm">${a.name}</span>
+                    <div class="flex items-center gap-4">
+                        <b class="text-slate-900 text-sm">R$ ${a.fee.toFixed(2)}</b>
+                        <button onclick="removeArea(${i})" class="text-red-500 font-bold p-2 hover:bg-red-50 px-3 rounded-lg">×</button>
+                    </div>
+                </div>`).join(''); 
+        }
+
+        window.saveStoreConfig = async (e) => {
+            e.preventDefault();
+            const btn = e.target.querySelector('button[type="submit"]');
+            const originalText = btn.textContent;
+            btn.disabled = true;
+            btn.textContent = "Salvando...";
+
+            try {
+                let logoUrl = storeConfig.logoUrl || ""; 
+
+                if (currentLogoData && currentLogoData.startsWith('data:image')) {
+                    const logoRef = ref(storage, `stores/${currentStoreId}/config/logo.jpg`);
+                    await uploadString(logoRef, currentLogoData, 'data_url');
+                    logoUrl = await getDownloadURL(logoRef);
+                }
+
+                const data = { 
+                    storeName: document.getElementById('confStoreName').value, 
+                    whatsappNumber: document.getElementById('confWhatsapp').value, 
+                    footerText: document.getElementById('confFooter').value, 
+                    primaryColor: document.getElementById('confColorPrimary').value, 
+                    deliveryAreas: deliveryAreas,
+                    logoUrl: logoUrl,
+                    lastUpdate: Date.now()
+                };
+
+                await setDoc(doc(db, `stores/${currentStoreId}/config/store`), data, { merge: true });
+                storeConfig.logoUrl = logoUrl;
+                currentLogoData = null;
+                showToast("Configurações atualizadas!");
+            } catch (err) {
+                console.error(err);
+                showToast("Erro ao salvar.");
+            } finally {
+                btn.disabled = false;
+                btn.textContent = originalText;
+            }
+        };
+
+        window.handleUpdatePassword = async (e) => { 
+            e.preventDefault(); 
+            const n = document.getElementById('newPass').value; 
+            const c = document.getElementById('confirmNewPass').value; 
+            if(n !== c){
+                document.getElementById('passError').classList.remove('hidden'); 
+                return;
+            } 
+            try { 
+                await updatePassword(auth.currentUser, n); 
+                showToast("Senha alterada com sucesso."); 
+                document.getElementById('newPass').value=''; 
+                document.getElementById('confirmNewPass').value=''; 
+                document.getElementById('passError').classList.add('hidden'); 
+            } catch(e) { 
+                showToast("Erro ao alterar senha. Tente relogar."); 
+            } 
+        };
 
         lucide.createIcons();
     </script>
