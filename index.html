@@ -1249,11 +1249,11 @@
 
         
         // --- GERAL ---
-                // --- LÓGICA DA LOGO (ADICIONADO PARA FUNCIONAR) ---
+        // --- LÓGICA DA LOGO ---
         let currentLogoData = null; 
 
         window.handleLogoSelect = (files) => {
-            if (!files.length) return;
+            if (!files || !files.length) return;
             const file = files[0];
             const reader = new FileReader();
             reader.onload = (e) => {
@@ -1314,6 +1314,7 @@
         };
 
         window.toggleStoreStatusQuick = async (el) => { 
+            if(!currentStoreId) return;
             await updateDoc(doc(db, `stores/${currentStoreId}/config/store`), { 
                 isStoreOpen: el.checked,
                 lastUpdate: Date.now()
@@ -1334,12 +1335,14 @@
         window.removeArea = (i) => { deliveryAreas.splice(i,1); renderDeliveryAreas(); };
 
         function renderDeliveryAreas() { 
-            document.getElementById('deliveryAreasList').innerHTML = deliveryAreas.map((a,i) => `
+            const list = document.getElementById('deliveryAreasList');
+            if(!list) return;
+            list.innerHTML = deliveryAreas.map((a,i) => `
                 <div class="flex justify-between items-center p-4 bg-white">
                     <span class="text-slate-700 font-medium text-sm">${a.name}</span>
                     <div class="flex items-center gap-4">
                         <b class="text-slate-900 text-sm">R$ ${a.fee.toFixed(2)}</b>
-                        <button onclick="removeArea(${i})" class="text-red-500 font-bold p-2 hover:bg-red-50 px-3 rounded-lg">×</button>
+                        <button type="button" onclick="removeArea(${i})" class="text-red-500 font-bold p-2 hover:bg-red-50 px-3 rounded-lg">×</button>
                     </div>
                 </div>`).join(''); 
         }
@@ -1347,13 +1350,18 @@
         window.saveStoreConfig = async (e) => {
             e.preventDefault();
             const btn = document.getElementById('btnSaveConfig');
+            if(!btn) return;
+            
             const originalText = btn.textContent;
             btn.disabled = true;
-            btn.textContent = "Salvando alterações...";
+            btn.textContent = "Gravando...";
 
             try {
+                if(!currentStoreId) throw new Error("Loja não identificada.");
+                
                 let logoUrl = storeConfig.logoUrl || ""; 
 
+                // Upload da logo apenas se houver imagem nova
                 if (currentLogoData && currentLogoData.startsWith('data:image')) {
                     const logoRef = ref(storage, `stores/${currentStoreId}/config/logo.jpg`);
                     await uploadString(logoRef, currentLogoData, 'data_url');
@@ -1377,7 +1385,7 @@
 
             } catch (err) {
                 console.error("Erro ao salvar:", err);
-                showToast("Erro ao salvar configurações.");
+                showToast("Erro ao salvar. Verifique se você está logado.");
             } finally {
                 btn.disabled = false;
                 btn.textContent = "Guardar Alterações";
@@ -1406,7 +1414,7 @@
                 document.getElementById('passError').classList.add('hidden'); 
             } catch(error) { 
                 console.error(error);
-                showToast("Erro: Saia e entre novamente."); 
+                showToast("Erro: Tente sair e entrar novamente para mudar a senha."); 
             } finally {
                 btn.disabled = false;
                 btn.textContent = "Atualizar Senha";
