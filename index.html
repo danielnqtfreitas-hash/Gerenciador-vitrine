@@ -762,89 +762,66 @@
             
             updateAnalyticsRange('day');
         };
-
         window.updateAnalyticsRange = async (range) => {
-            if (!analyticsChartInstance || !currentStoreId) return;
+    if (!analyticsChartInstance || !currentStoreId) return;
 
-            const loader = document.getElementById('chartLoading');
-            if (loader) loader.classList.remove('hidden');
+    const loader = document.getElementById('chartLoading');
+    if (loader) loader.classList.remove('hidden');
 
-            ['day', 'week', 'month'].forEach(r => {
-                const btn = document.getElementById(`range-${r}`);
-                if (btn) {
-                    btn.classList.toggle('active', r === range);
-                    btn.classList.toggle('inactive', r !== range);
-                }
+    ['day', 'week', 'month'].forEach(r => {
+        const btn = document.getElementById(`range-${r}`);
+        if (btn) {
+            btn.classList.toggle('active', r === range);
+            btn.classList.toggle('inactive', r !== range);
+        }
+    });
+
+    try {
+        let labels = [];
+        let values = [];
+        const now = new Date();
+
+        if (range === 'day') {
+            const year = now.getFullYear();
+            const month = String(now.getMonth() + 1).padStart(2, '0');
+            const day = String(now.getDate()).padStart(2, '0');
+            const todayId = `${year}-${month}-${day}`;
+
+            const docSnap = await getDoc(doc(db, `stores/${currentStoreId}/analytics_history`, todayId));
+            const hoursData = docSnap.exists() ? (docSnap.data().hours || {}) : {};
+
+            for (let h = 0; h <= now.getHours(); h++) {
+                labels.push(`${h}h`);
+                const valorHora = hoursData[h] || hoursData[h.toString()] || 0;
+                values.push(valorHora);
+            }
+        } else {
+            const daysToFetch = range === 'week' ? 7 : 30;
+            const q = query(collection(db, `stores/${currentStoreId}/analytics_history`), orderBy('date', 'desc'), limit(daysToFetch));
+            const snap = await getDocs(q);
+
+            const rawData = snap.docs.map(d => {
+                const data = d.data();
+                const dateObj = data.date?.toDate ? data.date.toDate() : new Date(data.date);
+                return { date: dateObj, visits: data.visits || 0 };
+            }).reverse();
+
+            rawData.forEach(item => {
+                labels.push(item.date.toLocaleDateString('pt-PT', { day: '2-digit', month: 'short' }));
+                values.push(item.visits);
             });
+        }
 
-            try {
-                let labels = [];
-                let values = [];
-                const now = new Date();
+        analyticsChartInstance.data.labels = labels;
+        analyticsChartInstance.data.datasets[0].data = values;
+        analyticsChartInstance.update();
 
-                if (range === 'day') {
-                    const year = now.getFullYear();
-                    const month = String(now.getMonth() + 1).padStart(2, '0');
-                    const day = String(now.getDate()).padStart(2, '0');
-                    const todayId = `${year}-${month}-${day}`;
-
-                    const docSnap = await getDoc(doc(db, `stores/${currentStoreId}/analytics_history`, todayId));
-                    const hoursData = docSnap.exists() ? (docSnap.data().hours || {}) : {};
-
-                    for (let h = 0; h <= now.getHours(); h++) {
-                        labels.push(`${h}h`);
-                        const valorHora = hoursData[h] || hoursData[h.toString()] || 0;
-                        values.push(valorHora);
-                    }
-                } else {
-                    const daysToFetch = range === 'week' ? 7 : 30;
-                    const q = query(collection(db, `stores/${currentStoreId}/analytics_history`), orderBy('date', 'desc'), limit(daysToFetch));
-                    const snap = await getDocs(q);
-
-                    const rawData = snap.docs.map(d => {
-                        const data = d.data();
-                        const dateObj = data.date?.toDate ? data.date.toDate() : new Date(data.date);
-                        return { date: dateObj, visits: data.visits || 0 };
-                    }).reverse();
-
-                    rawData.forEach(item => {
-                        labels.push(item.date.toLocaleDateString('pt-PT', { day: '2-digit', month: 'short' }));
-                        values.push(item.visits);
-                    });
-                }
-
-                analyticsChartInstance.data.labels = labels;
-                analyticsChartInstance.data.datasets[0].data = values;
-                analyticsChartInstance.update();
-
-            } catch (err) {
-                console.error("Erro no gráfico:", err);
-            } finally {
-                if (loader) loader.classList.add('hidden');
-            } 
-                        tension: 0.4,
-                        pointRadius: 4,
-                        pointHoverRadius: 6,
-                        pointHoverBackgroundColor: '#7c3aed',
-                        pointHoverBorderColor: '#fff',
-                        pointHoverBorderWidth: 3,
-                        pointBackgroundColor: '#fff'
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: { legend: { display: false } },
-                    scales: {
-                        x: { grid: { display: false }, ticks: { font: { size: 10, family: 'Inter' }, color: '#94a3b8' } },
-                        y: { beginAtZero: true, grid: { borderDash: [5, 5], color: '#f1f5f9' }, ticks: { font: { size: 10 }, color: '#94a3b8', stepSize: 1 } }
-                    },
-                    interaction: { intersect: false, mode: 'index' }
-                }
-            });
-            
-            updateAnalyticsRange('day');
-        };
+    } catch (err) {
+        console.error("Erro no gráfico:", err);
+    } finally {
+        if (loader) loader.classList.add('hidden');
+    }
+}; // Fechamento correto da função
 
         // --- INIT DATA ---
         onAuthStateChanged(auth, async (user) => {
