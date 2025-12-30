@@ -922,6 +922,7 @@ onSnapshot(doc(db, `stores/${currentStoreId}/config/store`), (d) => {
     const logoContMob = document.getElementById('sidebarLogoContainerMobile');
     const defaultIcon = document.getElementById('sidebarDefaultIcon');
 
+
     if (logoUrl) {
         logoImg.src = logoUrl;
         logoImgMob.src = logoUrl;
@@ -940,8 +941,8 @@ onSnapshot(doc(db, `stores/${currentStoreId}/config/store`), (d) => {
 
         defaultIcon.classList.remove('hidden');
     }
-});
-
+}); // 👈 FECHA onSnapshot
+}  // 👈 FECHA initStoreData
             // Visitas Totais
             onSnapshot(doc(db, `stores/${currentStoreId}/analytics/global`), docSnap => {
                 const dashVisitsElem = documenonSnapshot(doc(db, `stores/${currentStoreId}/config/store`), d => {
