@@ -748,7 +748,7 @@
     const loader = document.getElementById('chartLoading');
     if (loader) loader.classList.remove('hidden');
 
-    // Atualiza visualmente os botões de seleção
+    // Atualiza visualmente os botões
     ['day', 'week', 'month'].forEach(r => {
         const btn = document.getElementById(`range-${r}`);
         if (btn) {
@@ -763,7 +763,6 @@
         const now = new Date();
 
         if (range === 'day') {
-            // CORREÇÃO: Data local para evitar erro de fuso horário
             const year = now.getFullYear();
             const month = String(now.getMonth() + 1).padStart(2, '0');
             const day = String(now.getDate()).padStart(2, '0');
@@ -773,15 +772,12 @@
             const docSnap = await getDoc(docRef);
             const hoursData = docSnap.exists() ? (docSnap.data().hours || {}) : {};
 
-            // CORREÇÃO: Preenche todas as horas de 0 até à hora atual (Sobe e Desce)
             for (let h = 0; h <= now.getHours(); h++) {
                 labels.push(`${h}h`);
-                // Vai buscar o valor no mapa (ex: o 5 que viste na hora 21)
                 const valorHora = hoursData[h] || hoursData[h.toString()] || 0;
                 values.push(valorHora);
             }
         } else {
-            // Lógica para Semana/Mês (Permanece igual, apenas corrigida para carregar corretamente)
             const daysToFetch = range === 'week' ? 7 : 30;
             const historyRef = collection(db, `stores/${currentStoreId}/analytics_history`);
             const q = query(historyRef, orderBy('date', 'desc'), limit(daysToFetch));
@@ -799,17 +795,17 @@
             });
         }
 
-        // Atualiza o gráfico com os novos dados
         analyticsChartInstance.data.labels = labels;
         analyticsChartInstance.data.datasets[0].data = values;
         analyticsChartInstance.update();
 
     } catch (err) {
-        console.error("Erro ao carregar analytics:", err);
+        console.error("Erro no gráfico:", err);
     } finally {
         if (loader) loader.classList.add('hidden');
     }
-};              tension: 0.4,
+};
+                        tension: 0.4,
                         pointRadius: 4,
                         pointHoverRadius: 6,
                         pointHoverBackgroundColor: '#7c3aed',
