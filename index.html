@@ -105,6 +105,11 @@
             overflow: hidden;
             position: relative;
         }
+
+        /* Variações Matrix Table */
+        .variation-matrix-table { width: 100%; border-collapse: separate; border-spacing: 0 8px; }
+        .variation-matrix-table th { @apply text-[10px] uppercase font-black text-slate-400 px-4 py-2 text-left; }
+        .variation-matrix-table td { @apply bg-white border-y border-slate-100 px-4 py-3 text-sm first:rounded-l-xl first:border-l last:rounded-r-xl last:border-r; }
     </style>
 </head>
 <body class="text-slate-800 antialiased h-screen overflow-hidden flex bg-slate-50">
@@ -482,7 +487,7 @@
 
     <!-- MODAL PRODUTO -->
     <div id="productModal" class="modal-overlay fixed inset-0 z-[150] flex items-center justify-center p-4 hidden">
-        <div class="bg-white rounded-[2.5rem] shadow-2xl w-full max-w-3xl auth-card-container overflow-hidden">
+        <div class="bg-white rounded-[2.5rem] shadow-2xl w-full max-w-4xl auth-card-container overflow-hidden">
             <div class="bg-slate-900 p-6 flex items-center justify-between">
                 <div class="flex items-center gap-3"><div class="bg-primary-500/20 p-2 rounded-xl"><i data-lucide="package" class="w-6 h-6 text-primary-400"></i></div><h3 class="text-xl font-bold text-white" id="prodModalTitle">Novo Produto</h3></div>
                 <button onclick="document.getElementById('productModal').classList.add('hidden')" class="p-2 text-slate-400 hover:text-white transition-colors"><i data-lucide="x" class="w-6 h-6"></i></button>
@@ -536,32 +541,51 @@
                     </div>
 
                     <!-- VALORES E TAMANHOS / CORES -->
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
-                        <div class="space-y-5">
-                            <h4 class="text-[11px] font-black uppercase text-slate-400 tracking-widest border-b border-slate-100 pb-2">Precificação</h4>
-                            <div class="grid grid-cols-2 gap-4">
-                                <div class="space-y-1">
-                                    <label class="text-[10px] font-bold text-slate-500 uppercase ml-1">Preço Normal (R$)</label>
-                                    <input type="number" step="0.01" id="prodValue" required placeholder="0.00" class="input-pro bg-white">
+                    <div class="space-y-8">
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                            <div class="space-y-5">
+                                <h4 class="text-[11px] font-black uppercase text-slate-400 tracking-widest border-b border-slate-100 pb-2">Precificação Base</h4>
+                                <div class="grid grid-cols-2 gap-4">
+                                    <div class="space-y-1">
+                                        <label class="text-[10px] font-bold text-slate-500 uppercase ml-1">Preço Normal (R$)</label>
+                                        <input type="number" step="0.01" id="prodValue" required placeholder="0.00" class="input-pro bg-white">
+                                    </div>
+                                    <div class="space-y-1">
+                                        <label class="text-[10px] font-bold text-green-600 uppercase ml-1">Preço Promo (R$)</label>
+                                        <input type="number" step="0.01" id="prodPromo" placeholder="Opcional" class="input-pro bg-white">
+                                    </div>
                                 </div>
-                                <div class="space-y-1">
-                                    <label class="text-[10px] font-bold text-green-600 uppercase ml-1">Preço Promo (R$)</label>
-                                    <input type="number" step="0.01" id="prodPromo" placeholder="Opcional" class="input-pro bg-white">
+                            </div>
+                            <div class="space-y-5">
+                                <h4 class="text-[11px] font-black uppercase text-slate-400 tracking-widest border-b border-slate-100 pb-2">Gerador de Combinações</h4>
+                                <div class="grid grid-cols-1 gap-4">
+                                    <div class="space-y-1">
+                                        <label class="text-[10px] font-bold text-slate-500 uppercase ml-1">Tamanhos (Vírgula)</label>
+                                        <input type="text" id="prodSizesInput" oninput="generateVariationMatrix()" placeholder="P, M, G" class="input-pro bg-white">
+                                    </div>
+                                    <div class="space-y-1">
+                                        <label class="text-[10px] font-bold text-slate-500 uppercase ml-1">Cores (Vírgula)</label>
+                                        <input type="text" id="prodColorsInput" oninput="generateVariationMatrix()" placeholder="Azul, Branco, Preto" class="input-pro bg-white">
+                                    </div>
                                 </div>
                             </div>
                         </div>
-                        <div class="space-y-5">
-                            <h4 class="text-[11px] font-black uppercase text-slate-400 tracking-widest border-b border-slate-100 pb-2">Variações Disponíveis</h4>
-                            <div class="grid grid-cols-1 gap-4">
-                                <div class="space-y-1">
-                                    <label class="text-[10px] font-bold text-slate-500 uppercase ml-1">Tamanhos (Separe por vírgula)</label>
-                                    <input type="text" id="prodSizesInput" placeholder="Ex: P, M, G, 42" class="input-pro bg-white">
-                                </div>
-                                <div class="space-y-1">
-                                    <label class="text-[10px] font-bold text-slate-500 uppercase ml-1">Cores (Separe por vírgula)</label>
-                                    <input type="text" id="prodColorsInput" placeholder="Ex: Azul, Branco, Preto" class="input-pro bg-white">
-                                    <p class="text-[9px] text-slate-400 italic mt-1">Digite as cores e separe com uma vírgula.</p>
-                                </div>
+
+                        <!-- MATRIZ DE VARIAÇÕES (SHOPEE STYLE) -->
+                        <div id="variationMatrixContainer" class="hidden animate-fade-in">
+                            <h4 class="text-[11px] font-black uppercase text-slate-400 tracking-widest border-b border-slate-100 pb-2 mb-4">Matriz de Variações</h4>
+                            <div class="overflow-x-auto">
+                                <table class="variation-matrix-table">
+                                    <thead>
+                                        <tr>
+                                            <th>Ativo</th>
+                                            <th>Cor</th>
+                                            <th>Tamanho</th>
+                                            <th>Preço Individual (R$)</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="variationMatrixBody"></tbody>
+                                </table>
                             </div>
                         </div>
                     </div>
@@ -641,6 +665,9 @@
         // Cropper state
         let cropper = null;
 
+        // Estado da Matriz de Variações
+        let variationsMatrix = [];
+
         const PLAN_DISPLAY_NAMES = {
             'basic': 'Plano Gratuito',
             'pro': 'Plano Business',
@@ -657,13 +684,86 @@
             return planId; 
         }
 
-        // --- NOVO SISTEMA DE RECORTE ---
+        // --- SISTEMA DE MATRIZ DE VARIAÇÕES (ESTILO SHOPEE) ---
+        window.generateVariationMatrix = () => {
+            const sizesInput = document.getElementById('prodSizesInput').value;
+            const colorsInput = document.getElementById('prodColorsInput').value;
+            const basePrice = document.getElementById('prodValue').value || 0;
+            
+            const sizes = sizesInput.split(',').map(s => s.trim().toUpperCase()).filter(s => s !== '');
+            const colors = colorsInput.split(',').map(c => c.trim()).filter(c => c !== '');
+            
+            const container = document.getElementById('variationMatrixContainer');
+            const tbody = document.getElementById('variationMatrixBody');
+            
+            if (sizes.length === 0 && colors.length === 0) {
+                container.classList.add('hidden');
+                variationsMatrix = [];
+                return;
+            }
+            
+            container.classList.remove('hidden');
+            
+            // Mantemos os preços de variações que já existem para não perder dados ao editar
+            const oldMatrix = [...variationsMatrix];
+            const newMatrix = [];
+            
+            // Se houver apenas tamanhos ou apenas cores, ou ambos
+            const loopColors = colors.length > 0 ? colors : ['--'];
+            const loopSizes = sizes.length > 0 ? sizes : ['--'];
+            
+            loopColors.forEach(color => {
+                loopSizes.forEach(size => {
+                    const existing = oldMatrix.find(v => v.color === color && v.size === size);
+                    newMatrix.push({
+                        active: existing ? existing.active : true,
+                        color: color,
+                        size: size,
+                        price: existing ? existing.price : basePrice
+                    });
+                });
+            });
+            
+            variationsMatrix = newMatrix;
+            renderMatrixUI();
+        };
+
+        function renderMatrixUI() {
+            const tbody = document.getElementById('variationMatrixBody');
+            tbody.innerHTML = '';
+            
+            variationsMatrix.forEach((v, idx) => {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td>
+                        <label class="toggle-switch">
+                            <input type="checkbox" ${v.active ? 'checked' : ''} onchange="updateVariationStatus(${idx}, this.checked)">
+                            <span class="slider"></span>
+                        </label>
+                    </td>
+                    <td class="font-bold text-slate-800">${v.color}</td>
+                    <td class="font-bold text-slate-800">${v.size}</td>
+                    <td>
+                        <div class="relative">
+                            <span class="absolute left-3 top-3.5 text-xs text-slate-400 font-bold">R$</span>
+                            <input type="number" step="0.01" value="${v.price}" oninput="updateVariationPrice(${idx}, this.value)" 
+                                   class="w-full border border-slate-200 rounded-lg p-3 pl-10 outline-none focus:ring-1 focus:ring-primary-500 bg-white text-xs font-bold transition-all">
+                        </div>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        window.updateVariationStatus = (idx, checked) => { variationsMatrix[idx].active = checked; };
+        window.updateVariationPrice = (idx, value) => { variationsMatrix[idx].price = parseFloat(value) || 0; };
+
+        // --- SISTEMA DE RECORTE ---
         window.processImages = (files) => {
             if (!files || files.length === 0) return;
             const maxPhotos = storeConfig.hasCarousel ? 4 : 1;
             if (currentProductImages.length + files.length > maxPhotos) { showToast(`Limite: ${maxPhotos} foto(s).`); return; }
             
-            // Abrimos a primeira imagem no cropper (ou processamos uma por uma)
             const file = files[0];
             const reader = new FileReader();
             reader.onload = (e) => {
@@ -680,7 +780,6 @@
 
             if (cropper) cropper.destroy();
 
-            // Iniciamos o Cropper.js com aspecto 1:1 (quadrado) ideal para produtos
             cropper = new Cropper(img, {
                 aspectRatio: 1,
                 viewMode: 2,
@@ -702,25 +801,20 @@
         window.closeCropModal = () => {
             document.getElementById('cropModal').classList.add('hidden');
             if (cropper) cropper.destroy();
-            // Limpa o input para permitir selecionar a mesma imagem se desejar
             document.getElementById('prodImageInput').value = '';
             document.getElementById('cameraCaptureInput').value = '';
         };
 
         window.confirmCrop = () => {
             if (!cropper) return;
-            
-            // Exporta o canvas com compressão de alta qualidade
             const canvas = cropper.getCroppedCanvas({
                 width: 800,
                 height: 800,
                 imageSmoothingEnabled: true,
                 imageSmoothingQuality: 'high',
             });
-
             const croppedDataUrl = canvas.toDataURL('image/jpeg', 0.8);
             currentProductImages.push(croppedDataUrl);
-            
             renderImagePreviews();
             closeCropModal();
         };
@@ -857,9 +951,7 @@
             const gradient = ctx.createLinearGradient(0, 0, 0, 250);
             gradient.addColorStop(0, 'rgba(124, 58, 237, 0.2)');
             gradient.addColorStop(1, 'rgba(124, 58, 237, 0.0)');
-
             if (analyticsChartInstance) analyticsChartInstance.destroy();
-
             analyticsChartInstance = new Chart(ctx, {
                 type: 'line',
                 data: {
@@ -886,16 +978,13 @@
                     }
                 }
             });
-            
             updateAnalyticsRange('day');
         };
 
         window.updateAnalyticsRange = async (range) => {
             if (!analyticsChartInstance || !currentStoreId) return;
-
             const loader = document.getElementById('chartLoading');
             if (loader) loader.classList.remove('hidden');
-
             ['day', 'week', 'month'].forEach(r => {
                 const btn = document.getElementById(`range-${r}`);
                 if (btn) {
@@ -903,21 +992,17 @@
                     btn.classList.toggle('inactive', r !== range);
                 }
             });
-
             try {
                 let labels = [];
                 let values = [];
                 const now = new Date();
-
                 if (range === 'day') {
                     const year = now.getFullYear();
                     const month = String(now.getMonth() + 1).padStart(2, '0');
                     const day = String(now.getDate()).padStart(2, '0');
                     const todayId = `${year}-${month}-${day}`;
-
                     const docSnap = await getDoc(doc(db, `stores/${currentStoreId}/analytics_history`, todayId));
                     const hoursData = docSnap.exists() ? (docSnap.data().hours || {}) : {};
-
                     for (let h = 0; h <= now.getHours(); h++) {
                         labels.push(`${h}h`);
                         const valorHora = hoursData[h] || hoursData[h.toString()] || 0;
@@ -927,23 +1012,19 @@
                     const daysToFetch = range === 'week' ? 7 : 30;
                     const q = query(collection(db, `stores/${currentStoreId}/analytics_history`), orderBy('date', 'desc'), limit(daysToFetch));
                     const snap = await getDocs(q);
-
                     const rawData = snap.docs.map(d => {
                         const data = d.data();
                         const dateObj = data.date?.toDate ? data.date.toDate() : new Date(data.date);
                         return { date: dateObj, visits: data.visits || 0 };
                     }).reverse();
-
                     rawData.forEach(item => {
                         labels.push(item.date.toLocaleDateString('pt-PT', { day: '2-digit', month: 'short' }));
                         values.push(item.visits);
                     });
                 }
-
                 analyticsChartInstance.data.labels = labels;
                 analyticsChartInstance.data.datasets[0].data = values;
                 analyticsChartInstance.update();
-
             } catch (err) {
                 console.error("Erro no gráfico:", err);
             } finally {
@@ -973,22 +1054,16 @@
             const url = `https://danielnqtfreitas-hash.github.io/Vitrine/?id=${currentStoreId}`;
             document.getElementById('urlDisplay').textContent = url;
             document.getElementById('storeMenuBtn').classList.remove('opacity-50', 'pointer-events-none');
-            
-            // Listener da Configuração
             onSnapshot(doc(db, `stores/${currentStoreId}/config/store`), d => {
                 if(d.exists()) {
                     const data = d.data();
-
                     document.getElementById('sidebarStoreName').textContent = data.storeName;
                     document.getElementById('sidebarStoreNameMobile').textContent = data.storeName;
-
                     if (data.logoUrl) {
                         const logoDesktop = document.getElementById('sidebarStoreLogo');
                         const logoMobile = document.getElementById('sidebarStoreLogoMobile');
-
                         logoDesktop.src = data.logoUrl;
                         logoDesktop.classList.remove('hidden');
-
                         logoMobile.src = data.logoUrl;
                         logoMobile.classList.remove('hidden');
                     }
@@ -1005,14 +1080,12 @@
                     renderDeliveryAreas();
                 }
             });
-
             onSnapshot(doc(db, `stores/${currentStoreId}/analytics/global`), docSnap => {
                 const dashVisitsElem = document.getElementById('dash-total-visits');
                 if (dashVisitsElem && docSnap.exists()) {
                     dashVisitsElem.innerText = docSnap.data().totalVisits || 0;
                 }
             });
-
             onSnapshot(collection(db, `stores/${currentStoreId}/products`), s => {
                 allProducts = s.docs.map(d => ({id: d.id, ...d.data()}));
                 document.getElementById('dash-total-products').textContent = allProducts.length;
@@ -1080,6 +1153,13 @@
                 document.getElementById('prodSizesInput').value = p.sizes ? p.sizes.join(', ') : '';
                 document.getElementById('prodColorsInput').value = p.colors ? p.colors.join(', ') : '';
                 currentProductImages = p.images ? [...p.images] : [];
+                variationsMatrix = p.variations || [];
+                if (variationsMatrix.length > 0) {
+                    document.getElementById('variationMatrixContainer').classList.remove('hidden');
+                    renderMatrixUI();
+                } else {
+                    document.getElementById('variationMatrixContainer').classList.add('hidden');
+                }
             } else {
                 document.getElementById('prodModalTitle').textContent = "Adicionar Novo Produto";
                 document.getElementById('productForm').reset(); 
@@ -1087,6 +1167,8 @@
                 document.getElementById('prodSizesInput').value = '';
                 document.getElementById('prodColorsInput').value = '';
                 currentProductImages = []; 
+                variationsMatrix = [];
+                document.getElementById('variationMatrixContainer').classList.add('hidden');
             }
             renderImagePreviews();
             document.getElementById('productModal').classList.remove('hidden');
@@ -1117,6 +1199,10 @@
                 const colorsRaw = document.getElementById('prodColorsInput').value;
                 const sizesArray = sizesRaw ? sizesRaw.split(',').map(s => s.trim().toUpperCase()).filter(s => s !== '') : [];
                 const colorsArray = colorsRaw ? colorsRaw.split(',').map(c => c.trim()).filter(c => c !== '') : [];
+                
+                // Filtramos a matriz para salvar apenas variações ativas e válidas
+                const variationsToSave = variationsMatrix.filter(v => v.active);
+                
                 const data = { 
                     name: document.getElementById('prodName').value, 
                     category: document.getElementById('prodCategory').value, 
@@ -1127,6 +1213,7 @@
                     isFeatured: document.getElementById('prodFeatured').checked, 
                     sizes: sizesArray,
                     colors: colorsArray,
+                    variations: variationsToSave,
                     status: id ? allProducts.find(p => p.id === id).status || 'active' : 'active' 
                 };
                 if(id) { await updateDoc(doc(db, `stores/${currentStoreId}/products`, id), data); } 
@@ -1222,10 +1309,14 @@
                     <div class="category-content border-t border-slate-50 p-4 space-y-3">
                         ${products.length > 0 ? products.map(p => {
                             const isPaused = p.status === 'paused';
+                            const hasVariations = p.variations && p.variations.length > 0;
                             return `<div class="flex items-center gap-4 p-3 rounded-2xl border border-slate-100 hover:border-primary-100 transition-all ${isPaused ? 'opacity-60 bg-slate-50' : ''}">
                                 <img src="${p.images?.[0]||''}" class="w-14 h-14 rounded-xl object-cover border">
                                 <div class="flex-1 min-w-0">
-                                    <p class="font-bold text-slate-800 text-sm truncate">${p.name}</p>
+                                    <div class="flex items-center gap-2">
+                                        <p class="font-bold text-slate-800 text-sm truncate">${p.name}</p>
+                                        ${hasVariations ? '<span class="text-[8px] font-black uppercase bg-primary-100 text-primary-600 px-1.5 py-0.5 rounded">Variável</span>' : ''}
+                                    </div>
                                     <p class="text-[10px] font-bold text-slate-900 mt-0.5">R$ ${p.value.toFixed(2)} ${p.promoValue ? `<span class="text-green-600 ml-2">Promo: R$ ${p.promoValue.toFixed(2)}</span>` : ''}</p>
                                 </div>
                                 <div class="flex gap-1 flex-shrink-0">
@@ -1451,16 +1542,12 @@
             if(e) e.preventDefault();
             const btn = document.getElementById('btnSaveConfig');
             if(!btn) return;
-            
             const originalText = btn.textContent;
             btn.disabled = true;
             btn.textContent = "Gravando...";
-
             try {
                 if(!currentStoreId) throw new Error("ID da loja não identificado.");
-                
                 let logoUrl = storeConfig.logoUrl || ""; 
-
                 if (currentLogoData && currentLogoData.startsWith('data:image')) {
                     try {
                         const logoRef = ref(storage, `stores/${currentStoreId}/config/logo.jpg`);
@@ -1471,17 +1558,14 @@
                         showToast("Aviso: Erro ao salvar foto no Storage.");
                     }
                 }
-
                 const storeName = document.getElementById('confStoreName').value.trim();
                 const whatsappNumber = document.getElementById('confWhatsapp').value.trim();
-
                 if(!storeName) {
                     showToast("O nome da loja é obrigatório.");
                     btn.disabled = false;
                     btn.textContent = originalText;
                     return;
                 }
-
                 const data = { 
                     storeName: storeName, 
                     whatsappNumber: whatsappNumber, 
@@ -1491,14 +1575,11 @@
                     logoUrl: logoUrl,
                     lastUpdate: Date.now()
                 };
-
                 const docRef = doc(db, "stores", currentStoreId, "config", "store");
                 await setDoc(docRef, data, { merge: true });
-                
                 storeConfig.logoUrl = logoUrl;
                 currentLogoData = null;
                 showToast("Configurações guardadas com sucesso! ✅");
-
             } catch (err) {
                 console.error("Erro crítico ao salvar:", err);
                 showToast("Erro de permissão ou conexão.");
@@ -1513,15 +1594,12 @@
             const n = document.getElementById('newPass').value; 
             const c = document.getElementById('confirmNewPass').value; 
             const btn = document.getElementById('btnUpdatePass');
-
             if(n !== c){
                 document.getElementById('passError').classList.remove('hidden'); 
                 return;
             } 
-
             btn.disabled = true;
             btn.textContent = "Atualizando...";
-
             try { 
                 await updatePassword(auth.currentUser, n); 
                 showToast("Senha alterada com sucesso! 🛡️"); 
