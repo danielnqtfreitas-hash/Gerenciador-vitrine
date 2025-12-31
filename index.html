@@ -201,7 +201,20 @@
     <div id="mobileOverlay" onclick="toggleMobileSidebar()" class="fixed inset-0 bg-black/60 z-[140] hidden md:hidden backdrop-blur-sm"></div>
     <aside id="mobileSidebar" class="fixed inset-y-0 left-0 w-72 bg-white z-[150] shadow-2xl flex flex-col md:hidden sidebar-hidden">
         <div class="h-16 flex items-center px-6 border-b justify-between">
-            <span class="text-lg font-bold text-slate-800 truncate" id="sidebarStoreNameMobile">Menu</span>
+            <div class="flex items-center gap-3 truncate">
+    <img
+        id="sidebarStoreLogoMobile"
+        src=""
+        class="w-8 h-8 rounded-full object-cover border border-slate-200 hidden"
+        alt="Logo da loja"
+    >
+    <span
+        class="text-lg font-bold text-slate-800 truncate"
+        id="sidebarStoreNameMobile"
+    >
+        Menu
+    </span>
+</div>
             <button onclick="toggleMobileSidebar()"><i data-lucide="x" class="w-6 h-6 text-slate-400"></i></button>
         </div>
         <nav class="flex-1 overflow-y-auto py-4">
@@ -218,7 +231,19 @@
 
     <aside class="hidden md:flex flex-col w-64 bg-white border-r border-slate-200 h-full shadow-lg z-10 relative">
         <div class="h-16 flex items-center px-6 border-b border-primary-600/10 justify-between">
-            <span class="text-lg font-bold text-slate-800 truncate" id="sidebarStoreName">Carregando...</span>
+            <div class="flex items-center gap-3 truncate">
+    <img
+        id="sidebarStoreLogo"
+        src=""
+        class="w-9 h-9 rounded-full object-cover border border-slate-200 hidden"
+        alt="Logo da loja"
+    >
+    <span
+        class="text-lg font-bold text-slate-800 truncate"
+        id="sidebarStoreName"
+    >
+        Carregando...
+    </span>
         </div>
         <nav class="flex-1 overflow-y-auto py-6 space-y-1">
             <button id="nav-dashboard" onclick="changeTab('dashboard')" class="sidebar-link w-full flex items-center px-6 py-3 text-sm font-medium text-slate-600 active"><i data-lucide="bar-chart-2" class="w-5 h-5 mr-3"></i> Dashboard</button>
@@ -885,6 +910,22 @@
             onSnapshot(doc(db, `stores/${currentStoreId}/config/store`), d => {
                 if(d.exists()) {
                     const data = d.data();
+
+                    // Nome da loja
+document.getElementById('sidebarStoreName').textContent = data.storeName;
+document.getElementById('sidebarStoreNameMobile').textContent = data.storeName;
+
+// Logo da loja (redondinha estilo rede social)
+if (data.logoUrl) {
+    const logoDesktop = document.getElementById('sidebarStoreLogo');
+    const logoMobile = document.getElementById('sidebarStoreLogoMobile');
+
+    logoDesktop.src = data.logoUrl;
+    logoDesktop.classList.remove('hidden');
+
+    logoMobile.src = data.logoUrl;
+    logoMobile.classList.remove('hidden');
+}
                     if(data.subscriptionStatus === 'suspended') document.getElementById('suspended-screen').classList.remove('hidden');
                     storeConfig = { planId: data.planId || 'Básico', maxProducts: data.maxProducts || 50, maxBanners: data.maxBanners || 1, hasCarousel: data.hasCarousel ?? false };
                     updateUIByPlan();
