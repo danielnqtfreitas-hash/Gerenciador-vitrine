@@ -616,6 +616,7 @@
         let cachedPublicPlans = null;
         let expandedCategories = new Set();
         let analyticsChartInstance = null; 
+        let analyticsUnsubscribe = null; // Variável para desligar a escuta anterior
         let cropper = null;
         let variationsMatrix = [];
 
@@ -883,6 +884,13 @@
 
         window.updateAnalyticsRange = async (range) => {
     if (!analyticsChartInstance || !currentStoreId) return;
+    
+    // 1. Desliga qualquer escuta ativa antes de começar uma nova
+    if (analyticsUnsubscribe) {
+        analyticsUnsubscribe();
+        analyticsUnsubscribe = null;
+    }
+
     const loader = document.getElementById('chartLoading');
     if (loader) loader.classList.remove('hidden');
     
@@ -892,31 +900,41 @@
     });
 
     try {
-        let labels = [], values = [];
         const now = new Date();
 
         if (range === 'day') {
-            // Formata a data igual à vitrine: YYYY-MM-DD
+            // MODO REAL-TIME (HOJE)
             const todayId = now.toISOString().split('T')[0];
-            const docSnap = await getDoc(doc(db, `stores/${currentStoreId}/analytics_history`, todayId));
-            
-            const hoursData = docSnap.exists() ? (docSnap.data().hours || {}) : {};
-            
-            // Preenche as 24h do dia
-            for (let h = 0; h < 24; h++) {
-                labels.push(`${h}h`);
-                // Garante que lê tanto número quanto string como chave
-                values.push(hoursData[h] || hoursData[h.toString()] || 0);
-            }
+            const docRef = doc(db, `stores/${currentStoreId}/analytics_history`, todayId);
+
+            analyticsUnsubscribe = onSnapshot(docRef, (docSnap) => {
+                let labels = [], values = [];
+                const hoursData = docSnap.exists() ? (docSnap.data().hours || {}) : {};
+                
+                // Preenche as 24h do dia
+                for (let h = 0; h < 24; h++) {
+                    labels.push(`${h}h`);
+                    const totalHora = hoursData[h] || hoursData[h.toString()] || 0;
+                    values.push(totalHora);
+                }
+
+                analyticsChartInstance.data.labels = labels;
+                analyticsChartInstance.data.datasets[0].data = values;
+                analyticsChartInstance.update();
+                if (loader) loader.classList.add('hidden');
+            });
+
         } else {
-            // Busca histórico dos últimos dias
+            // MODO HISTÓRICO (SEMANA/MÊS)
             const q = query(
                 collection(db, `stores/${currentStoreId}/analytics_history`), 
                 orderBy('date', 'desc'), 
                 limit(range === 'week' ? 7 : 30)
             );
+            
             const snap = await getDocs(q);
-            const docs = snap.docs.reverse(); // Coloca em ordem cronológica
+            let labels = [], values = [];
+            const docs = snap.docs.reverse(); 
             
             docs.forEach(d => {
                 const item = d.data();
@@ -924,19 +942,19 @@
                 labels.push(dateObj.toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' }));
                 values.push(item.visits || 0);
             });
+
+            analyticsChartInstance.data.labels = labels;
+            analyticsChartInstance.data.datasets[0].data = values;
+            analyticsChartInstance.update();
+            if (loader) loader.classList.add('hidden');
         }
 
-        analyticsChartInstance.data.labels = labels;
-        analyticsChartInstance.data.datasets[0].data = values;
-        analyticsChartInstance.update();
-
     } catch (err) {
-        console.error("Erro ao carregar gráfico:", err);
-    } finally { 
-        if (loader) loader.classList.add('hidden'); 
+        console.error("Erro no gráfico:", err);
+        if (loader) loader.classList.add('hidden');
     }
 };
-
+        
         // --- INIT DATA ---
         onAuthStateChanged(auth, async (user) => {
             fetchPublicPlansEagerly();
