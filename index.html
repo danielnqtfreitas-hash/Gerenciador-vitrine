@@ -906,23 +906,32 @@
             const todayId = now.toLocaleDateString('en-CA'); 
             const docRef = doc(db, `stores/${currentStoreId}/analytics_history`, todayId);
 
-            analyticsUnsubscribe = onSnapshot(docRef, (docSnap) => {
-                let labels = [], values = [];
-                const hoursData = docSnap.exists() ? (docSnap.data().hours || {}) : {};
-                
-                // Preenche as 24h para criar o desenho da linha
-                for (let h = 0; h < 24; h++) {
-                    labels.push(`${h}h`);
-                    // Tenta ler a hora como número, string ou string com zero (ex: "09")
-                    const totalHora = hoursData[h] || hoursData[h.toString()] || hoursData[String(h).padStart(2, '0')] || 0;
-                    values.push(totalHora);
-                }
+            // --- DEPOIS (O QUE SALVAR) ---
+analyticsUnsubscribe = onSnapshot(docRef, (docSnap) => {
+    let labels = [], values = [];
+    
+    // Pegamos todos os dados do documento
+    const allData = docSnap.exists() ? docSnap.data() : {};
+    // Verificamos se existe um objeto de horas ou se os campos estão na raiz
+    const hoursObj = allData.hours || {};
 
-                analyticsChartInstance.data.labels = labels;
-                analyticsChartInstance.data.datasets[0].data = values;
-                analyticsChartInstance.update();
-                if (loader) loader.classList.add('hidden');
-            });
+    for (let h = 0; h < 24; h++) {
+        labels.push(`${h}h`);
+        
+        // Tenta ler de todas as formas que o Firebase pode ter salvado:
+        const totalHora = hoursObj[h] ||               // Tenta como objeto: hours: { 13: 1 }
+                          hoursObj[h.toString()] ||    // Tenta como objeto string: hours: { "13": 1 }
+                          allData[`hours.${h}`] ||     // Tenta como campo direto: hours.13: 1 (O SEU CASO)
+                          0;                           // Se não achar nada, coloca zero
+                          
+        values.push(totalHora);
+    }
+
+    analyticsChartInstance.data.labels = labels;
+    analyticsChartInstance.data.datasets[0].data = values;
+    analyticsChartInstance.update();
+    if (loader) loader.classList.add('hidden');
+});
 
         } else {
             // MODO HISTÓRICO
