@@ -882,39 +882,60 @@
         };
 
         window.updateAnalyticsRange = async (range) => {
-            if (!analyticsChartInstance || !currentStoreId) return;
-            const loader = document.getElementById('chartLoading');
-            if (loader) loader.classList.remove('hidden');
-            ['day', 'week', 'month'].forEach(r => {
-                const btn = document.getElementById(`range-${r}`);
-                if (btn) { btn.classList.toggle('active', r === range); btn.classList.toggle('inactive', r !== range); }
+    if (!analyticsChartInstance || !currentStoreId) return;
+    const loader = document.getElementById('chartLoading');
+    if (loader) loader.classList.remove('hidden');
+    
+    ['day', 'week', 'month'].forEach(r => {
+        const btn = document.getElementById(`range-${r}`);
+        if (btn) { btn.classList.toggle('active', r === range); btn.classList.toggle('inactive', r !== range); }
+    });
+
+    try {
+        let labels = [], values = [];
+        const now = new Date();
+
+        if (range === 'day') {
+            // Formata a data igual à vitrine: YYYY-MM-DD
+            const todayId = now.toISOString().split('T')[0];
+            const docSnap = await getDoc(doc(db, `stores/${currentStoreId}/analytics_history`, todayId));
+            
+            const hoursData = docSnap.exists() ? (docSnap.data().hours || {}) : {};
+            
+            // Preenche as 24h do dia
+            for (let h = 0; h < 24; h++) {
+                labels.push(`${h}h`);
+                // Garante que lê tanto número quanto string como chave
+                values.push(hoursData[h] || hoursData[h.toString()] || 0);
+            }
+        } else {
+            // Busca histórico dos últimos dias
+            const q = query(
+                collection(db, `stores/${currentStoreId}/analytics_history`), 
+                orderBy('date', 'desc'), 
+                limit(range === 'week' ? 7 : 30)
+            );
+            const snap = await getDocs(q);
+            const docs = snap.docs.reverse(); // Coloca em ordem cronológica
+            
+            docs.forEach(d => {
+                const item = d.data();
+                const dateObj = item.date?.toDate ? item.date.toDate() : new Date(item.date);
+                labels.push(dateObj.toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' }));
+                values.push(item.visits || 0);
             });
-            try {
-                let labels = [], values = [];
-                const now = new Date();
-                if (range === 'day') {
-                    const todayId = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
-                    const docSnap = await getDoc(doc(db, `stores/${currentStoreId}/analytics_history`, todayId));
-                    const hoursData = docSnap.exists() ? (docSnap.data().hours || {}) : {};
-                    for (let h = 0; h <= now.getHours(); h++) {
-                        labels.push(`${h}h`);
-                        values.push(hoursData[h] || hoursData[h.toString()] || 0);
-                    }
-                } else {
-                    const q = query(collection(db, `stores/${currentStoreId}/analytics_history`), orderBy('date', 'desc'), limit(range === 'week' ? 7 : 30));
-                    const snap = await getDocs(q);
-                    snap.docs.reverse().forEach(d => {
-                        const item = d.data();
-                        const dateObj = item.date?.toDate ? item.date.toDate() : new Date(item.date);
-                        labels.push(dateObj.toLocaleDateString('pt-PT', { day: '2-digit', month: 'short' }));
-                        values.push(item.visits || 0);
-                    });
-                }
-                analyticsChartInstance.data.labels = labels;
-                analyticsChartInstance.data.datasets[0].data = values;
-                analyticsChartInstance.update();
-            } catch (err) {} finally { if (loader) loader.classList.add('hidden'); }
-        };
+        }
+
+        analyticsChartInstance.data.labels = labels;
+        analyticsChartInstance.data.datasets[0].data = values;
+        analyticsChartInstance.update();
+
+    } catch (err) {
+        console.error("Erro ao carregar gráfico:", err);
+    } finally { 
+        if (loader) loader.classList.add('hidden'); 
+    }
+};
 
         // --- INIT DATA ---
         onAuthStateChanged(auth, async (user) => {
@@ -933,46 +954,61 @@
         });
 
         function initStoreData() {
-            const url = `https://danielnqtfreitas-hash.github.io/Vitrine/?id=${currentStoreId}`;
-            document.getElementById('urlDisplay').textContent = url;
-            document.getElementById('storeMenuBtn').classList.remove('opacity-50', 'pointer-events-none');
-            onSnapshot(doc(db, `stores/${currentStoreId}/config/store`), d => {
-                if(d.exists()) {
-                    const data = d.data();
-                    document.getElementById('sidebarStoreName').textContent = data.storeName;
-                    document.getElementById('sidebarStoreNameMobile').textContent = data.storeName;
-                    if (data.logoUrl) {
-                        const lD = document.getElementById('sidebarStoreLogo'); const lM = document.getElementById('sidebarStoreLogoMobile');
-                        lD.src = lM.src = data.logoUrl; lD.classList.remove('hidden'); lM.classList.remove('hidden');
-                    }
-                    if(data.subscriptionStatus === 'suspended') document.getElementById('suspended-screen').classList.remove('hidden');
-                    storeConfig = { planId: data.planId || 'Básico', maxProducts: data.maxProducts || 50, maxBanners: data.maxBanners || 1, hasCarousel: data.hasCarousel ?? false };
-                    updateUIByPlan();
-                    document.getElementById('confStoreName').value = data.storeName || '';
-                    document.getElementById('confWhatsapp').value = data.whatsappNumber || '';
-                    document.getElementById('confFooter').value = data.footerText || '';
-                    document.getElementById('confColorPrimary').value = data.primaryColor || '#8b5cf6';
-                    document.getElementById('dashboardStoreToggle').checked = data.isStoreOpen !== false;
-                    document.getElementById('statusLabel').textContent = (data.isStoreOpen !== false) ? 'Aberto' : 'Fechado';
-                    deliveryAreas = data.deliveryAreas || []; renderDeliveryAreas();
-                }
-            });
-            onSnapshot(collection(db, `stores/${currentStoreId}/products`), s => {
-                allProducts = s.docs.map(d => ({id: d.id, ...d.data()}));
-                document.getElementById('dash-total-products').textContent = allProducts.length;
-                renderProductList(); updateQuotas();
-            });
-            onSnapshot(collection(db, `stores/${currentStoreId}/hero_cards`), s => {
-                allBanners = s.docs.map(d => ({id: d.id, ...d.data()}));
-                document.getElementById('dash-total-banners').textContent = allBanners.length;
-                renderBannerList(); updateQuotas();
-            });
-            onSnapshot(collection(db, `stores/${currentStoreId}/categories`), s => {
-                allCategories = s.docs.map(d => ({id: d.id, ...d.data()}));
-                document.getElementById('dash-total-cats').textContent = allCategories.length;
-                renderProductList(); renderCategoryList();
-            });
+    const url = `https://danielnqtfreitas-hash.github.io/Vitrine/?id=${currentStoreId}`;
+    document.getElementById('urlDisplay').textContent = url;
+    document.getElementById('storeMenuBtn').classList.remove('opacity-50', 'pointer-events-none');
+
+    // LISTENER: Configurações da Loja
+    onSnapshot(doc(db, `stores/${currentStoreId}/config/store`), d => {
+        if(d.exists()) {
+            const data = d.data();
+            document.getElementById('sidebarStoreName').textContent = data.storeName;
+            document.getElementById('sidebarStoreNameMobile').textContent = data.storeName;
+            if (data.logoUrl) {
+                const lD = document.getElementById('sidebarStoreLogo'); const lM = document.getElementById('sidebarStoreLogoMobile');
+                lD.src = lM.src = data.logoUrl; lD.classList.remove('hidden'); lM.classList.remove('hidden');
+            }
+            if(data.subscriptionStatus === 'suspended') document.getElementById('suspended-screen').classList.remove('hidden');
+            storeConfig = { planId: data.planId || 'Básico', maxProducts: data.maxProducts || 50, maxBanners: data.maxBanners || 1, hasCarousel: data.hasCarousel ?? false };
+            updateUIByPlan();
+            document.getElementById('confStoreName').value = data.storeName || '';
+            document.getElementById('confWhatsapp').value = data.whatsappNumber || '';
+            document.getElementById('confFooter').value = data.footerText || '';
+            document.getElementById('confColorPrimary').value = data.primaryColor || '#8b5cf6';
+            document.getElementById('dashboardStoreToggle').checked = data.isStoreOpen !== false;
+            document.getElementById('statusLabel').textContent = (data.isStoreOpen !== false) ? 'Aberto' : 'Fechado';
+            deliveryAreas = data.deliveryAreas || []; renderDeliveryAreas();
         }
+    });
+
+    // --- NOVA PARTE: LISTENER DE ANALYTICS GLOBAL ---
+    onSnapshot(doc(db, `stores/${currentStoreId}/analytics/global`), d => {
+        if(d.exists()) {
+            document.getElementById('dash-total-visits').textContent = d.data().totalVisits || 0;
+        }
+    });
+
+    // LISTENER: Produtos
+    onSnapshot(collection(db, `stores/${currentStoreId}/products`), s => {
+        allProducts = s.docs.map(d => ({id: d.id, ...d.data()}));
+        document.getElementById('dash-total-products').textContent = allProducts.length;
+        renderProductList(); updateQuotas();
+    });
+
+    // LISTENER: Banners
+    onSnapshot(collection(db, `stores/${currentStoreId}/hero_cards`), s => {
+        allBanners = s.docs.map(d => ({id: d.id, ...d.data()}));
+        document.getElementById('dash-total-banners').textContent = allBanners.length;
+        renderBannerList(); updateQuotas();
+    });
+
+    // LISTENER: Categorias
+    onSnapshot(collection(db, `stores/${currentStoreId}/categories`), s => {
+        allCategories = s.docs.map(d => ({id: d.id, ...d.data()}));
+        document.getElementById('dash-total-cats').textContent = allCategories.length;
+        renderProductList(); renderCategoryList();
+    });
+}
 
         function updateUIByPlan() {
             const friendlyName = getFriendlyPlanName(storeConfig.planId);
