@@ -1542,28 +1542,51 @@ analyticsUnsubscribe = onSnapshot(docRef, (docSnap) => {
                 </div>`).join(''); 
         }
 
-        window.saveStoreConfig = async (e) => {
-            e.preventDefault();
-            const btn = document.getElementById('btnSaveConfig');
-            btn.disabled = true; btn.textContent = "Gravando...";
-            try {
-                let logoUrl = storeConfig.logoUrl || ""; 
-                if (window.currentLogoData && window.currentLogoData.startsWith('data:image')) {
-                    const logoRef = ref(storage, `stores/${currentStoreId}/config/logo.jpg`);
-                    await uploadString(logoRef, window.currentLogoData, 'data_url');
-                    logoUrl = await getDownloadURL(logoRef);
-                }
-                const data = { 
-                    storeName: document.getElementById('confStoreName').value, 
-                    whatsappNumber: document.getElementById('confWhatsapp').value, 
-                    footerText: document.getElementById('confFooter').value, 
-                    primaryColor: document.getElementById('confColorPrimary').value, 
-                    deliveryAreas, logoUrl, lastUpdate: Date.now()
-                };
-                await setDoc(doc(db, "stores", currentStoreId, "config", "store"), data, { merge: true });
-                showToast("Configurações guardadas! ✅");
-            } catch (err) { showToast("Erro ao salvar."); } finally { btn.disabled = false; btn.textContent = "Guardar Alterações"; }
-        };
+        import {
+  doc,
+  updateDoc,
+  Timestamp
+} from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+window.saveStoreConfig = async function (event) {
+  event.preventDefault();
+
+  try {
+    // 🔹 Coleta dos campos do formulário
+    const storeName = document.getElementById('confStoreName')?.value || '';
+    const whatsapp = document.getElementById('confWhatsapp')?.value || '';
+    const footer = document.getElementById('confFooter')?.value || '';
+    const themeColor = document.getElementById('confColorPrimary')?.value || '';
+
+    if (!window.currentStoreId) {
+      throw new Error("StoreId não encontrado");
+    }
+
+    // 🔹 Referência correta do documento
+    const storeRef = doc(
+      db,
+      "stores",
+      window.currentStoreId,
+      "config",
+      "store"
+    );
+
+    // 🔹 Atualização SEGURA (não quebra regras)
+    await updateDoc(storeRef, {
+      storeName,
+      whatsapp,
+      footer,
+      themeColor,
+      lastUpdate: Timestamp.now()
+    });
+
+    showToast("✅ Configurações salvas com sucesso!");
+
+  } catch (error) {
+    console.error("Erro ao salvar configurações:", error);
+    showToast("❌ Erro ao salvar configurações");
+  }
+};
 
         window.handleUpdatePassword = async (e) => { 
             e.preventDefault(); 
