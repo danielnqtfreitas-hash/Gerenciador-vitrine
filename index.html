@@ -1235,7 +1235,7 @@ analyticsUnsubscribe = onSnapshot(docRef, (docSnap) => {
             status: id ? (allProducts.find(p => p.id === id)?.status || 'active') : 'active'
         };
 
-                // 3. Persistência no Firebase
+                        // 3. Persistência no Firebase
         const docRef = doc(db, `stores/${currentStoreId}/products`, finalId);
         const storeRef = doc(db, `stores/${currentStoreId}/config/store`);
 
@@ -1243,14 +1243,14 @@ analyticsUnsubscribe = onSnapshot(docRef, (docSnap) => {
         await setDoc(docRef, data, { merge: true });
 
         // AGORA A FORÇA BRUTA: Atualiza o carimbo de tempo
-        // Usamos setDoc com merge:true em vez de updateDoc para garantir a criação se não existir
-        await setDoc(storeRef, { 
-            lastUpdate: Date.now(),
-            ownerEmail: auth.currentUser.email // Garante que o vínculo de e-mail permaneça ativo
-        }, { merge: true });
-        
+        try {
+            await setDoc(storeRef, { 
+                lastUpdate: Date.now(),
+                ownerEmail: auth.currentUser.email 
+            }, { merge: true });
+            console.log("✅ Comando de atualização enviado!");
         } catch (stampError) {
-            console.warn("Aviso: O carimbo da vitrine não pôde ser atualizado, mas o produto foi salvo.");
+            console.warn("Aviso: O carimbo da vitrine não pôde ser atualizado:", stampError);
         }
 
         showToast("✅ Publicado com sucesso!");
@@ -1285,18 +1285,13 @@ analyticsUnsubscribe = onSnapshot(docRef, (docSnap) => {
             await Promise.all(deletePromises);
         }
 
-        // 3. Avisa a vitrine
+                // 3. Avisa a vitrine (Dentro do bloco try da função deleteProduct)
         try {
-            await updateDoc(doc(db, `stores/${currentStoreId}/config/store`), { lastUpdate: Date.now() });
-        } catch(e) {}
-        
-        showToast("🗑️ Removido com sucesso!");
-
-    } catch (err) {
-        console.error("Erro na exclusão:", err);
-        showToast("❌ Você não tem permissão para excluir produtos nesta loja.");
-    }
-};
+            const storeRef = doc(db, `stores/${currentStoreId}/config/store`);
+            await setDoc(storeRef, { lastUpdate: Date.now() }, { merge: true });
+        } catch(e) {
+            console.warn("Não foi possível carimbar a exclusão");
+        }
              
         window.toggleProductStatus = async (id, currentStatus) => {
             const newStatus = currentStatus === 'paused' ? 'active' : 'paused';
