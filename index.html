@@ -402,7 +402,10 @@
 
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                             <div><label class="block text-xs font-bold text-slate-400 mb-1.5 uppercase tracking-wider">Nome da Loja</label><input type="text" id="confStoreName" class="input-pro"></div>
-                            <div><label class="block text-xs font-bold text-slate-400 mb-1.5 uppercase tracking-wider">WhatsApp Público</label><input type="text" id="confWhatsapp" class="input-pro"></div>
+                            <div>
+    <label class="block text-xs font-bold text-slate-400 mb-1.5 uppercase tracking-wider">WhatsApp Público</label>
+    <input type="text" id="confWhatsapp" placeholder="+55 (00) 00000-0000" class="input-pro">
+</div>
                             <div class="md:col-span-2"><label class="block text-xs font-bold text-slate-400 mb-1.5 uppercase tracking-wider">Rodapé</label><textarea id="confFooter" class="input-pro" rows="2"></textarea></div>
                             <div><label class="block text-xs font-bold text-slate-400 mb-1.5 uppercase tracking-wider">Cor do Tema</label><input type="color" id="confColorPrimary" class="h-14 w-full rounded-xl border p-1 cursor-pointer"></div>
                         </div>
@@ -894,12 +897,20 @@ function applyPhoneMask(elementId) {
 
         window.handleLogout = async () => { await signOut(auth); window.location.reload(); };
         window.toggleAuthView = (view) => { 
-            document.getElementById('login-card').classList.toggle('hidden', view === 'register'); 
-            document.getElementById('register-card').classList.toggle('hidden', view === 'login'); 
-            if(view === 'register') { renderPlansInGrid(); goToRegStep(1); }
-            applyPhoneMask('confWhatsapp')
-            lucide.createIcons(); 
-        };
+    document.getElementById('login-card').classList.toggle('hidden', view === 'register'); 
+    document.getElementById('register-card').classList.toggle('hidden', view === 'login'); 
+    
+    if(view === 'register') { 
+        renderPlansInGrid(); 
+        goToRegStep(1); 
+        
+        // Ativa a máscara no campo de pré-cadastro imediatamente
+        setTimeout(() => {
+            applyPhoneMask('regPhone');
+        }, 100); 
+    }
+    lucide.createIcons(); 
+};
         window.goToRegStep = (step) => { 
             const s1 = document.getElementById('reg-step-1'); const s2 = document.getElementById('reg-step-2'); 
             if (step === 2) { 
