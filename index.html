@@ -1234,15 +1234,23 @@ analyticsUnsubscribe = onSnapshot(docRef, (docSnap) => {
             lastUpdate: Date.now()
         };
 
+                // ... (resto do seu código de upload de imagens)
+
         // SALVAMENTO NO FIRESTORE
         const docRef = doc(db, `stores/${currentStoreId}/products`, finalId);
         await setDoc(docRef, data, { merge: true });
 
-        // TUDO OK: Agora forçamos o fechamento ANTES de qualquer outra função
+        // --- LINHA ESSENCIAL ADICIONADA AQUI ---
+        // Isso avisa a Vitrine que existe algo novo para baixar
+        await updateDoc(doc(db, `stores/${currentStoreId}/config/store`), { 
+            lastUpdate: Date.now() 
+        });
+
+        // TUDO OK: Agora forçamos o fechamento
         showToast("Publicado!");
         
-        if(modal) modal.classList.add('hidden'); // Fecha o modal
-        if(form) form.reset(); // Limpa o form
+        if(modal) modal.classList.add('hidden'); 
+        if(form) form.reset(); 
         currentProductImages = []; 
 
     } catch (err) {
