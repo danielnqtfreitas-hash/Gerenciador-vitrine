@@ -1236,19 +1236,20 @@ analyticsUnsubscribe = onSnapshot(docRef, (docSnap) => {
             status: id ? (allProducts.find(p => p.id === id)?.status || 'active') : 'active'
         };
 
-        // 3. Persistência no Firebase (Comando de Gravação)
+                // 3. Persistência no Firebase
         const docRef = doc(db, `stores/${currentStoreId}/products`, finalId);
         const storeRef = doc(db, `stores/${currentStoreId}/config/store`);
 
-        // Executamos sem o 'await' travando a UI, o Firebase cuida da fila em background
-        setDoc(docRef, data, { merge: true });
-        updateDoc(storeRef, { lastUpdate: Date.now() });
+        // Usamos await aqui para garantir que a Vitrine saiba que HOUVE uma mudança
+        // antes de fecharmos o modal
+        await setDoc(docRef, data, { merge: true });
+        await updateDoc(storeRef, { lastUpdate: Date.now() });
 
-        // 4. FEEDBACK E FECHAMENTO IMEDIATO
-        showToast("Produto publicado com sucesso!");
+        // 4. FEEDBACK E FECHAMENTO
+        showToast("✅ Publicado com sucesso!");
         
-        if(modal) modal.classList.add('hidden'); // Fecha a janela
-        if(form) form.reset(); // Limpa os campos
+        if(modal) modal.classList.add('hidden'); 
+        if(form) form.reset(); 
         currentProductImages = []; 
         variationsMatrix = [];
 
