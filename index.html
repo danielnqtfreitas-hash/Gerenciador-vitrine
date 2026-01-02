@@ -1206,7 +1206,7 @@ analyticsUnsubscribe = onSnapshot(docRef, (docSnap) => {
         const finalId = id || 'prod_' + Date.now();
         const imageUrls = [];
 
-        // 1. Upload das Imagens
+        // 1. Upload das Imagens (Sua lógica original)
         for (let i = 0; i < currentProductImages.length; i++) {
             const img = currentProductImages[i];
             if (img.startsWith('http')) { 
@@ -1218,7 +1218,7 @@ analyticsUnsubscribe = onSnapshot(docRef, (docSnap) => {
             }
         }
 
-        // 2. Dados do Produto
+        // 2. Dados do Produto (Mantendo SKU e Matriz)
         const data = {
             name: document.getElementById('prodName').value,
             sku: document.getElementById('prodSku').value || '',
@@ -1235,44 +1235,29 @@ analyticsUnsubscribe = onSnapshot(docRef, (docSnap) => {
             status: id ? (allProducts.find(p => p.id === id)?.status || 'active') : 'active'
         };
 
-                      // 3. Persistência no Firebase
+        // 3. Salvar no Firebase
         const docRef = doc(db, `stores/${currentStoreId}/products`, finalId);
-        const storeRef = doc(db, `stores/${currentStoreId}/config/store`);
-
-        // Primeiro salva o produto
         await setDoc(docRef, data, { merge: true });
 
-        // ATUALIZAÇÃO CIRÚRGICA:
-        // Enviamos apenas o lastUpdate. 
-        // Se o setDoc/merge falhar por causa das Rules, o updateDoc servirá de backup.
-        try {
-            await updateDoc(storeRef, { 
-                lastUpdate: Date.now() 
-            });
-            console.log("✅ lastUpdate atualizado via Update");
-        } catch (e) {
-            await setDoc(storeRef, { 
-                lastUpdate: Date.now() 
-            }, { merge: true });
-            console.log("✅ lastUpdate atualizado via Set/Merge");
-        }
-        } catch (stampError) {
-            console.warn("Aviso: O carimbo da vitrine não pôde ser atualizado:", stampError);
-        }
+        // Atualizar o carimbo de tempo da loja (Para a Vitrine atualizar)
+        const storeRef = doc(db, `stores/${currentStoreId}/config/store`);
+        await updateDoc(storeRef, { lastUpdate: Date.now() }).catch(() => {
+            // Se o update falhar, tenta o set merge
+            setDoc(storeRef, { lastUpdate: Date.now() }, { merge: true });
+        });
 
         showToast("✅ Publicado com sucesso!");
         if(modal) modal.classList.add('hidden'); 
         currentProductImages = []; 
 
     } catch (err) {
-        console.error("Erro real:", err);
-        showToast("❌ Erro de permissão: Verifique se sua conta é o dono desta loja.");
+        console.error("Erro ao salvar:", err);
+        showToast("❌ Erro ao salvar produto.");
     } finally {
         if(btn) btn.disabled = false;
         if(loader) loader.classList.add('hidden');
     }
 };
-
                 window.deleteProduct = async (id, imageUrls = []) => {
             if(!confirm("Deseja apagar este produto permanentemente?")) return;
 
@@ -1542,52 +1527,43 @@ analyticsUnsubscribe = onSnapshot(docRef, (docSnap) => {
                 </div>`).join(''); 
         }
 
-        import {
-  doc,
-  updateDoc,
-  Timestamp
-} from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
-
 window.saveStoreConfig = async function (event) {
-  event.preventDefault();
+    event.preventDefault();
+    const btn = document.getElementById('btnSaveConfig');
+    btn.disabled = true;
+    btn.textContent = "Salvando...";
 
-  try {
-    // 🔹 Coleta dos campos do formulário
-    const storeName = document.getElementById('confStoreName')?.value || '';
-    const whatsapp = document.getElementById('confWhatsapp')?.value || '';
-    const footer = document.getElementById('confFooter')?.value || '';
-    const themeColor = document.getElementById('confColorPrimary')?.value || '';
+    try {
+        let logoUrl = document.getElementById('logoPreviewImg').src;
 
-    if (!window.currentStoreId) {
-      throw new Error("StoreId não encontrado");
+        // Se a imagem for um "data:image" (uma imagem nova selecionada agora)
+        if (window.currentLogoData && window.currentLogoData.startsWith('data:image')) {
+            const logoRef = ref(storage, `stores/${currentStoreId}/config/logo.jpg`);
+            await uploadString(logoRef, window.currentLogoData, 'data_url');
+            logoUrl = await getDownloadURL(logoRef);
+        }
+
+        const data = {
+            storeName: document.getElementById('confStoreName').value,
+            whatsappNumber: document.getElementById('confWhatsapp').value,
+            footerText: document.getElementById('confFooter').value,
+            primaryColor: document.getElementById('confColorPrimary').value,
+            logoUrl: logoUrl, // Agora salva a URL real da imagem
+            lastUpdate: Date.now()
+        };
+
+        const storeRef = doc(db, "stores", currentStoreId, "config", "store");
+        await updateDoc(storeRef, data);
+
+        showToast("✅ Configurações e Logo atualizadas!");
+    } catch (error) {
+        console.error(error);
+        showToast("❌ Erro ao salvar configurações.");
+    } finally {
+        btn.disabled = false;
+        btn.textContent = "Guardar Alterações";
     }
-
-    // 🔹 Referência correta do documento
-    const storeRef = doc(
-      db,
-      "stores",
-      window.currentStoreId,
-      "config",
-      "store"
-    );
-
-    // 🔹 Atualização SEGURA (não quebra regras)
-    await updateDoc(storeRef, {
-      storeName,
-      whatsapp,
-      footer,
-      themeColor,
-      lastUpdate: Timestamp.now()
-    });
-
-    showToast("✅ Configurações salvas com sucesso!");
-
-  } catch (error) {
-    console.error("Erro ao salvar configurações:", error);
-    showToast("❌ Erro ao salvar configurações");
-  }
 };
-
         window.handleUpdatePassword = async (e) => { 
             e.preventDefault(); 
             const n = document.getElementById('newPass').value; 
