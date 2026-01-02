@@ -733,17 +733,31 @@
 };
 
         function openCropModal(imageSrc) {
-            const modal = document.getElementById('cropModal');
-            const img = document.getElementById('imageToCrop');
-            img.src = imageSrc;
-            modal.classList.remove('hidden');
-            if (cropper) cropper.destroy();
-            cropper = new Cropper(img, {
-                aspectRatio: 1, viewMode: 2, autoCropArea: 1, responsive: true,
-                restore: false, checkOrientation: false, modal: true, guides: true,
-                center: true, highlight: false, cropBoxMovable: true, cropBoxResizable: true,
-            });
-            lucide.createIcons();
+    const modal = document.getElementById('cropModal');
+    const img = document.getElementById('imageToCrop');
+    img.src = imageSrc;
+    modal.classList.remove('hidden');
+
+    // MUDANÇA AQUI: Em vez de destruir, nós substituímos se já existir
+    if (cropper) {
+        cropper.replace(imageSrc);
+    } else {
+        cropper = new Cropper(img, {
+            aspectRatio: 1, 
+            viewMode: 2, 
+            autoCropArea: 1, 
+            responsive: true,
+            restore: false, 
+            checkOrientation: false, 
+            modal: true, 
+            guides: true,
+            center: true, 
+            highlight: false, 
+            cropBoxMovable: true, 
+            cropBoxResizable: true,
+        });
+    }
+    lucide.createIcons();
         }
 
         window.closeCropModal = () => {
