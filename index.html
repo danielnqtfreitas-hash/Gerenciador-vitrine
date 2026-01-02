@@ -10,6 +10,7 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.js"></script>
+    <script src="https://unpkg.com/imask"></script>
     <script>
         tailwind.config = {
             theme: {
@@ -638,6 +639,16 @@
             'Básico': 'Plano Essencial', 'Padrão': 'Plano Padrão', 'Profissional': 'Plano Profissional'
         };
 
+        // Função para aplicar máscara nos campos de WhatsApp
+function applyPhoneMask(elementId) {
+    const element = document.getElementById(elementId);
+    if (!element) return;
+    
+    IMask(element, {
+        mask: '+{55} (00) 00000-0000'
+    });
+}
+        
         function getFriendlyPlanName(planId) {
             if (!planId) return "Sem Plano";
             if (PLAN_DISPLAY_NAMES[planId]) return PLAN_DISPLAY_NAMES[planId];
@@ -886,6 +897,7 @@
             document.getElementById('login-card').classList.toggle('hidden', view === 'register'); 
             document.getElementById('register-card').classList.toggle('hidden', view === 'login'); 
             if(view === 'register') { renderPlansInGrid(); goToRegStep(1); }
+            applyPhoneMask('confWhatsapp')
             lucide.createIcons(); 
         };
         window.goToRegStep = (step) => { 
@@ -1093,6 +1105,7 @@ analyticsUnsubscribe = onSnapshot(docRef, (docSnap) => {
             updateUIByPlan();
             document.getElementById('confStoreName').value = data.storeName || '';
             document.getElementById('confWhatsapp').value = data.whatsappNumber || '';
+            applyPhoneMask('confWhatsapp');
             document.getElementById('confFooter').value = data.footerText || '';
             document.getElementById('confColorPrimary').value = data.primaryColor || '#8b5cf6';
             document.getElementById('dashboardStoreToggle').checked = data.isStoreOpen !== false;
@@ -1535,34 +1548,47 @@ analyticsUnsubscribe = onSnapshot(docRef, (docSnap) => {
 window.saveStoreConfig = async function (event) {
     event.preventDefault();
     const btn = document.getElementById('btnSaveConfig');
+    
+    // Bloqueia o botão para evitar cliques duplos
     btn.disabled = true;
     btn.textContent = "Salvando...";
 
     try {
         let logoUrl = document.getElementById('logoPreviewImg').src;
 
-        // Se a imagem for um "data:image" (uma imagem nova selecionada agora)
+        // 1. Processamento da Logomarca
         if (window.currentLogoData && window.currentLogoData.startsWith('data:image')) {
             const logoRef = ref(storage, `stores/${currentStoreId}/config/logo.jpg`);
             await uploadString(logoRef, window.currentLogoData, 'data_url');
             logoUrl = await getDownloadURL(logoRef);
         }
 
+        // 2. Limpeza do WhatsApp (Tratamento para o Banco de Dados)
+        // O replace(/\D/g, '') remove tudo que não for número (+55 (11) 9... vira 55119...)
+        const rawWhatsapp = document.getElementById('confWhatsapp').value.replace(/\D/g, '');
+
+        // 3. Preparação dos Dados (Mantendo todas as suas funções ativas)
         const data = {
             storeName: document.getElementById('confStoreName').value,
-            whatsappNumber: document.getElementById('confWhatsapp').value,
+            whatsappNumber: rawWhatsapp, // Salvando o número limpo
             footerText: document.getElementById('confFooter').value,
             primaryColor: document.getElementById('confColorPrimary').value,
-            logoUrl: logoUrl, // Agora salva a URL real da imagem
+            deliveryAreas: deliveryAreas, // Mantém a lista de entregas atual
+            logoUrl: logoUrl,
             lastUpdate: Date.now()
         };
 
+        // 4. Gravação no Firestore
         const storeRef = doc(db, "stores", currentStoreId, "config", "store");
         await updateDoc(storeRef, data);
 
         showToast("✅ Configurações e Logo atualizadas!");
+        
+        // Reset do cache de imagem local após salvar com sucesso
+        window.currentLogoData = null;
+
     } catch (error) {
-        console.error(error);
+        console.error("Erro ao salvar configurações:", error);
         showToast("❌ Erro ao salvar configurações.");
     } finally {
         btn.disabled = false;
