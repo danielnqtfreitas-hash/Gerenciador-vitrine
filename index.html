@@ -612,6 +612,7 @@
         let currentStoreId = null;
         let allProducts = [], allCategories = [], allBanners = [], deliveryAreas = [];
         let currentProductImages = []; 
+        let imageQueue = [];
         let storeConfig = { planId: 'basic', maxProducts: 50, maxBanners: 1, hasCarousel: false };
         let cachedPublicPlans = null;
         let expandedCategories = new Set();
@@ -714,15 +715,22 @@
 
         // --- SISTEMA DE RECORTE ---
         window.processImages = (files) => {
-            if (!files || files.length === 0) return;
-            const maxPhotos = storeConfig.hasCarousel ? 4 : 1;
-            if (currentProductImages.length + files.length > maxPhotos) { showToast(`Limite: ${maxPhotos} foto(s).`); return; }
-            
-            const file = files[0];
-            const reader = new FileReader();
-            reader.onload = (e) => { openCropModal(e.target.result); };
-            reader.readAsDataURL(file);
-        };
+    if (!files || files.length === 0) return;
+    
+    const maxPhotos = storeConfig.hasCarousel ? 4 : 1;
+    const availableSlots = maxPhotos - currentProductImages.length;
+
+    if (availableSlots <= 0) {
+        showToast(`Limite de ${maxPhotos} fotos atingido.`);
+        return;
+    }
+
+    // Pega os arquivos, respeitando o limite do plano
+    imageQueue = Array.from(files).slice(0, availableSlots);
+    
+    // Inicia o processo
+    loadNextImageInQueue();
+};
 
         function openCropModal(imageSrc) {
             const modal = document.getElementById('cropModal');
@@ -746,12 +754,48 @@
         };
 
         window.confirmCrop = () => {
-            if (!cropper) return;
-            const canvas = cropper.getCroppedCanvas({ width: 800, height: 800, imageSmoothingQuality: 'high' });
-            currentProductImages.push(canvas.toDataURL('image/jpeg', 0.8));
-            renderImagePreviews();
-            closeCropModal();
-        };
+    if (!cropper) return;
+
+    // 1. Redimensiona para 800x800 (tamanho ideal para não pesar)
+    const canvas = cropper.getCroppedCanvas({ 
+        width: 800, 
+        height: 800, 
+        imageSmoothingQuality: 'high' 
+    });
+
+    // 2. COMPRESSÃO: Transforma em JPEG com 70% de qualidade (0.7)
+    const optimizedDataUrl = canvas.toDataURL('image/jpeg', 0.7);
+    
+    currentProductImages.push(optimizedDataUrl);
+    renderImagePreviews();
+
+    // 3. Gerencia a Fila: Remove a foto atual e vê se tem mais
+    imageQueue.shift(); 
+
+    if (imageQueue.length > 0) {
+        // Se ainda tem fotos na fila, carrega a próxima
+        loadNextImageInQueue();
+    } else {
+        // Se era a última, fecha o modal
+        closeCropModal();
+    }
+};
+        function loadNextImageInQueue() {
+    if (imageQueue.length === 0) {
+        // Limpa os inputs de arquivo para permitir nova seleção depois
+        document.getElementById('prodImageInput').value = '';
+        document.getElementById('cameraCaptureInput').value = '';
+        return;
+    }
+
+    const file = imageQueue[0];
+    const reader = new FileReader();
+    reader.onload = (e) => { 
+        openCropModal(e.target.result); 
+    };
+    reader.readAsDataURL(file);
+        }
+        
 
         window.removeImage = (index) => { currentProductImages.splice(index, 1); renderImagePreviews(); };
         function renderImagePreviews() {
