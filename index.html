@@ -1235,16 +1235,20 @@ analyticsUnsubscribe = onSnapshot(docRef, (docSnap) => {
             status: id ? (allProducts.find(p => p.id === id)?.status || 'active') : 'active'
         };
 
-        // 3. Persistência
+                // 3. Persistência no Firebase
         const docRef = doc(db, `stores/${currentStoreId}/products`, finalId);
-        
-        // Primeiro salvamos o produto (onde o lojista tem permissão total)
+        const storeRef = doc(db, `stores/${currentStoreId}/config/store`);
+
+        // Primeiro salva o produto
         await setDoc(docRef, data, { merge: true });
 
-        // Tentamos atualizar o carimbo da vitrine (pode falhar se a regra de config estiver fechada)
-        try {
-            const storeRef = doc(db, `stores/${currentStoreId}/config/store`);
-            await updateDoc(storeRef, { lastUpdate: Date.now() });
+        // AGORA A FORÇA BRUTA: Atualiza o carimbo de tempo
+        // Usamos setDoc com merge:true em vez de updateDoc para garantir a criação se não existir
+        await setDoc(storeRef, { 
+            lastUpdate: Date.now(),
+            ownerEmail: auth.currentUser.email // Garante que o vínculo de e-mail permaneça ativo
+        }, { merge: true });
+        
         } catch (stampError) {
             console.warn("Aviso: O carimbo da vitrine não pôde ser atualizado, mas o produto foi salvo.");
         }
