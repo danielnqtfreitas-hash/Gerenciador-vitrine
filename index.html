@@ -1260,29 +1260,34 @@ analyticsUnsubscribe = onSnapshot(docRef, (docSnap) => {
     }
 }; 
 
-        window.deleteProduct = async (id) => {
-    if(!confirm("Tem certeza que deseja excluir este produto?")) return;
+        window.deleteProduct = async (id, imageUrls = []) => {
+    if(!confirm("Deseja apagar este produto? As fotos também serão removidas do servidor para economizar espaço.")) return;
 
     try {
+        // 1. Limpa o Storage (Fotos)
+        if (imageUrls && imageUrls.length > 0) {
+            const deletePromises = imageUrls.map(url => {
+                // Só tenta deletar se for um link do seu próprio Firebase
+                if (url.includes('firebasestorage.googleapis.com')) {
+                    const imageRef = ref(storage, url);
+                    return deleteObject(imageRef).catch(e => console.log("Foto já não existia ou erro ao apagar:", e));
+                }
+            });
+            await Promise.all(deletePromises);
+        }
+
+        // 2. Limpa o Firestore (Texto/Dados)
         const docRef = doc(db, `stores/${currentStoreId}/products`, id);
         await deleteDoc(docRef);
         
-        showToast("Produto removido!");
-        
-        // Garante que o modal de edição feche se estiver aberto
-        const modal = document.getElementById('productModal');
-        if(modal) modal.classList.add('hidden');
-
-        // Recarrega a lista local para sumir o item da tela
-        if(typeof loadProducts === 'function') await loadProducts();
+        showToast("🗑️ Produto e fotos removidos com sucesso!");
 
     } catch (err) {
         console.error("Erro ao excluir:", err);
-        showToast("Erro ao excluir do banco de dados.");
+        showToast("❌ Erro ao remover do banco de dados.");
     }
 };
         
-
         window.toggleProductStatus = async (id, currentStatus) => {
             const newStatus = currentStatus === 'paused' ? 'active' : 'paused';
             await updateDoc(doc(db, `stores/${currentStoreId}/products`, id), { status: newStatus });
@@ -1346,7 +1351,11 @@ analyticsUnsubscribe = onSnapshot(docRef, (docSnap) => {
                                 <div class="flex gap-1 flex-shrink-0">
                                     <button onclick="toggleProductStatus('${p.id}', '${p.status || 'active'}')" class="p-2 ${isPaused ? 'text-green-600' : 'text-amber-500'} hover:bg-slate-100 rounded-lg"><i data-lucide="${isPaused ? 'eye' : 'eye-off'}" class="w-4 h-4"></i></button>
                                     <button onclick='openProductModal(${JSON.stringify(p).replace(/'/g, "&apos;")})' class="p-2 text-blue-500 hover:bg-blue-50 rounded-lg"><i data-lucide="pencil" class="w-4 h-4"></i></button>
-                                    <button onclick="deleteProduct('${p.id}')" class="p-2 text-red-500 hover:bg-red-50 rounded-lg"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
+                                    // Localize onde o botão de lixeira é criado e substitua por isso:
+<button onclick='deleteProduct("${p.id}", ${JSON.stringify(p.images || [])})' 
+        class="p-2 text-red-500 hover:bg-red-50 rounded-lg">
+    <i data-lucide="trash-2" class="w-4 h-4"></i>
+</button>
                                 </div>
                             </div>`;
                         }).join('')}
