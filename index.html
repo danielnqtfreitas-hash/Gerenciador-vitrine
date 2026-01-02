@@ -1190,15 +1190,14 @@ analyticsUnsubscribe = onSnapshot(docRef, (docSnap) => {
             lucide.createIcons();
         };
 
-       window.handleProductSubmit = async (e) => {
+       
+        window.handleProductSubmit = async (e) => {
     e.preventDefault();
     
     const btn = document.getElementById('btnSaveProd');
     const modal = document.getElementById('productModal');
-    const form = document.getElementById('productForm');
     const loader = document.getElementById('imageLoading');
     
-    // Bloqueia o botão e mostra o carregamento
     if(btn) btn.disabled = true;
     if(loader) loader.classList.remove('hidden');
 
@@ -1207,7 +1206,7 @@ analyticsUnsubscribe = onSnapshot(docRef, (docSnap) => {
         const finalId = id || 'prod_' + Date.now();
         const imageUrls = [];
 
-        // 1. Processamento e Upload das Imagens
+        // 1. Upload das Imagens
         for (let i = 0; i < currentProductImages.length; i++) {
             const img = currentProductImages[i];
             if (img.startsWith('http')) { 
@@ -1219,7 +1218,7 @@ analyticsUnsubscribe = onSnapshot(docRef, (docSnap) => {
             }
         }
 
-        // 2. Montagem do Objeto de Dados
+        // 2. Dados do Produto
         const data = {
             name: document.getElementById('prodName').value,
             sku: document.getElementById('prodSku').value || '',
@@ -1236,75 +1235,65 @@ analyticsUnsubscribe = onSnapshot(docRef, (docSnap) => {
             status: id ? (allProducts.find(p => p.id === id)?.status || 'active') : 'active'
         };
 
-                // 3. Persistência no Firebase
+        // 3. Persistência
         const docRef = doc(db, `stores/${currentStoreId}/products`, finalId);
-        const storeRef = doc(db, `stores/${currentStoreId}/config/store`);
-
-        // Usamos await aqui para garantir que a Vitrine saiba que HOUVE uma mudança
-        // antes de fecharmos o modal
-        await setDoc(docRef, data, { merge: true });
-        await updateDoc(storeRef, { lastUpdate: Date.now() });
-
-        // 4. FEEDBACK E FECHAMENTO
-        showToast("✅ Publicado com sucesso!");
         
+        // Primeiro salvamos o produto (onde o lojista tem permissão total)
+        await setDoc(docRef, data, { merge: true });
+
+        // Tentamos atualizar o carimbo da vitrine (pode falhar se a regra de config estiver fechada)
+        try {
+            const storeRef = doc(db, `stores/${currentStoreId}/config/store`);
+            await updateDoc(storeRef, { lastUpdate: Date.now() });
+        } catch (stampError) {
+            console.warn("Aviso: O carimbo da vitrine não pôde ser atualizado, mas o produto foi salvo.");
+        }
+
+        showToast("✅ Publicado com sucesso!");
         if(modal) modal.classList.add('hidden'); 
-        if(form) form.reset(); 
         currentProductImages = []; 
-        variationsMatrix = [];
 
     } catch (err) {
-        console.error("Erro crítico no salvamento:", err);
-        // Só exibe erro se for algo que realmente impeça a gravação (como falta de permissão)
-        if (err.code !== 'unavailable') {
-            showToast("Erro ao salvar. Verifique os dados.");
-        }
+        console.error("Erro real:", err);
+        showToast("❌ Erro de permissão: Verifique se sua conta é o dono desta loja.");
     } finally {
-        // Restaura o botão para o estado original
-        if(btn) {
-            btn.disabled = false;
-            btn.innerHTML = "Publicar Produto";
-        }
+        if(btn) btn.disabled = false;
         if(loader) loader.classList.add('hidden');
-        try { if(typeof lucide !== 'undefined') lucide.createIcons(); } catch(e){}
     }
 };
-        
 
         window.deleteProduct = async (id, imageUrls = []) => {
     if(!confirm("Deseja apagar este produto permanentemente?")) return;
 
     try {
-        // 1. PRIMEIRO tenta apagar o documento no banco (Onde está o erro de permissão)
+        // 1. Tenta apagar o documento no Firestore primeiro (Teste de permissão)
         const docRef = doc(db, `stores/${currentStoreId}/products`, id);
         await deleteDoc(docRef); 
         
-        // 2. SÓ DEPOIS apaga as fotos (Se o banco falhar, não perdemos a foto à toa)
+        // 2. Só apaga as fotos se o documento foi apagado com sucesso
         if (imageUrls && imageUrls.length > 0) {
             const deletePromises = imageUrls.map(url => {
                 if (url.includes('firebasestorage.googleapis.com')) {
-                    return deleteObject(ref(storage, url)).catch(e => console.log("Foto ignorada:", e));
+                    const imageRef = ref(storage, url);
+                    return deleteObject(imageRef).catch(e => console.warn("Foto ignorada:", e));
                 }
             });
             await Promise.all(deletePromises);
         }
 
-        // 3. ATUALIZA A VITRINE
-        await updateDoc(doc(db, `stores/${currentStoreId}/config/store`), { lastUpdate: Date.now() });
+        // 3. Avisa a vitrine
+        try {
+            await updateDoc(doc(db, `stores/${currentStoreId}/config/store`), { lastUpdate: Date.now() });
+        } catch(e) {}
         
-        showToast("🗑️ Produto removido com sucesso!");
+        showToast("🗑️ Removido com sucesso!");
 
     } catch (err) {
-        console.error("ERRO FIREBASE:", err.code, err.message);
-        if(err.code === 'permission-denied') {
-            showToast("❌ Erro de Permissão: Seu usuário não tem autorização para esta loja.");
-        } else {
-            showToast("❌ Erro ao remover dados. Tente novamente.");
-        }
+        console.error("Erro na exclusão:", err);
+        showToast("❌ Você não tem permissão para excluir produtos nesta loja.");
     }
 };
-        
-        
+             
         window.toggleProductStatus = async (id, currentStatus) => {
             const newStatus = currentStatus === 'paused' ? 'active' : 'paused';
             await updateDoc(doc(db, `stores/${currentStoreId}/products`, id), { status: newStatus });
