@@ -717,15 +717,23 @@
         window.processImages = (files) => {
     if (!files || files.length === 0) return;
     
+    // 1. Define o limite baseado no plano (4 para carrossel, 1 para simples)
     const maxPhotos = storeConfig.hasCarousel ? 4 : 1;
-    const availableSlots = maxPhotos - currentProductImages.length;
+    const currentCount = currentProductImages.length;
+    const availableSlots = maxPhotos - currentCount;
 
+    // 2. Se já estiver lotado antes de começar
     if (availableSlots <= 0) {
-        showToast(`Limite de ${maxPhotos} fotos atingido.`);
+        showToast(`⚠️ Limite atingido! Seu plano permite apenas ${maxPhotos} foto(s) por produto.`);
         return;
     }
 
-    // Pega os arquivos, respeitando o limite do plano
+    // 3. Se ele tentou selecionar MAIS do que o que resta de espaço
+    if (files.length > availableSlots) {
+        showToast(`Atenção: Apenas ${availableSlots} foto(s) serão processadas para respeitar o limite de ${maxPhotos}.`);
+    }
+
+    // 4. Pega apenas a quantidade que cabe no "espaço vazio"
     imageQueue = Array.from(files).slice(0, availableSlots);
     
     // Inicia o processo
@@ -813,18 +821,33 @@
 
         window.removeImage = (index) => { currentProductImages.splice(index, 1); renderImagePreviews(); };
         function renderImagePreviews() {
-            const gallery = document.getElementById('imageGallery');
-            const counter = document.getElementById('photoCount');
-            const max = storeConfig.hasCarousel ? 4 : 1;
-            gallery.innerHTML = '';
-            currentProductImages.forEach((img, idx) => {
-                const div = document.createElement('div');
-                div.className = "relative aspect-square rounded-xl overflow-hidden border border-slate-200 shadow-sm animate-fade-in";
-                div.innerHTML = `<img src="${img}" class="w-full h-full object-cover"><button type="button" onclick="removeImage(${idx})" class="absolute top-1 right-1 bg-red-500 text-white p-1 rounded-lg transition-opacity"><i data-lucide="x" class="w-3 h-3"></i></button>`;
-                gallery.appendChild(div);
-            });
-            counter.textContent = `${currentProductImages.length}/${max} fotos`;
-            lucide.createIcons();
+    const gallery = document.getElementById('imageGallery');
+    const counter = document.getElementById('photoCount');
+    const notice = document.getElementById('photoLimitNotice'); // Pegamos o novo ID
+    const max = storeConfig.hasCarousel ? 4 : 1;
+    
+    gallery.innerHTML = '';
+    currentProductImages.forEach((img, idx) => {
+        // ... seu código atual de criar a div da imagem ...
+        const div = document.createElement('div');
+        div.className = "relative aspect-square rounded-xl overflow-hidden border border-slate-200 shadow-sm animate-fade-in";
+        div.innerHTML = `<img src="${img}" class="w-full h-full object-cover"><button type="button" onclick="removeImage(${idx})" class="absolute top-1 right-1 bg-red-500 text-white p-1 rounded-lg transition-opacity"><i data-lucide="x" class="w-3 h-3"></i></button>`;
+        gallery.appendChild(div);
+    });
+
+    counter.textContent = `${currentProductImages.length}/${max} fotos`;
+
+    // --- NOVA LÓGICA DE MENSAGEM ---
+    if (currentProductImages.length >= max) {
+        notice.textContent = "✅ Limite de fotos atingido para este produto.";
+        notice.className = "text-[10px] font-bold mt-2 text-amber-600 animate-pulse";
+    } else {
+        const resta = max - currentProductImages.length;
+        notice.textContent = `💡 Você ainda pode adicionar mais ${resta} foto(s).`;
+        notice.className = "text-[10px] font-bold mt-2 text-slate-400";
+    }
+    
+    lucide.createIcons();
         }
 
         // --- AUTH ---
