@@ -1178,49 +1178,72 @@ analyticsUnsubscribe = onSnapshot(docRef, (docSnap) => {
             lucide.createIcons();
         };
 
-        window.handleProductSubmit = async (e) => {
-            e.preventDefault();
-            if(currentProductImages.length === 0) { showToast("Adicione uma foto."); return; }
-            const btn = document.getElementById('btnSaveProd');
-            const id = document.getElementById('prodId').value;
-            const finalId = id || 'prod_' + Date.now();
-            btn.disabled = true; btn.innerHTML = "Publicando...";
-            
-            try {
-                const imageUrls = [];
-                for (let i = 0; i < currentProductImages.length; i++) {
-                    const img = currentProductImages[i];
-                    if (img.startsWith('http')) { imageUrls.push(img); } 
-                    else {
-                        const fileRef = ref(storage, `stores/${currentStoreId}/products/${finalId}_${i}.jpg`);
-                        await uploadString(fileRef, img, 'data_url', { cacheControl: 'public,max-age=2592000' });
-                        imageUrls.push(await getDownloadURL(fileRef));
-                    }
-                }
-                
-                const data = { 
-                    name: document.getElementById('prodName').value, 
-                    sku: document.getElementById('prodSku').value.trim(), // SDK/SKU logic
-                    category: document.getElementById('prodCategory').value, 
-                    value: parseFloat(document.getElementById('prodValue').value), 
-                    promoValue: parseFloat(document.getElementById('prodPromo').value) || null, 
-                    images: imageUrls, 
-                    description: document.getElementById('prodDesc').value, 
-                    isFeatured: document.getElementById('prodFeatured').checked, 
-                    sizes: document.getElementById('prodSizesInput').value.split(',').map(s => s.trim().toUpperCase()).filter(s => s !== ''),
-                    colors: document.getElementById('prodColorsInput').value.split(',').map(c => c.trim()).filter(c => c !== ''),
-                    variations: variationsMatrix, // FIXED: Salva a matriz completa para não perder chaves inativas
-                    status: id ? allProducts.find(p => p.id === id).status || 'active' : 'active' 
-                };
-                
-                if(id) await updateDoc(doc(db, `stores/${currentStoreId}/products`, id), data);
-                else await setDoc(doc(db, `stores/${currentStoreId}/products`, finalId), data);
-                
-                await updateDoc(doc(db, `stores/${currentStoreId}/config/store`), { lastUpdate: Date.now() });
-                document.getElementById('productModal').classList.add('hidden');
-                showToast("Produto guardado.");
-            } catch (err) { showToast("Erro ao processar."); } finally { btn.disabled = false; btn.innerHTML = "Publicar Produto"; }
+         window.handleProductSubmit = async (e) => {
+    e.preventDefault();
+    if(currentProductImages.length === 0) { showToast("Adicione uma foto."); return; }
+    
+    const btn = document.getElementById('btnSaveProd');
+    const id = document.getElementById('prodId').value;
+    const loader = document.getElementById('imageLoading'); // Referência ao loader do modal
+    const finalId = id || 'prod_' + Date.now();
+    
+    btn.disabled = true; 
+    btn.innerHTML = "Publicando...";
+    if(loader) loader.classList.remove('hidden'); // Mostra o spinner de carregamento
+
+    try {
+        const imageUrls = [];
+        for (let i = 0; i < currentProductImages.length; i++) {
+            const img = currentProductImages[i];
+            if (img.startsWith('http')) { 
+                imageUrls.push(img); 
+            } else {
+                const fileRef = ref(storage, `stores/${currentStoreId}/products/${finalId}_${i}.jpg`);
+                // Metadados para cache e tipo
+                const metadata = { contentType: 'image/jpeg', cacheControl: 'public,max-age=2592000' };
+                await uploadString(fileRef, img, 'data_url', metadata);
+                imageUrls.push(await getDownloadURL(fileRef));
+            }
+        }
+        
+        const data = { 
+            name: document.getElementById('prodName').value, 
+            sku: document.getElementById('prodSku').value.trim(),
+            category: document.getElementById('prodCategory').value, 
+            value: parseFloat(document.getElementById('prodValue').value), 
+            promoValue: parseFloat(document.getElementById('prodPromo').value) || null, 
+            images: imageUrls, 
+            description: document.getElementById('prodDesc').value, 
+            isFeatured: document.getElementById('prodFeatured').checked, 
+            sizes: document.getElementById('prodSizesInput').value.split(',').map(s => s.trim().toUpperCase()).filter(s => s !== ''),
+            colors: document.getElementById('prodColorsInput').value.split(',').map(c => c.trim()).filter(c => c !== ''),
+            variations: variationsMatrix,
+            status: id ? allProducts.find(p => p.id === id).status || 'active' : 'active' 
         };
+        
+        if(id) {
+            await updateDoc(doc(db, `stores/${currentStoreId}/products`, id), data);
+        } else {
+            await setDoc(doc(db, `stores/${currentStoreId}/products`, finalId), data);
+        }
+        
+        await updateDoc(doc(db, `stores/${currentStoreId}/config/store`), { lastUpdate: Date.now() });
+
+        // --- AQUI ESTÁ A CORREÇÃO ---
+        showToast("Produto guardado com sucesso!");
+        document.getElementById('productModal').classList.add('hidden'); // Fecha o modal
+        if(loader) loader.classList.add('hidden'); // Esconde o loading
+        // ----------------------------
+
+    } catch (err) { 
+        console.error(err);
+        showToast("Erro ao processar o salvamento."); 
+    } finally { 
+        btn.disabled = false; 
+        btn.innerHTML = "Publicar Produto"; 
+        if(loader) loader.classList.add('hidden');
+    }
+};
 
         window.deleteProduct = async (id) => { 
             if(!confirm("Apagar definitivamente?")) return;
