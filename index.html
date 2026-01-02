@@ -1239,7 +1239,7 @@ analyticsUnsubscribe = onSnapshot(docRef, (docSnap) => {
         await setDoc(docRef, data, { merge: true });
 
         // TUDO OK: Agora forçamos o fechamento ANTES de qualquer outra função
-        showToast("✅ Publicado!");
+        showToast("Publicado!");
         
         if(modal) modal.classList.add('hidden'); // Fecha o modal
         if(form) form.reset(); // Limpa o form
@@ -1267,7 +1267,7 @@ analyticsUnsubscribe = onSnapshot(docRef, (docSnap) => {
         const docRef = doc(db, `stores/${currentStoreId}/products`, id);
         await deleteDoc(docRef);
         
-        showToast("🗑️ Produto removido!");
+        showToast("Produto removido!");
         
         // Garante que o modal de edição feche se estiver aberto
         const modal = document.getElementById('productModal');
@@ -1278,7 +1278,7 @@ analyticsUnsubscribe = onSnapshot(docRef, (docSnap) => {
 
     } catch (err) {
         console.error("Erro ao excluir:", err);
-        showToast("❌ Erro ao excluir do banco de dados.");
+        showToast("Erro ao excluir do banco de dados.");
     }
 };
         
