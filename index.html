@@ -1272,32 +1272,38 @@ analyticsUnsubscribe = onSnapshot(docRef, (docSnap) => {
         
 
         window.deleteProduct = async (id, imageUrls = []) => {
-    if(!confirm("Deseja apagar este produto? As fotos também serão removidas do servidor para economizar espaço.")) return;
+    if(!confirm("Deseja apagar este produto permanentemente?")) return;
 
     try {
-        // 1. Limpa o Storage (Fotos)
+        // 1. PRIMEIRO tenta apagar o documento no banco (Onde está o erro de permissão)
+        const docRef = doc(db, `stores/${currentStoreId}/products`, id);
+        await deleteDoc(docRef); 
+        
+        // 2. SÓ DEPOIS apaga as fotos (Se o banco falhar, não perdemos a foto à toa)
         if (imageUrls && imageUrls.length > 0) {
             const deletePromises = imageUrls.map(url => {
-                // Só tenta deletar se for um link do seu próprio Firebase
                 if (url.includes('firebasestorage.googleapis.com')) {
-                    const imageRef = ref(storage, url);
-                    return deleteObject(imageRef).catch(e => console.log("Foto já não existia ou erro ao apagar:", e));
+                    return deleteObject(ref(storage, url)).catch(e => console.log("Foto ignorada:", e));
                 }
             });
             await Promise.all(deletePromises);
         }
 
-        // 2. Limpa o Firestore (Texto/Dados)
-        const docRef = doc(db, `stores/${currentStoreId}/products`, id);
-        await deleteDoc(docRef);
+        // 3. ATUALIZA A VITRINE
+        await updateDoc(doc(db, `stores/${currentStoreId}/config/store`), { lastUpdate: Date.now() });
         
-        showToast("🗑️ Produto e fotos removidos com sucesso!");
+        showToast("🗑️ Produto removido com sucesso!");
 
     } catch (err) {
-        console.error("Erro ao excluir:", err);
-        showToast("Erro ao remover do banco de dados.");
+        console.error("ERRO FIREBASE:", err.code, err.message);
+        if(err.code === 'permission-denied') {
+            showToast("❌ Erro de Permissão: Seu usuário não tem autorização para esta loja.");
+        } else {
+            showToast("❌ Erro ao remover dados. Tente novamente.");
+        }
     }
 };
+        
         
         window.toggleProductStatus = async (id, currentStatus) => {
             const newStatus = currentStatus === 'paused' ? 'active' : 'paused';
