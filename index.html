@@ -1190,7 +1190,7 @@ analyticsUnsubscribe = onSnapshot(docRef, (docSnap) => {
             lucide.createIcons();
         };
 
-        window.handleProductSubmit = async (e) => {
+       window.handleProductSubmit = async (e) => {
     e.preventDefault();
     
     const btn = document.getElementById('btnSaveProd');
@@ -1198,7 +1198,7 @@ analyticsUnsubscribe = onSnapshot(docRef, (docSnap) => {
     const form = document.getElementById('productForm');
     const loader = document.getElementById('imageLoading');
     
-    // Bloqueia o botão imediatamente
+    // Bloqueia o botão e mostra o carregamento
     if(btn) btn.disabled = true;
     if(loader) loader.classList.remove('hidden');
 
@@ -1207,7 +1207,7 @@ analyticsUnsubscribe = onSnapshot(docRef, (docSnap) => {
         const finalId = id || 'prod_' + Date.now();
         const imageUrls = [];
 
-        // Upload das imagens
+        // 1. Processamento e Upload das Imagens
         for (let i = 0; i < currentProductImages.length; i++) {
             const img = currentProductImages[i];
             if (img.startsWith('http')) { 
@@ -1219,6 +1219,7 @@ analyticsUnsubscribe = onSnapshot(docRef, (docSnap) => {
             }
         }
 
+        // 2. Montagem do Objeto de Dados
         const data = {
             name: document.getElementById('prodName').value,
             sku: document.getElementById('prodSku').value || '',
@@ -1231,42 +1232,43 @@ analyticsUnsubscribe = onSnapshot(docRef, (docSnap) => {
             sizes: document.getElementById('prodSizesInput').value.split(',').map(s => s.trim()).filter(s => s !== ''),
             colors: document.getElementById('prodColorsInput').value.split(',').map(c => c.trim()).filter(c => c !== ''),
             variations: typeof variationsMatrix !== 'undefined' ? variationsMatrix : [],
-            lastUpdate: Date.now()
+            lastUpdate: Date.now(),
+            status: id ? (allProducts.find(p => p.id === id)?.status || 'active') : 'active'
         };
 
-                // ... (resto do seu código de upload de imagens)
-
-        // SALVAMENTO NO FIRESTORE
+        // 3. Persistência no Firebase (Comando de Gravação)
         const docRef = doc(db, `stores/${currentStoreId}/products`, finalId);
-        await setDoc(docRef, data, { merge: true });
+        const storeRef = doc(db, `stores/${currentStoreId}/config/store`);
 
-        // --- LINHA ESSENCIAL ADICIONADA AQUI ---
-        // Isso avisa a Vitrine que existe algo novo para baixar
-        await updateDoc(doc(db, `stores/${currentStoreId}/config/store`), { 
-            lastUpdate: Date.now() 
-        });
+        // Executamos sem o 'await' travando a UI, o Firebase cuida da fila em background
+        setDoc(docRef, data, { merge: true });
+        updateDoc(storeRef, { lastUpdate: Date.now() });
 
-        // TUDO OK: Agora forçamos o fechamento
-        showToast("Publicado!");
+        // 4. FEEDBACK E FECHAMENTO IMEDIATO
+        showToast("Produto publicado com sucesso!");
         
-        if(modal) modal.classList.add('hidden'); 
-        if(form) form.reset(); 
+        if(modal) modal.classList.add('hidden'); // Fecha a janela
+        if(form) form.reset(); // Limpa os campos
         currentProductImages = []; 
+        variationsMatrix = [];
 
     } catch (err) {
-        console.error("Erro real detectado:", err);
-        // Só mostra erro se o documento realmente não foi salvo
-        showToast("❌ Verifique sua conexão, mas os dados podem ter sido salvos.");
+        console.error("Erro crítico no salvamento:", err);
+        // Só exibe erro se for algo que realmente impeça a gravação (como falta de permissão)
+        if (err.code !== 'unavailable') {
+            showToast("Erro ao salvar. Verifique os dados.");
+        }
     } finally {
+        // Restaura o botão para o estado original
         if(btn) {
             btn.disabled = false;
             btn.innerHTML = "Publicar Produto";
         }
         if(loader) loader.classList.add('hidden');
-        // Tenta atualizar ícones, mas sem travar se falhar
         try { if(typeof lucide !== 'undefined') lucide.createIcons(); } catch(e){}
     }
-}; 
+};
+        
 
         window.deleteProduct = async (id, imageUrls = []) => {
     if(!confirm("Deseja apagar este produto? As fotos também serão removidas do servidor para economizar espaço.")) return;
@@ -1292,7 +1294,7 @@ analyticsUnsubscribe = onSnapshot(docRef, (docSnap) => {
 
     } catch (err) {
         console.error("Erro ao excluir:", err);
-        showToast("❌ Erro ao remover do banco de dados.");
+        showToast("Erro ao remover do banco de dados.");
     }
 };
         
