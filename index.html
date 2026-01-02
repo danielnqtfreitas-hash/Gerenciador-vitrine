@@ -469,7 +469,19 @@
                             <div id="imageGallery" class="col-span-1 md:col-span-3 grid grid-cols-2 md:grid-cols-3 gap-4"></div>
                         </div>
                         <p id="photoLimitNotice" class="text-[9px] text-slate-400 font-medium italic">Selecione uma imagem nítida para sua vitrine.</p>
-                        <div id="imageLoading" class="absolute inset-0 bg-white/90 flex items-center justify-center hidden z-20"><div class="w-5 h-5 border-2 border-primary-500 border-t-transparent rounded-full animate-spin"></div></div>
+                        <div id="imageLoading" class="absolute inset-0 bg-white/95 flex items-center justify-center hidden z-20 backdrop-blur-sm">
+    <div class="text-center">
+        <div class="relative mb-4 flex justify-center">
+            <div class="absolute inset-0 bg-primary-500/20 rounded-full blur-xl animate-pulse"></div>
+            <div class="relative bg-white p-4 rounded-3xl shadow-lg border border-primary-100 animate-bounce">
+                <i data-lucide="upload-cloud" class="w-10 h-10 text-primary-600"></i>
+            </div>
+        </div>
+        
+        <h4 id="loadingText" class="text-sm font-black text-slate-800 uppercase tracking-widest">Processando...</h4>
+        <p id="loadingSubText" class="text-[10px] text-slate-400 font-bold mt-1 uppercase tracking-tighter">Sua vitrine está sendo atualizada</p>
+    </div>
+</div>
                     </div>
 
                     <div class="space-y-6">
@@ -1180,32 +1192,39 @@ analyticsUnsubscribe = onSnapshot(docRef, (docSnap) => {
 
          window.handleProductSubmit = async (e) => {
     e.preventDefault();
-    if(currentProductImages.length === 0) { showToast("Adicione uma foto."); return; }
+    if(currentProductImages.length === 0) { showToast("⚠️ Adicione uma foto."); return; }
     
     const btn = document.getElementById('btnSaveProd');
+    const loader = document.getElementById('imageLoading');
+    const loadingText = document.getElementById('loadingText');
+    const loadingSubText = document.getElementById('loadingSubText');
     const id = document.getElementById('prodId').value;
-    const loader = document.getElementById('imageLoading'); // Referência ao loader do modal
     const finalId = id || 'prod_' + Date.now();
     
-    btn.disabled = true; 
-    btn.innerHTML = "Publicando...";
-    if(loader) loader.classList.remove('hidden'); // Mostra o spinner de carregamento
+    btn.disabled = true;
+    if(loader) loader.classList.remove('hidden');
 
     try {
         const imageUrls = [];
         for (let i = 0; i < currentProductImages.length; i++) {
+            // FEEDBACK VISUAL NO ÍCONE
+            if(loadingText) loadingText.textContent = `Enviando Foto ${i + 1}/${currentProductImages.length}`;
+            if(loadingSubText) loadingSubText.textContent = "Otimizando para carregamento rápido...";
+            
             const img = currentProductImages[i];
             if (img.startsWith('http')) { 
                 imageUrls.push(img); 
             } else {
                 const fileRef = ref(storage, `stores/${currentStoreId}/products/${finalId}_${i}.jpg`);
-                // Metadados para cache e tipo
                 const metadata = { contentType: 'image/jpeg', cacheControl: 'public,max-age=2592000' };
                 await uploadString(fileRef, img, 'data_url', metadata);
                 imageUrls.push(await getDownloadURL(fileRef));
             }
         }
         
+        if(loadingText) loadingText.textContent = "Finalizando Catálogo";
+        if(loadingSubText) loadingSubText.textContent = "Quase lá! Organizando sua vitrine...";
+
         const data = { 
             name: document.getElementById('prodName').value, 
             sku: document.getElementById('prodSku').value.trim(),
@@ -1229,21 +1248,22 @@ analyticsUnsubscribe = onSnapshot(docRef, (docSnap) => {
         
         await updateDoc(doc(db, `stores/${currentStoreId}/config/store`), { lastUpdate: Date.now() });
 
-        // --- AQUI ESTÁ A CORREÇÃO ---
-        showToast("Produto guardado com sucesso!");
-        document.getElementById('productModal').classList.add('hidden'); // Fecha o modal
-        if(loader) loader.classList.add('hidden'); // Esconde o loading
-        // ----------------------------
-
+        showToast("✅ Produto publicado com sucesso!");
+        document.getElementById('productModal').classList.add('hidden'); 
+        document.getElementById('productForm').reset();
+        currentProductImages = [];
+        variationsMatrix = [];
+        
     } catch (err) { 
-        console.error(err);
-        showToast("Erro ao processar o salvamento."); 
+        showToast("❌ Erro ao salvar."); 
     } finally { 
         btn.disabled = false; 
         btn.innerHTML = "Publicar Produto"; 
         if(loader) loader.classList.add('hidden');
+        lucide.createIcons();
     }
 };
+
 
         window.deleteProduct = async (id) => { 
             if(!confirm("Apagar definitivamente?")) return;
