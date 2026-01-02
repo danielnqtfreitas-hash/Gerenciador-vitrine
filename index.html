@@ -1266,38 +1266,46 @@ analyticsUnsubscribe = onSnapshot(docRef, (docSnap) => {
     }
 };
 
-        window.deleteProduct = async (id, imageUrls = []) => {
-    if(!confirm("Deseja apagar este produto permanentemente?")) return;
+                window.deleteProduct = async (id, imageUrls = []) => {
+            if(!confirm("Deseja apagar este produto permanentemente?")) return;
 
-    try {
-        // 1. Tenta apagar o documento no Firestore primeiro (Teste de permissão)
-        const docRef = doc(db, `stores/${currentStoreId}/products`, id);
-        await deleteDoc(docRef); 
-        
-        // 2. Só apaga as fotos se o documento foi apagado com sucesso
-        if (imageUrls && imageUrls.length > 0) {
-            const deletePromises = imageUrls.map(url => {
-                if (url.includes('firebasestorage.googleapis.com')) {
-                    const imageRef = ref(storage, url);
-                    return deleteObject(imageRef).catch(e => console.warn("Foto ignorada:", e));
+            try {
+                // 1. Apaga o documento
+                const docRef = doc(db, `stores/${currentStoreId}/products`, id);
+                await deleteDoc(docRef); 
+                
+                // 2. Apaga as fotos
+                if (imageUrls && imageUrls.length > 0) {
+                    const deletePromises = imageUrls.map(url => {
+                        if (url && url.includes('firebasestorage.googleapis.com')) {
+                            const imageRef = ref(storage, url);
+                            return deleteObject(imageRef).catch(e => console.warn("Foto ignorada:", e));
+                        }
+                    });
+                    await Promise.all(deletePromises);
                 }
-            });
-            await Promise.all(deletePromises);
-        }
 
-                // 3. Avisa a vitrine (Dentro do bloco try da função deleteProduct)
-        try {
-            const storeRef = doc(db, `stores/${currentStoreId}/config/store`);
-            await setDoc(storeRef, { lastUpdate: Date.now() }, { merge: true });
-        } catch(e) {
-            console.warn("Não foi possível carimbar a exclusão");
-        }
-             
+                // 3. Avisa a vitrine
+                const storeRef = doc(db, `stores/${currentStoreId}/config/store`);
+                await setDoc(storeRef, { lastUpdate: Date.now() }, { merge: true });
+                
+                showToast("🗑️ Removido com sucesso!");
+            } catch (err) {
+                console.error("Erro na exclusão:", err);
+                showToast("❌ Erro ao excluir produto.");
+            }
+        };
+
         window.toggleProductStatus = async (id, currentStatus) => {
             const newStatus = currentStatus === 'paused' ? 'active' : 'paused';
-            await updateDoc(doc(db, `stores/${currentStoreId}/products`, id), { status: newStatus });
-            await updateDoc(doc(db, `stores/${currentStoreId}/config/store`), { lastUpdate: Date.now() });
-            showToast(newStatus === 'paused' ? "Pausado." : "Ativado.");
+            try {
+                await updateDoc(doc(db, `stores/${currentStoreId}/products`, id), { status: newStatus });
+                const storeRef = doc(db, `stores/${currentStoreId}/config/store`);
+                await setDoc(storeRef, { lastUpdate: Date.now() }, { merge: true });
+                showToast(newStatus === 'paused' ? "Pausado." : "Ativado.");
+            } catch (e) {
+                showToast("Erro ao mudar status.");
+            }
         };
 
         window.toggleCategoryAccordion = (catName) => {
