@@ -1303,7 +1303,7 @@ analyticsUnsubscribe = onSnapshot(docRef, (docSnap) => {
             lucide.createIcons();
         };
 
-        function renderProductList() {
+                function renderProductList() {
             const search = document.getElementById('productSearch').value.toLowerCase();
             const container = document.getElementById('productListGrouped');
             container.innerHTML = '';
@@ -1351,11 +1351,9 @@ analyticsUnsubscribe = onSnapshot(docRef, (docSnap) => {
                                 <div class="flex gap-1 flex-shrink-0">
                                     <button onclick="toggleProductStatus('${p.id}', '${p.status || 'active'}')" class="p-2 ${isPaused ? 'text-green-600' : 'text-amber-500'} hover:bg-slate-100 rounded-lg"><i data-lucide="${isPaused ? 'eye' : 'eye-off'}" class="w-4 h-4"></i></button>
                                     <button onclick='openProductModal(${JSON.stringify(p).replace(/'/g, "&apos;")})' class="p-2 text-blue-500 hover:bg-blue-50 rounded-lg"><i data-lucide="pencil" class="w-4 h-4"></i></button>
-                                    // Localize onde o botão de lixeira é criado e substitua por isso:
-<button onclick='deleteProduct("${p.id}", ${JSON.stringify(p.images || [])})' 
-        class="p-2 text-red-500 hover:bg-red-50 rounded-lg">
-    <i data-lucide="trash-2" class="w-4 h-4"></i>
-</button>
+                                    <button onclick='deleteProduct("${p.id}", ${JSON.stringify(p.images || [])})' class="p-2 text-red-500 hover:bg-red-50 rounded-lg">
+                                        <i data-lucide="trash-2" class="w-4 h-4"></i>
+                                    </button>
                                 </div>
                             </div>`;
                         }).join('')}
@@ -1363,7 +1361,7 @@ analyticsUnsubscribe = onSnapshot(docRef, (docSnap) => {
                 container.appendChild(groupDiv);
             });
             lucide.createIcons();
-        }
+                }
 
         window.handleCategorySubmit = async (e) => {
             e.preventDefault();
