@@ -1258,35 +1258,40 @@ analyticsUnsubscribe = onSnapshot(docRef, (docSnap) => {
         if(loader) loader.classList.add('hidden');
     }
 };
-                window.deleteProduct = async (id, imageUrls = []) => {
-            if(!confirm("Deseja apagar este produto permanentemente?")) return;
+       window.deleteProduct = async (id, imageUrls = []) => {
+    if(!confirm("Deseja apagar este produto permanentemente?")) return;
 
-            try {
-                // 1. Apaga o documento
-                const docRef = doc(db, `stores/${currentStoreId}/products`, id);
-                await deleteDoc(docRef); 
-                
-                // 2. Apaga as fotos
-                if (imageUrls && imageUrls.length > 0) {
-                    const deletePromises = imageUrls.map(url => {
-                        if (url && url.includes('firebasestorage.googleapis.com')) {
-                            const imageRef = ref(storage, url);
-                            return deleteObject(imageRef).catch(e => console.warn("Foto ignorada:", e));
-                        }
-                    });
-                    await Promise.all(deletePromises);
+    try {
+        // 1. Apaga o documento no Firestore
+        const docRef = doc(db, `stores/${currentStoreId}/products`, id);
+        await deleteDoc(docRef); 
+        
+        // 2. Apaga as fotos no Storage (Se houver)
+        if (imageUrls && imageUrls.length > 0) {
+            const deletePromises = imageUrls.map(url => {
+                // Verifica se a URL é do seu Firebase Storage antes de tentar deletar
+                if (url && url.includes('firebasestorage.googleapis.com')) {
+                    const imageRef = ref(storage, url);
+                    return deleteObject(imageRef).catch(e => console.warn("Aviso: Foto não encontrada no Storage, ignorando...", e));
                 }
+                return Promise.resolve();
+            });
+            await Promise.all(deletePromises);
+        }
 
-                // 3. Avisa a vitrine
-                const storeRef = doc(db, `stores/${currentStoreId}/config/store`);
-                await setDoc(storeRef, { lastUpdate: Date.now() }, { merge: true });
-                
-                showToast("🗑️ Removido com sucesso!");
-            } catch (err) {
-                console.error("Erro na exclusão:", err);
-                showToast("❌ Erro ao excluir produto.");
-            }
-        };
+        // 3. Atualiza o carimbo da vitrine (Trigger de atualização)
+        const storeRef = doc(db, `stores/${currentStoreId}/config/store`);
+        await setDoc(storeRef, { lastUpdate: Date.now() }, { merge: true });
+        
+        // 4. Feedback Visual (Usando window. para garantir o escopo)
+        window.showToast("🗑️ Produto removido com sucesso!");
+
+    } catch (err) {
+        console.error("Erro na exclusão:", err);
+        window.showToast("❌ Erro ao excluir produto.");
+    }
+};
+        
 
         window.toggleProductStatus = async (id, currentStatus) => {
             const newStatus = currentStatus === 'paused' ? 'active' : 'paused';
