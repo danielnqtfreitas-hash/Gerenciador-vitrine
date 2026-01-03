@@ -1576,48 +1576,87 @@ window.closeLegalModal = () => {
        }
         
         window.handleCategorySubmit = async (e) => {
-            e.preventDefault();
-            const name = document.getElementById('catInputName').value;
-            const editId = document.getElementById('editingCategoryId').value;
-            if(editId) await updateDoc(doc(db, `stores/${currentStoreId}/categories`, editId), { name });
-            else await addDoc(collection(db, `stores/${currentStoreId}/categories`), { name, status: 'active' });
-            await updateDoc(doc(db, `stores/${currentStoreId}/config/store`), { lastUpdate: Date.now() });
-            cancelCategoryEdit(); showToast("Categoria guardada.");
-        };
+    e.preventDefault();
+    const name = document.getElementById('catInputName').value;
+    const editId = document.getElementById('editingCategoryId').value;
 
-        window.openEditCategory = (id, name) => {
-            document.getElementById('catFormTitle').textContent = "Editar Departamento";
-            document.getElementById('catInputName').value = name;
-            document.getElementById('editingCategoryId').value = id;
-            document.getElementById('btnCatSubmit').textContent = "Atualizar";
-            document.getElementById('btnCancelEditCat').classList.remove('hidden');
-        };
+    try {
+        if (editId) {
+            const oldDoc = await getDoc(doc(db, `stores/${currentStoreId}/categories`, editId));
+            const oldName = oldDoc.exists() ? oldDoc.data().name : null;
 
-        window.cancelCategoryEdit = () => {
-            document.getElementById('catFormTitle').textContent = "Departamentos";
-            document.getElementById('catInputName').value = ''; document.getElementById('editingCategoryId').value = '';
-            document.getElementById('btnCatSubmit').textContent = "Criar Categoria";
-            document.getElementById('btnCancelEditCat').classList.add('hidden');
-        };
+            await updateDoc(doc(db, `stores/${currentStoreId}/categories`, editId), { name });
 
-        window.deleteCategory = async (id) => { 
-            if(confirm("Apagar categoria?")) {
-                await deleteDoc(doc(db, `stores/${currentStoreId}/categories`, id));
-                await updateDoc(doc(db, `stores/${currentStoreId}/config/store`), { lastUpdate: Date.now() });
+            if (oldName && oldName !== name) {
+                const q = query(collection(db, `stores/${currentStoreId}/products`), where("category", "==", oldName));
+                const snap = await getDocs(q);
+                const updates = snap.docs.map(d => updateDoc(doc(db, `stores/${currentStoreId}/products`, d.id), { category: name }));
+                await Promise.all(updates);
             }
-        };
-
-        function renderCategoryList() { 
-            document.getElementById('categoryList').innerHTML = allCategories.map(c => `
-                <div class="flex justify-between items-center p-4 md:p-5 bg-white gap-4">
-                    <div class="flex-1 min-w-0"><span class="font-bold text-slate-700 block truncate">${c.name}</span></div>
-                    <div class="flex gap-2">
-                        <button onclick="openEditCategory('${c.id}', '${c.name}')" class="p-2 text-blue-500 hover:bg-blue-50 rounded-lg"><i data-lucide="pencil" class="w-5 h-5"></i></button>
-                        <button onclick="deleteCategory('${c.id}')" class="p-2 text-red-500 hover:bg-red-50 rounded-lg"><i data-lucide="trash-2" class="w-5 h-5"></i></button>
-                    </div>
-                </div>`).join(''); 
-            lucide.createIcons(); 
+        } else {
+            await addDoc(collection(db, `stores/${currentStoreId}/categories`), { name, status: 'active' });
         }
+
+        await updateDoc(doc(db, `stores/${currentStoreId}/config/store`), { lastUpdate: Date.now() });
+        cancelCategoryEdit();
+        showToast("Categoria e produtos atualizados.");
+    } catch (err) {
+        console.error(err);
+        showToast("Erro ao atualizar categoria.");
+    }
+};
+
+window.openEditCategory = (id, name) => {
+    document.getElementById('catFormTitle').textContent = "Editar Departamento";
+    document.getElementById('catInputName').value = name;
+    document.getElementById('editingCategoryId').value = id;
+    document.getElementById('btnCatSubmit').textContent = "Atualizar";
+    document.getElementById('btnCancelEditCat').classList.remove('hidden');
+};
+
+window.cancelCategoryEdit = () => {
+    document.getElementById('catFormTitle').textContent = "Departamentos";
+    document.getElementById('catInputName').value = '';
+    document.getElementById('editingCategoryId').value = '';
+    document.getElementById('btnCatSubmit').textContent = "Criar Categoria";
+    document.getElementById('btnCancelEditCat').classList.add('hidden');
+};
+
+window.deleteCategory = async (id) => {
+    if (confirm("Apagar categoria? Os produtos desta categoria ficarão sem departamento.")) {
+        try {
+            const oldDoc = await getDoc(doc(db, `stores/${currentStoreId}/categories`, id));
+            const oldName = oldDoc.exists() ? oldDoc.data().name : null;
+
+            await deleteDoc(doc(db, `stores/${currentStoreId}/categories`, id));
+
+            if (oldName) {
+                const q = query(collection(db, `stores/${currentStoreId}/products`), where("category", "==", oldName));
+                const snap = await getDocs(q);
+                const updates = snap.docs.map(d => updateDoc(doc(db, `stores/${currentStoreId}/products`, d.id), { category: "Sem Categoria" }));
+                await Promise.all(updates);
+            }
+
+            await updateDoc(doc(db, `stores/${currentStoreId}/config/store`), { lastUpdate: Date.now() });
+            showToast("Categoria removida.");
+        } catch (err) {
+            console.error(err);
+            showToast("Erro ao excluir.");
+        }
+    }
+};
+
+function renderCategoryList() {
+    document.getElementById('categoryList').innerHTML = allCategories.map(c => `
+        <div class="flex justify-between items-center p-4 md:p-5 bg-white gap-4">
+            <div class="flex-1 min-w-0"><span class="font-bold text-slate-700 block truncate">${c.name}</span></div>
+            <div class="flex gap-2">
+                <button onclick="openEditCategory('${c.id}', '${c.name}')" class="p-2 text-blue-500 hover:bg-blue-50 rounded-lg"><i data-lucide="pencil" class="w-5 h-5"></i></button>
+                <button onclick="deleteCategory('${c.id}')" class="p-2 text-red-500 hover:bg-red-50 rounded-lg"><i data-lucide="trash-2" class="w-5 h-5"></i></button>
+            </div>
+        </div>`).join('');
+    lucide.createIcons();
+}
 
         window.openBannerModal = (b = null) => {
             const select = document.getElementById('bannerTarget');
