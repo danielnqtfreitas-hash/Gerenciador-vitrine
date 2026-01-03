@@ -1182,53 +1182,89 @@ window.closeLegalModal = () => {
         window.updateAnalyticsRange = async (range) => {
     if (!analyticsChartInstance || !currentStoreId) return;
     
+    // 1. Limpa ouvintes anteriores para não sobrecarregar
     if (analyticsUnsubscribe) {
         analyticsUnsubscribe();
         analyticsUnsubscribe = null;
     }
 
+    // 2. Ativa o loader visual do gráfico
     const loader = document.getElementById('chartLoading');
     if (loader) loader.classList.remove('hidden');
     
+    // 3. Atualiza o visual dos botões (Troca as classes active/inactive)
     ['day', 'week', 'month'].forEach(r => {
         const btn = document.getElementById(`range-${r}`);
-        if (btn) { btn.classList.toggle('active', r === range); btn.classList.toggle('inactive', r !== range); }
+        if (btn) { 
+            btn.classList.toggle('active', r === range); 
+            btn.classList.toggle('inactive', r !== range); 
+        }
     });
 
     try {
         const now = new Date();
 
         if (range === 'day') {
-            // USAR DATA LOCAL (YYYY-MM-DD) para bater com a Vitrine
+            // --- LÓGICA PARA HOJE (REAL-TIME) ---
             const todayId = now.toLocaleDateString('en-CA'); 
             const docRef = doc(db, `stores/${currentStoreId}/analytics_history`, todayId);
 
-            // --- DEPOIS (O QUE SALVAR) ---
-analyticsUnsubscribe = onSnapshot(docRef, (docSnap) => {
-    let labels = [], values = [];
-    
-    // Pegamos todos os dados do documento
-    const allData = docSnap.exists() ? docSnap.data() : {};
-    // Verificamos se existe um objeto de horas ou se os campos estão na raiz
-    const hoursObj = allData.hours || {};
+            analyticsUnsubscribe = onSnapshot(docRef, (docSnap) => {
+                let labels = [], values = [];
+                const allData = docSnap.exists() ? docSnap.data() : {};
+                
+                // Tenta capturar o mapa 'hours' (formato antigo/agrupado)
+                const hoursMap = allData.hours || {};
 
-    for (let h = 0; h < 24; h++) {
-        labels.push(`${h}h`);
-        
-        // Tenta ler de todas as formas que o Firebase pode ter salvado:
-        const totalHora = hoursObj[h] ||               // Tenta como objeto: hours: { 13: 1 }
-                          hoursObj[h.toString()] ||    // Tenta como objeto string: hours: { "13": 1 }
-                          allData[`hours.${h}`] ||     // Tenta como campo direto: hours.13: 1 (O SEU CASO)
-                          0;                           // Se não achar nada, coloca zero
-                          
-        values.push(totalHora);
+                for (let h = 0; h < 24; h++) {
+                    labels.push(`${h}h`);
+                    
+                    // SOMA AS TRÊS POSSIBILIDADES (Para não perder dados novos nem antigos)
+                    const vMapa = hoursMap[h] || 0;             // hours: { 10: 5 }
+                    const vDot  = allData[`hours.${h}`] || 0;   // "hours.10": 5
+                    const vRaiz = allData[h] || 0;              // 10: 5 (na raiz do doc)
+
+                    values.push(vMapa + vDot + vRaiz);
+                }
+
+                analyticsChartInstance.data.labels = labels;
+                analyticsChartInstance.data.datasets[0].data = values;
+                analyticsChartInstance.update();
+                if (loader) loader.classList.add('hidden');
+            });
+
+        } else {
+            // --- LÓGICA PARA SEMANA / MÊS (HISTÓRICO) ---
+            const q = query(
+                collection(db, `stores/${currentStoreId}/analytics_history`), 
+                orderBy('date', 'desc'), 
+                limit(range === 'week' ? 7 : 30)
+            );
+            
+            const snap = await getDocs(q);
+            let labels = [], values = [];
+            const docs = snap.docs.reverse(); // Inverte para mostrar do mais antigo ao mais novo
+            
+            docs.forEach(d => {
+                const item = d.data();
+                // Trata datas que podem vir como Timestamp ou String
+                const dateObj = item.date?.toDate ? item.date.toDate() : new Date(item.date);
+                labels.push(dateObj.toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' }));
+                values.push(item.visits || 0);
+            });
+
+            analyticsChartInstance.data.labels = labels;
+            analyticsChartInstance.data.datasets[0].data = values;
+            analyticsChartInstance.update();
+            if (loader) loader.classList.add('hidden');
+        }
+
+    } catch (err) {
+        console.error("Erro no gráfico:", err);
+        if (loader) loader.classList.add('hidden');
     }
-
-    analyticsChartInstance.data.labels = labels;
-    analyticsChartInstance.data.datasets[0].data = values;
-    analyticsChartInstance.update();
-    if (loader) loader.classList.add('hidden');
-});
+};
+        
 
         } else {
             // MODO HISTÓRICO
