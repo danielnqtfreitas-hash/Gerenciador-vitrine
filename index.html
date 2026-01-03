@@ -1179,7 +1179,7 @@ window.closeLegalModal = () => {
             updateAnalyticsRange('day');
         };
 
-window.updateAnalyticsRange = async (range) => {
+      window.updateAnalyticsRange = async (range) => {
     if (!analyticsChartInstance || !currentStoreId) return;
     
     if (analyticsUnsubscribe) {
@@ -1190,7 +1190,6 @@ window.updateAnalyticsRange = async (range) => {
     const loader = document.getElementById('chartLoading');
     if (loader) loader.classList.remove('hidden');
     
-    // Atualiza botões
     ['day', 'week', 'month'].forEach(r => {
         const btn = document.getElementById(`range-${r}`);
         if (btn) { 
@@ -1200,40 +1199,29 @@ window.updateAnalyticsRange = async (range) => {
     });
 
     try {
-        const now = new Date();
-
         if (range === 'day') {
-            const todayId = now.toLocaleDateString('en-CA'); 
+            const d = new Date();
+            const todayId = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
             const docRef = doc(db, `stores/${currentStoreId}/analytics_history`, todayId);
 
             analyticsUnsubscribe = onSnapshot(docRef, (docSnap) => {
                 let labels = [], values = [];
-                // Se o doc não existir, usamos um objeto vazio para não quebrar
                 const allData = docSnap.exists() ? docSnap.data() : {};
                 const hoursMap = allData.hours || {};
 
                 for (let h = 0; h < 24; h++) {
                     labels.push(`${h}h`);
-                    
-                    // SOMA SEGURA: Verifica se o valor existe antes de somar
-                    const vMapa = hoursMap[h] || 0;             
-                    const vDot  = allData[`hours.${h}`] || 0;   
-                    const vRaiz = allData[h] || 0;              
-
-                    values.push(Number(vMapa) + Number(vDot) + Number(vRaiz));
+                    const v = hoursMap[h] || allData[`hours.${h}`] || allData[h] || 0;
+                    values.push(Number(v));
                 }
 
                 analyticsChartInstance.data.labels = labels;
                 analyticsChartInstance.data.datasets[0].data = values;
                 analyticsChartInstance.update();
                 if (loader) loader.classList.add('hidden');
-            }, (error) => {
-                console.warn("Erro no snapshot de analytics:", error);
-                if (loader) loader.classList.add('hidden');
             });
 
         } else {
-            // Lógica para Semana/Mês
             const q = query(
                 collection(db, `stores/${currentStoreId}/analytics_history`), 
                 orderBy('date', 'desc'), 
@@ -1260,7 +1248,7 @@ window.updateAnalyticsRange = async (range) => {
             if (loader) loader.classList.add('hidden');
         }
     } catch (err) {
-        console.error("Erro no gráfico:", err);
+        console.error(err);
         if (loader) loader.classList.add('hidden');
     }
 };
