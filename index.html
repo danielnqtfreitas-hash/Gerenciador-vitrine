@@ -1179,90 +1179,92 @@ window.closeLegalModal = () => {
             updateAnalyticsRange('day');
         };
 
-                window.updateAnalyticsRange = async (range) => {
-            if (!analyticsChartInstance || !currentStoreId) return;
-            
-            // 1. Limpa ouvintes anteriores para não vazar memória
-            if (analyticsUnsubscribe) {
-                analyticsUnsubscribe();
-                analyticsUnsubscribe = null;
-            }
+window.updateAnalyticsRange = async (range) => {
+    if (!analyticsChartInstance || !currentStoreId) return;
+    
+    if (analyticsUnsubscribe) {
+        analyticsUnsubscribe();
+        analyticsUnsubscribe = null;
+    }
 
-            // 2. Ativa o loader visual do gráfico
-            const loader = document.getElementById('chartLoading');
-            if (loader) loader.classList.remove('hidden');
-            
-            // 3. Atualiza o visual dos botões (active/inactive)
-            ['day', 'week', 'month'].forEach(r => {
-                const btn = document.getElementById(`range-${r}`);
-                if (btn) { 
-                    btn.classList.toggle('active', r === range); 
-                    btn.classList.toggle('inactive', r !== range); 
+    const loader = document.getElementById('chartLoading');
+    if (loader) loader.classList.remove('hidden');
+    
+    // Atualiza botões
+    ['day', 'week', 'month'].forEach(r => {
+        const btn = document.getElementById(`range-${r}`);
+        if (btn) { 
+            btn.classList.toggle('active', r === range); 
+            btn.classList.toggle('inactive', r !== range); 
+        }
+    });
+
+    try {
+        const now = new Date();
+
+        if (range === 'day') {
+            const todayId = now.toLocaleDateString('en-CA'); 
+            const docRef = doc(db, `stores/${currentStoreId}/analytics_history`, todayId);
+
+            analyticsUnsubscribe = onSnapshot(docRef, (docSnap) => {
+                let labels = [], values = [];
+                // Se o doc não existir, usamos um objeto vazio para não quebrar
+                const allData = docSnap.exists() ? docSnap.data() : {};
+                const hoursMap = allData.hours || {};
+
+                for (let h = 0; h < 24; h++) {
+                    labels.push(`${h}h`);
+                    
+                    // SOMA SEGURA: Verifica se o valor existe antes de somar
+                    const vMapa = hoursMap[h] || 0;             
+                    const vDot  = allData[`hours.${h}`] || 0;   
+                    const vRaiz = allData[h] || 0;              
+
+                    values.push(Number(vMapa) + Number(vDot) + Number(vRaiz));
                 }
+
+                analyticsChartInstance.data.labels = labels;
+                analyticsChartInstance.data.datasets[0].data = values;
+                analyticsChartInstance.update();
+                if (loader) loader.classList.add('hidden');
+            }, (error) => {
+                console.warn("Erro no snapshot de analytics:", error);
+                if (loader) loader.classList.add('hidden');
             });
 
-            try {
-                const now = new Date();
+        } else {
+            // Lógica para Semana/Mês
+            const q = query(
+                collection(db, `stores/${currentStoreId}/analytics_history`), 
+                orderBy('date', 'desc'), 
+                limit(range === 'week' ? 7 : 30)
+            );
+            
+            const snap = await getDocs(q);
+            let labels = [], values = [];
+            const docs = snap.docs.slice().reverse(); 
+            
+            docs.forEach(d => {
+                const item = d.data();
+                let dateLabel = "";
+                if(item.date?.toDate) dateLabel = item.date.toDate().toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' });
+                else if(item.date) dateLabel = new Date(item.date).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' });
+                
+                labels.push(dateLabel);
+                values.push(item.visits || 0);
+            });
 
-                if (range === 'day') {
-                    // --- MANTÉM: Lógica para HOJE (Real-time) COM SOMA TRIPLA ---
-                    const todayId = now.toLocaleDateString('en-CA'); 
-                    const docRef = doc(db, `stores/${currentStoreId}/analytics_history`, todayId);
-
-                    analyticsUnsubscribe = onSnapshot(docRef, (docSnap) => {
-                        let labels = [], values = [];
-                        const allData = docSnap.exists() ? docSnap.data() : {};
-                        const hoursMap = allData.hours || {};
-
-                        for (let h = 0; h < 24; h++) {
-                            labels.push(`${h}h`);
-                            
-                            // CORREÇÃO: Soma as 3 formas que o dado pode existir no Firebase
-                            const vMapa = hoursMap[h] || 0;             
-                            const vDot  = allData[`hours.${h}`] || 0;   
-                            const vRaiz = allData[h] || 0;              
-
-                            values.push(vMapa + vDot + vRaiz);
-                        }
-
-                        analyticsChartInstance.data.labels = labels;
-                        analyticsChartInstance.data.datasets[0].data = values;
-                        analyticsChartInstance.update();
-                        if (loader) loader.classList.add('hidden');
-                    });
-
-                } else {
-                    // --- MANTÉM: Lógica para SEMANA / MÊS (Histórico) ---
-                    const q = query(
-                        collection(db, `stores/${currentStoreId}/analytics_history`), 
-                        orderBy('date', 'desc'), 
-                        limit(range === 'week' ? 7 : 30)
-                    );
-                    
-                    const snap = await getDocs(q);
-                    let labels = [], values = [];
-                    const docs = snap.docs.reverse(); 
-                    
-                    docs.forEach(d => {
-                        const item = d.data();
-                        const dateObj = item.date?.toDate ? item.date.toDate() : new Date(item.date);
-                        labels.push(dateObj.toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' }));
-                        values.push(item.visits || 0);
-                    });
-
-                    analyticsChartInstance.data.labels = labels;
-                    analyticsChartInstance.data.datasets[0].data = values;
-                    analyticsChartInstance.update();
-                    if (loader) loader.classList.add('hidden');
-                }
-
-                            } // Fecha o else (Histórico)
-            } catch (err) {
-                console.error("Erro no gráfico:", err);
-                if (loader) loader.classList.add('hidden');
-            }
-        };
-
+            analyticsChartInstance.data.labels = labels;
+            analyticsChartInstance.data.datasets[0].data = values;
+            analyticsChartInstance.update();
+            if (loader) loader.classList.add('hidden');
+        }
+    } catch (err) {
+        console.error("Erro no gráfico:", err);
+        if (loader) loader.classList.add('hidden');
+    }
+};
+    
 
         // --- INIT DATA ---
         
