@@ -1836,56 +1836,57 @@ function renderCategoryList() {
 
         lucide.createIcons();
 
-        // --- SISTEMA DE MÉTRICAS AVANÇADAS ---
-function initAnalyticsInsights() {
+        // --- NOVO SISTEMA DE MÉTRICAS (ECONOMIA MÁXIMA PARA 50 LOJAS) ---
+async function initAnalyticsInsights() {
     if (!currentStoreId) return;
 
-    // 1. Ouvinte para Produtos Mais Vistos
-    const topProdQuery = query(
-        collection(db, `stores/${currentStoreId}/product_analytics`),
-        orderBy("views", "desc"),
-        limit(5)
-    );
+    // Referência ao documento único que economiza escritas e leituras
+    const docRef = doc(db, `stores/${currentStoreId}/analytics`, "product_views");
+    
+    // Usamos onSnapshot para que o painel atualize em tempo real se alguém ver um produto
+    onSnapshot(docRef, (snap) => {
+        if (!snap.exists()) return;
 
-    onSnapshot(topProdQuery, (snap) => {
-        const list = document.getElementById('topProductsList');
-        if (snap.empty) return;
+        const data = snap.data();
         
-        list.innerHTML = snap.docs.map(doc => {
-            const data = doc.data();
-            return `
+        // --- 1. PROCESSAR PRODUTOS POPULARES ---
+        const stats = data.stats || {};
+        const ranking = Object.keys(stats).map(id => ({
+            name: stats[id].name || "Produto",
+            views: stats[id].views || 0
+        })).sort((a, b) => b.views - a.views).slice(0, 5); // Top 5
+
+        const listProd = document.getElementById('topProductsList');
+        if (ranking.length > 0) {
+            listProd.innerHTML = ranking.map(p => `
                 <div class="flex items-center justify-between p-3 bg-slate-50 rounded-2xl border border-slate-100">
-                    <span class="text-xs font-bold text-slate-700 truncate pr-2">${data.name}</span>
+                    <span class="text-xs font-bold text-slate-700 truncate pr-2">${p.name}</span>
                     <span class="text-[10px] font-black bg-primary-100 text-primary-700 px-2 py-1 rounded-lg">
-                        ${data.views} views
+                        ${p.views} views
                     </span>
-                </div>`;
-        }).join('');
-    });
+                </div>`).join('');
+        }
 
-    // 2. Ouvinte para Buscas Sem Resultado
-    const failedSearchQuery = query(
-        collection(db, `stores/${currentStoreId}/failed_searches`),
-        orderBy("count", "desc"),
-        limit(5)
-    );
+        // --- 2. PROCESSAR BUSCAS FALHAS ---
+        const searches = data.searches || {};
+        const listSearch = document.getElementById('failedSearchesList');
+        
+        // Transforma o objeto de buscas em array para ordenar
+        const searchRanking = Object.entries(searches)
+            .sort((a, b) => b[1] - a[1]) // Ordena pela quantidade
+            .slice(0, 5); // Top 5
 
-    onSnapshot(failedSearchQuery, (snap) => {
-        const list = document.getElementById('failedSearchesList');
-        if (snap.empty) return;
-
-        list.innerHTML = snap.docs.map(doc => {
-            const data = doc.data();
-            return `
+        if (searchRanking.length > 0) {
+            listSearch.innerHTML = searchRanking.map(([term, count]) => `
                 <div class="flex items-center justify-between p-3 bg-amber-50/50 rounded-2xl border border-amber-100">
-                    <span class="text-xs font-bold text-amber-800 uppercase tracking-tight italic">"${data.term}"</span>
+                    <span class="text-xs font-bold text-amber-800 uppercase tracking-tight italic">"${term}"</span>
                     <div class="flex items-center gap-2">
-                        <span class="text-[9px] font-bold text-amber-600 uppercase">Perdido ${data.count}x</span>
+                        <span class="text-[9px] font-bold text-amber-600 uppercase">Perdido ${count}x</span>
                         <i data-lucide="alert-circle" class="w-3 h-3 text-amber-400"></i>
                     </div>
-                </div>`;
-        }).join('');
-        lucide.createIcons();
+                </div>`).join('');
+            lucide.createIcons();
+        }
     });
 }
         
