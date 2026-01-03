@@ -982,23 +982,41 @@ function applyPhoneMask(elementId) {
         };
 
         window.handlePreRegister = async (e) => {
-            e.preventDefault();
-            const planId = document.getElementById('selectedPlanId').value;
-            const btn = document.getElementById('btnReg');
-            btn.disabled = true; btn.innerHTML = `Processando...`;
-            try {
-                await addDoc(collection(db, "registration_requests"), { 
-                    ownerName: document.getElementById('regOwner').value, 
-                    email: document.getElementById('regEmail').value, 
-                    storeName: document.getElementById('regStoreName').value, 
-                    phone: document.getElementById('regPhone').value, 
-                    planId: planId, status: 'pending', requestDate: new Date().toISOString() 
-                });
-                document.getElementById('preRegForm').classList.add('hidden');
-                document.getElementById('regSuccess').classList.remove('hidden'); 
-                lucide.createIcons();
-            } catch(e) { showToast("Erro ao processar solicitação."); btn.disabled = false; }
-        };
+    e.preventDefault();
+    const planId = document.getElementById('selectedPlanId').value;
+    const btn = document.getElementById('btnReg');
+    
+    // --- NOVIDADE: Limpeza do WhatsApp no Registro ---
+    // Remove parênteses, espaços e traços para salvar apenas os números
+    const rawPhone = document.getElementById('regPhone').value.replace(/\D/g, '');
+    
+    btn.disabled = true; 
+    btn.innerHTML = `Processando...`;
+    
+    try {
+        await addDoc(collection(db, "registration_requests"), { 
+            ownerName: document.getElementById('regOwner').value, 
+            email: document.getElementById('regEmail').value, 
+            storeName: document.getElementById('regStoreName').value, 
+            phone: rawPhone, // Agora o número vai limpo para o banco (ex: 5511999999999)
+            planId: planId, 
+            status: 'pending', 
+            requestDate: new Date().toISOString() 
+        });
+        
+        // Esconde o formulário e mostra a mensagem de sucesso
+        document.getElementById('preRegForm').classList.add('hidden');
+        document.getElementById('regSuccess').classList.remove('hidden'); 
+        
+        lucide.createIcons();
+    } catch(e) { 
+        console.error("Erro no registro:", e);
+        showToast("Erro ao processar solicitação."); 
+        btn.disabled = false; 
+        btn.innerHTML = `Finalizar Pedido <i data-lucide="check-circle" class="w-5 h-5 ml-2"></i>`;
+    }
+};
+        
 
         // --- ANALYTICS CHART ---
         window.initAnalyticsChart = () => {
