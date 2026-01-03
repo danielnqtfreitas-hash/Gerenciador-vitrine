@@ -1836,25 +1836,28 @@ function renderCategoryList() {
 
         lucide.createIcons();
 
-        // --- NOVO SISTEMA DE MÉTRICAS (ECONOMIA MÁXIMA PARA 50 LOJAS) ---
+        // --- NOVO SISTEMA DE MÉTRICAS (CORREÇÃO DE LEITURA DO BALDE) ---
 async function initAnalyticsInsights() {
     if (!currentStoreId) return;
 
-    // Referência ao documento único que economiza escritas e leituras
+    // Referência ao documento único que a Vitrine agora preenche (product_views)
     const docRef = doc(db, `stores/${currentStoreId}/analytics`, "product_views");
     
-    // Usamos onSnapshot para que o painel atualize em tempo real se alguém ver um produto
     onSnapshot(docRef, (snap) => {
-        if (!snap.exists()) return;
+        // Se o documento não existir, mantemos as mensagens de "Aguardando..." que você já tem
+        if (!snap.exists()) {
+            console.log("Nenhum dado de analytics encontrado para esta loja.");
+            return;
+        }
 
         const data = snap.data();
         
-        // --- 1. PROCESSAR PRODUTOS POPULARES ---
+        // --- 1. PROCESSAR PRODUTOS POPULARES (Lendo do Mapa 'stats') ---
         const stats = data.stats || {};
         const ranking = Object.keys(stats).map(id => ({
             name: stats[id].name || "Produto",
             views: stats[id].views || 0
-        })).sort((a, b) => b.views - a.views).slice(0, 5); // Top 5
+        })).sort((a, b) => b.views - a.views).slice(0, 5);
 
         const listProd = document.getElementById('topProductsList');
         if (ranking.length > 0) {
@@ -1867,14 +1870,13 @@ async function initAnalyticsInsights() {
                 </div>`).join('');
         }
 
-        // --- 2. PROCESSAR BUSCAS FALHAS ---
+        // --- 2. PROCESSAR BUSCAS FALHAS (Lendo do Mapa 'searches') ---
         const searches = data.searches || {};
         const listSearch = document.getElementById('failedSearchesList');
         
-        // Transforma o objeto de buscas em array para ordenar
         const searchRanking = Object.entries(searches)
-            .sort((a, b) => b[1] - a[1]) // Ordena pela quantidade
-            .slice(0, 5); // Top 5
+            .sort((a, b) => b[1] - a[1])
+            .slice(0, 5);
 
         if (searchRanking.length > 0) {
             listSearch.innerHTML = searchRanking.map(([term, count]) => `
@@ -1886,6 +1888,8 @@ async function initAnalyticsInsights() {
                     </div>
                 </div>`).join('');
             lucide.createIcons();
+        } else {
+            listSearch.innerHTML = `<p class="text-xs text-slate-400 italic py-4">Nenhuma busca perdida registrada.</p>`;
         }
     });
 }
