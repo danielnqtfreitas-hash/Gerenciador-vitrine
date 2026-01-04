@@ -1683,30 +1683,56 @@ function renderCategoryList() {
    // --- GESTÃO DE BANNERS ---
 
 // 1. Primeiro a variável (o "balde" que guarda a foto temporária)
-window.currentBannerImageData = null; 
+      window.currentBannerImageData = null;
 
-// 2. Depois a função que seleciona a foto
+// FUNÇÃO ATUALIZADA COM COMPRESSÃO E REDIMENSIONAMENTO
 window.handleBannerImageSelect = (files) => {
     if (!files || !files.length) return;
+    const file = files[0];
+
     const reader = new FileReader();
     reader.onload = (e) => {
-        window.currentBannerImageData = e.target.result;
-        updateBannerPreview();
+        const img = new Image();
+        img.onload = () => {
+            const canvas = document.createElement('canvas');
+            const MAX_SIZE = 800; 
+            let width = img.width;
+            let height = img.height;
+
+            if (width > height) {
+                if (width > MAX_SIZE) {
+                    height *= MAX_SIZE / width;
+                    width = MAX_SIZE;
+                }
+            } else {
+                if (height > MAX_SIZE) {
+                    width *= MAX_SIZE / height;
+                    height = MAX_SIZE;
+                }
+            }
+
+            canvas.width = width;
+            canvas.height = height;
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(img, 0, 0, width, height);
+
+            // Converte para JPEG leve (70% de qualidade)
+            window.currentBannerImageData = canvas.toDataURL('image/jpeg', 0.7);
+            updateBannerPreview();
+        };
+        img.src = e.target.result;
     };
-    reader.readAsDataURL(files[0]);
+    reader.readAsDataURL(file);
 };
 
-// 3. Depois a função que remove a foto
 window.removeBannerImage = () => {
     window.currentBannerImageData = null;
     document.getElementById('bannerImageInput').value = '';
     updateBannerPreview();
 };
 
-// 4. Depois a função que abre o modal (Substitua a antiga por esta)
 window.openBannerModal = (b = null) => {
     const select = document.getElementById('bannerTarget');
-    // Preenche categorias no select do banner
     select.innerHTML = '<option value="offers">Todas as Ofertas</option>' + allCategories.map(c => `<option value="${c.name}">${c.name}</option>`).join('');
     
     if(b) {
@@ -1728,7 +1754,6 @@ window.openBannerModal = (b = null) => {
     document.getElementById('bannerModal').classList.remove('hidden');
 };
 
-// 5. Depois a função de Preview (Substitua a antiga por esta)
 window.updateBannerPreview = () => {
     const tag = document.getElementById('bannerTag').value || 'TAG';
     const title = document.getElementById('bannerTitle').value || 'Título';
@@ -1746,17 +1771,16 @@ window.updateBannerPreview = () => {
         document.getElementById('prevImg').src = window.currentBannerImageData;
         imgContainer.classList.remove('hidden');
         btnRemove.classList.remove('hidden');
-        preview.style.justifyContent = 'space-between'; // Espalha o texto e a foto
+        preview.style.justifyContent = 'space-between';
         preview.style.textAlign = 'left';
     } else {
         imgContainer.classList.add('hidden');
         btnRemove.classList.add('hidden');
-        preview.style.justifyContent = 'center'; // Centraliza o texto se não houver foto
+        preview.style.justifyContent = 'center';
         preview.style.textAlign = 'center';
     }
 };
 
-// 6. E por fim a função de salvar (Substitua a antiga por esta)
 window.handleBannerSubmit = async (e) => {
     e.preventDefault();
     const btn = document.getElementById('btnSaveBanner');
@@ -1766,7 +1790,6 @@ window.handleBannerSubmit = async (e) => {
     let imageUrl = window.currentBannerImageData;
 
     try {
-        // Se a imagem for nova (estiver em Base64), faz upload para o Storage
         if (imageUrl && imageUrl.startsWith('data:image')) {
             const bannerRef = ref(storage, `stores/${currentStoreId}/banners/${finalId}.jpg`);
             await uploadString(bannerRef, imageUrl, 'data_url');
@@ -1789,13 +1812,12 @@ window.handleBannerSubmit = async (e) => {
         document.getElementById('bannerModal').classList.add('hidden');
         showToast("Banner salvo!");
     } catch (err) {
-        console.error(err);
         showToast("Erro ao salvar.");
     } finally {
         btn.disabled = false;
     }
 };
-        
+
 
         window.deleteBanner = async (id) => { if(confirm("Apagar banner?")) await deleteDoc(doc(db, `stores/${currentStoreId}/hero_cards`, id)); };
 
