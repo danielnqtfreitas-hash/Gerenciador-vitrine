@@ -615,32 +615,55 @@
 
     <!-- MODAL BANNER -->
     <div id="bannerModal" class="modal-overlay fixed inset-0 z-[150] flex items-center justify-center p-4 hidden">
-        <div class="bg-white rounded-3xl shadow-2xl w-full max-w-lg auth-card-container p-8">
-            <div class="auth-card-content">
-                <h3 class="text-2xl font-bold mb-6 text-slate-800">Banner de Destaque</h3>
-                <form id="bannerForm" onsubmit="handleBannerSubmit(event)" class="space-y-5">
-                    <input type="hidden" id="bannerId">
-                    <div id="bannerPreview" class="h-40 rounded-3xl flex flex-col justify-center p-8 text-white shadow-xl transition-all">
-                        <span id="prevTag" class="text-xs font-bold uppercase tracking-widest opacity-80 mb-2">PROMOÇÃO</span>
-                        <h3 id="prevTitle" class="font-extrabold text-3xl leading-tight text-white">Título do Banner</h3>
+    <div class="bg-white rounded-3xl shadow-2xl w-full max-w-lg auth-card-container p-8">
+        <div class="auth-card-content">
+            <h3 class="text-2xl font-bold mb-6 text-slate-800">Banner de Destaque</h3>
+            <form id="bannerForm" onsubmit="handleBannerSubmit(event)" class="space-y-5">
+                <input type="hidden" id="bannerId">
+                
+                <div id="bannerPreview" class="h-40 rounded-3xl flex items-center justify-between p-6 text-white shadow-xl transition-all relative overflow-hidden">
+                    <div class="relative z-10 w-3/5">
+                        <span id="prevTag" class="text-[10px] font-black uppercase tracking-widest opacity-80 mb-1 block">PROMOÇÃO</span>
+                        <h3 id="prevTitle" class="font-extrabold text-xl leading-tight text-white break-words">Título do Banner</h3>
                     </div>
-                    <div class="grid grid-cols-2 gap-4">
-                        <input type="text" id="bannerTag" placeholder="Tag Ex: Oferta" oninput="updateBannerPreview()" required class="input-pro">
-                        <select id="bannerTarget" class="input-pro"></select>
+                    <div id="bannerPreviewImgContainer" class="w-24 h-24 rounded-2xl bg-white/20 flex items-center justify-center overflow-hidden border border-white/10 hidden">
+                        <img id="prevImg" src="" class="w-full h-full object-cover">
                     </div>
-                    <input type="text" id="bannerTitle" placeholder="Frase principal" oninput="updateBannerPreview()" required class="input-pro">
-                    <div class="grid grid-cols-2 gap-4">
-                        <div><label class="text-xs font-bold text-slate-400 block mb-2 uppercase">Cor Esquerda</label><input type="color" id="bannerColor1" oninput="updateBannerPreview()" class="w-full h-12 rounded-xl cursor-pointer"></div>
-                        <div><label class="text-xs font-bold text-slate-400 block mb-2 uppercase">Cor Direita</label><input type="color" id="bannerColor2" oninput="updateBannerPreview()" class="w-full h-12 rounded-xl cursor-pointer"></div>
+                </div>
+
+                <div class="bg-slate-50 p-4 rounded-2xl border border-slate-100">
+                    <label class="block text-[10px] font-black text-slate-400 mb-2 uppercase tracking-widest">Imagem do Produto (Opcional)</label>
+                    <div class="flex items-center gap-4">
+                        <input type="file" id="bannerImageInput" accept="image/*" class="hidden" onchange="handleBannerImageSelect(this.files)">
+                        <button type="button" onclick="document.getElementById('bannerImageInput').click()" class="flex-1 bg-white border border-slate-200 py-2.5 rounded-xl text-xs font-bold text-slate-600 hover:bg-slate-50 transition-all flex items-center justify-center gap-2">
+                            <i data-lucide="image" class="w-4 h-4"></i> Escolher Foto
+                        </button>
+                        <button type="button" onclick="removeBannerImage()" id="btnRemoveBannerImg" class="hidden p-2.5 bg-red-50 text-red-500 rounded-xl hover:bg-red-100 transition-all">
+                            <i data-lucide="trash-2" class="w-4 h-4"></i>
+                        </button>
                     </div>
-                    <div class="flex justify-end gap-4 pt-4">
-                        <button type="button" onclick="document.getElementById('bannerModal').classList.add('hidden')" class="px-6 py-3 text-slate-400 font-bold">Cancelar</button>
-                        <button type="submit" class="bg-primary-600 text-white px-8 py-3 rounded-2xl font-bold uppercase text-xs tracking-widest">Salvar Banner</button>
-                    </div>
-                </form>
-            </div>
+                </div>
+
+                <div class="grid grid-cols-2 gap-4">
+                    <input type="text" id="bannerTag" placeholder="Tag Ex: Oferta" oninput="updateBannerPreview()" required class="input-pro">
+                    <select id="bannerTarget" class="input-pro"></select>
+                </div>
+                <input type="text" id="bannerTitle" placeholder="Frase principal" oninput="updateBannerPreview()" required class="input-pro">
+                
+                <div class="grid grid-cols-2 gap-4">
+                    <div><label class="text-xs font-bold text-slate-400 block mb-2 uppercase">Cor Esquerda</label><input type="color" id="bannerColor1" oninput="updateBannerPreview()" class="w-full h-12 rounded-xl cursor-pointer"></div>
+                    <div><label class="text-xs font-bold text-slate-400 block mb-2 uppercase">Cor Direita</label><input type="color" id="bannerColor2" oninput="updateBannerPreview()" class="w-full h-12 rounded-xl cursor-pointer"></div>
+                </div>
+
+                <div class="flex justify-end gap-4 pt-4">
+                    <button type="button" onclick="document.getElementById('bannerModal').classList.add('hidden')" class="px-6 py-3 text-slate-400 font-bold">Cancelar</button>
+                    <button type="submit" id="btnSaveBanner" class="bg-primary-600 text-white px-8 py-3 rounded-2xl font-bold uppercase text-[10px] tracking-widest">Salvar Banner</button>
+                </div>
+            </form>
         </div>
     </div>
+</div>
+
     <div id="legalModal" class="modal-overlay fixed inset-0 z-[300] flex items-center justify-center p-4 hidden">
     <div class="bg-white rounded-[2rem] shadow-2xl w-full max-w-2xl auth-card-container overflow-hidden animate-fade-in">
         <div class="bg-slate-900 p-6 flex items-center justify-between">
