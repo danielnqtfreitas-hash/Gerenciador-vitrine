@@ -1680,37 +1680,122 @@ function renderCategoryList() {
         </div>`).join('');
     lucide.createIcons();
 }
+   // --- GESTÃO DE BANNERS ---
 
-        window.openBannerModal = (b = null) => {
-            const select = document.getElementById('bannerTarget');
-            select.innerHTML = '<option value="offers">Todas as Ofertas</option>' + allCategories.map(c => `<option value="${c.name}">${c.name}</option>`).join('');
-            if(b) {
-                document.getElementById('bannerId').value = b.id; document.getElementById('bannerTag').value = b.tag;
-                document.getElementById('bannerTitle').value = b.title; document.getElementById('bannerColor1').value = b.color1;
-                document.getElementById('bannerColor2').value = b.color2; document.getElementById('bannerTarget').value = b.target;
-            } else { document.getElementById('bannerForm').reset(); document.getElementById('bannerId').value = ''; document.getElementById('bannerColor1').value = '#8b5cf6'; document.getElementById('bannerColor2').value = '#6d28d9'; }
-            updateBannerPreview();
-            document.getElementById('bannerModal').classList.remove('hidden');
+// 1. Primeiro a variável (o "balde" que guarda a foto temporária)
+window.currentBannerImageData = null; 
+
+// 2. Depois a função que seleciona a foto
+window.handleBannerImageSelect = (files) => {
+    if (!files || !files.length) return;
+    const reader = new FileReader();
+    reader.onload = (e) => {
+        window.currentBannerImageData = e.target.result;
+        updateBannerPreview();
+    };
+    reader.readAsDataURL(files[0]);
+};
+
+// 3. Depois a função que remove a foto
+window.removeBannerImage = () => {
+    window.currentBannerImageData = null;
+    document.getElementById('bannerImageInput').value = '';
+    updateBannerPreview();
+};
+
+// 4. Depois a função que abre o modal (Substitua a antiga por esta)
+window.openBannerModal = (b = null) => {
+    const select = document.getElementById('bannerTarget');
+    // Preenche categorias no select do banner
+    select.innerHTML = '<option value="offers">Todas as Ofertas</option>' + allCategories.map(c => `<option value="${c.name}">${c.name}</option>`).join('');
+    
+    if(b) {
+        document.getElementById('bannerId').value = b.id; 
+        document.getElementById('bannerTag').value = b.tag;
+        document.getElementById('bannerTitle').value = b.title; 
+        document.getElementById('bannerColor1').value = b.color1;
+        document.getElementById('bannerColor2').value = b.color2; 
+        document.getElementById('bannerTarget').value = b.target;
+        window.currentBannerImageData = b.imageUrl || null;
+    } else { 
+        document.getElementById('bannerForm').reset(); 
+        document.getElementById('bannerId').value = ''; 
+        document.getElementById('bannerColor1').value = '#8b5cf6'; 
+        document.getElementById('bannerColor2').value = '#6d28d9';
+        window.currentBannerImageData = null;
+    }
+    updateBannerPreview();
+    document.getElementById('bannerModal').classList.remove('hidden');
+};
+
+// 5. Depois a função de Preview (Substitua a antiga por esta)
+window.updateBannerPreview = () => {
+    const tag = document.getElementById('bannerTag').value || 'TAG';
+    const title = document.getElementById('bannerTitle').value || 'Título';
+    const c1 = document.getElementById('bannerColor1').value; 
+    const c2 = document.getElementById('bannerColor2').value;
+    const preview = document.getElementById('bannerPreview');
+    const imgContainer = document.getElementById('bannerPreviewImgContainer');
+    const btnRemove = document.getElementById('btnRemoveBannerImg');
+
+    document.getElementById('prevTag').textContent = tag; 
+    document.getElementById('prevTitle').textContent = title;
+    preview.style.background = `linear-gradient(135deg, ${c1}, ${c2})`;
+    
+    if (window.currentBannerImageData) {
+        document.getElementById('prevImg').src = window.currentBannerImageData;
+        imgContainer.classList.remove('hidden');
+        btnRemove.classList.remove('hidden');
+        preview.style.justifyContent = 'space-between'; // Espalha o texto e a foto
+        preview.style.textAlign = 'left';
+    } else {
+        imgContainer.classList.add('hidden');
+        btnRemove.classList.add('hidden');
+        preview.style.justifyContent = 'center'; // Centraliza o texto se não houver foto
+        preview.style.textAlign = 'center';
+    }
+};
+
+// 6. E por fim a função de salvar (Substitua a antiga por esta)
+window.handleBannerSubmit = async (e) => {
+    e.preventDefault();
+    const btn = document.getElementById('btnSaveBanner');
+    btn.disabled = true;
+    const id = document.getElementById('bannerId').value;
+    const finalId = id || 'banner_' + Date.now();
+    let imageUrl = window.currentBannerImageData;
+
+    try {
+        // Se a imagem for nova (estiver em Base64), faz upload para o Storage
+        if (imageUrl && imageUrl.startsWith('data:image')) {
+            const bannerRef = ref(storage, `stores/${currentStoreId}/banners/${finalId}.jpg`);
+            await uploadString(bannerRef, imageUrl, 'data_url');
+            imageUrl = await getDownloadURL(bannerRef);
+        }
+
+        const data = { 
+            tag: document.getElementById('bannerTag').value, 
+            title: document.getElementById('bannerTitle').value, 
+            color1: document.getElementById('bannerColor1').value, 
+            color2: document.getElementById('bannerColor2').value, 
+            target: document.getElementById('bannerTarget').value,
+            imageUrl: imageUrl
         };
 
-        window.updateBannerPreview = () => {
-            const tag = document.getElementById('bannerTag').value || 'TAG';
-            const title = document.getElementById('bannerTitle').value || 'Título';
-            const c1 = document.getElementById('bannerColor1').value; const c2 = document.getElementById('bannerColor2').value;
-            document.getElementById('prevTag').textContent = tag; document.getElementById('prevTitle').textContent = title;
-            document.getElementById('bannerPreview').style.background = `linear-gradient(135deg, ${c1}, ${c2})`;
-        };
+        if(id) await updateDoc(doc(db, `stores/${currentStoreId}/hero_cards`, id), data);
+        else await addDoc(collection(db, `stores/${currentStoreId}/hero_cards`), data);
 
-        window.handleBannerSubmit = async (e) => {
-            e.preventDefault();
-            const id = document.getElementById('bannerId').value;
-            const data = { tag: document.getElementById('bannerTag').value, title: document.getElementById('bannerTitle').value, color1: document.getElementById('bannerColor1').value, color2: document.getElementById('bannerColor2').value, target: document.getElementById('bannerTarget').value };
-            if(id) await updateDoc(doc(db, `stores/${currentStoreId}/hero_cards`, id), data);
-            else await addDoc(collection(db, `stores/${currentStoreId}/hero_cards`), data);
-            await updateDoc(doc(db, `stores/${currentStoreId}/config/store`), { lastUpdate: Date.now() });
-            document.getElementById('bannerModal').classList.add('hidden');
-            showToast("Banner salvo.");
-        };
+        await updateDoc(doc(db, `stores/${currentStoreId}/config/store`), { lastUpdate: Date.now() });
+        document.getElementById('bannerModal').classList.add('hidden');
+        showToast("Banner salvo!");
+    } catch (err) {
+        console.error(err);
+        showToast("Erro ao salvar.");
+    } finally {
+        btn.disabled = false;
+    }
+};
+        
 
         window.deleteBanner = async (id) => { if(confirm("Apagar banner?")) await deleteDoc(doc(db, `stores/${currentStoreId}/hero_cards`, id)); };
 
