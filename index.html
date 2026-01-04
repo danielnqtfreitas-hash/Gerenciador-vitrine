@@ -368,7 +368,7 @@
             <div id="content-banners" class="max-w-6xl mx-auto space-y-6 hidden animate-fade-in">
                 <div class="flex justify-between items-center px-2">
                     <div><h3 class="text-2xl font-bold text-slate-800">Banners de Destaque</h3><p class="text-xs text-slate-400 font-medium">Capacidade do plano: <span id="bannerQuotaText">--/--</span></p></div>
-                    <button id="btnNewBanner" onclick="openBannerModal()" class="bg-primary-600 hover:bg-primary-700 text-white px-5 py-2.5 rounded-2xl font-bold flex items-center gap-2 shadow-lg transition-all"><i data-lucide="plus" class="w-5 h-5"></i> Novo Banner</button>
+                    <button id="btnNewBanner" onclick="window.openBannerModal()" class="bg-primary-600 hover:bg-primary-700 text-white px-5 py-2.5 rounded-2xl font-bold flex items-center gap-2 shadow-lg transition-all"><i data-lucide="plus" class="w-5 h-5"></i> Novo Banner</button>
                 </div>
                 <div id="bannersList" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"></div>
                 <div id="emptyBannersMsg" class="hidden text-center py-24 text-slate-400 italic">Destaque promoções no topo da sua vitrine.</div>
@@ -636,36 +636,36 @@
 
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div class="space-y-3">
-                        <label class="text-[10px] font-black text-slate-400 uppercase ml-1">Textos</label>
                         <input type="text" id="bannerTag" placeholder="Tag (Ex: Oferta)" oninput="updateBannerPreview()" class="input-pro">
                         <input type="text" id="bannerTitle" placeholder="Título Principal" oninput="updateBannerPreview()" required class="input-pro">
                         <input type="text" id="bannerSubtitle" placeholder="Subtítulo (Chamada)" oninput="updateBannerPreview()" class="input-pro">
                         <input type="text" id="bannerBtnText" placeholder="Texto do Botão" oninput="updateBannerPreview()" class="input-pro">
                     </div>
                     <div class="space-y-3">
-                        <label class="text-[10px] font-black text-slate-400 uppercase ml-1">Mídia e Cores</label>
                         <div class="bg-slate-50 p-4 rounded-2xl border border-slate-200">
                             <input type="file" id="bannerImageInput" accept="image/*" class="hidden" onchange="handleBannerImageSelect(this.files)">
                             <button type="button" onclick="document.getElementById('bannerImageInput').click()" class="w-full bg-white border-2 border-dashed border-slate-200 py-3 rounded-xl text-xs font-bold text-slate-500 hover:border-primary-500 transition-all flex items-center justify-center gap-2">
                                 <i data-lucide="image" class="w-4 h-4"></i> Carregar Foto
                             </button>
+                            <button type="button" id="btnRemoveBannerImg" onclick="removeBannerImage()" class="hidden w-full mt-2 text-red-500 text-[10px] font-bold uppercase">Remover Foto</button>
                         </div>
                         <div class="grid grid-cols-2 gap-3">
-                            <input type="color" id="bannerColor1" oninput="updateBannerPreview()" class="w-full h-12 rounded-xl cursor-pointer border-none p-1 bg-white shadow-sm">
-                            <input type="color" id="bannerColor2" oninput="updateBannerPreview()" class="w-full h-12 rounded-xl cursor-pointer border-none p-1 bg-white shadow-sm">
+                            <input type="color" id="bannerColor1" oninput="updateBannerPreview()" value="#8b5cf6" class="w-full h-12 rounded-xl cursor-pointer">
+                            <input type="color" id="bannerColor2" oninput="updateBannerPreview()" value="#6d28d9" class="w-full h-12 rounded-xl cursor-pointer">
                         </div>
                         <select id="bannerTarget" class="input-pro"></select>
                     </div>
                 </div>
 
                 <div class="flex justify-end gap-4 pt-4">
-                    <button type="button" onclick="document.getElementById('bannerModal').classList.add('hidden')" class="px-6 py-3 text-slate-400 font-bold uppercase text-[10px] tracking-widest">Cancelar</button>
-                    <button type="submit" id="btnSaveBanner" class="bg-slate-900 text-white px-10 py-4 rounded-2xl font-bold uppercase text-[10px] tracking-widest shadow-xl hover:bg-slate-800 transition-all">Publicar Banner</button>
+                    <button type="button" onclick="document.getElementById('bannerModal').classList.add('hidden')" class="px-6 py-3 text-slate-400 font-bold uppercase text-[10px]">Cancelar</button>
+                    <button type="submit" id="btnSaveBanner" class="bg-slate-900 text-white px-10 py-4 rounded-2xl font-bold uppercase text-[10px] tracking-widest shadow-xl">Publicar</button>
                 </div>
             </form>
         </div>
     </div>
     </div>
+    
     <div id="legalModal" class="modal-overlay fixed inset-0 z-[300] flex items-center justify-center p-4 hidden">
     <div class="bg-white rounded-[2rem] shadow-2xl w-full max-w-2xl auth-card-container overflow-hidden animate-fade-in">
         <div class="bg-slate-900 p-6 flex items-center justify-between">
