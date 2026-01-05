@@ -2117,26 +2117,31 @@ async function initAnalyticsInsights() {
     });
 }
 
-        async function toggleMagicCategory(type, isVisible) {
-    if (!currentStoreId) return;
+        // Adicione o window. para garantir que o botão no HTML ache a função
+window.toggleMagicCategory = async function(type, isVisible) {
+    console.log("Botão clicado:", type, isVisible); // ajuda se alguém plugar um PC
+    
+    if (!currentStoreId) {
+        if (typeof showToast === "function") showToast("Erro: ID da loja não encontrado.", "error");
+        return;
+    }
+
     try {
         const storeRef = doc(db, `stores/${currentStoreId}/config/store`);
         
-        // A alteração cirúrgica nas regras agora permite este comando:
         await updateDoc(storeRef, {
             [`magicCategories.${type}`]: isVisible
         });
         
-        // Usando sua notificação customizada em vez de alert
-        showToast("Vitrine atualizada com sucesso! ✨"); 
-        
-    } catch (error) {
-        console.error(error);
-        showToast("Erro ao atualizar vitrine.", "error");
-    }
+        if (typeof showToast === "function") {
+            showToast("Vitrine atualizada! ✨");
+        } else {
+            alert("Vitrine atualizada! ✨");
         }
-        
-        
+    } catch (error) {
+        alert("Erro no Firebase: " + error.message);
+    }
+};
         
     </script>
 </body>
