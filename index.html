@@ -2121,10 +2121,12 @@ async function initAnalyticsInsights() {
     try {
         const storeRef = doc(db, `stores/${currentStoreId}/config/store`);
         
-        // Atualiza apenas o campo específico dentro de magicCategories
-        await updateDoc(storeRef, {
-            [`magicCategories.${type}`]: isVisible
-        });
+        // Usamos setDoc com merge:true para garantir que o objeto magicCategories seja criado
+        await setDoc(storeRef, {
+            magicCategories: {
+                [type]: isVisible
+            }
+        }, { merge: true });
         
         showToast("Vitrine atualizada!");
     } catch (error) {
@@ -2132,6 +2134,7 @@ async function initAnalyticsInsights() {
         showToast("Erro ao salvar.", "error");
     }
         }
+        
         
     </script>
 </body>
