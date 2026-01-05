@@ -2118,22 +2118,24 @@ async function initAnalyticsInsights() {
 }
 
         async function toggleMagicCategory(type, isVisible) {
+    if (!currentStoreId) return;
     try {
         const storeRef = doc(db, `stores/${currentStoreId}/config/store`);
         
-        // Usamos setDoc com merge:true para garantir que o objeto magicCategories seja criado
-        await setDoc(storeRef, {
-            magicCategories: {
-                [type]: isVisible
-            }
-        }, { merge: true });
+        // A alteração cirúrgica nas regras agora permite este comando:
+        await updateDoc(storeRef, {
+            [`magicCategories.${type}`]: isVisible
+        });
         
-        showToast("Vitrine atualizada!");
+        // Usando sua notificação customizada em vez de alert
+        showToast("Vitrine atualizada com sucesso! ✨"); 
+        
     } catch (error) {
-        console.error("Erro ao atualizar categoria mágica:", error);
-        showToast("Erro ao salvar.", "error");
+        console.error(error);
+        showToast("Erro ao atualizar vitrine.", "error");
     }
         }
+        
         
         
     </script>
