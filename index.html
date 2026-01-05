@@ -399,6 +399,39 @@
                         </div>
                     </form>
                 </div>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
+    <div class="bg-gradient-to-br from-purple-50 to-white p-5 rounded-3xl border border-purple-100 shadow-sm flex items-center justify-between">
+        <div class="flex items-center gap-4">
+            <div class="w-12 h-12 bg-purple-600 rounded-2xl flex items-center justify-center text-white shadow-lg shadow-purple-200">
+                <i data-lucide="sparkles" class="w-6 h-6"></i>
+            </div>
+            <div>
+                <h4 class="font-bold text-slate-800 text-sm">Novidades ✨</h4>
+                <p class="text-[10px] text-slate-500 font-medium uppercase tracking-wider">Automática (Últimos 12)</p>
+            </div>
+        </div>
+        <label class="relative inline-flex items-center cursor-pointer">
+            <input type="checkbox" id="magicNew" class="sr-only peer" onchange="toggleMagicCategory('showNew', this.checked)">
+            <div class="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-purple-600"></div>
+        </label>
+    </div>
+
+    <div class="bg-gradient-to-br from-orange-50 to-white p-5 rounded-3xl border border-orange-100 shadow-sm flex items-center justify-between">
+        <div class="flex items-center gap-4">
+            <div class="w-12 h-12 bg-orange-500 rounded-2xl flex items-center justify-center text-white shadow-lg shadow-orange-200">
+                <i data-lucide="flame" class="w-6 h-6"></i>
+            </div>
+            <div>
+                <h4 class="font-bold text-slate-800 text-sm">Mais Vistos 🔥</h4>
+                <p class="text-[10px] text-slate-500 font-medium uppercase tracking-wider">Automática (Top 12)</p>
+            </div>
+        </div>
+        <label class="relative inline-flex items-center cursor-pointer">
+            <input type="checkbox" id="magicTop" class="sr-only peer" onchange="toggleMagicCategory('showTop', this.checked)">
+            <div class="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-orange-500"></div>
+        </label>
+    </div>
+                </div>
                 <div id="categoryList" class="bg-white rounded-3xl border border-slate-200 divide-y divide-slate-100 overflow-hidden shadow-xl"></div>
             </div>
 
@@ -1312,8 +1345,13 @@ window.closeLegalModal = () => {
             document.getElementById('dashboardStoreToggle').checked = data.isStoreOpen !== false;
             document.getElementById('statusLabel').textContent = (data.isStoreOpen !== false) ? 'Aberto' : 'Fechado';
             deliveryAreas = data.deliveryAreas || []; renderDeliveryAreas();
-            initAnalyticsInsights(); 
-    }
+            initAnalyticsInsights();
+            // Dentro do onSnapshot que lê config/store
+if (data.magicCategories) {
+    document.getElementById('magicNew').checked = !!data.magicCategories.showNew;
+    document.getElementById('magicTop').checked = !!data.magicCategories.showTop;
+}
+        }
 });
 
     // --- NOVA PARTE: LISTENER DE ANALYTICS GLOBAL ---
@@ -2078,6 +2116,22 @@ async function initAnalyticsInsights() {
         }
     });
 }
+
+        async function toggleMagicCategory(type, isVisible) {
+    try {
+        const storeRef = doc(db, `stores/${currentStoreId}/config/store`);
+        
+        // Atualiza apenas o campo específico dentro de magicCategories
+        await updateDoc(storeRef, {
+            [`magicCategories.${type}`]: isVisible
+        });
+        
+        showToast("Vitrine atualizada!");
+    } catch (error) {
+        console.error("Erro ao atualizar categoria mágica:", error);
+        showToast("Erro ao salvar.", "error");
+    }
+        }
         
     </script>
 </body>
