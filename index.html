@@ -1512,38 +1512,37 @@ if (data.magicCategories) {
     }
 };
        window.deleteProduct = async (id, imageUrls = []) => {
-    if(!confirm("Deseja apagar este produto permanentemente?")) return;
+    if(!confirm("Deseja apagar este produto permanentemente? Suas fotos também serão removidas do servidor.")) return;
 
     try {
         // 1. Apaga o documento no Firestore
         const docRef = doc(db, `stores/${currentStoreId}/products`, id);
         await deleteDoc(docRef); 
         
-        // 2. Apaga as fotos no Storage (Se houver)
+        // 2. Apaga as fotos no Storage (Limpeza Física)
         if (imageUrls && imageUrls.length > 0) {
             const deletePromises = imageUrls.map(url => {
-                // Verifica se a URL é do seu Firebase Storage antes de tentar deletar
                 if (url && url.includes('firebasestorage.googleapis.com')) {
+                    // Criamos a referência a partir da URL para deletar o arquivo real
                     const imageRef = ref(storage, url);
-                    return deleteObject(imageRef).catch(e => console.warn("Aviso: Foto não encontrada no Storage, ignorando...", e));
+                    return deleteObject(imageRef).catch(e => console.warn("Arquivo não encontrado no Storage, ignorando..."));
                 }
                 return Promise.resolve();
             });
             await Promise.all(deletePromises);
         }
 
-        // 3. Atualiza o carimbo da vitrine (Trigger de atualização)
+        // 3. Atualiza a vitrine
         const storeRef = doc(db, `stores/${currentStoreId}/config/store`);
         await setDoc(storeRef, { lastUpdate: Date.now() }, { merge: true });
         
-        // 4. Feedback Visual (Usando window. para garantir o escopo)
-        window.showToast("🗑️ Produto removido com sucesso!");
-
+        window.showToast("🗑️ Produto e fotos removidos com sucesso!");
     } catch (err) {
         console.error("Erro na exclusão:", err);
-        window.showToast("❌ Erro ao excluir produto.");
+        window.showToast("❌ Erro ao excluir.");
     }
 };
+        
         
 
         window.toggleProductStatus = async (id, currentStatus) => {
@@ -1888,8 +1887,27 @@ window.handleBannerSubmit = async (e) => {
     }
 };
 
-        window.deleteBanner = async (id) => { if(confirm("Apagar banner?")) await deleteDoc(doc(db, `stores/${currentStoreId}/hero_cards`, id)); };
+        window.deleteBanner = async (id) => {
+    if(!confirm("Apagar banner? A imagem também será removida.")) return;
+    
+    try {
+        const bannerDoc = allBanners.find(b => b.id === id);
+        const imageUrl = bannerDoc ? bannerDoc.imageUrl : null;
 
+        // Apaga do Firestore
+        await deleteDoc(doc(db, `stores/${currentStoreId}/hero_cards`, id));
+
+        // Apaga do Storage
+        if (imageUrl && imageUrl.includes('firebasestorage.googleapis.com')) {
+            const bannerImgRef = ref(storage, imageUrl);
+            await deleteObject(bannerImgRef).catch(e => console.warn("Imagem do banner não encontrada."));
+        }
+
+        showToast("Banner removido!");
+    } catch (e) {
+        showToast("Erro ao excluir banner.");
+    }
+};
         function renderBannerList() {
     const listContainer = document.getElementById('bannersList');
     document.getElementById('emptyBannersMsg').classList.toggle('hidden', allBanners.length > 0);
