@@ -2161,6 +2161,35 @@ window.toggleMagicCategory = async function(type, isVisible) {
         alert("Erro no Firebase: " + error.message);
     }
 };
+
+    window.bulkToggleStatus = async (categoryName, newStatus) => {
+    const actionText = newStatus === 'paused' ? 'pausar todos os produtos de' : 'ativar todos os produtos de';
+    if(!confirm(`Deseja ${actionText} "${categoryName}"?`)) return;
+
+    // Filtra apenas os produtos que pertencem a esta categoria
+    const productsToUpdate = allProducts.filter(p => p.category === categoryName);
+    
+    if(productsToUpdate.length === 0) return;
+
+    showToast("⚙️ Processando lote...");
+
+    try {
+        const promises = productsToUpdate.map(p => 
+            updateDoc(doc(db, `stores/${currentStoreId}/products`, p.id), { status: newStatus })
+        );
+
+        await Promise.all(promises);
+
+        // Notifica a vitrine para atualizar o cache
+        const storeRef = doc(db, `stores/${currentStoreId}/config/store`);
+        await updateDoc(storeRef, { lastUpdate: Date.now() });
+
+        showToast(`✅ Categoria "${categoryName}" ${newStatus === 'paused' ? 'pausada' : 'ativada'}!`);
+    } catch (err) {
+        console.error(err);
+        showToast("❌ Erro ao processar alteração em massa.");
+    }
+};
         
     </script>
 </body>
