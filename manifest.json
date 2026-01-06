@@ -2,7 +2,7 @@
   "name": "Painel do Lojista",
   "short_name": "Painel Loja",
   "description": "Gestão de pedidos em tempo real",
-  "start_url": "/index.html",
+  "start_url": "./index.html",
   "display": "standalone",
   "background_color": "#ffffff",
   "theme_color": "#8b5cf6",
