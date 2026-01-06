@@ -2627,7 +2627,7 @@ window.calculateProfit = () => {
     }
 };
 
-// Atualize sua função de renderizar a matriz para incluir o input de estoque:
+// 1. GERAÇÃO DA MATRIZ COM CAMPO DE ESTOQUE
 window.renderMatrixUI = () => {
     const tbody = document.getElementById('variationMatrixBody');
     tbody.innerHTML = '';
@@ -2654,6 +2654,84 @@ window.renderMatrixUI = () => {
         tbody.appendChild(tr);
     });
 };
+
+// 2. CALCULADORA DE LUCRO
+window.calculateProfit = () => {
+    const cost = parseFloat(document.getElementById('prodCost').value) || 0;
+    const sale = parseFloat(document.getElementById('prodValue').value) || 0;
+    const promo = parseFloat(document.getElementById('prodPromo').value) || 0;
+    
+    const finalSale = promo > 0 ? promo : sale;
+    const resDiv = document.getElementById('profitRes');
+    const badge = document.getElementById('profitBadge');
+
+    if (cost > 0 && finalSale > 0) {
+        resDiv.classList.remove('hidden');
+        badge.classList.remove('hidden');
+        const profit = finalSale - cost;
+        const margin = (profit / finalSale) * 100;
+        
+        document.getElementById('profitAmt').innerText = `R$ ${profit.toFixed(2).replace('.',',')}`;
+        document.getElementById('profitPct').innerText = `${margin.toFixed(0)}%`;
+        document.getElementById('profitPct').className = margin > 0 ? "text-xl font-black text-green-400" : "text-xl font-black text-red-400";
+    } else {
+        resDiv.classList.add('hidden');
+        badge.classList.add('hidden');
+    }
+};
+
+// 3. SALVAR PRODUTO COM OS NOVOS CAMPOS
+window.handleProductSubmit = async (e) => {
+    e.preventDefault();
+    const btn = document.getElementById('btnSaveProd');
+    const loader = document.getElementById('imageLoading');
+    if(btn) btn.disabled = true;
+    if(loader) loader.classList.remove('hidden');
+
+    try {
+        const id = document.getElementById('prodId').value || 'prod_' + Date.now();
+        const imageUrls = [];
+
+        // Upload de imagens (Lógica mantida)
+        for (let i = 0; i < currentProductImages.length; i++) {
+            const img = currentProductImages[i];
+            if (img.startsWith('http')) imageUrls.push(img);
+            else {
+                const fileRef = ref(storage, `stores/${currentStoreId}/products/${id}_${i}.jpg`);
+                await uploadString(fileRef, img, 'data_url', { contentType: 'image/jpeg' });
+                imageUrls.push(await getDownloadURL(fileRef));
+            }
+        }
+
+        const data = {
+            name: document.getElementById('prodName').value,
+            sku: document.getElementById('prodSku').value || '',
+            category: document.getElementById('prodCategory').value,
+            costPrice: parseFloat(document.getElementById('prodCost').value) || 0, // NOVO
+            value: parseFloat(document.getElementById('prodValue').value) || 0,
+            promoValue: parseFloat(document.getElementById('prodPromo').value) || null,
+            images: imageUrls,
+            description: document.getElementById('prodDesc').value || '',
+            isFeatured: document.getElementById('prodFeatured').checked,
+            variations: variationsMatrix, // MANTIDO COM ESTOQUE
+            lastUpdate: Date.now(),
+            status: 'active'
+        };
+
+        await setDoc(doc(db, `stores/${currentStoreId}/products`, id), data, { merge: true });
+        await updateDoc(doc(db, `stores/${currentStoreId}/config/store`), { lastUpdate: Date.now() });
+
+        showToast("Produto publicado com sucesso! 🚀");
+        document.getElementById('productModal').classList.add('hidden');
+    } catch (err) {
+        console.error(err);
+        showToast("Erro ao salvar.");
+    } finally {
+        if(btn) btn.disabled = false;
+        if(loader) loader.classList.add('hidden');
+    }
+};
+        
         
     </script>
 </body>
