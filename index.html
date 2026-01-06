@@ -1390,27 +1390,57 @@ onAuthStateChanged(auth, async (user) => {
     document.getElementById('urlDisplay').textContent = url;
     document.getElementById('storeMenuBtn').classList.remove('opacity-50', 'pointer-events-none');
 
-    // LISTENER: Configurações da Loja
+                // LISTENER: Configurações da Loja (ATUALIZADO)
     onSnapshot(doc(db, `stores/${currentStoreId}/config/store`), d => {
         if(d.exists()) {
             const data = d.data();
             document.getElementById('sidebarStoreName').textContent = data.storeName;
             document.getElementById('sidebarStoreNameMobile').textContent = data.storeName;
+            
+            // Carregar Logo no Preview das Configurações
             if (data.logoUrl) {
-                const lD = document.getElementById('sidebarStoreLogo'); const lM = document.getElementById('sidebarStoreLogoMobile');
-                lD.src = lM.src = data.logoUrl; lD.classList.remove('hidden'); lM.classList.remove('hidden');
+                const lD = document.getElementById('sidebarStoreLogo'); 
+                const lM = document.getElementById('sidebarStoreLogoMobile');
+                const lP = document.getElementById('logoPreviewImg');
+                const lI = document.getElementById('logoPlaceholderIcon');
+                
+                lD.src = lM.src = lP.src = data.logoUrl;
+                lD.classList.remove('hidden'); lM.classList.remove('hidden'); lP.classList.remove('hidden');
+                if(lI) lI.classList.add('hidden');
             }
-            if(data.subscriptionStatus === 'suspended') document.getElementById('suspended-screen').classList.remove('hidden');
-            storeConfig = { planId: data.planId || 'Básico', maxProducts: data.maxProducts || 50, maxBanners: data.maxBanners || 1, hasCarousel: data.hasCarousel ?? false };
-            updateUIByPlan();
+
+            // Preencher campos de Identidade e Visual
             document.getElementById('confStoreName').value = data.storeName || '';
             document.getElementById('confWhatsapp').value = data.whatsappNumber || '';
-            applyPhoneMask('confWhatsapp');
             document.getElementById('confFooter').value = data.footerText || '';
             document.getElementById('confColorPrimary').value = data.primaryColor || '#8b5cf6';
+            
+            // Status da Loja
             document.getElementById('dashboardStoreToggle').checked = data.isStoreOpen !== false;
             document.getElementById('statusLabel').textContent = (data.isStoreOpen !== false) ? 'Aberto' : 'Fechado';
-            deliveryAreas = data.deliveryAreas || []; renderDeliveryAreas();
+
+            // Carregar Categorias Mágicas (Dashboard e Categorias)
+            if (data.magicCategories) {
+                const mNew = data.magicCategories.showNew;
+                const mTop = data.magicCategories.showTop;
+                
+                // Marca no Dashboard
+                if(document.getElementById('magicNew')) document.getElementById('magicNew').checked = !!mNew;
+                if(document.getElementById('magicTop')) document.getElementById('magicTop').checked = !!mTop;
+                
+                // Marca na aba Categorias (vamos adicionar os IDs abaixo)
+                if(document.getElementById('magicNewCat')) document.getElementById('magicNewCat').checked = !!mNew;
+                if(document.getElementById('magicTopCat')) document.getElementById('magicTopCat').checked = !!mTop;
+            }
+
+            // Carregar Áreas de Entrega
+            deliveryAreas = data.deliveryAreas || []; 
+            renderDeliveryAreas();
+            
+            // ... resto da função ...
+        }
+    });
+            
             initAnalyticsInsights();
             // Dentro do onSnapshot que lê config/store
 if (data.magicCategories) {
