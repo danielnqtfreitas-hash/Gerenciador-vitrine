@@ -2406,66 +2406,63 @@ window.toggleMagicCategory = async function(type, isVisible) {
     const p = ordersCache[id];
     if(!p) return;
 
-    // Para o som de alerta
     const audio = document.getElementById('notifSound');
     audio.pause();
     audio.currentTime = 0;
 
-    // 1. Preenche Cabeçalho e Dados Básicos
-    document.getElementById('modalOrderId').innerText = `#${p.id.slice(-5).toUpperCase()}`;
-    document.getElementById('modalCustomerName').innerText = p.customer.name;
-    document.getElementById('modalPayment').innerText = p.paymentMethod;
-    document.getElementById('modalAddress').innerText = p.customer.addressString || 'Retirada na Loja';
-    document.getElementById('modalTotal').innerText = `R$ ${p.total.toFixed(2).replace('.',',')}`;
+    // ESTA LINHA É A SOLUÇÃO: Sempre reseta o visual do modal para os dados do cliente ao abrir
+    const modalContent = document.querySelector('#orderDetailModal .auth-card-content');
+    modalContent.innerHTML = `
+        <div class="grid md:grid-cols-2 gap-4">
+            <div class="p-4 bg-slate-50 rounded-2xl border border-slate-100">
+                <p class="text-[10px] font-black text-slate-400 uppercase mb-2">Cliente</p>
+                <p id="modalCustomerName" class="font-bold text-slate-800">${p.customer.name}</p>
+                <a id="modalCustomerPhone" href="https://wa.me/55${p.customer.phone.replace(/\D/g,'')}" target="_blank" class="text-green-600 text-xs font-bold flex items-center gap-1 mt-1 underline">${p.customer.phone}</a>
+            </div>
+            <div class="p-4 bg-slate-50 rounded-2xl border border-slate-100">
+                <p class="text-[10px] font-black text-slate-400 uppercase mb-2">Pagamento / Entrega</p>
+                <p class="text-xs font-bold text-slate-700">${p.paymentMethod}</p>
+                <p class="text-[10px] text-slate-500 mt-1">${p.customer.addressString || 'Retirada na Loja'}</p>
+            </div>
+        </div>
+        <div class="border rounded-2xl overflow-hidden mt-4">
+            <table class="w-full text-sm text-left">
+                <thead class="bg-slate-50 border-b"><tr class="text-[10px] uppercase text-slate-400 font-black"><th class="px-4 py-2">Item</th><th class="px-4 py-2 text-center">Qtd</th><th class="px-4 py-2 text-right">Preço</th></tr></thead>
+                <tbody class="divide-y divide-slate-100">
+                    ${p.items.map(i => `
+                        <tr>
+                            <td class="px-4 py-3"><div class="font-bold text-slate-700">${i.name}</div></td>
+                            <td class="px-4 py-3 text-center">x${i.qty}</td>
+                            <td class="px-4 py-3 text-right font-bold">R$ ${(i.price * i.qty).toFixed(2)}</td>
+                        </tr>
+                    `).join('')}
+                </tbody>
+            </table>
+        </div>
+        <div class="flex justify-between items-center p-4 bg-primary-50 rounded-2xl border border-primary-100 font-bold mt-4">
+            <span class="text-primary-700 text-sm">TOTAL</span>
+            <span class="text-xl text-primary-800">R$ ${p.total.toFixed(2)}</span>
+        </div>
+        <div class="grid grid-cols-2 gap-3 mt-6">
+            <a href="https://wa.me/55${p.customer.phone.replace(/\D/g,'')}" target="_blank" class="py-4 bg-green-500 text-white rounded-2xl font-bold flex justify-center items-center gap-2 shadow-lg"><i data-lucide="message-circle" class="w-5 h-5"></i> WhatsApp</a>
+            <button id="btnActionMain" class="py-4 bg-blue-600 text-white rounded-2xl font-bold flex justify-center shadow-lg">${p.status === 'pending_whatsapp' ? 'Confirmar' : 'Entregue'}</button>
+            <button id="btnActionEdit" class="py-4 border border-slate-200 text-slate-600 rounded-2xl font-bold text-xs uppercase">Mudar Status</button>
+            <button onclick="deleteOrder('${p.id}')" class="py-4 border border-red-100 text-red-500 rounded-2xl font-bold text-xs uppercase">Excluir</button>
+        </div>
+    `;
+
+    document.getElementById('btnActionMain').onclick = () => updateOrderStatus(p.id, p.status === 'pending_whatsapp' ? 'confirmed' : 'completed');
     
-    // 2. Configura o Link do WhatsApp
-    const rawPhone = p.customer.phone.replace(/\D/g,'');
-    const linkTel = document.getElementById('modalCustomerPhone');
-    linkTel.href = `https://wa.me/55${rawPhone}`;
-    linkTel.innerText = p.customer.phone;
-
-    // 3. Preenche a Lista de Itens (Importante para saber o que vender!)
-    document.getElementById('modalItemsList').innerHTML = p.items.map(i => {
-        const vars = i.variations ? `(${Object.values(i.variations).join('/')})` : '';
-        return `<tr class="bg-white">
-            <td class="px-4 py-3"><div class="font-bold text-slate-700">${i.name}</div><div class="text-[9px] text-slate-400">${vars}</div></td>
-            <td class="px-4 py-3 text-center text-slate-500">x${i.qty}</td>
-            <td class="px-4 py-3 text-right font-bold text-slate-800">R$ ${(i.price * i.qty).toFixed(2).replace('.',',')}</td>
-        </tr>`;
-    }).join('');
-
-    // 4. Configura os Botões de Ação
-    const btnMain = document.getElementById('btnActionMain');
-    const btnEdit = document.getElementById('btnActionEdit');
-
-    if(p.status === 'pending_whatsapp') {
-        btnMain.innerHTML = `Confirmar Pedido`;
-        btnMain.onclick = () => updateOrderStatus(p.id, 'confirmed');
-    } else {
-        btnMain.innerHTML = `Marcar como Entregue`;
-        btnMain.onclick = () => updateOrderStatus(p.id, 'completed');
-    }
-
-    btnEdit.innerText = "MUDAR STATUS";
-    btnEdit.onclick = () => {
-        const opcoes = [
-            { id: 'confirmed', label: '✅ Em Preparo' },
-            { id: 'completed', label: '🏁 Entregue' },
-            { id: 'canceled', label: '❌ Cancelar' }
-        ];
-
-        let menuHtml = `<div class="space-y-3">
-            <p class="text-[10px] font-black text-slate-400 text-center mb-4 uppercase">Escolha o novo status</p>
-            ${opcoes.map(opt => `
-                <button onclick="updateOrderStatus('${p.id}', '${opt.id}')" 
-                    class="w-full p-5 bg-slate-50 active:bg-slate-200 rounded-2xl font-bold text-slate-700 border border-slate-200 text-left flex justify-between">
-                    ${opt.label} <i data-lucide="chevron-right" class="w-4 h-4 text-slate-300"></i>
-                </button>
-            `).join('')}
-            <button onclick="openOrderModal('${p.id}')" class="w-full p-4 text-slate-400 text-xs font-black uppercase">Voltar</button>
-        </div>`;
-
-        document.querySelector('#orderDetailModal .auth-card-content').innerHTML = menuHtml;
+    document.getElementById('btnActionEdit').onclick = () => {
+        modalContent.innerHTML = `
+            <div class="space-y-3 animate-fade-in">
+                <p class="text-[10px] font-black text-slate-400 uppercase text-center mb-4">Novo Status</p>
+                <button onclick="updateOrderStatus('${p.id}', 'confirmed')" class="w-full p-5 bg-slate-50 rounded-2xl font-bold text-left flex justify-between">✅ Em Preparo <i data-lucide="chevron-right"></i></button>
+                <button onclick="updateOrderStatus('${p.id}', 'completed')" class="w-full p-5 bg-slate-50 rounded-2xl font-bold text-left flex justify-between">🏁 Entregue <i data-lucide="chevron-right"></i></button>
+                <button onclick="updateOrderStatus('${p.id}', 'canceled')" class="w-full p-5 bg-red-50 text-red-600 rounded-2xl font-bold text-left flex justify-between">❌ Cancelar <i data-lucide="chevron-right"></i></button>
+                <button onclick="openOrderModal('${p.id}')" class="w-full p-4 text-slate-400 text-xs font-black uppercase">Voltar</button>
+            </div>
+        `;
         lucide.createIcons();
     };
 
@@ -2473,29 +2470,17 @@ window.toggleMagicCategory = async function(type, isVisible) {
     lucide.createIcons();
 };
 
-async function updateOrderStatus(id, status) {
-    const btnMain = document.getElementById('btnActionMain');
-    if(btnMain) btnMain.innerHTML = "Processando...";
-    
+window.updateOrderStatus = async (id, status) => {
     try {
-        const statusTraduzido = {
-            'pending_whatsapp': 'Pendente',
-            'confirmed': 'Confirmado',
-            'completed': 'Entregue',
-            'canceled': 'Cancelado'
-        };
-
-        await updateDoc(doc(db, `stores/${currentStoreId}/orders`, id), { status });
-        
-        showToast(`Pedido ${statusTraduzido[status] || status}! ✅`);
-        
-        // Fecha o modal automaticamente
+        const storeRef = doc(db, `stores/${currentStoreId}/orders`, id);
+        await updateDoc(storeRef, { status: status });
+        showToast("Status atualizado!");
         document.getElementById('orderDetailModal').classList.add('hidden');
-    } catch (e) { 
-        showToast("Erro ao atualizar status."); 
-        if(btnMain) btnMain.innerHTML = "Tentar Novamente";
+    } catch (e) {
+        showToast("Erro ao atualizar.");
     }
-}
+};
+
     </script>
 </body>
 </html>
