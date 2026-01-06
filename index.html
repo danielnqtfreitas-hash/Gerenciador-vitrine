@@ -2402,84 +2402,111 @@ window.toggleMagicCategory = async function(type, isVisible) {
     });
 };
 
-        window.openOrderModal = (id) => {
+       window.openOrderModal = (id) => {
     const p = ordersCache[id];
     if(!p) return;
 
     const audio = document.getElementById('notifSound');
-    audio.pause();
-    audio.currentTime = 0;
+    if(audio) {
+        audio.pause();
+        audio.currentTime = 0;
+    }
 
-    // ESTA LINHA É A SOLUÇÃO: Sempre reseta o visual do modal para os dados do cliente ao abrir
     const modalContent = document.querySelector('#orderDetailModal .auth-card-content');
-    modalContent.innerHTML = `
-        <div class="grid md:grid-cols-2 gap-4">
-            <div class="p-4 bg-slate-50 rounded-2xl border border-slate-100">
-                <p class="text-[10px] font-black text-slate-400 uppercase mb-2">Cliente</p>
-                <p id="modalCustomerName" class="font-bold text-slate-800">${p.customer.name}</p>
-                <a id="modalCustomerPhone" href="https://wa.me/55${p.customer.phone.replace(/\D/g,'')}" target="_blank" class="text-green-600 text-xs font-bold flex items-center gap-1 mt-1 underline">${p.customer.phone}</a>
-            </div>
-            <div class="p-4 bg-slate-50 rounded-2xl border border-slate-100">
-                <p class="text-[10px] font-black text-slate-400 uppercase mb-2">Pagamento / Entrega</p>
-                <p class="text-xs font-bold text-slate-700">${p.paymentMethod}</p>
-                <p class="text-[10px] text-slate-500 mt-1">${p.customer.addressString || 'Retirada na Loja'}</p>
-            </div>
-        </div>
-        <div class="border rounded-2xl overflow-hidden mt-4">
-            <table class="w-full text-sm text-left">
-                <thead class="bg-slate-50 border-b"><tr class="text-[10px] uppercase text-slate-400 font-black"><th class="px-4 py-2">Item</th><th class="px-4 py-2 text-center">Qtd</th><th class="px-4 py-2 text-right">Preço</th></tr></thead>
-                <tbody class="divide-y divide-slate-100">
-                    ${p.items.map(i => `
-                        <tr>
-                            <td class="px-4 py-3"><div class="font-bold text-slate-700">${i.name}</div></td>
-                            <td class="px-4 py-3 text-center">x${i.qty}</td>
-                            <td class="px-4 py-3 text-right font-bold">R$ ${(i.price * i.qty).toFixed(2)}</td>
-                        </tr>
-                    `).join('')}
-                </tbody>
-            </table>
-        </div>
-        <div class="flex justify-between items-center p-4 bg-primary-50 rounded-2xl border border-primary-100 font-bold mt-4">
-            <span class="text-primary-700 text-sm">TOTAL</span>
-            <span class="text-xl text-primary-800">R$ ${p.total.toFixed(2)}</span>
-        </div>
-        <div class="grid grid-cols-2 gap-3 mt-6">
-            <a href="https://wa.me/55${p.customer.phone.replace(/\D/g,'')}" target="_blank" class="py-4 bg-green-500 text-white rounded-2xl font-bold flex justify-center items-center gap-2 shadow-lg"><i data-lucide="message-circle" class="w-5 h-5"></i> WhatsApp</a>
-            <button id="btnActionMain" class="py-4 bg-blue-600 text-white rounded-2xl font-bold flex justify-center shadow-lg">${p.status === 'pending_whatsapp' ? 'Confirmar' : 'Entregue'}</button>
-            <button id="btnActionEdit" class="py-4 border border-slate-200 text-slate-600 rounded-2xl font-bold text-xs uppercase">Mudar Status</button>
-            <button onclick="deleteOrder('${p.id}')" class="py-4 border border-red-100 text-red-500 rounded-2xl font-bold text-xs uppercase">Excluir</button>
-        </div>
-    `;
-
-    document.getElementById('btnActionMain').onclick = () => updateOrderStatus(p.id, p.status === 'pending_whatsapp' ? 'confirmed' : 'completed');
     
-    document.getElementById('btnActionEdit').onclick = () => {
+    // Função interna para renderizar o conteúdo principal
+    const renderMainContent = () => {
         modalContent.innerHTML = `
-            <div class="space-y-3 animate-fade-in">
-                <p class="text-[10px] font-black text-slate-400 uppercase text-center mb-4">Novo Status</p>
-                <button onclick="updateOrderStatus('${p.id}', 'confirmed')" class="w-full p-5 bg-slate-50 rounded-2xl font-bold text-left flex justify-between">✅ Em Preparo <i data-lucide="chevron-right"></i></button>
-                <button onclick="updateOrderStatus('${p.id}', 'completed')" class="w-full p-5 bg-slate-50 rounded-2xl font-bold text-left flex justify-between">🏁 Entregue <i data-lucide="chevron-right"></i></button>
-                <button onclick="updateOrderStatus('${p.id}', 'canceled')" class="w-full p-5 bg-red-50 text-red-600 rounded-2xl font-bold text-left flex justify-between">❌ Cancelar <i data-lucide="chevron-right"></i></button>
-                <button onclick="openOrderModal('${p.id}')" class="w-full p-4 text-slate-400 text-xs font-black uppercase">Voltar</button>
+            <div class="grid md:grid-cols-2 gap-4">
+                <div class="p-4 bg-slate-50 rounded-2xl border border-slate-100">
+                    <p class="text-[10px] font-black text-slate-400 uppercase mb-2">Cliente</p>
+                    <p class="font-bold text-slate-800">${p.customer.name}</p>
+                    <a href="https://wa.me/55${p.customer.phone.replace(/\D/g,'')}" target="_blank" class="text-green-600 text-xs font-bold flex items-center gap-1 mt-1 underline">${p.customer.phone}</a>
+                </div>
+                <div class="p-4 bg-slate-50 rounded-2xl border border-slate-100">
+                    <p class="text-[10px] font-black text-slate-400 uppercase mb-2">Pagamento / Entrega</p>
+                    <p class="text-xs font-bold text-slate-700">${p.paymentMethod}</p>
+                    <p class="text-[10px] text-slate-500 mt-1">${p.customer.addressString || 'Retirada na Loja'}</p>
+                </div>
+            </div>
+
+            <div class="border rounded-2xl overflow-hidden mt-4">
+                <table class="w-full text-sm text-left">
+                    <thead class="bg-slate-50 border-b"><tr class="text-[10px] uppercase text-slate-400 font-black"><th class="px-4 py-2">Item</th><th class="px-4 py-2 text-center">Qtd</th><th class="px-4 py-2 text-right">Preço</th></tr></thead>
+                    <tbody class="divide-y divide-slate-100">
+                        ${p.items.map(i => `
+                            <tr>
+                                <td class="px-4 py-3 font-bold text-slate-700">${i.name}</td>
+                                <td class="px-4 py-3 text-center">x${i.qty}</td>
+                                <td class="px-4 py-3 text-right font-bold">R$ ${(i.price * i.qty).toFixed(2).replace('.',',')}</td>
+                            </tr>
+                        `).join('')}
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="flex justify-between items-center p-4 bg-primary-50 rounded-2xl border border-primary-100 font-bold mt-4">
+                <span class="text-primary-700 text-sm">TOTAL</span>
+                <span class="text-xl text-primary-800">R$ ${p.total.toFixed(2).replace('.',',')}</span>
+            </div>
+
+            <div class="grid grid-cols-2 gap-3 mt-6">
+                <button id="btnActionMain" class="py-4 bg-blue-600 text-white rounded-2xl font-bold flex justify-center shadow-lg">
+                    ${p.status === 'pending_whatsapp' ? 'Confirmar' : 'Entregue'}
+                </button>
+                <button id="btnActionEdit" class="py-4 border border-slate-200 text-slate-600 rounded-2xl font-bold text-[10px] uppercase">Mudar Status</button>
+                <a href="https://wa.me/55${p.customer.phone.replace(/\D/g,'')}" target="_blank" class="py-4 bg-green-500 text-white rounded-2xl font-bold flex justify-center items-center gap-2 shadow-lg col-span-2"><i data-lucide="message-circle" class="w-5 h-5"></i> WhatsApp</a>
+                <button onclick="window.deleteOrder('${p.id}')" class="py-3 text-red-400 font-bold text-[10px] uppercase col-span-2 mt-2">Excluir Pedido</button>
             </div>
         `;
+
+        // Atribui as funções aos botões após criar o HTML
+        document.getElementById('btnActionMain').onclick = () => window.updateOrderStatus(p.id, p.status === 'pending_whatsapp' ? 'confirmed' : 'completed');
+        
+        document.getElementById('btnActionEdit').onclick = () => {
+            modalContent.innerHTML = `
+                <div class="space-y-3 p-2">
+                    <p class="text-[10px] font-black text-slate-400 uppercase text-center mb-4">Novo Status</p>
+                    <button onclick="window.updateOrderStatus('${p.id}', 'confirmed')" class="w-full p-5 bg-slate-50 rounded-2xl font-bold text-left flex justify-between items-center text-slate-700">✅ Em Preparo <i data-lucide="chevron-right" class="w-4 h-4"></i></button>
+                    <button onclick="window.updateOrderStatus('${p.id}', 'completed')" class="w-full p-5 bg-slate-50 rounded-2xl font-bold text-left flex justify-between items-center text-slate-700">🏁 Entregue <i data-lucide="chevron-right" class="w-4 h-4"></i></button>
+                    <button onclick="window.updateOrderStatus('${p.id}', 'canceled')" class="w-full p-5 bg-red-50 text-red-600 rounded-2xl font-bold text-left flex justify-between items-center">❌ Cancelar <i data-lucide="chevron-right" class="w-4 h-4"></i></button>
+                    <button onclick="window.openOrderModal('${p.id}')" class="w-full p-4 text-slate-400 text-xs font-black uppercase mt-4 text-center">Voltar</button>
+                </div>
+            `;
+            lucide.createIcons();
+        };
         lucide.createIcons();
     };
 
+    renderMainContent();
     document.getElementById('orderDetailModal').classList.remove('hidden');
-    lucide.createIcons();
 };
 
+// FUNÇÕES GLOBAIS (Garantem que o onclick encontre o código)
 window.updateOrderStatus = async (id, status) => {
     try {
-        const storeRef = doc(db, `stores/${currentStoreId}/orders`, id);
-        await updateDoc(storeRef, { status: status });
-        showToast("Status atualizado!");
+        const btn = document.getElementById('btnActionMain');
+        if(btn) btn.innerText = "Salvando...";
+        
+        await updateDoc(doc(db, `stores/${currentStoreId}/orders`, id), { status });
+        showToast("Status atualizado! ✅");
         document.getElementById('orderDetailModal').classList.add('hidden');
     } catch (e) {
         showToast("Erro ao atualizar.");
+        console.error(e);
     }
 };
+
+window.deleteOrder = async (id) => {
+    if(!confirm("Tens a certeza que desejas excluir este pedido permanentemente?")) return;
+    try {
+        await deleteDoc(doc(db, `stores/${currentStoreId}/orders`, id));
+        showToast("Pedido excluído! 🗑️");
+        document.getElementById('orderDetailModal').classList.add('hidden');
+    } catch (e) {
+        showToast("Erro ao excluir.");
+    }
+};  
 
     </script>
 </body>
