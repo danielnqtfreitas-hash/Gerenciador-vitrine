@@ -1435,12 +1435,7 @@ onAuthStateChanged(auth, async (user) => {
 
             // Carregar Áreas de Entrega
             deliveryAreas = data.deliveryAreas || []; 
-            renderDeliveryAreas();
-            
-            // ... resto da função ...
-        }
-    });
-            
+            renderDeliveryAreas();    
             initAnalyticsInsights();
             // Dentro do onSnapshot que lê config/store
 if (data.magicCategories) {
