@@ -11,6 +11,20 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.js"></script>
     <script src="https://unpkg.com/imask"></script>
+    <link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#8b5cf6">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    
+    <script>
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register('sw.js')
+        .then(reg => console.log('PWA ativo!', reg))
+        .catch(err => console.log('Erro no PWA', err));
+    });
+  }
+    </script>
     <script>
         tailwind.config = {
             theme: {
@@ -107,21 +121,7 @@
         .variation-matrix-table { width: 100%; border-collapse: separate; border-spacing: 0 8px; }
         .variation-matrix-table th { @apply text-[10px] uppercase font-black text-slate-400 px-4 py-2 text-left; }
         .variation-matrix-table td { @apply bg-white border-y border-slate-100 px-4 py-3 text-sm first:rounded-l-xl first:border-l last:rounded-r-xl last:border-r; }
-    <link rel="manifest" href="manifest.json">
-<meta name="theme-color" content="#8b5cf6">
-<meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-
-<script>
-  if ('serviceWorker' in navigator) {
-    window.addEventListener('load', () => {
-      navigator.serviceWorker.register('sw.js')
-        .then(reg => console.log('PWA ativo!', reg))
-        .catch(err => console.log('Erro no PWA', err));
-    });
-  }
-</script>
-</style>
+    </style>
 </head>
 <body class="text-slate-800 antialiased h-screen overflow-hidden flex bg-slate-50">
 
