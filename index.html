@@ -1380,40 +1380,109 @@ async function requestNotificationPermission() {
 }
         
 
-        // --- INIT DATA ---
-        
-onAuthStateChanged(auth, async (user) => {
-    fetchPublicPlansEagerly();
-    if(user) {
-        document.getElementById('auth-screen').classList.add('hidden');
-        document.getElementById('userEmailDisplay').textContent = user.email;
-        
-        let dirDoc = await getDoc(doc(db, "admin_directory", user.uid));
-        if(!dirDoc.exists()){
-            const snap = await getDocs(query(collection(db, "stores_registry"), where("ownerEmail", "==", user.email)));
-            if(snap.empty) return handleLogout();
-            currentStoreId = snap.docs[0].data().slug;
-        } else { 
-            currentStoreId = dirDoc.data().storeId; 
+        // --- INIT DATA & AUTH PERSISTENCE ---
+
+// Força o Firebase a salvar a sessão no "disco" do telemóvel
+setPersistence(auth, browserLocalPersistence)
+    .then(() => {
+        // Agora o onAuthStateChanged fica protegido pela persistência
+        return onAuthStateChanged(auth, async (user) => {
+            fetchPublicPlansEagerly();
+            
+            const authScreen = document.getElementById('auth-screen');
+            
+            if(user) {
+                // Se estiver logado, garante que a tela de login suma imediatamente
+                if(authScreen) authScreen.classList.add('hidden');
+                document.getElementById('userEmailDisplay').textContent = user.email;
+                
+                try {
+                    let dirDoc = await getDoc(doc(db, "admin_directory", user.uid));
+                    if(!dirDoc.exists()){
+                        const snap = await getDocs(query(collection(db, "stores_registry"), where("ownerEmail", "==", user.email)));
+                        if(snap.empty) return handleLogout();
+                        currentStoreId = snap.docs[0].data().slug;
+                    } else { 
+                        currentStoreId = dirDoc.data().storeId; 
+                    }
+
+                    if (currentStoreId) {
+                        initStoreData(); 
+                        initAnalyticsChart(); 
+                        initOrderListener(currentStoreId); 
+                        // Abre nos pedidos por padrão
+                        changeTab('orders');       
+                        setTimeout(requestNotificationPermission, 5000);
+                    }
+                } catch (e) {
+                    console.error("Erro ao carregar loja:", e);
+                }
+
+            } else { 
+                // Se não houver rastro de login, mostra a tela de acesso
+                if(authScreen) authScreen.classList.remove('hidden'); 
+                lucide.createIcons(); 
+            }
+        });
+    })
+    .catch((error) => {
+        console.error("Erro ao configurar persistência:", error);
+    });
+
+// --- LISTENER DE PEDIDOS (VERSÃO 5 CARACTERES) ---
+window.initOrderListener = (storeId) => {
+    const q = query(collection(db, `stores/${storeId}/orders`), orderBy("createdAt", "desc"));
+    const container = document.getElementById('ordersCardsContainer');
+
+    onSnapshot(q, (snapshot) => {
+        if (!container) return;
+        container.innerHTML = '';
+        let hasNewPending = false;
+
+        snapshot.forEach(doc => {
+            const p = { id: doc.id, ...doc.data() };
+            ordersCache[p.id] = p;
+
+            if(p.status === 'pending_whatsapp') hasNewPending = true;
+
+            const hour = p.createdAt ? new Date(p.createdAt.toDate()).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'}) : '--:--';
+            
+            const statusMap = {
+                'pending_whatsapp': { label: 'NOVO', class: 'bg-red-500 text-white animate-pulse' },
+                'confirmed': { label: 'EM PREPARO', class: 'bg-amber-100 text-amber-700' },
+                'completed': { label: 'ENTREGUE', class: 'bg-green-100 text-green-700' },
+                'canceled': { label: 'CANCELADO', class: 'bg-slate-100 text-slate-500' }
+            };
+            const s = statusMap[p.status] || { label: 'OUTRO', class: 'bg-slate-100' };
+
+            // AJUSTE PARA 5 CARACTERES: Profissional para Multiloja
+            const pedidoIdCurto = p.id.toUpperCase().slice(-5);
+
+            container.innerHTML += `
+                <div onclick="window.openOrderModal('${p.id}')" class="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm active:scale-[0.98] transition-all flex justify-between items-center mb-3">
+                    <div class="space-y-1">
+                        <div class="flex items-center gap-2">
+                            <span class="text-[9px] font-black px-2 py-0.5 rounded-full ${s.class}">${s.label}</span>
+                            <span class="text-[10px] text-slate-400 font-mono">#${pedidoIdCurto} • ${hour}</span>
+                        </div>
+                        <p class="font-bold text-slate-800">${p.customer.name}</p>
+                    </div>
+                    <div class="text-right">
+                        <p class="font-black text-slate-800">R$ ${p.total.toFixed(2).replace('.',',')}</p>
+                    </div>
+                </div>`;
+        });
+
+        if (!isFirstLoad && hasNewPending) {
+            const audio = document.getElementById('notifSound');
+            if(audio) audio.play().catch(() => {});
+            document.getElementById('menuBadgeMobile')?.classList.remove('hidden');
         }
-
-        // Inicializa dados da loja e gráficos
-        initStoreData(); 
-        initAnalyticsChart(); 
-
-        // --- ATIVAÇÃO DO RADAR E ABA DE PEDIDOS ---
-        if (currentStoreId) {
-            initOrderListener(currentStoreId); // Liga o monitor de pedidos
-            changeTab('orders');       
-            setTimeout(requestNotificationPermission, 5000);
-        }
-
-    } else { 
-        document.getElementById('auth-screen').classList.remove('hidden'); 
-        lucide.createIcons(); 
-    }
-});
         
+        isFirstLoad = false;
+        lucide.createIcons();
+    });
+};
 
         function initStoreData() {
     const url = `https://danielnqtfreitas-hash.github.io/Vitrine/?id=${currentStoreId}`;
