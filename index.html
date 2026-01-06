@@ -2658,57 +2658,6 @@ window.deleteOrder = async (id) => {
         showToast("Erro ao excluir.");
     }
 };  
-window.calculateProfit = () => {
-    const cost = parseFloat(document.getElementById('prodCost').value) || 0;
-    const sale = parseFloat(document.getElementById('prodValue').value) || 0;
-    const promo = parseFloat(document.getElementById('prodPromo').value) || 0;
-    
-    const finalSale = promo > 0 ? promo : sale;
-    const resDiv = document.getElementById('profitRes');
-    const badge = document.getElementById('profitBadge');
-
-    if (cost > 0 && finalSale > 0) {
-        resDiv.classList.remove('hidden');
-        badge.classList.remove('hidden');
-        const profit = finalSale - cost;
-        const margin = (profit / finalSale) * 100;
-        
-        document.getElementById('profitAmt').innerText = `R$ ${profit.toFixed(2).replace('.',',')}`;
-        document.getElementById('profitPct').innerText = `${margin.toFixed(0)}%`;
-        document.getElementById('profitPct').className = margin > 0 ? "text-xl font-black text-green-400" : "text-xl font-black text-red-400";
-    } else {
-        resDiv.classList.add('hidden');
-        badge.classList.add('hidden');
-    }
-};
-
-// 1. GERAÇÃO DA MATRIZ COM CAMPO DE ESTOQUE
-window.renderMatrixUI = () => {
-    const tbody = document.getElementById('variationMatrixBody');
-    tbody.innerHTML = '';
-    
-    variationsMatrix.forEach((v, idx) => {
-        const tr = document.createElement('tr');
-        tr.innerHTML = `
-            <td>
-                <label class="toggle-switch">
-                    <input type="checkbox" ${v.active ? 'checked' : ''} onchange="variationsMatrix[${idx}].active = this.checked">
-                    <span class="slider"></span>
-                </label>
-            </td>
-            <td class="font-bold text-slate-800">${v.color} / ${v.size}</td>
-            <td>
-                <input type="number" step="0.01" value="${v.price}" oninput="variationsMatrix[${idx}].price = parseFloat(this.value)" 
-                    class="w-full border border-slate-200 rounded-lg p-2 text-xs font-bold">
-            </td>
-            <td>
-                <input type="number" value="${v.stock || 0}" oninput="variationsMatrix[${idx}].stock = parseInt(this.value)" 
-                    class="w-full border-2 border-blue-100 bg-blue-50 rounded-lg p-2 text-xs font-bold text-blue-700 focus:border-blue-400 outline-none">
-            </td>
-        `;
-        tbody.appendChild(tr);
-    });
-};
 
     </script>
 </body>
