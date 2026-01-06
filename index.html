@@ -781,6 +781,9 @@
         import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged, updatePassword, setPersistence, browserLocalPersistence, browserSessionPersistence } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
         import { getFirestore, doc, getDoc, setDoc, updateDoc, deleteDoc, onSnapshot, collection, addDoc, query, where, getDocs, orderBy, limit, Timestamp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
         import { getStorage, ref, uploadString, getDownloadURL, deleteObject } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-storage.js";
+        // Procure onde começam os imports e adicione este:
+        import { getMessaging, getToken, onMessage } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-messaging.js";
+        
         
         const CONFIG = { 
             apiKey: "AIzaSyAdwsGBTApwOwqr37qCv72gdPRbipsZG0Q", 
@@ -794,6 +797,7 @@
         const db = getFirestore(app);
         const auth = getAuth(app);
         const storage = getStorage(app);
+        const messaging = getMessaging(app);
 
         let currentStoreId = null;
         let allProducts = [], allCategories = [], allBanners = [], deliveryAreas = [];
@@ -1362,7 +1366,32 @@ window.closeLegalModal = () => {
         if (loader) loader.classList.add('hidden');
     }
 };
-    
+
+        // Função para ativar notificações
+async function requestNotificationPermission() {
+    try {
+        const permission = await Notification.requestPermission();
+        if (permission === 'granted') {
+            const token = await getToken(messaging, { 
+                vapidKey: 'BKk5Dr9AJ8fY0QAelaAvSPK7D9csG5dwdW45VhG0C-oeipeKD2kErkExPHQRp0eAYhm797-k5lLn3OO7-TRfZVw' 
+            });
+            
+            if (token && currentStoreId) {
+                // Salva o token no cadastro da loja no Firestore
+                const storeRef = doc(db, `stores/${currentStoreId}/config/store`);
+                await updateDoc(storeRef, {
+                    notificationToken: token
+                });
+                console.log("Token de notificação salvo com sucesso!");
+            }
+        } else {
+            console.log("Permissão de notificação negada.");
+        }
+    } catch (error) {
+        console.error("Erro ao obter permissão de Push:", error);
+    }
+}
+        
 
         // --- INIT DATA ---
         
@@ -1388,7 +1417,8 @@ onAuthStateChanged(auth, async (user) => {
         // --- ATIVAÇÃO DO RADAR E ABA DE PEDIDOS ---
         if (currentStoreId) {
             initOrderListener(currentStoreId); // Liga o monitor de pedidos
-            changeTab('orders');               // Força abrir na aba de pedidos
+            changeTab('orders');       
+            setTimeout(requestNotificationPermission, 5000);
         }
 
     } else { 
