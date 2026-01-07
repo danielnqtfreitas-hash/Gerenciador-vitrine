@@ -822,8 +822,8 @@
         let allProducts = [], allCategories = [], allBanners = [], deliveryAreas = [];
         let currentProductImages = []; 
         let imageQueue = [];
-        let storeConfig = { planId: 'basic', maxProducts: 50, maxBanners: 1, hasCarousel: false };
-        let cachedPublicPlans = null;
+        let storeConfig = {};      // 🔹 vem do Firestore
+let currentPlan = null;   // 🔹 vem da collection plans
         let expandedCategories = new Set();
         let analyticsChartInstance = null; 
         let analyticsUnsubscribe = null; // Variável para desligar a escuta anterior
@@ -1419,7 +1419,6 @@ setPersistence(auth, browserLocalPersistence)
     .then(() => {
         // Agora o onAuthStateChanged fica protegido pela persistência
         return onAuthStateChanged(auth, async (user) => {
-            fetchPublicPlansEagerly();
             
             const authScreen = document.getElementById('auth-screen');
             
@@ -1439,6 +1438,7 @@ setPersistence(auth, browserLocalPersistence)
                     }
 
                     if (currentStoreId) {
+                        fetchPublicPlansEagerly();
                         initStoreData(); 
                         initAnalyticsChart(); 
                         initOrderListener(currentStoreId); 
