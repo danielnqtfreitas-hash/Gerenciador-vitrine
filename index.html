@@ -723,15 +723,21 @@
                             <input type="color" id="bannerColor1" oninput="updateBannerPreview()" value="#8b5cf6" class="w-full h-12 rounded-xl cursor-pointer">
                             <input type="color" id="bannerColor2" oninput="updateBannerPreview()" value="#6d28d9" class="w-full h-12 rounded-xl cursor-pointer">
                         </div>
-                        <div class="space-y-3">
-    <div class="space-y-1">
-        <label class="text-[10px] font-bold text-slate-500 uppercase ml-1">Destino do Banner</label>
-        <select id="bannerTarget" class="input-pro bg-white relative z-10"></select>
-    </div>
-</div> </div> <div class="flex justify-end gap-4 pt-4">
-    <button type="button" onclick="document.getElementById('bannerModal').classList.add('hidden')" ...>Cancelar</button>
-    <button type="submit" id="btnSaveBanner" ...>Publicar</button>
+                        <div class="space-y-1">
+  <label class="text-[10px] font-bold text-slate-500 uppercase ml-1">
+    Destino do Banner
+  </label>
+  <select
+    id="bannerTarget"
+    class="input-pro bg-white relative z-10"
+  ></select>
 </div>
+                </div>
+
+                <div class="flex justify-end gap-4 pt-4">
+                    <button type="button" onclick="document.getElementById('bannerModal').classList.add('hidden')" class="px-6 py-3 text-slate-400 font-bold uppercase text-[10px]">Cancelar</button>
+                    <button type="submit" id="btnSaveBanner" class="bg-slate-900 text-white px-10 py-4 rounded-2xl font-bold uppercase text-[10px] tracking-widest shadow-xl">Publicar</button>
+                </div>
             </form>
         </div>
     </div>
@@ -1668,7 +1674,6 @@ window.initOrderListener = (storeId) => {
 
         // --- GESTÃO DE PRODUTOS ---
         window.openProductModal = (p = null) => {
-            closeAllModals();
     
             if(!p && allProducts.length >= storeConfig.maxProducts) { showToast(`Limite do plano atingido.`); return; }
             document.getElementById('prodCategory').innerHTML = allCategories.map(c => `<option value="${c.name}">${c.name}</option>`).join('');
@@ -2052,34 +2057,34 @@ window.removeBannerImage = () => {
 
 // 3. ABERTURA DO MODAL (CARREGA DADOS)
 window.openBannerModal = (b = null) => {
-  closeAllModals(); // 🔥 ISSO É O MAIS IMPORTANTE
+    const select = document.getElementById('bannerTarget');
+    // Preenche o select com as categorias disponíveis
+    select.innerHTML = '<option value="offers">Todas as Ofertas</option>' + 
+                      allCategories.map(c => `<option value="${c.name}">${c.name}</option>`).join('');
+    
+    if(b) {
+        document.getElementById('bannerId').value = b.id || ''; 
+        document.getElementById('bannerTag').value = b.tag || '';
+        document.getElementById('bannerTitle').value = b.title || ''; 
+        document.getElementById('bannerSubtitle').value = b.subtitle || ''; 
+        document.getElementById('bannerBtnText').value = b.btnText || ''; 
+        document.getElementById('bannerColor1').value = b.color1 || '#8b5cf6';
+        document.getElementById('bannerColor2').value = b.color2 || '#6d28d9'; 
+        document.getElementById('bannerTarget').value = b.target || 'offers';
+        window.currentBannerImageData = b.imageUrl || null;
+    } else { 
+        document.getElementById('bannerForm').reset(); 
+        document.getElementById('bannerId').value = ''; 
+        document.getElementById('bannerColor1').value = '#8b5cf6'; 
+        document.getElementById('bannerColor2').value = '#6d28d9';
+        window.currentBannerImageData = null;
+    }
 
-  const select = document.getElementById('bannerTarget');
-  if (select) {
-    select.innerHTML =
-      '<option value="offers">Todas as Ofertas</option>' +
-      allCategories.map(c => `<option value="${c.name}">${c.name}</option>`).join('');
-  }
-
-  if (b) {
-    document.getElementById('bannerId').value = b.id || '';
-    document.getElementById('bannerTag').value = b.tag || '';
-    document.getElementById('bannerTitle').value = b.title || '';
-    document.getElementById('bannerSubtitle').value = b.subtitle || '';
-    document.getElementById('bannerBtnText').value = b.btnText || '';
-    document.getElementById('bannerColor1').value = b.color1 || '#8b5cf6';
-    document.getElementById('bannerColor2').value = b.color2 || '#6d28d9';
-    document.getElementById('bannerTarget').value = b.target || 'offers';
-    window.currentBannerImageData = b.imageUrl || null;
-  } else {
-    document.getElementById('bannerForm').reset();
-    document.getElementById('bannerId').value = '';
-    window.currentBannerImageData = null;
-  }
-
-  updateBannerPreview();
-  document.getElementById('bannerModal').classList.remove('hidden');
-  setTimeout(() => lucide.createIcons(), 50);
+    updateBannerPreview();
+    document.getElementById('bannerModal').classList.remove('hidden');
+    
+    // Força a renderização dos ícones do Lucide que estão dentro do modal
+    setTimeout(() => lucide.createIcons(), 50);
 };
 
 // 4. PREVIEW EM TEMPO REAL (ESTILO PREMIUM)
@@ -2710,10 +2715,7 @@ window.deleteOrder = async (id) => {
 
   return `${prefix}-${time}${random}`;
     }
-        function closeAllModals() {
-  document.getElementById('productModal')?.classList.add('hidden');
-  document.getElementById('bannerModal')?.classList.add('hidden');
-        }
+        
     </script>
 </body>
 </html>
