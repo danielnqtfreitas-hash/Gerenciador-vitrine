@@ -1580,14 +1580,26 @@ window.initOrderListener = (storeId) => {
   // Aplica o plano na UI
   updateUIByPlan();
 
-  // Categorias mágicas
+  // --- SINCRONIZAÇÃO DAS CATEGORIAS MÁGICAS ---
   if (data.magicCategories) {
-    document.getElementById('magicNew').checked = !!data.magicCategories.showNew;
-    document.getElementById('magicTop').checked = !!data.magicCategories.showTop;
-    if (document.getElementById('magicNewCat'))
-      document.getElementById('magicNewCat').checked = !!data.magicCategories.showNew;
-    if (document.getElementById('magicTopCat'))
-      document.getElementById('magicTopCat').checked = !!data.magicCategories.showTop;
+    const magics = data.magicCategories;
+    
+    // Toggles do Dashboard
+    const mNew = document.getElementById('magicNew');
+    const mTop = document.getElementById('magicTop');
+    if (mNew) mNew.checked = !!magics.showNew;
+    if (mTop) mTop.checked = !!magics.showTop;
+
+    // Toggles da aba Categorias (se você usar os IDs magicNewCat/magicTopCat)
+    const mNewCat = document.getElementById('magicNewCat');
+    const mTopCat = document.getElementById('magicTopCat');
+    if (mNewCat) mNewCat.checked = !!magics.showNew;
+    if (mTopCat) mTopCat.checked = !!magics.showTop;
+
+    // Dispara o feedback visual (criaremos a função no próximo passo)
+    if (typeof updateMagicFeedback === 'function') {
+        updateMagicFeedback(magics);
+    }
   }
 
   deliveryAreas = Array.isArray(data.deliveryAreas)
@@ -2455,27 +2467,29 @@ async function initAnalyticsInsights() {
 
         // Adicione o window. para garantir que o botão no HTML ache a função
 window.toggleMagicCategory = async function(type, isVisible) {
-    console.log("Botão clicado:", type, isVisible); // ajuda se alguém plugar um PC
-    
-    if (!currentStoreId) {
-        if (typeof showToast === "function") showToast("Erro: ID da loja não encontrado.", "error");
-        return;
-    }
+    if (!currentStoreId) return;
 
     try {
         const storeRef = doc(db, `stores/${currentStoreId}/config/store`);
         
+        // Atualiza o estado e força o timestamp de atualização
         await updateDoc(storeRef, {
-            [`magicCategories.${type}`]: isVisible
+            [`magicCategories.${type}`]: isVisible,
+            lastUpdate: Date.now() 
         });
         
-        if (typeof showToast === "function") {
-            showToast("Vitrine atualizada! ✨");
-        } else {
-            alert("Vitrine atualizada! ✨");
+        showToast(isVisible ? "Setor automático ativado! ✨" : "Setor removido da vitrine.");
+        
+        // Se a função de feedback existir, vamos atualizar a tela na hora
+        if (typeof updateMagicFeedback === 'function' && storeConfig) {
+            // Atualizamos o cache local antes de rodar o feedback
+            if(!storeConfig.magicCategories) storeConfig.magicCategories = {};
+            storeConfig.magicCategories[type] = isVisible;
+            updateMagicFeedback(storeConfig.magicCategories);
         }
     } catch (error) {
-        alert("Erro no Firebase: " + error.message);
+        console.error("Erro ao salvar categoria mágica:", error);
+        showToast("Erro ao salvar preferência.");
     }
 };
 
@@ -2712,6 +2726,39 @@ window.deleteOrder = async (id) => {
 
   return `${prefix}-${time}${random}`;
     }
+      window.updateMagicFeedback = (magics) => {
+    // 1. Cálculo de Novidades (Produtos dos últimos 15 dias)
+    const fifteenDaysAgo = Date.now() - (15 * 24 * 60 * 60 * 1000);
+    const newCount = allProducts.filter(p => {
+        const date = p.createdAt?.toMillis ? p.createdAt.toMillis() : (p.lastUpdate || 0);
+        return date > fifteenDaysAgo;
+    }).length;
+
+    // 2. Selecionar os textos de descrição no HTML para atualizar
+    // Usamos o ID do checkbox para achar o texto que está no mesmo card
+    const inputNew = document.getElementById('magicNew');
+    const inputTop = document.getElementById('magicTop');
+
+    if (inputNew) {
+        // Localiza o parágrafo de descrição (Últimos 15 dias)
+        const descNew = inputNew.closest('.flex').querySelector('p.text-slate-400');
+        if (descNew) {
+            descNew.innerHTML = magics.showNew 
+                ? `<span class="text-blue-600 font-bold">ATIVO: ${newCount} produtos recentes</span>` 
+                : "Últimos 15 dias";
+        }
+    }
+
+    if (inputTop) {
+        // Localiza o parágrafo de descrição (Top 10 Vistos)
+        const descTop = inputTop.closest('.flex').querySelector('p.text-slate-400');
+        if (descTop) {
+            descTop.innerHTML = magics.showTop 
+                ? `<span class="text-orange-600 font-bold">ATIVO: Exibindo os mais vistos</span>` 
+                : "Top 10 Vistos";
+        }
+    }
+};
         
     </script>
 </body>
