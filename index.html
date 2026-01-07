@@ -596,13 +596,45 @@
                                 <div class="grid grid-cols-2 gap-4">
                                     <div class="space-y-1">
                                         <label class="text-[10px] font-bold text-slate-500 uppercase ml-1">Preço Normal (R$)</label>
-                                        <input type="number" step="0.01" id="prodValue" required placeholder="0.00" class="input-pro bg-white">
-                                    </div>
+                                        <input type="number" step="0.01" id="prodValue" required
+  oninput="calculateProfit()"
+  placeholder="0.00" class="input-pro bg-white">
                                     <div class="space-y-1">
                                         <label class="text-[10px] font-bold text-green-600 uppercase ml-1">Preço Promo (R$)</label>
                                         <input type="number" step="0.01" id="prodPromo" placeholder="Opcional" class="input-pro bg-white">
                                     </div>
                                 </div>
+                            </div>
+                            <div class="space-y-5">
+  <h4 class="text-[11px] font-black uppercase text-slate-400 tracking-widest border-b border-slate-100 pb-2">
+    Controle de Estoque & Lucro
+  </h4>
+
+  <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+    <div>
+      <label class="text-[10px] font-bold text-slate-500 uppercase ml-1">Estoque</label>
+      <input type="number" id="prodStock" min="0" placeholder="0"
+        class="input-pro bg-white">
+    </div>
+
+    <div>
+      <label class="text-[10px] font-bold text-slate-500 uppercase ml-1">
+        Valor de Compra (R$)
+      </label>
+      <input type="number" step="0.01" id="prodCost"
+        oninput="calculateProfit()"
+        class="input-pro bg-white">
+    </div>
+
+    <div>
+      <label class="text-[10px] font-bold text-green-600 uppercase ml-1">
+        Lucro por Unidade
+      </label>
+      <input type="text" id="prodProfit"
+        class="input-pro bg-green-50 border-green-200 font-bold text-green-700"
+        disabled>
+    </div>
+  </div>
                             </div>
                             <div class="space-y-5">
                                 <h4 class="text-[11px] font-black uppercase text-slate-400 tracking-widest border-b border-slate-100 pb-2">Gerador de Combinações</h4>
@@ -1594,12 +1626,13 @@ if (data.magicCategories) {
 
         // --- GESTÃO DE PRODUTOS ---
         window.openProductModal = (p = null) => {
+    
             if(!p && allProducts.length >= storeConfig.maxProducts) { showToast(`Limite do plano atingido.`); return; }
             document.getElementById('prodCategory').innerHTML = allCategories.map(c => `<option value="${c.name}">${c.name}</option>`).join('');
             
             if(p) {
                 document.getElementById('prodModalTitle').textContent = "Editar Produto Existente";
-                document.getElementById('prodId').value = p.id; 
+                document.getElementById('prodId').value = p.id;
                 document.getElementById('prodName').value = p.name;
                 document.getElementById('prodSku').value = p.sku || ''; // SDK/SKU Field
                 document.getElementById('prodCategory').value = p.category; 
@@ -1624,6 +1657,11 @@ if (data.magicCategories) {
                 document.getElementById('productForm').reset(); 
                 document.getElementById('prodId').value = ''; 
                 document.getElementById('prodSku').value = '';
+                const skuInput = document.getElementById('prodSku');
+
+if (!skuInput.value) {
+  skuInput.value = generateSKU();
+}
                 currentProductImages = []; 
                 variationsMatrix = [];
                 document.getElementById('variationMatrixContainer').classList.add('hidden');
@@ -1660,14 +1698,21 @@ if (data.magicCategories) {
                 imageUrls.push(await getDownloadURL(fileRef));
             }
         }
+        const stock = Number(document.getElementById('prodStock').value) || 0;
+const cost = Number(document.getElementById('prodCost').value) || 0;
+const price = Number(document.getElementById('prodValue').value) || 0;
 
+const profit = price - cost;
         // 2. Dados do Produto (Mantendo SKU e Matriz)
         const data = {
             name: document.getElementById('prodName').value,
             sku: document.getElementById('prodSku').value || '',
             category: document.getElementById('prodCategory').value,
             value: parseFloat(document.getElementById('prodValue').value) || 0,
-            promoValue: parseFloat(document.getElementById('prodPromo').value) || null,
+            promoValue: parseFloat(document.getElementById('prodPromo').value) || null,            
+            stock,
+            cost,
+            profit,
             images: imageUrls,
             description: document.getElementById('prodDesc').value || '',
             isFeatured: document.getElementById('prodFeatured').checked,
@@ -1700,7 +1745,8 @@ if (data.magicCategories) {
         if(btn) btn.disabled = false;
         if(loader) loader.classList.add('hidden');
     }
-};
+        };
+        
        window.deleteProduct = async (id, imageUrls = []) => {
     if(!confirm("Deseja apagar este produto permanentemente? Suas fotos também serão removidas do servidor.")) return;
 
@@ -2592,6 +2638,36 @@ window.deleteOrder = async (id) => {
     }
 };  
 
+    window.calculateProfit = () => {
+  const cost = parseFloat(document.getElementById('prodCost').value) || 0;
+  const price = parseFloat(document.getElementById('prodValue').value) || 0;
+
+  const profit = price - cost;
+
+  const profitInput = document.getElementById('prodProfit');
+  profitInput.value = profit >= 0
+    ? `R$ ${profit.toFixed(2)}`
+    : `- R$ ${Math.abs(profit).toFixed(2)}`;
+
+  profitInput.classList.toggle('text-red-600', profit < 0);
+  profitInput.classList.toggle('bg-red-50', profit < 0);
+};
+ 
+    function generateSKU() {
+  const storeNameEl = document.getElementById('sidebarStoreName');
+  const storeName = storeNameEl ? storeNameEl.innerText : 'SKU';
+
+  const prefix = storeName
+    .substring(0, 3)
+    .toUpperCase()
+    .replace(/[^A-Z]/g, '');
+
+  const random = Math.random().toString(36).substring(2, 6).toUpperCase();
+  const time = Date.now().toString().slice(-4);
+
+  return `${prefix}-${time}${random}`;
+    }
+        
     </script>
 </body>
 </html>
