@@ -353,26 +353,108 @@
                 <div class="bg-white rounded-3xl border border-slate-200 p-8 flex flex-col md:flex-row items-center justify-between shadow-sm gap-6">
                     <div class="flex items-center gap-5">
                         <div class="p-4 bg-primary-50 text-primary-600 rounded-2xl shadow-inner"><i data-lucide="store" class="w-8 h-8"></i></div>
-                        <div><h3 class="font-bold text-xl text-slate-800">Status da Loja</h3><div class="flex items-center gap-2 mt-1"><span class="text-sm text-slate-500">Plano Atual:</span><span id="currentPlanBadge" class="text-xs font-bold bg-slate-100 px-2 py-0.5 rounded border uppercase">Carregando...</span></div></div>
+                        <div>
+                            <h3 class="font-bold text-xl text-slate-800">Status da Loja</h3>
+                            <div class="flex items-center gap-2 mt-1">
+                                <span class="text-sm text-slate-500">Plano Atual:</span>
+                                <span id="currentPlanBadge" class="text-xs font-bold bg-slate-100 px-2 py-0.5 rounded border uppercase">Carregando...</span>
+                            </div>
+                        </div>
                     </div>
-        <div id="view-finance" class="max-w-6xl mx-auto space-y-6 hidden animate-fade-in">
-    <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-        <div>
-            <h3 class="text-2xl font-bold text-slate-800">Inteligência Financeira</h3>
-            <p class="text-sm text-slate-500">Acompanhe a saúde real do seu estoque e vendas.</p>
+                    
+                    <div class="flex items-center gap-4 bg-slate-50 px-6 py-3 rounded-2xl border">
+                        <span class="text-sm font-bold text-slate-600" id="statusLabel">Aberto</span>
+                        <label class="toggle-switch"><input type="checkbox" id="dashboardStoreToggle" onchange="toggleStoreStatusQuick(this)"><span class="slider"></span></label>
+                    </div>
+                </div> <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 w-full">
+                    <div class="bg-white p-6 border border-slate-100 rounded-3xl shadow-sm"><p class="text-xs font-bold text-slate-400 uppercase tracking-widest mb-2">Produtos</p><h3 class="text-4xl font-bold text-slate-800"><span id="dash-total-products">0</span></h3></div>
+                    <div class="bg-white p-6 border border-slate-100 rounded-3xl shadow-sm"><p class="text-xs font-bold text-slate-400 uppercase tracking-widest mb-2">Banners</p><h3 class="text-4xl font-bold text-primary-600"><span id="dash-total-banners">0</span></h3></div>
+                    <div class="bg-white p-6 border border-slate-100 rounded-3xl shadow-sm"><p class="text-xs font-bold text-slate-400 uppercase tracking-widest mb-2">Categorias</p><h3 class="text-4xl font-bold text-slate-800" id="dash-total-cats">0</h3></div>
+                    <div class="bg-white p-5 border border-slate-100 rounded-3xl shadow-sm"><p class="text-xs font-bold text-slate-400 uppercase tracking-widest mb-2">Visitas</p><h3 class="text-4xl font-bold text-slate-800" id="dash-total-visits">0</h3></div>
+                </div>
+
+                </div> <div id="view-finance" class="max-w-6xl mx-auto space-y-6 hidden animate-fade-in">
+                <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+                    <div>
+                        <h3 class="text-2xl font-bold text-slate-800">Inteligência Financeira</h3>
+                        <p class="text-sm text-slate-500">Acompanhe a saúde real do seu estoque e vendas.</p>
+                    </div>
+                    <div class="bg-white p-2 rounded-2xl border shadow-sm flex gap-2">
+                         <div class="px-4 py-2 bg-green-50 rounded-xl border border-green-100">
+                             <p class="text-[9px] font-black text-green-600 uppercase">Status do Caixa</p>
+                             <p class="text-xs font-bold text-green-700">Fluxo Ativo</p>
+                         </div>
+                    </div>
+                </div>
+
+                <div id="financeContent" class="space-y-6">
+                    </div>
+                </div>
+
+    <div id="financeContent" class="space-y-6">
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div class="bg-white p-5 rounded-3xl border border-slate-100 shadow-sm">
+            <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Faturação (Hoje)</p>
+            <h3 class="text-2xl font-black text-slate-800" id="fin-rev-day">R$ 0,00</h3>
+            <span class="text-[9px] font-bold text-green-600 bg-green-50 px-2 py-0.5 rounded-full" id="fin-orders-day">0 pedidos</span>
         </div>
-        <div class="bg-white p-2 rounded-2xl border shadow-sm flex gap-2">
-             <div class="px-4 py-2 bg-green-50 rounded-xl border border-green-100">
-                 <p class="text-[9px] font-black text-green-600 uppercase">Status do Caixa</p>
-                 <p class="text-xs font-bold text-green-700">Fluxo Ativo</p>
-             </div>
+        <div class="bg-white p-5 rounded-3xl border border-slate-100 shadow-sm">
+            <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Esta Semana</p>
+            <h3 class="text-2xl font-black text-slate-800" id="fin-rev-week">R$ 0,00</h3>
+        </div>
+        <div class="bg-white p-5 rounded-3xl border border-slate-100 shadow-sm">
+            <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Este Mês</p>
+            <h3 class="text-2xl font-black text-primary-600" id="fin-rev-month">R$ 0,00</h3>
+        </div>
+        <div class="bg-white p-5 rounded-3xl border border-slate-100 shadow-sm bg-slate-900">
+            <p class="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1">Faturação Total</p>
+            <h3 class="text-2xl font-black text-white" id="fin-rev-total">R$ 0,00</h3>
         </div>
     </div>
 
-    <div id="financeContent" class="grid grid-cols-1 gap-6">
-        <p class="text-slate-400 italic text-sm py-10 text-center">Calculando métricas financeiras...</p>
-    </div>
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div class="lg:col-span-1 bg-gradient-to-br from-primary-600 to-indigo-700 rounded-[2.5rem] p-8 text-white shadow-xl relative overflow-hidden">
+            <div class="relative z-10">
+                <h4 class="text-sm font-bold opacity-80 uppercase tracking-widest mb-4">Análise Mensal</h4>
+                <div id="fin-growth-feedback" class="space-y-4">
+                    <p class="text-lg font-medium leading-tight">A analisar os seus dados de venda...</p>
+                </div>
+            </div>
+            <i data-lucide="trending-up" class="absolute -bottom-4 -right-4 w-32 h-32 opacity-10"></i>
         </div>
+
+        <div class="lg:col-span-2 bg-white p-8 rounded-[2.5rem] border border-slate-200 shadow-sm">
+            <div class="flex justify-between items-center mb-6">
+                <h3 class="text-lg font-bold text-slate-800">Crescimento de Vendas</h3>
+                <i data-lucide="calendar" class="w-5 h-5 text-slate-400"></i>
+            </div>
+            <div class="relative h-64">
+                <canvas id="growthChart"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <div class="bg-slate-100/50 p-6 rounded-[2.5rem] border border-dashed border-slate-200">
+        <h4 class="text-xs font-black text-slate-400 uppercase tracking-widest mb-4 ml-2">Património em Stock (Preço de Venda)</h4>
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div class="bg-white p-6 rounded-3xl shadow-sm">
+                <p class="text-[10px] font-black text-slate-400 uppercase mb-1">Valor Total em Stock</p>
+                <h3 class="text-3xl font-black text-slate-800" id="fin-stock-value">R$ 0,00</h3>
+                <p class="text-[10px] text-slate-500 mt-2 font-bold" id="fin-stock-count">0 unidades disponíveis</p>
+            </div>
+            <div class="bg-white p-6 rounded-3xl shadow-sm">
+                <p class="text-[10px] font-black text-slate-400 uppercase mb-1">Investimento (Custo)</p>
+                <h3 class="text-3xl font-black text-slate-800" id="fin-stock-cost">R$ 0,00</h3>
+                <p class="text-[10px] text-slate-500 mt-2 font-bold uppercase tracking-tighter">Capital imobilizado</p>
+            </div>
+            <div class="bg-white p-6 rounded-3xl shadow-sm border-2 border-green-100">
+                <p class="text-[10px] font-black text-green-600 uppercase mb-1">Lucro Potencial</p>
+                <h3 class="text-3xl font-black text-green-600" id="fin-profit-potential">R$ 0,00</h3>
+                <p class="text-[10px] text-green-600/60 mt-2 font-bold uppercase tracking-tighter">Previsão de retorno</p>
+            </div>
+        </div>
+    </div>
+    </div>
                     
                     <div class="flex items-center gap-4 bg-slate-50 px-6 py-3 rounded-2xl border">
                         <span class="text-sm font-bold text-slate-600" id="statusLabel">Aberto</span>
@@ -860,6 +942,7 @@ let currentPlan = null;   // 🔹 vem da collection plans
         let analyticsChartInstance = null; 
         let analyticsUnsubscribe = null; // Variável para desligar a escuta anterior
         let cropper = null;
+        let growthChartInstance = null;
         let ordersCache = {}; // Guarda os pedidos para o modal de detalhes
 let isFirstLoad = true;
         let variationsMatrix = [];
@@ -2330,6 +2413,9 @@ window.handleBannerSubmit = async (e) => {
     if (typeof toggleMobileSidebar === 'function' && !document.getElementById('mobileSidebar').classList.contains('sidebar-hidden')) {
         toggleMobileSidebar();
     }
+            if (tabName === 'finance') {
+    window.initFinanceDashboard();
+            }
 };
 
         window.toggleMobileSidebar = () => { 
@@ -2786,6 +2872,134 @@ window.deleteOrder = async (id) => {
                 : "Top 10 Vistos";
         }
     }
+};
+
+        window.initFinanceDashboard = () => {
+    const now = new Date();
+    const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
+    const startOfWeek = now.getTime() - (now.getDay() * 24 * 60 * 60 * 1000);
+    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1).getTime();
+    const startOfLastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1).getTime();
+
+    // 1. CÁLCULOS DE FATURAMENTO (Baseado nos pedidos no cache)
+    let revDay = 0, revWeek = 0, revMonth = 0, revTotal = 0, countDay = 0;
+    let revLastMonth = 0;
+
+    Object.values(ordersCache).forEach(order => {
+        const orderTime = order.createdAt?.toMillis ? order.createdAt.toMillis() : 0;
+        const value = order.total || 0;
+
+        if (order.status !== 'canceled') {
+            revTotal += value;
+            if (orderTime >= startOfDay) { revDay += value; countDay++; }
+            if (orderTime >= startOfWeek) { revWeek += value; }
+            if (orderTime >= startOfMonth) { revMonth += value; }
+            if (orderTime >= startOfLastMonth && orderTime < startOfMonth) { revLastMonth += value; }
+        }
+    });
+
+    // 2. CÁLCULOS DE ESTOQUE (Baseado nos produtos)
+    let stockValue = 0, stockCost = 0, totalItems = 0;
+
+    allProducts.forEach(p => {
+        const qty = parseFloat(p.stock) || 0;
+        const price = parseFloat(p.value) || 0;
+        const cost = parseFloat(p.cost) || 0;
+
+        stockValue += (price * qty);
+        stockCost += (cost * qty);
+        totalItems += qty;
+    });
+
+    // 3. ATUALIZAÇÃO DA UI
+    document.getElementById('fin-rev-day').textContent = `R$ ${revDay.toFixed(2).replace('.',',')}`;
+    document.getElementById('fin-orders-day').textContent = `${countDay} pedidos hoje`;
+    document.getElementById('fin-rev-week').textContent = `R$ ${revWeek.toFixed(2).replace('.',',')}`;
+    document.getElementById('fin-rev-month').textContent = `R$ ${revMonth.toFixed(2).replace('.',',')}`;
+    document.getElementById('fin-rev-total').textContent = `R$ ${revTotal.toFixed(2).replace('.',',')}`;
+    
+    document.getElementById('fin-stock-value').textContent = `R$ ${stockValue.toFixed(2).replace('.',',')}`;
+    document.getElementById('fin-stock-cost').textContent = `R$ ${stockCost.toFixed(2).replace('.',',')}`;
+    document.getElementById('fin-profit-potential').textContent = `R$ ${(stockValue - stockCost).toFixed(2).replace('.',',')}`;
+    document.getElementById('fin-stock-count').textContent = `${totalItems} unidades disponíveis`;
+
+    // 4. FEEDBACK DE CRESCIMENTO
+    renderGrowthFeedback(revMonth, revLastMonth);
+    
+    // 5. GRÁFICO 
+    initGrowthChart();
+};
+        function renderGrowthFeedback(current, last) {
+    const container = document.getElementById('fin-growth-feedback');
+    if (last === 0) {
+        container.innerHTML = `<p class="text-lg font-medium leading-tight">Primeiro mês de análise. Continue vendendo para gerar comparativos!</p>`;
+        return;
+    }
+
+    const diff = ((current - last) / last) * 100;
+    const isPositive = diff >= 0;
+
+    container.innerHTML = `
+        <p class="text-3xl font-black">${isPositive ? '+' : ''}${diff.toFixed(1)}%</p>
+        <p class="text-sm font-medium opacity-90">
+            Este mês você faturou <b>R$ ${(current - last).toFixed(2)}</b> ${isPositive ? 'a mais' : 'a menos'} que no mês passado.
+        </p>
+        <div class="mt-4 py-2 px-4 bg-white/20 rounded-xl inline-block text-[10px] font-bold uppercase">
+            ${isPositive ? 'Desempenho em Alta 🚀' : 'Atenção ao Fluxo 📉'}
+        </div>
+    `;
+        }
+
+        window.initGrowthChart = () => {
+    const ctx = document.getElementById('growthChart').getContext('2d');
+    
+    // 1. Preparar os dados (Últimos 6 meses)
+    const months = [];
+    const values = [];
+    const now = new Date();
+
+    for (let i = 5; i >= 0; i--) {
+        const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+        const monthName = d.toLocaleString('pt-PT', { month: 'short' }).toUpperCase();
+        months.push(monthName);
+
+        // Soma os pedidos daquele mês específico no ordersCache
+        let monthlySum = 0;
+        Object.values(ordersCache).forEach(order => {
+            const oDate = order.createdAt?.toDate ? order.createdAt.toDate() : new Date(0);
+            if (oDate.getMonth() === d.getMonth() && oDate.getFullYear() === d.getFullYear() && order.status !== 'canceled') {
+                monthlySum += (order.total || 0);
+            }
+        });
+        values.push(monthlySum);
+    }
+
+    // 2. Destruir gráfico anterior se existir (evita sobreposição)
+    if (growthChartInstance) growthChartInstance.destroy();
+
+    // 3. Criar o novo gráfico
+    growthChartInstance = new Chart(ctx, {
+        type: 'bar', // Barra é melhor para ver crescimento mensal
+        data: {
+            labels: months,
+            datasets: [{
+                label: 'Faturação Mensal',
+                data: values,
+                backgroundColor: '#7c3aed',
+                borderRadius: 8,
+                hoverBackgroundColor: '#6d28d9'
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: { legend: { display: false } },
+            scales: {
+                y: { beginAtZero: true, grid: { display: false }, ticks: { font: { size: 10 } } },
+                x: { grid: { display: false }, ticks: { font: { size: 10 } } }
+            }
+        }
+    });
 };
         
     </script>
