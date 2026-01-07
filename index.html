@@ -1622,14 +1622,39 @@ window.initOrderListener = (storeId) => {
 }
 
         function updateUIByPlan() {
-            const friendlyName = getFriendlyPlanName(storeConfig.planId);
-            document.getElementById('currentPlanBadge').textContent = friendlyName.toUpperCase();
-            document.getElementById('dash-limit-products').textContent = `/${storeConfig.maxProducts}`;
-            document.getElementById('dash-limit-banners').textContent = `/${storeConfig.maxBanners}`;
-            const bNav = document.getElementById('nav-banners'); const bMob = document.getElementById('mob-nav-banners');
-            if(storeConfig.maxBanners > 0) { bNav?.classList.remove('hidden'); bMob?.classList.remove('hidden'); }
-            else { bNav?.classList.add('hidden'); bMob?.classList.add('hidden'); }
-            updateQuotas();
+  console.log("📦 storeConfig aplicado:", storeConfig);
+
+  // Nome do plano
+  const planName =
+    currentPlan?.name ||
+    storeConfig.planId ||
+    "Sem Plano";
+
+  const badge = document.getElementById('currentPlanBadge');
+  if (badge) {
+    badge.textContent = planName.toUpperCase();
+  }
+
+  // Limites
+  document.getElementById('dash-limit-products').textContent =
+    `/${storeConfig.maxProducts ?? 0}`;
+
+  document.getElementById('dash-limit-banners').textContent =
+    `/${storeConfig.maxBanners ?? 0}`;
+
+  // Menu de banners
+  const navBanner = document.getElementById('nav-banners');
+  const mobBanner = document.getElementById('mob-nav-banners');
+
+  if ((storeConfig.maxBanners ?? 0) > 0) {
+    navBanner?.classList.remove('hidden');
+    mobBanner?.classList.remove('hidden');
+  } else {
+    navBanner?.classList.add('hidden');
+    mobBanner?.classList.add('hidden');
+  }
+
+  updateQuotas();
         }
 
         function updateQuotas() {
