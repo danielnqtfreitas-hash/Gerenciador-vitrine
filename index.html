@@ -270,6 +270,11 @@
     <button id="nav-config" onclick="changeTab('config')" class="sidebar-link w-full flex items-center px-6 py-3 text-sm font-medium text-slate-600">
         <i data-lucide="settings" class="w-5 h-5 mr-3"></i> Configurações
     </button>
+
+     <button id="nav-finance" onclick="changeTab('finance')" class="sidebar-link w-full flex items-center px-6 py-3 text-sm font-medium text-slate-600">
+    <i data-lucide="dollar-sign" class="w-5 h-5 mr-3"></i> Financeiro
+</button>
+            
         </nav>
         
         <div class="p-6 border-t bg-slate-50">
@@ -294,6 +299,10 @@
     <button id="nav-products" onclick="changeTab('products')" class="w-full flex items-center px-6 py-4 ...">Produtos</button>
     <button id="nav-categories" onclick="changeTab('categories')" class="w-full flex items-center px-6 py-4 ...">Categorias</button>
     <button id="nav-config" onclick="changeTab('config')" class="w-full flex items-center px-6 py-4 ...">Configurações</button>
+     <button id="nav-finance" onclick="changeTab('finance')" class="w-full flex items-center px-6 py-4 text-slate-600 font-medium">
+    <i data-lucide="dollar-sign" class="w-5 h-5 mr-3"></i> Financeiro
+     </button>
+            
         </nav>
 
         <div class="p-4 border-t border-slate-100 bg-slate-50/50">
@@ -346,6 +355,25 @@
                         <div class="p-4 bg-primary-50 text-primary-600 rounded-2xl shadow-inner"><i data-lucide="store" class="w-8 h-8"></i></div>
                         <div><h3 class="font-bold text-xl text-slate-800">Status da Loja</h3><div class="flex items-center gap-2 mt-1"><span class="text-sm text-slate-500">Plano Atual:</span><span id="currentPlanBadge" class="text-xs font-bold bg-slate-100 px-2 py-0.5 rounded border uppercase">Carregando...</span></div></div>
                     </div>
+        <div id="view-finance" class="max-w-6xl mx-auto space-y-6 hidden animate-fade-in">
+    <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+        <div>
+            <h3 class="text-2xl font-bold text-slate-800">Inteligência Financeira</h3>
+            <p class="text-sm text-slate-500">Acompanhe a saúde real do seu estoque e vendas.</p>
+        </div>
+        <div class="bg-white p-2 rounded-2xl border shadow-sm flex gap-2">
+             <div class="px-4 py-2 bg-green-50 rounded-xl border border-green-100">
+                 <p class="text-[9px] font-black text-green-600 uppercase">Status do Caixa</p>
+                 <p class="text-xs font-bold text-green-700">Fluxo Ativo</p>
+             </div>
+        </div>
+    </div>
+
+    <div id="financeContent" class="grid grid-cols-1 gap-6">
+        <p class="text-slate-400 italic text-sm py-10 text-center">Calculando métricas financeiras...</p>
+    </div>
+        </div>
+                    
                     <div class="flex items-center gap-4 bg-slate-50 px-6 py-3 rounded-2xl border">
                         <span class="text-sm font-bold text-slate-600" id="statusLabel">Aberto</span>
                         <label class="toggle-switch"><input type="checkbox" id="dashboardStoreToggle" onchange="toggleStoreStatusQuick(this)"><span class="slider"></span></label>
@@ -2259,7 +2287,7 @@ window.handleBannerSubmit = async (e) => {
 
         window.changeTab = (tabName) => {
     // 1. Lista de todas as suas abas
-    const tabs = ['orders', 'dashboard', 'banners', 'products', 'categories', 'config'];
+    const tabs = ['orders', 'dashboard', 'banners', 'products', 'categories', 'config', 'finance'];
 
     // 2. Loop para esconder todas as views e resetar os botões
     tabs.forEach(tab => {
