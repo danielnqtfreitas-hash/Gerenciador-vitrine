@@ -723,21 +723,15 @@
                             <input type="color" id="bannerColor1" oninput="updateBannerPreview()" value="#8b5cf6" class="w-full h-12 rounded-xl cursor-pointer">
                             <input type="color" id="bannerColor2" oninput="updateBannerPreview()" value="#6d28d9" class="w-full h-12 rounded-xl cursor-pointer">
                         </div>
-                        <div class="space-y-1">
-  <label class="text-[10px] font-bold text-slate-500 uppercase ml-1">
-    Destino do Banner
-  </label>
-  <select
-    id="bannerTarget"
-    class="input-pro bg-white relative z-10"
-  ></select>
+                        <div class="space-y-3">
+    <div class="space-y-1">
+        <label class="text-[10px] font-bold text-slate-500 uppercase ml-1">Destino do Banner</label>
+        <select id="bannerTarget" class="input-pro bg-white relative z-10"></select>
+    </div>
+</div> </div> <div class="flex justify-end gap-4 pt-4">
+    <button type="button" onclick="document.getElementById('bannerModal').classList.add('hidden')" ...>Cancelar</button>
+    <button type="submit" id="btnSaveBanner" ...>Publicar</button>
 </div>
-                </div>
-
-                <div class="flex justify-end gap-4 pt-4">
-                    <button type="button" onclick="document.getElementById('bannerModal').classList.add('hidden')" class="px-6 py-3 text-slate-400 font-bold uppercase text-[10px]">Cancelar</button>
-                    <button type="submit" id="btnSaveBanner" class="bg-slate-900 text-white px-10 py-4 rounded-2xl font-bold uppercase text-[10px] tracking-widest shadow-xl">Publicar</button>
-                </div>
             </form>
         </div>
     </div>
