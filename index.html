@@ -1742,32 +1742,6 @@ window.calculateProfit = () => {
 };
    
 
-// Mantenha a calculadora de lucro separada, pois ela é chamada pelo HTML (oninput)
-window.calculateProfit = () => {
-    const cost = parseFloat(document.getElementById('prodCost').value) || 0;
-    const sale = parseFloat(document.getElementById('prodValue').value) || 0;
-    const promo = parseFloat(document.getElementById('prodPromo').value) || 0;
-    
-    const finalSale = promo > 0 ? promo : sale;
-    const resDiv = document.getElementById('profitRes');
-    const badge = document.getElementById('profitBadge');
-
-    if (cost > 0 && finalSale > 0) {
-        resDiv.classList.remove('hidden');
-        badge.classList.remove('hidden');
-        const profit = finalSale - cost;
-        const margin = (profit / finalSale) * 100;
-        
-        document.getElementById('profitAmt').innerText = `R$ ${profit.toFixed(2).replace('.',',')}`;
-        document.getElementById('profitPct').innerText = `${margin.toFixed(0)}%`;
-        document.getElementById('profitPct').className = margin > 0 ? "text-xl font-black text-green-400" : "text-xl font-black text-red-400";
-    } else {
-        resDiv.classList.add('hidden');
-        badge.classList.add('hidden');
-    }
-};
-        
-        
        window.deleteProduct = async (id, imageUrls = []) => {
     if(!confirm("Deseja apagar este produto permanentemente? Suas fotos também serão removidas do servidor.")) return;
 
@@ -1800,8 +1774,6 @@ window.calculateProfit = () => {
     }
 };
         
-        
-
         window.toggleProductStatus = async (id, currentStatus) => {
             const newStatus = currentStatus === 'paused' ? 'active' : 'paused';
             try {
