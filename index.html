@@ -1939,25 +1939,51 @@ window.removeBannerImage = () => {
     updateBannerPreview();
 };
 
-// 3. ABERTURA DO MODAL (CARREGA DADOS)
+  // --- GESTÃO DE PRODUTOS (CORRIGIDA) ---
 window.openProductModal = (p = null) => {
-    if(!p && allProducts.length >= storeConfig.maxProducts) { showToast(`Limite do plano atingido.`); return; }
-    document.getElementById('prodCategory').innerHTML = allCategories.map(c => `<option value="${c.name}">${c.name}</option>`).join('');
+    console.log("Tentando abrir modal de produto...", p); // Para debug no F12
+
+    // 1. Verificação de Limites
+    if(!p && allProducts && allProducts.length >= (storeConfig.maxProducts || 50)) { 
+        showToast(`Limite do seu plano atingido.`); 
+        return; 
+    }
+
+    // 2. Localizar o Modal e os Campos
+    const modal = document.getElementById('productModal');
+    const catSelect = document.getElementById('prodCategory');
     
+    if(!modal) {
+        console.error("Erro crítico: Elemento 'productModal' não encontrado no HTML.");
+        return;
+    }
+
+    // 3. Popular Categorias com segurança
+    if(catSelect) {
+        if(allCategories && allCategories.length > 0) {
+            catSelect.innerHTML = allCategories.map(c => `<option value="${c.name}">${c.name}</option>`).join('');
+        } else {
+            catSelect.innerHTML = '<option value="">Crie uma categoria primeiro</option>';
+        }
+    }
+    
+    // 4. Modo Edição vs Novo
     if(p) {
         document.getElementById('prodModalTitle').textContent = "Editar Produto";
-        document.getElementById('prodId').value = p.id; 
-        document.getElementById('prodName').value = p.name;
+        document.getElementById('prodId').value = p.id || ''; 
+        document.getElementById('prodName').value = p.name || '';
         document.getElementById('prodSku').value = p.sku || '';
         document.getElementById('prodStock').value = p.stock || 0;
         document.getElementById('prodCost').value = p.purchasePrice || 0;
-        document.getElementById('prodCategory').value = p.category; 
-        document.getElementById('prodValue').value = p.value;
+        document.getElementById('prodCategory').value = p.category || ''; 
+        document.getElementById('prodValue').value = p.value || 0;
         document.getElementById('prodPromo').value = p.promoValue || ''; 
         document.getElementById('prodDesc').value = p.description || '';
-        document.getElementById('prodFeatured').checked = p.isFeatured; 
+        document.getElementById('prodFeatured').checked = !!p.isFeatured; 
+        
         document.getElementById('prodSizesInput').value = p.sizes ? p.sizes.join(', ') : '';
         document.getElementById('prodColorsInput').value = p.colors ? p.colors.join(', ') : '';
+        
         currentProductImages = p.images ? [...p.images] : [];
         variationsMatrix = p.variations || [];
         
@@ -1967,24 +1993,33 @@ window.openProductModal = (p = null) => {
         } else {
             document.getElementById('variationMatrixContainer').classList.add('hidden');
         }
-        calculateProfit(); // Atualiza os campos de lucro ao abrir
+        
+        if(typeof calculateProfit === 'function') calculateProfit(); 
+
     } else {
+        // Modo Novo
         document.getElementById('prodModalTitle').textContent = "Novo Produto";
-        document.getElementById('productForm').reset(); 
+        const form = document.getElementById('productForm');
+        if(form) form.reset();
+        
         document.getElementById('prodId').value = ''; 
-        document.getElementById('prodSku').value = '';
-        document.getElementById('prodStock').value = '';
-        document.getElementById('prodCost').value = '';
-        document.getElementById('prodProfitAmt').value = '';
-        document.getElementById('prodProfitPct').value = '';
+        document.getElementById('prodProfitAmt').value = 'R$ 0,00';
+        document.getElementById('prodProfitPct').value = '0%';
+        
         currentProductImages = []; 
         variationsMatrix = [];
         document.getElementById('variationMatrixContainer').classList.add('hidden');
     }
-    renderImagePreviews();
-    document.getElementById('productModal').classList.remove('hidden');
-    setTimeout(() => lucide.createIcons(), 50);
+    
+    // 5. Finalizar Abertura
+    if(typeof renderImagePreviews === 'function') renderImagePreviews();
+    modal.classList.remove('hidden');
+    
+    setTimeout(() => {
+        if(typeof lucide !== 'undefined') lucide.createIcons();
+    }, 100);
 };
+        
 
 
 // 4. PREVIEW EM TEMPO REAL (ESTILO PREMIUM)
