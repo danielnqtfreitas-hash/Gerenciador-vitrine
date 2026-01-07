@@ -523,11 +523,11 @@
     </div>
 
     <!-- MODAL PRODUTO -->
-        <div id="productModal" class="modal-overlay fixed inset-0 z-[150] flex items-center justify-center p-4 hidden">
+    <div id="productModal" class="modal-overlay fixed inset-0 z-[150] flex items-center justify-center p-4 hidden">
         <div class="bg-white rounded-[2.5rem] shadow-2xl w-full max-w-4xl auth-card-container overflow-hidden">
             <div class="bg-slate-900 p-6 flex items-center justify-between">
                 <div class="flex items-center gap-3"><div class="bg-primary-500/20 p-2 rounded-xl"><i data-lucide="package" class="w-6 h-6 text-primary-400"></i></div><h3 class="text-xl font-bold text-white" id="prodModalTitle">Novo Produto</h3></div>
-                <button type="button" onclick="document.getElementById('productModal').classList.add('hidden')" class="p-2 text-slate-400 hover:text-white transition-colors"><i data-lucide="x" class="w-6 h-6"></i></button>
+                <button onclick="document.getElementById('productModal').classList.add('hidden')" class="p-2 text-slate-400 hover:text-white transition-colors"><i data-lucide="x" class="w-6 h-6"></i></button>
             </div>
             <div class="auth-card-content p-8">
                 <form id="productForm" onsubmit="handleProductSubmit(event)" class="space-y-10">
@@ -548,29 +548,31 @@
                             </div>
                             <div id="imageGallery" class="col-span-1 md:col-span-3 grid grid-cols-2 md:grid-cols-3 gap-4"></div>
                         </div>
+                        <p id="photoLimitNotice" class="text-[9px] text-slate-400 font-medium italic">Selecione uma imagem nítida para sua vitrine.</p>
                         <div id="imageLoading" class="absolute inset-0 bg-white/95 flex items-center justify-center hidden z-20 backdrop-blur-sm">
-                            <div class="text-center">
-                                <h4 class="text-sm font-black text-slate-800 uppercase tracking-widest">Processando...</h4>
-                            </div>
-                        </div>
+    <div class="text-center">
+        <div class="relative mb-4 flex justify-center">
+            <div class="absolute inset-0 bg-primary-500/20 rounded-full blur-xl animate-pulse"></div>
+            <div class="relative bg-white p-4 rounded-3xl shadow-lg border border-primary-100 animate-bounce">
+                <i data-lucide="upload-cloud" class="w-10 h-10 text-primary-600"></i>
+            </div>
+        </div>
+        
+        <h4 id="loadingText" class="text-sm font-black text-slate-800 uppercase tracking-widest">Processando...</h4>
+        <p id="loadingSubText" class="text-[10px] text-slate-400 font-bold mt-1 uppercase tracking-tighter">Sua vitrine está sendo atualizada</p>
+    </div>
+</div>
                     </div>
 
                     <div class="space-y-6">
-                        <h4 class="text-[11px] font-black uppercase text-slate-400 tracking-widest border-b border-slate-100 pb-2">Identificação e Inventário</h4>
-                        <div class="grid grid-cols-1 md:grid-cols-3 gap-5">
-                            <div class="md:col-span-2 space-y-1">
+                        <h4 class="text-[11px] font-black uppercase text-slate-400 tracking-widest border-b border-slate-100 pb-2">Identificação do Produto</h4>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+                            <div class="md:col-span-1 space-y-1">
                                 <label class="text-[10px] font-bold text-slate-500 uppercase ml-1">Título do Produto</label>
                                 <input type="text" id="prodName" required placeholder="Ex: Camisa Polo Slim Azul" class="input-pro !bg-white border-slate-300 text-lg font-semibold">
                             </div>
-                            <div class="space-y-1">
-                                <label class="text-[10px] font-bold text-slate-500 uppercase ml-1">Qtd em Estoque</label>
-                                <input type="number" id="prodStock" placeholder="0" class="input-pro !bg-white border-slate-300 font-bold text-primary-600">
-                            </div>
                             <div class="md:col-span-1 space-y-1">
-                                <label class="text-[10px] font-bold text-blue-600 uppercase ml-1 flex items-center justify-between">
-                                    SKU / Cód. Barras
-                                    <button type="button" onclick="generateAutoSku()" class="text-[9px] bg-blue-100 text-blue-700 px-2 py-0.5 rounded-lg hover:bg-blue-200 transition-colors">Gerar Auto</button>
-                                </label>
+                                <label class="text-[10px] font-bold text-blue-600 uppercase ml-1 flex items-center gap-1">Código SDK / SKU <i data-lucide="qr-code" class="w-3 h-3"></i></label>
                                 <input type="text" id="prodSku" placeholder="Ex: SKU-12345" class="input-pro !bg-blue-50/30 border-blue-200 font-mono text-sm">
                             </div>
                             <div class="space-y-1">
@@ -581,34 +583,8 @@
                                 <label class="text-[10px] font-bold text-slate-500 uppercase ml-1">Destaque na Vitrine?</label>
                                 <div class="flex items-center gap-3 bg-slate-50 p-3 rounded-xl border border-slate-200">
                                     <input type="checkbox" id="prodFeatured" class="w-5 h-5 accent-primary-600">
-                                    <span class="text-xs font-bold text-slate-600">Exibir no topo</span>
+                                    <span class="text-xs font-bold text-slate-600">Exibir no topo da página</span>
                                 </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="space-y-6">
-                        <h4 class="text-[11px] font-black uppercase text-slate-400 tracking-widest border-b border-slate-100 pb-2">Precificação e Lucro (PDV)</h4>
-                        <div class="grid grid-cols-1 md:grid-cols-4 gap-4 bg-slate-50 p-5 rounded-[2rem] border border-slate-200">
-                            <div class="space-y-1">
-                                <label class="text-[10px] font-bold text-slate-500 uppercase ml-1">Valor de Compra (R$)</label>
-                                <input type="number" step="0.01" id="prodCost" oninput="calculateProfit()" placeholder="0.00" class="input-pro bg-white">
-                            </div>
-                            <div class="space-y-1">
-                                <label class="text-[10px] font-bold text-slate-500 uppercase ml-1">Valor de Venda (R$)</label>
-                                <input type="number" step="0.01" id="prodValue" oninput="calculateProfit()" required placeholder="0.00" class="input-pro bg-white">
-                            </div>
-                            <div class="space-y-1">
-                                <label class="text-[10px] font-bold text-green-600 uppercase ml-1">Lucro Estimado</label>
-                                <input type="text" id="prodProfitAmt" readonly placeholder="R$ 0,00" class="input-pro bg-green-50/50 border-green-100 text-green-700 font-bold">
-                            </div>
-                            <div class="space-y-1">
-                                <label class="text-[10px] font-bold text-green-600 uppercase ml-1">Margem %</label>
-                                <input type="text" id="prodProfitPct" readonly placeholder="0%" class="input-pro bg-green-50/50 border-green-100 text-green-700 font-bold">
-                            </div>
-                            <div class="md:col-span-4 space-y-1">
-                                <label class="text-[10px] font-bold text-amber-600 uppercase ml-1">Preço Promocional (Opcional)</label>
-                                <input type="number" step="0.01" id="prodPromo" placeholder="Ex: Valor que aparecerá riscado" class="input-pro bg-white">
                             </div>
                         </div>
                     </div>
@@ -616,34 +592,53 @@
                     <div class="space-y-8">
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
                             <div class="space-y-5">
-                                <h4 class="text-[11px] font-black uppercase text-slate-400 tracking-widest border-b border-slate-100 pb-2">Gerador de Atributos</h4>
-                                <div class="grid grid-cols-1 gap-4">
+                                <h4 class="text-[11px] font-black uppercase text-slate-400 tracking-widest border-b border-slate-100 pb-2">Precificação Base</h4>
+                                <div class="grid grid-cols-2 gap-4">
                                     <div class="space-y-1">
-                                        <label class="text-[10px] font-bold text-slate-500 uppercase ml-1">Tamanhos (P, M, G...)</label>
-                                        <input type="text" id="prodSizesInput" oninput="generateVariationMatrix()" placeholder="P, M, G" class="input-pro bg-white">
+                                        <label class="text-[10px] font-bold text-slate-500 uppercase ml-1">Preço Normal (R$)</label>
+                                        <input type="number" step="0.01" id="prodValue" required placeholder="0.00" class="input-pro bg-white">
                                     </div>
                                     <div class="space-y-1">
-                                        <label class="text-[10px] font-bold text-slate-500 uppercase ml-1">Cores (Azul, Preto...)</label>
-                                        <input type="text" id="prodColorsInput" oninput="generateVariationMatrix()" placeholder="Azul, Branco" class="input-pro bg-white">
+                                        <label class="text-[10px] font-bold text-green-600 uppercase ml-1">Preço Promo (R$)</label>
+                                        <input type="number" step="0.01" id="prodPromo" placeholder="Opcional" class="input-pro bg-white">
                                     </div>
                                 </div>
                             </div>
-                            <div id="variationMatrixContainer" class="hidden animate-fade-in">
-                                <h4 class="text-[11px] font-black uppercase text-slate-400 tracking-widest border-b border-slate-100 pb-2 mb-4">Matriz de Variações</h4>
-                                <div class="max-h-48 overflow-y-auto">
-                                    <table class="variation-matrix-table">
-                                        <thead>
-                                            <tr><th>Ativo</th><th>Variação</th><th>Preço (R$)</th></tr>
-                                        </thead>
-                                        <tbody id="variationMatrixBody"></tbody>
-                                    </table>
+                            <div class="space-y-5">
+                                <h4 class="text-[11px] font-black uppercase text-slate-400 tracking-widest border-b border-slate-100 pb-2">Gerador de Combinações</h4>
+                                <div class="grid grid-cols-1 gap-4">
+                                    <div class="space-y-1">
+                                        <label class="text-[10px] font-bold text-slate-500 uppercase ml-1">Tamanhos (Vírgula)</label>
+                                        <input type="text" id="prodSizesInput" oninput="generateVariationMatrix()" placeholder="P, M, G" class="input-pro bg-white">
+                                    </div>
+                                    <div class="space-y-1">
+                                        <label class="text-[10px] font-bold text-slate-500 uppercase ml-1">Cores (Vírgula)</label>
+                                        <input type="text" id="prodColorsInput" oninput="generateVariationMatrix()" placeholder="Azul, Branco, Preto" class="input-pro bg-white">
+                                    </div>
                                 </div>
+                            </div>
+                        </div>
+
+                        <div id="variationMatrixContainer" class="hidden animate-fade-in">
+                            <h4 class="text-[11px] font-black uppercase text-slate-400 tracking-widest border-b border-slate-100 pb-2 mb-4">Matriz de Variações</h4>
+                            <div class="overflow-x-auto">
+                                <table class="variation-matrix-table">
+                                    <thead>
+                                        <tr>
+                                            <th>Ativo</th>
+                                            <th>Cor</th>
+                                            <th>Tamanho</th>
+                                            <th>Preço Individual (R$)</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="variationMatrixBody"></tbody>
+                                </table>
                             </div>
                         </div>
                     </div>
 
                     <div class="space-y-1">
-                        <label class="text-[10px] font-bold text-slate-500 uppercase ml-1">Descrição Técnica / Detalhes</label>
+                        <label class="text-[10px] font-bold text-slate-500 uppercase ml-1">Breve Descrição</label>
                         <textarea id="prodDesc" class="input-pro bg-white" rows="3" placeholder="Informações extras como tecido ou medidas..."></textarea>
                     </div>
 
@@ -655,7 +650,6 @@
             </div>
         </div>
     </div>
-
 
     <!-- MODAL BANNER -->
     <div id="bannerModal" class="modal-overlay fixed inset-0 z-[150] flex items-center justify-center p-4 hidden">
@@ -1598,30 +1592,55 @@ if (data.magicCategories) {
             document.getElementById('bannerQuotaText').textContent = `${allBanners.length}/${storeConfig.maxBanners}`;
         }
 
-        // Gerador de SKU Automático
-window.generateAutoSku = () => {
-    const random = Math.floor(10000000 + Math.random() * 90000000);
-    document.getElementById('prodSku').value = `SW-${random}`;
-    showToast("SKU Gerado!");
-};
+        // --- GESTÃO DE PRODUTOS ---
+        window.openProductModal = (p = null) => {
+            if(!p && allProducts.length >= storeConfig.maxProducts) { showToast(`Limite do plano atingido.`); return; }
+            document.getElementById('prodCategory').innerHTML = allCategories.map(c => `<option value="${c.name}">${c.name}</option>`).join('');
+            
+            if(p) {
+                document.getElementById('prodModalTitle').textContent = "Editar Produto Existente";
+                document.getElementById('prodId').value = p.id; 
+                document.getElementById('prodName').value = p.name;
+                document.getElementById('prodSku').value = p.sku || ''; // SDK/SKU Field
+                document.getElementById('prodCategory').value = p.category; 
+                document.getElementById('prodValue').value = p.value;
+                document.getElementById('prodPromo').value = p.promoValue || ''; 
+                document.getElementById('prodDesc').value = p.description || '';
+                document.getElementById('prodFeatured').checked = p.isFeatured; 
+                document.getElementById('prodSizesInput').value = p.sizes ? p.sizes.join(', ') : '';
+                document.getElementById('prodColorsInput').value = p.colors ? p.colors.join(', ') : '';
+                currentProductImages = p.images ? [...p.images] : [];
+                
+                // FIXED: Preservar toda a matriz ao abrir
+                variationsMatrix = p.variations || [];
+                if (variationsMatrix.length > 0) {
+                    document.getElementById('variationMatrixContainer').classList.remove('hidden');
+                    renderMatrixUI();
+                } else {
+                    document.getElementById('variationMatrixContainer').classList.add('hidden');
+                }
+            } else {
+                document.getElementById('prodModalTitle').textContent = "Adicionar Novo Produto";
+                document.getElementById('productForm').reset(); 
+                document.getElementById('prodId').value = ''; 
+                document.getElementById('prodSku').value = '';
+                currentProductImages = []; 
+                variationsMatrix = [];
+                document.getElementById('variationMatrixContainer').classList.add('hidden');
+            }
+            renderImagePreviews();
+            document.getElementById('productModal').classList.remove('hidden');
+            lucide.createIcons();
+        };
 
-// Cálculo de Lucro em Tempo Real
-window.calculateProfit = () => {
-    const cost = parseFloat(document.getElementById('prodCost').value) || 0;
-    const price = parseFloat(document.getElementById('prodValue').value) || 0;
-    const profitAmt = price - cost;
-    const profitPct = price > 0 ? (profitAmt / price) * 100 : 0;
-    
-    document.getElementById('prodProfitAmt').value = `R$ ${profitAmt.toFixed(2)}`;
-    document.getElementById('prodProfitPct').value = `${profitPct.toFixed(1)}%`;
-};
-
-        
+       
         window.handleProductSubmit = async (e) => {
     e.preventDefault();
+    
     const btn = document.getElementById('btnSaveProd');
     const modal = document.getElementById('productModal');
     const loader = document.getElementById('imageLoading');
+    
     if(btn) btn.disabled = true;
     if(loader) loader.classList.remove('hidden');
 
@@ -1630,6 +1649,7 @@ window.calculateProfit = () => {
         const finalId = id || 'prod_' + Date.now();
         const imageUrls = [];
 
+        // 1. Upload das Imagens (Sua lógica original)
         for (let i = 0; i < currentProductImages.length; i++) {
             const img = currentProductImages[i];
             if (img.startsWith('http')) { 
@@ -1641,11 +1661,10 @@ window.calculateProfit = () => {
             }
         }
 
+        // 2. Dados do Produto (Mantendo SKU e Matriz)
         const data = {
             name: document.getElementById('prodName').value,
             sku: document.getElementById('prodSku').value || '',
-            stock: parseInt(document.getElementById('prodStock').value) || 0,
-            purchasePrice: parseFloat(document.getElementById('prodCost').value) || 0,
             category: document.getElementById('prodCategory').value,
             value: parseFloat(document.getElementById('prodValue').value) || 0,
             promoValue: parseFloat(document.getElementById('prodPromo').value) || null,
@@ -1659,26 +1678,29 @@ window.calculateProfit = () => {
             status: id ? (allProducts.find(p => p.id === id)?.status || 'active') : 'active'
         };
 
+        // 3. Salvar no Firebase
         const docRef = doc(db, `stores/${currentStoreId}/products`, finalId);
         await setDoc(docRef, data, { merge: true });
 
+        // Atualizar o carimbo de tempo da loja (Para a Vitrine atualizar)
         const storeRef = doc(db, `stores/${currentStoreId}/config/store`);
         await updateDoc(storeRef, { lastUpdate: Date.now() }).catch(() => {
+            // Se o update falhar, tenta o set merge
             setDoc(storeRef, { lastUpdate: Date.now() }, { merge: true });
         });
 
         showToast("✅ Publicado com sucesso!");
         if(modal) modal.classList.add('hidden'); 
         currentProductImages = []; 
+
     } catch (err) {
-        console.error(err);
-        showToast("❌ Erro ao salvar.");
+        console.error("Erro ao salvar:", err);
+        showToast("❌ Erro ao salvar produto.");
     } finally {
         if(btn) btn.disabled = false;
         if(loader) loader.classList.add('hidden');
     }
 };
-        
        window.deleteProduct = async (id, imageUrls = []) => {
     if(!confirm("Deseja apagar este produto permanentemente? Suas fotos também serão removidas do servidor.")) return;
 
@@ -1939,88 +1961,37 @@ window.removeBannerImage = () => {
     updateBannerPreview();
 };
 
-  // --- GESTÃO DE PRODUTOS (CORRIGIDA) ---
-window.openProductModal = (p = null) => {
-    console.log("Tentando abrir modal de produto...", p); // Para debug no F12
-
-    // 1. Verificação de Limites
-    if(!p && allProducts && allProducts.length >= (storeConfig.maxProducts || 50)) { 
-        showToast(`Limite do seu plano atingido.`); 
-        return; 
+// 3. ABERTURA DO MODAL (CARREGA DADOS)
+window.openBannerModal = (b = null) => {
+    const select = document.getElementById('bannerTarget');
+    // Preenche o select com as categorias disponíveis
+    select.innerHTML = '<option value="offers">Todas as Ofertas</option>' + 
+                      allCategories.map(c => `<option value="${c.name}">${c.name}</option>`).join('');
+    
+    if(b) {
+        document.getElementById('bannerId').value = b.id || ''; 
+        document.getElementById('bannerTag').value = b.tag || '';
+        document.getElementById('bannerTitle').value = b.title || ''; 
+        document.getElementById('bannerSubtitle').value = b.subtitle || ''; 
+        document.getElementById('bannerBtnText').value = b.btnText || ''; 
+        document.getElementById('bannerColor1').value = b.color1 || '#8b5cf6';
+        document.getElementById('bannerColor2').value = b.color2 || '#6d28d9'; 
+        document.getElementById('bannerTarget').value = b.target || 'offers';
+        window.currentBannerImageData = b.imageUrl || null;
+    } else { 
+        document.getElementById('bannerForm').reset(); 
+        document.getElementById('bannerId').value = ''; 
+        document.getElementById('bannerColor1').value = '#8b5cf6'; 
+        document.getElementById('bannerColor2').value = '#6d28d9';
+        window.currentBannerImageData = null;
     }
 
-    // 2. Localizar o Modal e os Campos
-    const modal = document.getElementById('productModal');
-    const catSelect = document.getElementById('prodCategory');
+    updateBannerPreview();
+    document.getElementById('bannerModal').classList.remove('hidden');
     
-    if(!modal) {
-        console.error("Erro crítico: Elemento 'productModal' não encontrado no HTML.");
-        return;
-    }
-
-    // 3. Popular Categorias com segurança
-    if(catSelect) {
-        if(allCategories && allCategories.length > 0) {
-            catSelect.innerHTML = allCategories.map(c => `<option value="${c.name}">${c.name}</option>`).join('');
-        } else {
-            catSelect.innerHTML = '<option value="">Crie uma categoria primeiro</option>';
-        }
-    }
-    
-    // 4. Modo Edição vs Novo
-    if(p) {
-        document.getElementById('prodModalTitle').textContent = "Editar Produto";
-        document.getElementById('prodId').value = p.id || ''; 
-        document.getElementById('prodName').value = p.name || '';
-        document.getElementById('prodSku').value = p.sku || '';
-        document.getElementById('prodStock').value = p.stock || 0;
-        document.getElementById('prodCost').value = p.purchasePrice || 0;
-        document.getElementById('prodCategory').value = p.category || ''; 
-        document.getElementById('prodValue').value = p.value || 0;
-        document.getElementById('prodPromo').value = p.promoValue || ''; 
-        document.getElementById('prodDesc').value = p.description || '';
-        document.getElementById('prodFeatured').checked = !!p.isFeatured; 
-        
-        document.getElementById('prodSizesInput').value = p.sizes ? p.sizes.join(', ') : '';
-        document.getElementById('prodColorsInput').value = p.colors ? p.colors.join(', ') : '';
-        
-        currentProductImages = p.images ? [...p.images] : [];
-        variationsMatrix = p.variations || [];
-        
-        if (variationsMatrix.length > 0) {
-            document.getElementById('variationMatrixContainer').classList.remove('hidden');
-            renderMatrixUI();
-        } else {
-            document.getElementById('variationMatrixContainer').classList.add('hidden');
-        }
-        
-        if(typeof calculateProfit === 'function') calculateProfit(); 
-
-    } else {
-        // Modo Novo
-        document.getElementById('prodModalTitle').textContent = "Novo Produto";
-        const form = document.getElementById('productForm');
-        if(form) form.reset();
-        
-        document.getElementById('prodId').value = ''; 
-        document.getElementById('prodProfitAmt').value = 'R$ 0,00';
-        document.getElementById('prodProfitPct').value = '0%';
-        
-        currentProductImages = []; 
-        variationsMatrix = [];
-        document.getElementById('variationMatrixContainer').classList.add('hidden');
-    }
-    
-    // 5. Finalizar Abertura
-    if(typeof renderImagePreviews === 'function') renderImagePreviews();
-    modal.classList.remove('hidden');
-    
-    setTimeout(() => {
-        if(typeof lucide !== 'undefined') lucide.createIcons();
-    }, 100);
+    // Força a renderização dos ícones do Lucide que estão dentro do modal
+    setTimeout(() => lucide.createIcons(), 50);
 };
-        
-
 
 // 4. PREVIEW EM TEMPO REAL (ESTILO PREMIUM)
 window.updateBannerPreview = () => {
