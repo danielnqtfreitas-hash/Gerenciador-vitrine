@@ -414,36 +414,6 @@
                 
             </div>
 
-            <div id="view-vendas" class="max-w-4xl mx-auto space-y-6 hidden animate-fade-in">
-    <div class="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm">
-        <h3 class="text-xl font-bold mb-4">Venda Rápida (Frente de Caixa)</h3>
-        
-        <div class="flex gap-2 mb-6">
-            <div class="relative flex-1">
-                <i data-lucide="scan-barcode" class="absolute left-4 top-3.5 text-slate-400 w-5 h-5"></i>
-                <input type="text" id="quickSearch" placeholder="Escanear código ou digitar nome..." 
-                       class="input-pro pl-12" onkeyup="searchProductPDV(this.value)">
-            </div>
-        </div>
-
-        <div id="pdvResult" class="hidden space-y-4 p-4 bg-slate-50 rounded-2xl border border-dashed border-slate-300">
-            </div>
-
-        <div id="pdvCart" class="mt-8 border-t pt-6">
-            <h4 class="text-xs font-black text-slate-400 uppercase mb-4">Itens da Venda</h4>
-            <div id="cartItems" class="space-y-2"></div>
-            
-            <div class="mt-6 p-4 bg-primary-600 rounded-2xl text-white flex justify-between items-center">
-                <div>
-                    <p class="text-[10px] uppercase font-bold opacity-80">Total a Receber</p>
-                    <h3 class="text-2xl font-black" id="pdvTotal">R$ 0,00</h3>
-                </div>
-                <button onclick="finalizePDV()" class="bg-white text-primary-600 px-6 py-3 rounded-xl font-black uppercase text-xs shadow-lg">Finalizar e Baixar</button>
-            </div>
-        </div>
-    </div>
-            </div>
-             
             <div id="view-banners" class="max-w-6xl mx-auto space-y-6 hidden animate-fade-in">
                 <div class="flex justify-between items-center">
                     <h3 class="text-2xl font-bold text-slate-800">Banners de Destaque</h3>
@@ -553,18 +523,27 @@
     </div>
 
     <!-- MODAL PRODUTO -->
-    <div id="productModal" class="modal-overlay fixed inset-0 z-[150] flex items-center justify-center p-4 hidden">
+        <div id="productModal" class="modal-overlay fixed inset-0 z-[150] flex items-center justify-center p-4 hidden">
         <div class="bg-white rounded-[2.5rem] shadow-2xl w-full max-w-4xl auth-card-container overflow-hidden">
             <div class="bg-slate-900 p-6 flex items-center justify-between">
-                <div class="flex items-center gap-3"><div class="bg-primary-500/20 p-2 rounded-xl"><i data-lucide="package" class="w-6 h-6 text-primary-400"></i></div><h3 class="text-xl font-bold text-white" id="prodModalTitle">Novo Produto</h3></div>
-                <button onclick="document.getElementById('productModal').classList.add('hidden')" class="p-2 text-slate-400 hover:text-white transition-colors"><i data-lucide="x" class="w-6 h-6"></i></button>
+                <div class="flex items-center gap-3">
+                    <div class="bg-primary-500/20 p-2 rounded-xl"><i data-lucide="package" class="w-6 h-6 text-primary-400"></i></div>
+                    <h3 class="text-xl font-bold text-white" id="prodModalTitle">Gestão de Produto</h3>
+                </div>
+                <button onclick="document.getElementById('productModal').classList.add('hidden')" class="p-2 text-slate-400 hover:text-white transition-colors">
+                    <i data-lucide="x" class="w-6 h-6"></i>
+                </button>
             </div>
+            
             <div class="auth-card-content p-8">
                 <form id="productForm" onsubmit="handleProductSubmit(event)" class="space-y-10">
                     <input type="hidden" id="prodId">
                     
                     <div class="space-y-4">
-                        <div class="flex justify-between items-end border-b border-slate-100 pb-2"><h4 class="text-[11px] font-black uppercase text-slate-400 tracking-widest">Fotos do Produto</h4><span id="photoCount" class="text-[10px] font-bold text-primary-600 bg-primary-50 px-2 py-0.5 rounded-full">0/1 fotos</span></div>
+                        <div class="flex justify-between items-end border-b border-slate-100 pb-2">
+                            <h4 class="text-[11px] font-black uppercase text-slate-400 tracking-widest">Fotos do Produto</h4>
+                            <span id="photoCount" class="text-[10px] font-bold text-primary-600 bg-primary-50 px-2 py-0.5 rounded-full">0/4 fotos</span>
+                        </div>
                         <div class="grid grid-cols-2 md:grid-cols-5 gap-4">
                             <div class="relative aspect-square rounded-2xl border-2 border-dashed border-slate-200 flex flex-col items-center justify-center cursor-pointer hover:border-primary-400 hover:bg-primary-50/30 transition-all group overflow-hidden">
                                 <input type="file" id="prodImageInput" accept="image/*" multiple class="absolute inset-0 opacity-0 cursor-pointer z-10" onchange="processImages(this.files)">
@@ -578,31 +557,17 @@
                             </div>
                             <div id="imageGallery" class="col-span-1 md:col-span-3 grid grid-cols-2 md:grid-cols-3 gap-4"></div>
                         </div>
-                        <p id="photoLimitNotice" class="text-[9px] text-slate-400 font-medium italic">Selecione uma imagem nítida para sua vitrine.</p>
-                        <div id="imageLoading" class="absolute inset-0 bg-white/95 flex items-center justify-center hidden z-20 backdrop-blur-sm">
-    <div class="text-center">
-        <div class="relative mb-4 flex justify-center">
-            <div class="absolute inset-0 bg-primary-500/20 rounded-full blur-xl animate-pulse"></div>
-            <div class="relative bg-white p-4 rounded-3xl shadow-lg border border-primary-100 animate-bounce">
-                <i data-lucide="upload-cloud" class="w-10 h-10 text-primary-600"></i>
-            </div>
-        </div>
-        
-        <h4 id="loadingText" class="text-sm font-black text-slate-800 uppercase tracking-widest">Processando...</h4>
-        <p id="loadingSubText" class="text-[10px] text-slate-400 font-bold mt-1 uppercase tracking-tighter">Sua vitrine está sendo atualizada</p>
-    </div>
-</div>
                     </div>
 
                     <div class="space-y-6">
-                        <h4 class="text-[11px] font-black uppercase text-slate-400 tracking-widest border-b border-slate-100 pb-2">Identificação do Produto</h4>
+                        <h4 class="text-[11px] font-black uppercase text-slate-400 tracking-widest border-b border-slate-100 pb-2">Identificação</h4>
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
-                            <div class="md:col-span-1 space-y-1">
+                            <div class="space-y-1">
                                 <label class="text-[10px] font-bold text-slate-500 uppercase ml-1">Título do Produto</label>
-                                <input type="text" id="prodName" required placeholder="Ex: Camisa Polo Slim Azul" class="input-pro !bg-white border-slate-300 text-lg font-semibold">
+                                <input type="text" id="prodName" required placeholder="Ex: Camisa Polo" class="input-pro !bg-white border-slate-300 text-lg font-semibold">
                             </div>
-                            <div class="md:col-span-1 space-y-1">
-                                <label class="text-[10px] font-bold text-blue-600 uppercase ml-1 flex items-center gap-1">Código SDK / SKU <i data-lucide="qr-code" class="w-3 h-3"></i></label>
+                            <div class="space-y-1">
+                                <label class="text-[10px] font-bold text-blue-600 uppercase ml-1 flex items-center gap-1">Código SKU <i data-lucide="qr-code" class="w-3 h-3"></i></label>
                                 <input type="text" id="prodSku" placeholder="Ex: SKU-12345" class="input-pro !bg-blue-50/30 border-blue-200 font-mono text-sm">
                             </div>
                             <div class="space-y-1">
@@ -610,10 +575,38 @@
                                 <select id="prodCategory" class="input-pro bg-white" required></select>
                             </div>
                             <div class="space-y-1">
-                                <label class="text-[10px] font-bold text-slate-500 uppercase ml-1">Destaque na Vitrine?</label>
+                                <label class="text-[10px] font-bold text-slate-500 uppercase ml-1">Opções</label>
                                 <div class="flex items-center gap-3 bg-slate-50 p-3 rounded-xl border border-slate-200">
                                     <input type="checkbox" id="prodFeatured" class="w-5 h-5 accent-primary-600">
-                                    <span class="text-xs font-bold text-slate-600">Exibir no topo da página</span>
+                                    <span class="text-xs font-bold text-slate-600">Destaque no topo</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="bg-slate-900 p-6 rounded-[2rem] text-white space-y-6 shadow-xl">
+                        <div class="flex justify-between items-center">
+                            <h4 class="text-[11px] font-black uppercase text-slate-400 tracking-widest">Calculadora de Lucro</h4>
+                            <div id="profitBadge" class="hidden px-3 py-1 bg-green-500/20 text-green-400 rounded-full text-[10px] font-black uppercase border border-green-500/30 animate-pulse">Lucro Ativo</div>
+                        </div>
+                        
+                        <div class="grid grid-cols-2 md:grid-cols-4 gap-6">
+                            <div class="space-y-1">
+                                <label class="text-[9px] font-black text-slate-400 uppercase">Custo Unitário (R$)</label>
+                                <input type="number" step="0.01" id="prodCost" oninput="calculateProfit()" placeholder="0,00" class="w-full bg-slate-800 border-none rounded-xl p-3 text-sm focus:ring-2 focus:ring-primary-500">
+                            </div>
+                            <div class="space-y-1">
+                                <label class="text-[9px] font-black text-slate-400 uppercase">Preço Venda (R$)</label>
+                                <input type="number" step="0.01" id="prodValue" oninput="calculateProfit()" placeholder="0,00" class="w-full bg-slate-800 border-none rounded-xl p-3 text-sm focus:ring-2 focus:ring-primary-500">
+                            </div>
+                            <div id="profitRes" class="hidden col-span-2 flex items-center gap-6 pl-4 border-l border-slate-700">
+                                <div>
+                                    <p class="text-[9px] font-black text-slate-500 uppercase">Lucro Real</p>
+                                    <p id="profitAmt" class="text-xl font-black text-white">R$ 0,00</p>
+                                </div>
+                                <div>
+                                    <p class="text-[9px] font-black text-slate-500 uppercase">Margem</p>
+                                    <p id="profitPct" class="text-xl font-black text-green-400">0%</p>
                                 </div>
                             </div>
                         </div>
@@ -622,43 +615,31 @@
                     <div class="space-y-8">
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
                             <div class="space-y-5">
-                                <h4 class="text-[11px] font-black uppercase text-slate-400 tracking-widest border-b border-slate-100 pb-2">Precificação Base</h4>
-                                <div class="grid grid-cols-2 gap-4">
-                                    <div class="space-y-1">
-                                        <label class="text-[10px] font-bold text-slate-500 uppercase ml-1">Preço Normal (R$)</label>
-                                        <input type="number" step="0.01" id="prodValue" required placeholder="0.00" class="input-pro bg-white">
-                                    </div>
-                                    <div class="space-y-1">
-                                        <label class="text-[10px] font-bold text-green-600 uppercase ml-1">Preço Promo (R$)</label>
-                                        <input type="number" step="0.01" id="prodPromo" placeholder="Opcional" class="input-pro bg-white">
-                                    </div>
+                                <h4 class="text-[11px] font-black uppercase text-slate-400 tracking-widest border-b border-slate-100 pb-2">Preço Promocional</h4>
+                                <div class="space-y-1">
+                                    <label class="text-[10px] font-bold text-green-600 uppercase">Valor em Oferta (R$)</label>
+                                    <input type="number" step="0.01" id="prodPromo" oninput="calculateProfit()" placeholder="Opcional" class="input-pro bg-white">
                                 </div>
                             </div>
                             <div class="space-y-5">
-                                <h4 class="text-[11px] font-black uppercase text-slate-400 tracking-widest border-b border-slate-100 pb-2">Gerador de Combinações</h4>
-                                <div class="grid grid-cols-1 gap-4">
-                                    <div class="space-y-1">
-                                        <label class="text-[10px] font-bold text-slate-500 uppercase ml-1">Tamanhos (Vírgula)</label>
-                                        <input type="text" id="prodSizesInput" oninput="generateVariationMatrix()" placeholder="P, M, G" class="input-pro bg-white">
-                                    </div>
-                                    <div class="space-y-1">
-                                        <label class="text-[10px] font-bold text-slate-500 uppercase ml-1">Cores (Vírgula)</label>
-                                        <input type="text" id="prodColorsInput" oninput="generateVariationMatrix()" placeholder="Azul, Branco, Preto" class="input-pro bg-white">
-                                    </div>
+                                <h4 class="text-[11px] font-black uppercase text-slate-400 tracking-widest border-b border-slate-100 pb-2">Gerador de Matriz</h4>
+                                <div class="grid grid-cols-2 gap-4">
+                                    <input type="text" id="prodSizesInput" oninput="generateVariationMatrix()" placeholder="Tamanhos (P, M)" class="input-pro">
+                                    <input type="text" id="prodColorsInput" oninput="generateVariationMatrix()" placeholder="Cores" class="input-pro">
                                 </div>
                             </div>
                         </div>
 
                         <div id="variationMatrixContainer" class="hidden animate-fade-in">
-                            <h4 class="text-[11px] font-black uppercase text-slate-400 tracking-widest border-b border-slate-100 pb-2 mb-4">Matriz de Variações</h4>
+                            <h4 class="text-[11px] font-black uppercase text-slate-400 tracking-widest border-b border-slate-100 pb-2 mb-4">Matriz de Estoque Individual</h4>
                             <div class="overflow-x-auto">
                                 <table class="variation-matrix-table">
                                     <thead>
                                         <tr>
                                             <th>Ativo</th>
-                                            <th>Cor</th>
-                                            <th>Tamanho</th>
-                                            <th>Preço Individual (R$)</th>
+                                            <th>Opção</th>
+                                            <th>Preço</th>
+                                            <th>Estoque</th>
                                         </tr>
                                     </thead>
                                     <tbody id="variationMatrixBody"></tbody>
@@ -668,8 +649,8 @@
                     </div>
 
                     <div class="space-y-1">
-                        <label class="text-[10px] font-bold text-slate-500 uppercase ml-1">Breve Descrição</label>
-                        <textarea id="prodDesc" class="input-pro bg-white" rows="3" placeholder="Informações extras como tecido ou medidas..."></textarea>
+                        <label class="text-[10px] font-bold text-slate-500 uppercase ml-1">Descrição</label>
+                        <textarea id="prodDesc" class="input-pro bg-white" rows="3" placeholder="Detalhes técnicos..."></textarea>
                     </div>
 
                     <div class="flex items-center justify-between pt-6 border-t gap-4">
@@ -680,6 +661,7 @@
             </div>
         </div>
     </div>
+                    
 
     <!-- MODAL BANNER -->
     <div id="bannerModal" class="modal-overlay fixed inset-0 z-[150] flex items-center justify-center p-4 hidden">
@@ -796,7 +778,7 @@
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
         import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged, updatePassword, setPersistence, browserLocalPersistence, browserSessionPersistence } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        import { getFirestore, writeBatch, doc, getDoc, setDoc, updateDoc, deleteDoc, onSnapshot, collection, addDoc, query, where, getDocs, orderBy, limit, Timestamp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        import { getFirestore, doc, getDoc, setDoc, updateDoc, deleteDoc, onSnapshot, collection, addDoc, query, where, getDocs, orderBy, limit, Timestamp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
         import { getStorage, ref, uploadString, getDownloadURL, deleteObject } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-storage.js";
         // Procure onde começam os imports e adicione este:
         import { getMessaging, getToken, onMessage } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-messaging.js";
@@ -826,7 +808,6 @@
         let analyticsChartInstance = null; 
         let analyticsUnsubscribe = null; // Variável para desligar a escuta anterior
         let cropper = null;
-        let currentCart = [];
         let ordersCache = {}; // Guarda os pedidos para o modal de detalhes
 let isFirstLoad = true;
         let variationsMatrix = [];
@@ -2622,125 +2603,133 @@ window.deleteOrder = async (id) => {
         showToast("Erro ao excluir.");
     }
 };  
-// Função para dar baixa no estoque e registrar a venda
-window.processSale = async (items, source = 'fisica') => {
+window.calculateProfit = () => {
+    const cost = parseFloat(document.getElementById('prodCost').value) || 0;
+    const sale = parseFloat(document.getElementById('prodValue').value) || 0;
+    const promo = parseFloat(document.getElementById('prodPromo').value) || 0;
+    
+    const finalSale = promo > 0 ? promo : sale;
+    const resDiv = document.getElementById('profitRes');
+    const badge = document.getElementById('profitBadge');
+
+    if (cost > 0 && finalSale > 0) {
+        resDiv.classList.remove('hidden');
+        badge.classList.remove('hidden');
+        const profit = finalSale - cost;
+        const margin = (profit / finalSale) * 100;
+        
+        document.getElementById('profitAmt').innerText = `R$ ${profit.toFixed(2).replace('.',',')}`;
+        document.getElementById('profitPct').innerText = `${margin.toFixed(0)}%`;
+        document.getElementById('profitPct').className = margin > 0 ? "text-xl font-black text-green-400" : "text-xl font-black text-red-400";
+    } else {
+        resDiv.classList.add('hidden');
+        badge.classList.add('hidden');
+    }
+};
+
+// 1. GERAÇÃO DA MATRIZ COM CAMPO DE ESTOQUE
+window.renderMatrixUI = () => {
+    const tbody = document.getElementById('variationMatrixBody');
+    tbody.innerHTML = '';
+    
+    variationsMatrix.forEach((v, idx) => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+            <td>
+                <label class="toggle-switch">
+                    <input type="checkbox" ${v.active ? 'checked' : ''} onchange="variationsMatrix[${idx}].active = this.checked">
+                    <span class="slider"></span>
+                </label>
+            </td>
+            <td class="font-bold text-slate-800">${v.color} / ${v.size}</td>
+            <td>
+                <input type="number" step="0.01" value="${v.price}" oninput="variationsMatrix[${idx}].price = parseFloat(this.value)" 
+                    class="w-full border border-slate-200 rounded-lg p-2 text-xs font-bold">
+            </td>
+            <td>
+                <input type="number" value="${v.stock || 0}" oninput="variationsMatrix[${idx}].stock = parseInt(this.value)" 
+                    class="w-full border-2 border-blue-100 bg-blue-50 rounded-lg p-2 text-xs font-bold text-blue-700 focus:border-blue-400 outline-none">
+            </td>
+        `;
+        tbody.appendChild(tr);
+    });
+};
+
+// 2. CALCULADORA DE LUCRO
+window.calculateProfit = () => {
+    const cost = parseFloat(document.getElementById('prodCost').value) || 0;
+    const sale = parseFloat(document.getElementById('prodValue').value) || 0;
+    const promo = parseFloat(document.getElementById('prodPromo').value) || 0;
+    
+    const finalSale = promo > 0 ? promo : sale;
+    const resDiv = document.getElementById('profitRes');
+    const badge = document.getElementById('profitBadge');
+
+    if (cost > 0 && finalSale > 0) {
+        resDiv.classList.remove('hidden');
+        badge.classList.remove('hidden');
+        const profit = finalSale - cost;
+        const margin = (profit / finalSale) * 100;
+        
+        document.getElementById('profitAmt').innerText = `R$ ${profit.toFixed(2).replace('.',',')}`;
+        document.getElementById('profitPct').innerText = `${margin.toFixed(0)}%`;
+        document.getElementById('profitPct').className = margin > 0 ? "text-xl font-black text-green-400" : "text-xl font-black text-red-400";
+    } else {
+        resDiv.classList.add('hidden');
+        badge.classList.add('hidden');
+    }
+};
+
+// 3. SALVAR PRODUTO COM OS NOVOS CAMPOS
+window.handleProductSubmit = async (e) => {
+    e.preventDefault();
+    const btn = document.getElementById('btnSaveProd');
+    const loader = document.getElementById('imageLoading');
+    if(btn) btn.disabled = true;
+    if(loader) loader.classList.remove('hidden');
+
     try {
-        const batch = writeBatch(db); // Usa batch para garantir que tudo ocorra ou nada ocorra
-        let totalCusto = 0;
-        let totalVenda = 0;
+        const id = document.getElementById('prodId').value || 'prod_' + Date.now();
+        const imageUrls = [];
 
-        for (const item of items) {
-            const productRef = doc(db, `stores/${currentStoreId}/products`, item.productId);
-            const pDoc = await getDoc(productRef);
-            const pData = pDoc.data();
-
-            // 1. Cálculo de Baixa de Estoque (considerando variações se existirem)
-            if (pData.variations && pData.variations.length > 0) {
-                const updatedVariations = pData.variations.map(v => {
-                    if (v.color === item.color && v.size === item.size) {
-                        return { ...v, stock: (v.stock || 0) - item.qty };
-                    }
-                    return v;
-                });
-                batch.update(productRef, { variations: updatedVariations });
-            } else {
-                batch.update(productRef, { stock: (pData.stock || 0) - item.qty });
+        // Upload de imagens (Lógica mantida)
+        for (let i = 0; i < currentProductImages.length; i++) {
+            const img = currentProductImages[i];
+            if (img.startsWith('http')) imageUrls.push(img);
+            else {
+                const fileRef = ref(storage, `stores/${currentStoreId}/products/${id}_${i}.jpg`);
+                await uploadString(fileRef, img, 'data_url', { contentType: 'image/jpeg' });
+                imageUrls.push(await getDownloadURL(fileRef));
             }
-
-            // 2. Acúmulo para relatório de lucro
-            totalCusto += (pData.costPrice || 0) * item.qty;
-            totalVenda += item.price * item.qty;
         }
 
-        // 3. Registrar o pedido na aba de Vendas/Pedidos
-        const saleId = 'SALE_' + Date.now();
-        const saleRef = doc(db, `stores/${currentStoreId}/orders`, saleId);
-        
-        batch.set(saleRef, {
-            items: items,
-            total: totalVenda,
-            profit: totalVenda - totalCusto,
-            source: source, // 'site' ou 'fisica'
-            status: 'completed',
-            createdAt: Timestamp.now()
-        });
+        const data = {
+            name: document.getElementById('prodName').value,
+            sku: document.getElementById('prodSku').value || '',
+            category: document.getElementById('prodCategory').value,
+            costPrice: parseFloat(document.getElementById('prodCost').value) || 0, // NOVO
+            value: parseFloat(document.getElementById('prodValue').value) || 0,
+            promoValue: parseFloat(document.getElementById('prodPromo').value) || null,
+            images: imageUrls,
+            description: document.getElementById('prodDesc').value || '',
+            isFeatured: document.getElementById('prodFeatured').checked,
+            variations: variationsMatrix, // MANTIDO COM ESTOQUE
+            lastUpdate: Date.now(),
+            status: 'active'
+        };
 
-        await batch.commit();
-        showToast("Venda registrada e estoque atualizado! 💸");
-    } catch (error) {
-        console.error("Erro na venda:", error);
-        showToast("Erro ao processar venda.");
+        await setDoc(doc(db, `stores/${currentStoreId}/products`, id), data, { merge: true });
+        await updateDoc(doc(db, `stores/${currentStoreId}/config/store`), { lastUpdate: Date.now() });
+
+        showToast("Produto publicado com sucesso! 🚀");
+        document.getElementById('productModal').classList.add('hidden');
+    } catch (err) {
+        console.error(err);
+        showToast("Erro ao salvar.");
+    } finally {
+        if(btn) btn.disabled = false;
+        if(loader) loader.classList.add('hidden');
     }
-};
-
-        let currentCart = [];
-
-window.searchProductPDV = (val) => {
-    const resultArea = document.getElementById('pdvResult');
-    if(val.length < 2) { resultArea.classList.add('hidden'); return; }
-
-    const product = allProducts.find(p => 
-        p.name.toLowerCase().includes(val.toLowerCase()) || 
-        (p.sku && p.sku.toLowerCase() === val.toLowerCase())
-    );
-
-    if(product) {
-        resultArea.classList.remove('hidden');
-        const profit = product.value - (product.costPrice || 0);
-        const margin = ((profit / product.value) * 100).toFixed(1);
-
-        resultArea.innerHTML = `
-            <div class="flex items-center justify-between">
-                <div class="flex items-center gap-3">
-                    <img src="${product.images[0]}" class="w-12 h-12 rounded-lg object-cover">
-                    <div>
-                        <p class="font-bold text-slate-800">${product.name}</p>
-                        <p class="text-[10px] text-slate-500">Estoque: ${product.stock || 0} | Lucro: <span class="text-green-600 font-bold">R$ ${profit.toFixed(2)} (${margin}%)</span></p>
-                    </div>
-                </div>
-                <button onclick="addToPDVCart('${product.id}')" class="bg-primary-500 text-white p-2 rounded-lg"><i data-lucide="plus" class="w-5 h-5"></i></button>
-            </div>
-        `;
-        lucide.createIcons();
-    }
-};
-
-window.addToPDVCart = (id) => {
-    const p = allProducts.find(prod => prod.id === id);
-    currentCart.push({
-        productId: p.id,
-        name: p.name,
-        price: p.value,
-        qty: 1
-    });
-    renderPDVCart();
-    document.getElementById('quickSearch').value = '';
-    document.getElementById('pdvResult').classList.add('hidden');
-};
-
-function renderPDVCart() {
-    const container = document.getElementById('cartItems');
-    let total = 0;
-    container.innerHTML = currentCart.map((item, idx) => {
-        total += item.price * item.qty;
-        return `
-            <div class="flex justify-between items-center bg-white p-3 rounded-xl border">
-                <span class="text-sm font-bold">${item.name}</span>
-                <div class="flex items-center gap-3">
-                    <span class="text-xs font-bold">R$ ${item.price.toFixed(2)}</span>
-                    <button onclick="currentCart.splice(${idx},1);renderPDVCart()" class="text-red-500">×</button>
-                </div>
-            </div>
-        `;
-    }).join('');
-    document.getElementById('pdvTotal').innerText = `R$ ${total.toFixed(2).replace('.', ',')}`;
-}
-
-window.finalizePDV = async () => {
-    if(currentCart.length === 0) return;
-    await processSale(currentCart, 'fisica');
-    currentCart = [];
-    renderPDVCart();
 };
         
         
