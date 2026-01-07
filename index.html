@@ -832,10 +832,6 @@ let currentPlan = null;   // 🔹 vem da collection plans
 let isFirstLoad = true;
         let variationsMatrix = [];
 
-        const PLAN_DISPLAY_NAMES = {
-            'basic': 'Plano Gratuito', 'pro': 'Plano Business', 'premium': 'Plano Pro Master',
-            'Básico': 'Plano Essencial', 'Padrão': 'Plano Padrão', 'Profissional': 'Plano Profissional'
-        };
 
         // Função para aplicar máscara nos campos de WhatsApp
 function applyPhoneMask(elementId) {
@@ -1522,60 +1518,78 @@ window.initOrderListener = (storeId) => {
     document.getElementById('storeMenuBtn').classList.remove('opacity-50', 'pointer-events-none');
 
                 // LISTENER: Configurações da Loja (ATUALIZADO)
-    onSnapshot(doc(db, `stores/${currentStoreId}/config/store`), d => {
-        if(d.exists()) {
-            const data = d.data();
-            document.getElementById('sidebarStoreName').textContent = data.storeName;
-            document.getElementById('sidebarStoreNameMobile').textContent = data.storeName;
-            
-            // Carregar Logo no Preview das Configurações
-            if (data.logoUrl) {
-                const lD = document.getElementById('sidebarStoreLogo'); 
-                const lM = document.getElementById('sidebarStoreLogoMobile');
-                const lP = document.getElementById('logoPreviewImg');
-                const lI = document.getElementById('logoPlaceholderIcon');
-                
-                lD.src = lM.src = lP.src = data.logoUrl;
-                lD.classList.remove('hidden'); lM.classList.remove('hidden'); lP.classList.remove('hidden');
-                if(lI) lI.classList.add('hidden');
-            }
+    onSnapshot(doc(db, `stores/${currentStoreId}/config/store`), async d => {
+  if (!d.exists()) return;
 
-            // Preencher campos de Identidade e Visual
-            document.getElementById('confStoreName').value = data.storeName || '';
-            document.getElementById('confWhatsapp').value = data.whatsappNumber || '';
-            document.getElementById('confFooter').value = data.footerText || '';
-            document.getElementById('confColorPrimary').value = data.primaryColor || '#8b5cf6';
-            
-            // Status da Loja
-            document.getElementById('dashboardStoreToggle').checked = data.isStoreOpen !== false;
-            document.getElementById('statusLabel').textContent = (data.isStoreOpen !== false) ? 'Aberto' : 'Fechado';
+  const data = d.data();
+  storeConfig = data;
 
-            // Carregar Categorias Mágicas (Dashboard e Categorias)
-            if (data.magicCategories) {
-                const mNew = data.magicCategories.showNew;
-                const mTop = data.magicCategories.showTop;
-                
-                // Marca no Dashboard
-                if(document.getElementById('magicNew')) document.getElementById('magicNew').checked = !!mNew;
-                if(document.getElementById('magicTop')) document.getElementById('magicTop').checked = !!mTop;
-                
-                // Marca na aba Categorias (vamos adicionar os IDs abaixo)
-                if(document.getElementById('magicNewCat')) document.getElementById('magicNewCat').checked = !!mNew;
-                if(document.getElementById('magicTopCat')) document.getElementById('magicTopCat').checked = !!mTop;
-            }
+  // Nome da loja
+  document.getElementById('sidebarStoreName').textContent = data.storeName;
+  document.getElementById('sidebarStoreNameMobile').textContent = data.storeName;
 
-            // Carregar Áreas de Entrega
-            deliveryAreas = data.deliveryAreas || []; 
-            renderDeliveryAreas();    
-            initAnalyticsInsights();
-            // Dentro do onSnapshot que lê config/store
-if (data.magicCategories) {
+  // Logo
+  if (data.logoUrl) {
+    const lD = document.getElementById('sidebarStoreLogo'); 
+    const lM = document.getElementById('sidebarStoreLogoMobile');
+    const lP = document.getElementById('logoPreviewImg');
+    const lI = document.getElementById('logoPlaceholderIcon');
+
+    lD.src = lM.src = lP.src = data.logoUrl;
+    lD.classList.remove('hidden');
+    lM.classList.remove('hidden');
+    lP.classList.remove('hidden');
+    if (lI) lI.classList.add('hidden');
+  }
+
+  // Campos de configuração
+  document.getElementById('confStoreName').value = data.storeName || '';
+  document.getElementById('confWhatsapp').value = data.whatsappNumber || '';
+  document.getElementById('confFooter').value = data.footerText || '';
+  document.getElementById('confColorPrimary').value = data.primaryColor || '#8b5cf6';
+
+  // Status
+  document.getElementById('dashboardStoreToggle').checked = data.isStoreOpen !== false;
+  document.getElementById('statusLabel').textContent =
+    data.isStoreOpen !== false ? 'Aberto' : 'Fechado';
+
+  // 🔥 AGORA A PARTE MAIS IMPORTANTE 🔥
+  // Buscar o plano REAL
+  try {
+    if (data.plan?.id) {
+      const planSnap = await getDoc(
+        doc(db, "config_plans", data.plan.id)
+      );
+
+      if (planSnap.exists()) {
+        currentPlan = planSnap.data();
+
+        storeConfig.maxProducts = currentPlan.maxProducts;
+        storeConfig.maxBanners = currentPlan.maxBanners;
+        storeConfig.hasCarousel = currentPlan.hasCarousel;
+      }
+    }
+  } catch (err) {
+    console.error("Erro ao carregar plano:", err);
+  }
+
+  // Aplica o plano na UI
+  updateUIByPlan();
+
+  // Categorias mágicas
+  if (data.magicCategories) {
     document.getElementById('magicNew').checked = !!data.magicCategories.showNew;
     document.getElementById('magicTop').checked = !!data.magicCategories.showTop;
-}
-        }
-});
+    if (document.getElementById('magicNewCat'))
+      document.getElementById('magicNewCat').checked = !!data.magicCategories.showNew;
+    if (document.getElementById('magicTopCat'))
+      document.getElementById('magicTopCat').checked = !!data.magicCategories.showTop;
+  }
 
+  deliveryAreas = data.deliveryAreas || [];
+  renderDeliveryAreas();
+  initAnalyticsInsights();
+});
     // --- NOVA PARTE: LISTENER DE ANALYTICS GLOBAL ---
     onSnapshot(doc(db, `stores/${currentStoreId}/analytics/global`), d => {
         if(d.exists()) {
