@@ -349,18 +349,91 @@
                 </div>
             </div>
 
-            <div id="view-dashboard" class="max-w-6xl mx-auto space-y-6 hidden animate-fade-in">
-                <div class="bg-white rounded-3xl border border-slate-200 p-8 flex flex-col md:flex-row items-center justify-between shadow-sm gap-6">
-                    <div class="flex items-center gap-5">
-                        <div class="p-4 bg-primary-50 text-primary-600 rounded-2xl shadow-inner"><i data-lucide="store" class="w-8 h-8"></i></div>
-                        <div>
-                            <h3 class="font-bold text-xl text-slate-800">Status da Loja</h3>
-                            <div class="flex items-center gap-2 mt-1">
-                                <span class="text-sm text-slate-500">Plano Atual:</span>
-                                <span id="currentPlanBadge" class="text-xs font-bold bg-slate-100 px-2 py-0.5 rounded border uppercase">Carregando...</span>
-                            </div>
+             <div id="view-dashboard" class="max-w-6xl mx-auto space-y-6 hidden animate-fade-in">
+            <div class="bg-white rounded-3xl border border-slate-200 p-8 flex flex-col md:flex-row items-center justify-between shadow-sm gap-6">
+                <div class="flex items-center gap-5">
+                    <div class="p-4 bg-primary-50 text-primary-600 rounded-2xl shadow-inner"><i data-lucide="store" class="w-8 h-8"></i></div>
+                    <div>
+                        <h3 class="font-bold text-xl text-slate-800">Status da Loja</h3>
+                        <div class="flex items-center gap-2 mt-1">
+                            <span class="text-sm text-slate-500">Plano Atual:</span>
+                            <span id="currentPlanBadge" class="text-xs font-bold bg-slate-100 px-2 py-0.5 rounded border uppercase">Carregando...</span>
                         </div>
                     </div>
+                </div>
+                
+                <div class="flex items-center gap-4 bg-slate-50 px-6 py-3 rounded-2xl border">
+                    <span class="text-sm font-bold text-slate-600" id="statusLabel">Aberto</span>
+                    <label class="toggle-switch"><input type="checkbox" id="dashboardStoreToggle" onchange="toggleStoreStatusQuick(this)"><span class="slider"></span></label>
+                </div>
+            </div> 
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 w-full">
+                <div class="bg-white p-6 border border-slate-100 rounded-3xl shadow-sm"><p class="text-xs font-bold text-slate-400 uppercase tracking-widest mb-2">Produtos</p><h3 class="text-4xl font-bold text-slate-800"><span id="dash-total-products">0</span></h3></div>
+                <div class="bg-white p-6 border border-slate-100 rounded-3xl shadow-sm"><p class="text-xs font-bold text-slate-400 uppercase tracking-widest mb-2">Banners</p><h3 class="text-4xl font-bold text-primary-600"><span id="dash-total-banners">0</span></h3></div>
+                <div class="bg-white p-6 border border-slate-100 rounded-3xl shadow-sm"><p class="text-xs font-bold text-slate-400 uppercase tracking-widest mb-2">Categorias</p><h3 class="text-4xl font-bold text-slate-800" id="dash-total-cats">0</h3></div>
+                <div class="bg-white p-5 border border-slate-100 rounded-3xl shadow-sm"><p class="text-xs font-bold text-slate-400 uppercase tracking-widest mb-2">Visitas</p><h3 class="text-4xl font-bold text-slate-800" id="dash-total-visits">0</h3></div>
+            </div>
+
+            </div> 
+
+<div id="view-finance" class="max-w-6xl mx-auto space-y-6 hidden animate-fade-in">
+    
+    <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+        <div>
+            <h3 class="text-2xl font-bold text-slate-800">Inteligência Financeira</h3>
+            <p class="text-sm text-slate-500">Acompanhe a saúde real do seu estoque e vendas.</p>
+        </div>
+        <div class="bg-white p-2 rounded-2xl border shadow-sm flex gap-2">
+             <div class="px-4 py-2 bg-green-50 rounded-xl border border-green-100">
+                 <p class="text-[9px] font-black text-green-600 uppercase">Status do Caixa</p>
+                 <p class="text-xs font-bold text-green-700">Fluxo Ativo</p>
+             </div>
+        </div>
+    </div>
+
+    <div id="financeContent" class="space-y-6">
+        
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div class="bg-white p-5 rounded-3xl border border-slate-100 shadow-sm">
+                <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Faturação (Hoje)</p>
+                <h3 class="text-2xl font-black text-slate-800" id="fin-rev-day">R$ 0,00</h3>
+                <span class="text-[9px] font-bold text-green-600 bg-green-50 px-2 py-0.5 rounded-full" id="fin-orders-day">0 pedidos</span>
+            </div>
+            <div class="bg-white p-5 rounded-3xl border border-slate-100 shadow-sm">
+                <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Este Mês</p>
+                <h3 class="text-2xl font-black text-primary-600" id="fin-rev-month">R$ 0,00</h3>
+            </div>
+            <div class="bg-white p-5 rounded-3xl border border-slate-100 shadow-sm bg-slate-900">
+                <p class="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1">Faturação Total</p>
+                <h3 class="text-2xl font-black text-white" id="fin-rev-total">R$ 0,00</h3>
+            </div>
+            <div class="bg-white p-5 rounded-3xl border border-slate-100 shadow-sm border-l-4 border-l-green-500">
+                <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Lucro Potencial</p>
+                <h3 class="text-2xl font-black text-green-600" id="fin-profit-potential">R$ 0,00</h3>
+            </div>
+        </div>
+
+        <div class="bg-white p-8 rounded-[2.5rem] border border-slate-200 shadow-sm">
+            <h3 class="text-lg font-bold text-slate-800 mb-6">Crescimento de Vendas (Últimos 6 meses)</h3>
+            <div class="relative h-64">
+                <canvas id="growthChart"></canvas>
+            </div>
+        </div>
+
+        <div class="bg-slate-50 p-6 rounded-[2.5rem] border border-dashed border-slate-200 grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div class="bg-white p-6 rounded-3xl shadow-sm">
+                <p class="text-[10px] font-black text-slate-400 uppercase mb-1">Valor Total em Stock</p>
+                <h3 class="text-3xl font-black text-slate-800" id="fin-stock-value">R$ 0,00</h3>
+                <p class="text-[10px] text-slate-500 mt-2 font-bold" id="fin-stock-count">0 unidades</p>
+            </div>
+            <div class="bg-white p-6 rounded-3xl shadow-sm">
+                <p class="text-[10px] font-black text-slate-400 uppercase mb-1">Custo de Aquisição</p>
+                <h3 class="text-3xl font-black text-slate-800" id="fin-stock-cost">R$ 0,00</h3>
+            </div>
+        </div>
+
+    </div> </div>
                     
                     <div class="flex items-center gap-4 bg-slate-50 px-6 py-3 rounded-2xl border">
                         <span class="text-sm font-bold text-slate-600" id="statusLabel">Aberto</span>
@@ -386,22 +459,6 @@
                          </div>
                     </div>
                 </div>
-
-                <div id="financeContent" class="space-y-6">
-                    </div>
-                </div>
-
-    <div id="financeContent" class="space-y-6">
-    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <div class="bg-white p-5 rounded-3xl border border-slate-100 shadow-sm">
-            <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Faturação (Hoje)</p>
-            <h3 class="text-2xl font-black text-slate-800" id="fin-rev-day">R$ 0,00</h3>
-            <span class="text-[9px] font-bold text-green-600 bg-green-50 px-2 py-0.5 rounded-full" id="fin-orders-day">0 pedidos</span>
-        </div>
-        <div class="bg-white p-5 rounded-3xl border border-slate-100 shadow-sm">
-            <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Esta Semana</p>
-            <h3 class="text-2xl font-black text-slate-800" id="fin-rev-week">R$ 0,00</h3>
-        </div>
         <div class="bg-white p-5 rounded-3xl border border-slate-100 shadow-sm">
             <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Este Mês</p>
             <h3 class="text-2xl font-black text-primary-600" id="fin-rev-month">R$ 0,00</h3>
