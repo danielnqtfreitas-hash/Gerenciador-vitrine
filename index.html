@@ -1616,70 +1616,12 @@ window.calculateProfit = () => {
     document.getElementById('prodProfitPct').value = `${profitPct.toFixed(1)}%`;
 };
 
-        window.generateAutoSku = () => {
-    const random = Math.floor(10000000 + Math.random() * 90000000);
-    document.getElementById('prodSku').value = `SW-${random}`;
-    showToast("SKU Gerado!");
-};
-
-window.calculateProfit = () => {
-    const cost = parseFloat(document.getElementById('prodCost').value) || 0;
-    const price = parseFloat(document.getElementById('prodValue').value) || 0;
-    const profitAmt = price - cost;
-    const profitPct = price > 0 ? (profitAmt / price) * 100 : 0;
-    
-    document.getElementById('prodProfitAmt').value = `R$ ${profitAmt.toFixed(2)}`;
-    document.getElementById('prodProfitPct').value = `${profitPct.toFixed(1)}%`;
-};
-       // --- GESTÃO DE PRODUTOS ---
-        window.openProductModal = (p = null) => {
-            if(!p && allProducts.length >= storeConfig.maxProducts) { showToast(`Limite do plano atingido.`); return; }
-            document.getElementById('prodCategory').innerHTML = allCategories.map(c => `<option value="${c.name}">${c.name}</option>`).join('');
-            
-            if(p) {
-                document.getElementById('prodModalTitle').textContent = "Editar Produto Existente";
-                document.getElementById('prodId').value = p.id; 
-                document.getElementById('prodName').value = p.name;
-                document.getElementById('prodSku').value = p.sku || ''; // SDK/SKU Field
-                document.getElementById('prodCategory').value = p.category; 
-                document.getElementById('prodValue').value = p.value;
-                document.getElementById('prodPromo').value = p.promoValue || ''; 
-                document.getElementById('prodDesc').value = p.description || '';
-                document.getElementById('prodFeatured').checked = p.isFeatured; 
-                document.getElementById('prodSizesInput').value = p.sizes ? p.sizes.join(', ') : '';
-                document.getElementById('prodColorsInput').value = p.colors ? p.colors.join(', ') : '';
-                currentProductImages = p.images ? [...p.images] : [];
-                
-                // FIXED: Preservar toda a matriz ao abrir
-                variationsMatrix = p.variations || [];
-                if (variationsMatrix.length > 0) {
-                    document.getElementById('variationMatrixContainer').classList.remove('hidden');
-                    renderMatrixUI();
-                } else {
-                    document.getElementById('variationMatrixContainer').classList.add('hidden');
-                }
-            } else {
-                document.getElementById('prodModalTitle').textContent = "Adicionar Novo Produto";
-                document.getElementById('productForm').reset(); 
-                document.getElementById('prodId').value = ''; 
-                document.getElementById('prodSku').value = '';
-                currentProductImages = []; 
-                variationsMatrix = [];
-                document.getElementById('variationMatrixContainer').classList.add('hidden');
-            }
-            renderImagePreviews();
-            document.getElementById('productModal').classList.remove('hidden');
-            lucide.createIcons();
-        };
         
-        
-       window.handleProductSubmit = async (e) => {
+        window.handleProductSubmit = async (e) => {
     e.preventDefault();
-    
     const btn = document.getElementById('btnSaveProd');
     const modal = document.getElementById('productModal');
     const loader = document.getElementById('imageLoading');
-    
     if(btn) btn.disabled = true;
     if(loader) loader.classList.remove('hidden');
 
@@ -1688,7 +1630,6 @@ window.calculateProfit = () => {
         const finalId = id || 'prod_' + Date.now();
         const imageUrls = [];
 
-        // 1. Upload das Imagens (Sua lógica original)
         for (let i = 0; i < currentProductImages.length; i++) {
             const img = currentProductImages[i];
             if (img.startsWith('http')) { 
@@ -1700,10 +1641,11 @@ window.calculateProfit = () => {
             }
         }
 
-        // 2. Dados do Produto (Mantendo SKU e Matriz)
         const data = {
             name: document.getElementById('prodName').value,
             sku: document.getElementById('prodSku').value || '',
+            stock: parseInt(document.getElementById('prodStock').value) || 0,
+            purchasePrice: parseFloat(document.getElementById('prodCost').value) || 0,
             category: document.getElementById('prodCategory').value,
             value: parseFloat(document.getElementById('prodValue').value) || 0,
             promoValue: parseFloat(document.getElementById('prodPromo').value) || null,
@@ -1717,24 +1659,20 @@ window.calculateProfit = () => {
             status: id ? (allProducts.find(p => p.id === id)?.status || 'active') : 'active'
         };
 
-        // 3. Salvar no Firebase
         const docRef = doc(db, `stores/${currentStoreId}/products`, finalId);
         await setDoc(docRef, data, { merge: true });
 
-        // Atualizar o carimbo de tempo da loja (Para a Vitrine atualizar)
         const storeRef = doc(db, `stores/${currentStoreId}/config/store`);
         await updateDoc(storeRef, { lastUpdate: Date.now() }).catch(() => {
-            // Se o update falhar, tenta o set merge
             setDoc(storeRef, { lastUpdate: Date.now() }, { merge: true });
         });
 
         showToast("✅ Publicado com sucesso!");
         if(modal) modal.classList.add('hidden'); 
         currentProductImages = []; 
-
     } catch (err) {
-        console.error("Erro ao salvar:", err);
-        showToast("❌ Erro ao salvar produto.");
+        console.error(err);
+        showToast("❌ Erro ao salvar.");
     } finally {
         if(btn) btn.disabled = false;
         if(loader) loader.classList.add('hidden');
@@ -2003,6 +1941,7 @@ window.removeBannerImage = () => {
 
 // 3. ABERTURA DO MODAL (CARREGA DADOS)
 window.openProductModal = (p = null) => {
+    if(!p && allProducts.length >= storeConfig.maxProducts) { showToast(`Limite do plano atingido.`); return; }
     document.getElementById('prodCategory').innerHTML = allCategories.map(c => `<option value="${c.name}">${c.name}</option>`).join('');
     
     if(p) {
@@ -2028,12 +1967,12 @@ window.openProductModal = (p = null) => {
         } else {
             document.getElementById('variationMatrixContainer').classList.add('hidden');
         }
-        
-        calculateProfit();
+        calculateProfit(); // Atualiza os campos de lucro ao abrir
     } else {
         document.getElementById('prodModalTitle').textContent = "Novo Produto";
         document.getElementById('productForm').reset(); 
         document.getElementById('prodId').value = ''; 
+        document.getElementById('prodSku').value = '';
         document.getElementById('prodStock').value = '';
         document.getElementById('prodCost').value = '';
         document.getElementById('prodProfitAmt').value = '';
@@ -2044,7 +1983,7 @@ window.openProductModal = (p = null) => {
     }
     renderImagePreviews();
     document.getElementById('productModal').classList.remove('hidden');
-    lucide.createIcons();
+    setTimeout(() => lucide.createIcons(), 50);
 };
 
 
