@@ -414,6 +414,36 @@
                 
             </div>
 
+            <div id="view-vendas" class="max-w-4xl mx-auto space-y-6 hidden animate-fade-in">
+    <div class="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm">
+        <h3 class="text-xl font-bold mb-4">Venda Rápida (Frente de Caixa)</h3>
+        
+        <div class="flex gap-2 mb-6">
+            <div class="relative flex-1">
+                <i data-lucide="scan-barcode" class="absolute left-4 top-3.5 text-slate-400 w-5 h-5"></i>
+                <input type="text" id="quickSearch" placeholder="Escanear código ou digitar nome..." 
+                       class="input-pro pl-12" onkeyup="searchProductPDV(this.value)">
+            </div>
+        </div>
+
+        <div id="pdvResult" class="hidden space-y-4 p-4 bg-slate-50 rounded-2xl border border-dashed border-slate-300">
+            </div>
+
+        <div id="pdvCart" class="mt-8 border-t pt-6">
+            <h4 class="text-xs font-black text-slate-400 uppercase mb-4">Itens da Venda</h4>
+            <div id="cartItems" class="space-y-2"></div>
+            
+            <div class="mt-6 p-4 bg-primary-600 rounded-2xl text-white flex justify-between items-center">
+                <div>
+                    <p class="text-[10px] uppercase font-bold opacity-80">Total a Receber</p>
+                    <h3 class="text-2xl font-black" id="pdvTotal">R$ 0,00</h3>
+                </div>
+                <button onclick="finalizePDV()" class="bg-white text-primary-600 px-6 py-3 rounded-xl font-black uppercase text-xs shadow-lg">Finalizar e Baixar</button>
+            </div>
+        </div>
+    </div>
+            </div>
+             
             <div id="view-banners" class="max-w-6xl mx-auto space-y-6 hidden animate-fade-in">
                 <div class="flex justify-between items-center">
                     <h3 class="text-2xl font-bold text-slate-800">Banners de Destaque</h3>
@@ -796,6 +826,7 @@
         let analyticsChartInstance = null; 
         let analyticsUnsubscribe = null; // Variável para desligar a escuta anterior
         let cropper = null;
+        let currentCart = [];
         let ordersCache = {}; // Guarda os pedidos para o modal de detalhes
 let isFirstLoad = true;
         let variationsMatrix = [];
@@ -2591,7 +2622,128 @@ window.deleteOrder = async (id) => {
         showToast("Erro ao excluir.");
     }
 };  
+// Função para dar baixa no estoque e registrar a venda
+window.processSale = async (items, source = 'fisica') => {
+    try {
+        const batch = writeBatch(db); // Usa batch para garantir que tudo ocorra ou nada ocorra
+        let totalCusto = 0;
+        let totalVenda = 0;
 
+        for (const item of items) {
+            const productRef = doc(db, `stores/${currentStoreId}/products`, item.productId);
+            const pDoc = await getDoc(productRef);
+            const pData = pDoc.data();
+
+            // 1. Cálculo de Baixa de Estoque (considerando variações se existirem)
+            if (pData.variations && pData.variations.length > 0) {
+                const updatedVariations = pData.variations.map(v => {
+                    if (v.color === item.color && v.size === item.size) {
+                        return { ...v, stock: (v.stock || 0) - item.qty };
+                    }
+                    return v;
+                });
+                batch.update(productRef, { variations: updatedVariations });
+            } else {
+                batch.update(productRef, { stock: (pData.stock || 0) - item.qty });
+            }
+
+            // 2. Acúmulo para relatório de lucro
+            totalCusto += (pData.costPrice || 0) * item.qty;
+            totalVenda += item.price * item.qty;
+        }
+
+        // 3. Registrar o pedido na aba de Vendas/Pedidos
+        const saleId = 'SALE_' + Date.now();
+        const saleRef = doc(db, `stores/${currentStoreId}/orders`, saleId);
+        
+        batch.set(saleRef, {
+            items: items,
+            total: totalVenda,
+            profit: totalVenda - totalCusto,
+            source: source, // 'site' ou 'fisica'
+            status: 'completed',
+            createdAt: Timestamp.now()
+        });
+
+        await batch.commit();
+        showToast("Venda registrada e estoque atualizado! 💸");
+    } catch (error) {
+        console.error("Erro na venda:", error);
+        showToast("Erro ao processar venda.");
+    }
+};
+
+        let currentCart = [];
+
+window.searchProductPDV = (val) => {
+    const resultArea = document.getElementById('pdvResult');
+    if(val.length < 2) { resultArea.classList.add('hidden'); return; }
+
+    const product = allProducts.find(p => 
+        p.name.toLowerCase().includes(val.toLowerCase()) || 
+        (p.sku && p.sku.toLowerCase() === val.toLowerCase())
+    );
+
+    if(product) {
+        resultArea.classList.remove('hidden');
+        const profit = product.value - (product.costPrice || 0);
+        const margin = ((profit / product.value) * 100).toFixed(1);
+
+        resultArea.innerHTML = `
+            <div class="flex items-center justify-between">
+                <div class="flex items-center gap-3">
+                    <img src="${product.images[0]}" class="w-12 h-12 rounded-lg object-cover">
+                    <div>
+                        <p class="font-bold text-slate-800">${product.name}</p>
+                        <p class="text-[10px] text-slate-500">Estoque: ${product.stock || 0} | Lucro: <span class="text-green-600 font-bold">R$ ${profit.toFixed(2)} (${margin}%)</span></p>
+                    </div>
+                </div>
+                <button onclick="addToPDVCart('${product.id}')" class="bg-primary-500 text-white p-2 rounded-lg"><i data-lucide="plus" class="w-5 h-5"></i></button>
+            </div>
+        `;
+        lucide.createIcons();
+    }
+};
+
+window.addToPDVCart = (id) => {
+    const p = allProducts.find(prod => prod.id === id);
+    currentCart.push({
+        productId: p.id,
+        name: p.name,
+        price: p.value,
+        qty: 1
+    });
+    renderPDVCart();
+    document.getElementById('quickSearch').value = '';
+    document.getElementById('pdvResult').classList.add('hidden');
+};
+
+function renderPDVCart() {
+    const container = document.getElementById('cartItems');
+    let total = 0;
+    container.innerHTML = currentCart.map((item, idx) => {
+        total += item.price * item.qty;
+        return `
+            <div class="flex justify-between items-center bg-white p-3 rounded-xl border">
+                <span class="text-sm font-bold">${item.name}</span>
+                <div class="flex items-center gap-3">
+                    <span class="text-xs font-bold">R$ ${item.price.toFixed(2)}</span>
+                    <button onclick="currentCart.splice(${idx},1);renderPDVCart()" class="text-red-500">×</button>
+                </div>
+            </div>
+        `;
+    }).join('');
+    document.getElementById('pdvTotal').innerText = `R$ ${total.toFixed(2).replace('.', ',')}`;
+}
+
+window.finalizePDV = async () => {
+    if(currentCart.length === 0) return;
+    await processSale(currentCart, 'fisica');
+    currentCart = [];
+    renderPDVCart();
+};
+        
+        
     </script>
 </body>
 </html>
