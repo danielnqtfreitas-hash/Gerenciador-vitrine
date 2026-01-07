@@ -1674,6 +1674,7 @@ window.initOrderListener = (storeId) => {
 
         // --- GESTÃO DE PRODUTOS ---
         window.openProductModal = (p = null) => {
+            closeAllModals();
     
             if(!p && allProducts.length >= storeConfig.maxProducts) { showToast(`Limite do plano atingido.`); return; }
             document.getElementById('prodCategory').innerHTML = allCategories.map(c => `<option value="${c.name}">${c.name}</option>`).join('');
@@ -2057,34 +2058,34 @@ window.removeBannerImage = () => {
 
 // 3. ABERTURA DO MODAL (CARREGA DADOS)
 window.openBannerModal = (b = null) => {
-    const select = document.getElementById('bannerTarget');
-    // Preenche o select com as categorias disponíveis
-    select.innerHTML = '<option value="offers">Todas as Ofertas</option>' + 
-                      allCategories.map(c => `<option value="${c.name}">${c.name}</option>`).join('');
-    
-    if(b) {
-        document.getElementById('bannerId').value = b.id || ''; 
-        document.getElementById('bannerTag').value = b.tag || '';
-        document.getElementById('bannerTitle').value = b.title || ''; 
-        document.getElementById('bannerSubtitle').value = b.subtitle || ''; 
-        document.getElementById('bannerBtnText').value = b.btnText || ''; 
-        document.getElementById('bannerColor1').value = b.color1 || '#8b5cf6';
-        document.getElementById('bannerColor2').value = b.color2 || '#6d28d9'; 
-        document.getElementById('bannerTarget').value = b.target || 'offers';
-        window.currentBannerImageData = b.imageUrl || null;
-    } else { 
-        document.getElementById('bannerForm').reset(); 
-        document.getElementById('bannerId').value = ''; 
-        document.getElementById('bannerColor1').value = '#8b5cf6'; 
-        document.getElementById('bannerColor2').value = '#6d28d9';
-        window.currentBannerImageData = null;
-    }
+  closeAllModals(); // 🔥 ISSO É O MAIS IMPORTANTE
 
-    updateBannerPreview();
-    document.getElementById('bannerModal').classList.remove('hidden');
-    
-    // Força a renderização dos ícones do Lucide que estão dentro do modal
-    setTimeout(() => lucide.createIcons(), 50);
+  const select = document.getElementById('bannerTarget');
+  if (select) {
+    select.innerHTML =
+      '<option value="offers">Todas as Ofertas</option>' +
+      allCategories.map(c => `<option value="${c.name}">${c.name}</option>`).join('');
+  }
+
+  if (b) {
+    document.getElementById('bannerId').value = b.id || '';
+    document.getElementById('bannerTag').value = b.tag || '';
+    document.getElementById('bannerTitle').value = b.title || '';
+    document.getElementById('bannerSubtitle').value = b.subtitle || '';
+    document.getElementById('bannerBtnText').value = b.btnText || '';
+    document.getElementById('bannerColor1').value = b.color1 || '#8b5cf6';
+    document.getElementById('bannerColor2').value = b.color2 || '#6d28d9';
+    document.getElementById('bannerTarget').value = b.target || 'offers';
+    window.currentBannerImageData = b.imageUrl || null;
+  } else {
+    document.getElementById('bannerForm').reset();
+    document.getElementById('bannerId').value = '';
+    window.currentBannerImageData = null;
+  }
+
+  updateBannerPreview();
+  document.getElementById('bannerModal').classList.remove('hidden');
+  setTimeout(() => lucide.createIcons(), 50);
 };
 
 // 4. PREVIEW EM TEMPO REAL (ESTILO PREMIUM)
@@ -2715,7 +2716,10 @@ window.deleteOrder = async (id) => {
 
   return `${prefix}-${time}${random}`;
     }
-        
+        function closeAllModals() {
+  document.getElementById('productModal')?.classList.add('hidden');
+  document.getElementById('bannerModal')?.classList.add('hidden');
+        }
     </script>
 </body>
 </html>
