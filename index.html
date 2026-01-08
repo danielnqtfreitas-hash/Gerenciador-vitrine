@@ -39,25 +39,6 @@
         }
     </script>
     <style>
-
-         <style>
-    .card-fin {
-        @apply bg-white p-6 rounded-3xl border border-slate-100 shadow-sm flex flex-col gap-1;
-    }
-    .label-fin {
-        @apply text-[10px] font-black uppercase tracking-wider text-slate-400;
-    }
-    .value-fin {
-        @apply text-2xl font-extrabold text-slate-800;
-    }
-    .sub-fin {
-        @apply text-[10px] font-bold text-green-600 bg-green-50 px-2 py-0.5 rounded-full w-fit;
-    }
-    .hint-fin {
-        @apply text-[10px] text-slate-400 mt-1 leading-tight;
-    }
-</style>
-        
         body { font-family: 'Inter', sans-serif; background-color: #f8fafc; }
         ::-webkit-scrollbar { width: 6px; height: 6px; }
         ::-webkit-scrollbar-track { background: transparent; }
@@ -455,104 +436,125 @@
                 </div> 
              </div>
 
-         <div id="view-finance" class="max-w-6xl mx-auto space-y-10 hidden animate-fade-in">
+         <div id="view-finance" class="max-w-6xl mx-auto space-y-8 hidden animate-fade-in">
 
-    <!-- TÍTULO / HEADER -->
+    <!-- HEADER -->
     <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div>
-            <h3 class="text-3xl font-black text-slate-900 tracking-tight">
-                Inteligência Financeira
-            </h3>
-            <p class="text-sm text-slate-500 leading-tight">
-                Veja a saúde do seu negócio em tempo real — faturação, estoque e evolução.
-            </p>
+            <h3 class="text-3xl font-black text-slate-900">Inteligência Financeira</h3>
+            <p class="text-sm text-slate-500">Resumo completo do desempenho da loja.</p>
         </div>
-
-        <div class="bg-white py-3 px-5 rounded-2xl border shadow-sm flex items-center gap-3">
-            <div class="w-2.5 h-2.5 rounded-full bg-green-500"></div>
-            <div>
-                <p class="text-[10px] font-black uppercase text-green-600">Status do Caixa</p>
+        <div class="bg-white p-2 rounded-2xl border shadow-sm flex gap-2">
+            <div class="px-4 py-2 bg-green-50 rounded-xl border border-green-100">
+                <p class="text-[9px] font-black text-green-600 uppercase">Status do Caixa</p>
                 <p class="text-xs font-bold text-green-700">Fluxo Ativo</p>
             </div>
         </div>
     </div>
 
-    <!-- LINHA PRINCIPAL DE KPI's -->
-    <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-5 gap-4">
+    <!-- MÉTRICAS -->
+    <div id="financeContent" class="space-y-8">
 
-        <!-- HOJE -->
-        <div class="card-fin">
-            <p class="label-fin">Faturação Hoje</p>
-            <h3 id="fin-rev-day" class="value-fin">R$ 0,00</h3>
-            <p id="fin-orders-day" class="sub-fin">0 pedidos hoje</p>
-            <p class="hint-fin">Quanto você ganhou desde a meia-noite.</p>
+        <!-- GRID 1 -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+
+            <!-- Faturação Hoje -->
+            <div class="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm">
+                <div class="tooltip">
+                    <p class="text-[10px] font-black text-slate-400 uppercase">Faturação (Hoje)</p>
+                    <span class="tooltip-icon">?</span>
+                    <div class="tooltip-box">Total recebido hoje em pedidos concluídos.</div>
+                </div>
+                <h3 class="text-3xl font-black text-slate-800 mt-1" id="fin-rev-day">R$ 0,00</h3>
+                <span class="text-[10px] font-bold text-green-600 bg-green-50 px-2 py-1 rounded-full" id="fin-orders-day">0 pedidos</span>
+            </div>
+
+            <!-- Este mês -->
+            <div class="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm">
+                <div class="tooltip">
+                    <p class="text-[10px] font-black text-slate-400 uppercase">Este Mês</p>
+                    <span class="tooltip-icon">?</span>
+                    <div class="tooltip-box">Total faturado desde o início do mês atual.</div>
+                </div>
+                <h3 class="text-3xl font-black text-primary-600 mt-1" id="fin-rev-month">R$ 0,00</h3>
+            </div>
+
+            <!-- Esta semana -->
+            <div class="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm">
+                <div class="tooltip">
+                    <p class="text-[10px] font-black text-slate-400 uppercase">Esta Semana</p>
+                    <span class="tooltip-icon">?</span>
+                    <div class="tooltip-box">Total faturado desde o último domingo.</div>
+                </div>
+                <h3 class="text-3xl font-black text-slate-800 mt-1" id="fin-rev-week">R$ 0,00</h3>
+            </div>
+
+            <!-- Total -->
+            <div class="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm bg-slate-900">
+                <div class="tooltip">
+                    <p class="text-[10px] font-black text-slate-500 uppercase">Faturação Total</p>
+                    <span class="tooltip-icon">?</span>
+                    <div class="tooltip-box">Soma de todas as vendas confirmadas.</div>
+                </div>
+                <h3 class="text-3xl font-black text-white mt-1" id="fin-rev-total">R$ 0,00</h3>
+            </div>
         </div>
 
-        <!-- SEMANA -->
-        <div class="card-fin">
-            <p class="label-fin">Esta Semana</p>
-            <h3 id="fin-rev-week" class="value-fin">R$ 0,00</h3>
-            <p class="hint-fin">Total acumulado desde domingo.</p>
+        <!-- Lucro Potencial -->
+        <div class="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm">
+            <div class="tooltip">
+                <p class="text-[10px] font-black text-slate-400 uppercase">Lucro Potencial</p>
+                <span class="tooltip-icon">?</span>
+                <div class="tooltip-box">Diferença entre preço de venda e custo de aquisição multiplicado pelo estoque.</div>
+            </div>
+            <h3 class="text-3xl font-black text-green-600 mt-1" id="fin-profit-potential">R$ 0,00</h3>
         </div>
 
-        <!-- MÊS -->
-        <div class="card-fin">
-            <p class="label-fin">Este Mês</p>
-            <h3 id="fin-rev-month" class="value-fin text-primary-600">R$ 0,00</h3>
-            <p class="hint-fin">Total faturado no mês atual.</p>
-        </div>
-
-        <!-- TOTAL -->
-        <div class="card-fin bg-slate-900 text-white">
-            <p class="label-fin text-slate-400">Total Geral</p>
-            <h3 id="fin-rev-total" class="value-fin text-white">R$ 0,00</h3>
-            <p class="hint-fin text-slate-300">Tudo que sua loja já faturou.</p>
-        </div>
-
-        <!-- LUCRO POTENCIAL -->
-        <div class="card-fin border-l-4 border-green-500">
-            <p class="label-fin">Lucro Potencial</p>
-            <h3 id="fin-profit-potential" class="value-fin text-green-600">R$ 0,00</h3>
-            <p class="hint-fin">Valor que você pode lucrar ao vender todo o estoque.</p>
-        </div>
-
-    </div>
-
-    <!-- EVOLUÇÃO -->
-    <div class="bg-white p-8 rounded-[2.5rem] border border-slate-200 shadow-sm space-y-6">
-        <div>
-            <h3 class="text-lg font-bold text-slate-800">
+        <!-- Gráfico Crescimento -->
+        <div class="bg-white p-8 rounded-[2.5rem] border border-slate-200 shadow-sm">
+            <h3 class="text-lg font-bold text-slate-800 mb-6 flex items-center gap-2">
                 Crescimento de Vendas (Últimos 6 meses)
+                <span class="tooltip-icon tooltip">
+                    ?
+                    <div class="tooltip-box">Comparação automática da evolução mensal das vendas.</div>
+                </span>
             </h3>
-            <p class="text-xs text-slate-500 mt-1">
-                Analise o ritmo de evolução mensal da sua loja.
-            </p>
+            <div class="relative h-64">
+                <canvas id="growthChart"></canvas>
+            </div>
         </div>
-        <div class="relative h-72">
-            <canvas id="growthChart"></canvas>
+
+        <!-- Feedback -->
+        <div id="fin-growth-feedback" class="text-slate-700 text-center text-sm"></div>
+
+        <!-- ESTOQUE -->
+        <div class="bg-slate-50 p-6 rounded-[2.5rem] border border-dashed border-slate-200 grid grid-cols-1 md:grid-cols-2 gap-6">
+
+            <!-- Valor do estoque -->
+            <div class="bg-white p-6 rounded-3xl shadow-sm">
+                <div class="tooltip">
+                    <p class="text-[10px] font-black text-slate-400 uppercase">Valor Total em Stock</p>
+                    <span class="tooltip-icon">?</span>
+                    <div class="tooltip-box">Soma do preço de venda multiplicado por cada unidade em estoque.</div>
+                </div>
+                <h3 class="text-3xl font-black text-slate-800 mt-1" id="fin-stock-value">R$ 0,00</h3>
+                <p class="text-[10px] text-slate-500 mt-2 font-bold" id="fin-stock-count">0 unidades</p>
+            </div>
+
+            <!-- Custo total -->
+            <div class="bg-white p-6 rounded-3xl shadow-sm">
+                <div class="tooltip">
+                    <p class="text-[10px] font-black text-slate-400 uppercase">Custo de Aquisição</p>
+                    <span class="tooltip-icon">?</span>
+                    <div class="tooltip-box">Soma do custo de compra de todos os produtos em estoque.</div>
+                </div>
+                <h3 class="text-3xl font-black text-slate-800 mt-1" id="fin-stock-cost">R$ 0,00</h3>
+            </div>
+
         </div>
-        <div id="fin-growth-feedback" class="text-center text-slate-700 text-sm"></div>
+
     </div>
-
-    <!-- ESTOQUE -->
-    <div class="bg-slate-50 p-6 rounded-[2.5rem] border border-dashed border-slate-200 grid grid-cols-1 md:grid-cols-2 gap-5">
-
-        <div class="bg-white p-6 rounded-3xl shadow-sm">
-            <p class="label-fin">Valor Total em Estoque</p>
-            <h3 id="fin-stock-value" class="value-fin">R$ 0,00</h3>
-            <p id="fin-stock-count" class="sub-fin">0 unidades</p>
-            <p class="hint-fin">Somatória de todos os produtos multiplicados pela quantidade.</p>
-        </div>
-
-        <div class="bg-white p-6 rounded-3xl shadow-sm">
-            <p class="label-fin">Custo de Aquisição</p>
-            <h3 id="fin-stock-cost" class="value-fin">R$ 0,00</h3>
-            <p class="hint-fin">Quanto você investiu para obter o estoque atual.</p>
-        </div>
-
-    </div>
-
-</div>
+         </div>
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
     <div class="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm">
         <h3 class="text-sm font-black text-slate-400 uppercase mb-4 flex items-center gap-2">
