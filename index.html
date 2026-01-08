@@ -348,9 +348,7 @@
     <button id="nav-products" onclick="changeTab('products')" class="w-full flex items-center px-6 py-4 ...">Produtos</button>
     <button id="nav-categories" onclick="changeTab('categories')" class="w-full flex items-center px-6 py-4 ...">Categorias</button>
     <button id="nav-config" onclick="changeTab('config')" class="w-full flex items-center px-6 py-4 ...">Configurações</button>
-     <button id="nav-finance" onclick="changeTab('finance')" class="w-full flex items-center px-6 py-4 text-slate-600 font-medium">
-    <i data-lucide="dollar-sign" class="w-5 h-5 mr-3"></i> Financeiro
-     </button>
+     <button id="nav-finance" onclick="changeTab('finance')" class="w-full flex items-center px-6 py-4 text-slate-600 font-medium"><i data-lucide="dollar-sign" class="w-5 h-5 mr-3"></i> Financeiro</button>
             
         </nav>
 
@@ -575,26 +573,6 @@
     </div>
 </div>
 
-    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        <div class="flex items-center justify-between p-4 bg-slate-50 rounded-2xl border border-slate-100">
-            <div class="flex items-center gap-3">
-                <div class="p-2 bg-blue-100 text-blue-600 rounded-lg"><i data-lucide="sparkles" class="w-5 h-5"></i></div>
-                <div><p class="text-xs font-bold text-slate-700">Setor "Novidades"</p><p class="text-[9px] text-slate-400 uppercase">Últimos 15 dias</p></div>
-            </div>
-            <label class="toggle-switch"><input type="checkbox" id="magicNew" onchange="toggleMagicCategory('showNew', this.checked)"><span class="slider"></span></label>
-        </div>
-        <div class="flex items-center justify-between p-4 bg-slate-50 rounded-2xl border border-slate-100">
-            <div class="flex items-center gap-3">
-                <div class="p-2 bg-orange-100 text-orange-600 rounded-lg"><i data-lucide="flame" class="w-5 h-5"></i></div>
-                <div><p class="text-xs font-bold text-slate-700">Setor "Mais Vendidos"</p><p class="text-[9px] text-slate-400 uppercase">Top 10 Vistos</p></div>
-            </div>
-            <label class="toggle-switch"><input type="checkbox" id="magicTop" onchange="toggleMagicCategory('showTop', this.checked)"><span class="slider"></span></label>
-        </div>
-    </div>
-</div>
-                
-            </div>
-
             <div id="view-banners" class="max-w-6xl mx-auto space-y-6 hidden animate-fade-in">
                 <div class="flex justify-between items-center">
                     <h3 class="text-2xl font-bold text-slate-800">Banners de Destaque</h3>
@@ -625,6 +603,25 @@
                 <div class="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm mt-6">
     <h3 class="text-sm font-black text-slate-400 uppercase mb-6 tracking-widest">Categorias Inteligentes (Automáticas)</h3>
             </div>
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div class="flex items-center justify-between p-4 bg-slate-50 rounded-2xl border border-slate-100">
+            <div class="flex items-center gap-3">
+                <div class="p-2 bg-blue-100 text-blue-600 rounded-lg"><i data-lucide="sparkles" class="w-5 h-5"></i></div>
+                <div><p class="text-xs font-bold text-slate-700">Setor "Novidades"</p><p class="text-[9px] text-slate-400 uppercase">Últimos 15 dias</p></div>
+            </div>
+            <label class="toggle-switch"><input type="checkbox" id="magicNew" onchange="toggleMagicCategory('showNew', this.checked)"><span class="slider"></span></label>
+        </div>
+        <div class="flex items-center justify-between p-4 bg-slate-50 rounded-2xl border border-slate-100">
+            <div class="flex items-center gap-3">
+                <div class="p-2 bg-orange-100 text-orange-600 rounded-lg"><i data-lucide="flame" class="w-5 h-5"></i></div>
+                <div><p class="text-xs font-bold text-slate-700">Setor "Mais Vendidos"</p><p class="text-[9px] text-slate-400 uppercase">Top 10 Vistos</p></div>
+            </div>
+            <label class="toggle-switch"><input type="checkbox" id="magicTop" onchange="toggleMagicCategory('showTop', this.checked)"><span class="slider"></span></label>
+        </div>
+    </div>
+</div>
+                
+         </div>
             </div>
 
             <div id="view-config" class="max-w-4xl mx-auto space-y-8 hidden animate-fade-in">
