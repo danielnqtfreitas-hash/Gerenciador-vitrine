@@ -2666,7 +2666,7 @@ window.toggleMagicCategory = async function(type, isVisible) {
     if (!currentStoreId) return;
 
     try {
-        const storeRef = doc(db, `stores/${currentStoreId}/config/store`);
+        const storeRef = doc(db, `stores/${currentStoreId}/config`);
         
         // Atualiza o estado e força o timestamp de atualização
         await updateDoc(storeRef, {
@@ -2708,7 +2708,7 @@ window.toggleMagicCategory = async function(type, isVisible) {
         await Promise.all(promises);
 
         // Notifica a vitrine para atualizar o cache
-        const storeRef = doc(db, `stores/${currentStoreId}/config/store`);
+        const storeRef = doc(db, `stores/${currentStoreId}/config`);
         await updateDoc(storeRef, { lastUpdate: Date.now() });
 
         showToast(`✅ Categoria "${categoryName}" ${newStatus === 'paused' ? 'pausada' : 'ativada'}!`);
