@@ -2701,27 +2701,39 @@ async function initAnalyticsInsights() {
 }
 
         // Adicione o window. para garantir que o botão no HTML ache a função
-window.toggleMagicCategory = async function(type, isVisible) {
+  window.toggleMagicCategory = async function(type, isVisible) {
     if (!currentStoreId) return;
 
     try {
-        const storeRef = doc(db, `stores/${currentStoreId}/config`);
-        
-        // Atualiza o estado e força o timestamp de atualização
-        await updateDoc(storeRef, {
-            [`magicCategories.${type}`]: isVisible,
-            lastUpdate: Date.now() 
-        });
-        
-        showToast(isVisible ? "Setor automático ativado! ✨" : "Setor removido da vitrine.");
-        
-        // Se a função de feedback existir, vamos atualizar a tela na hora
-        if (typeof updateMagicFeedback === 'function' && storeConfig) {
-            // Atualizamos o cache local antes de rodar o feedback
-            if(!storeConfig.magicCategories) storeConfig.magicCategories = {};
-            storeConfig.magicCategories[type] = isVisible;
-            updateMagicFeedback(storeConfig.magicCategories);
+        const storeRef = doc(db, `stores/${currentStoreId}/config/store`);
+
+        // 🔹 Garante que o documento exista
+        await setDoc(
+            storeRef,
+            {
+                magicCategories: {
+                    [type]: isVisible
+                },
+                lastUpdate: Date.now()
+            },
+            { merge: true }
+        );
+
+        showToast(
+            isVisible
+                ? "Setor automático ativado! ✨"
+                : "Setor removido da vitrine."
+        );
+
+        // 🔹 Garante cache local
+        window.storeConfig = window.storeConfig || {};
+        window.storeConfig.magicCategories = window.storeConfig.magicCategories || {};
+        window.storeConfig.magicCategories[type] = isVisible;
+
+        if (typeof updateMagicFeedback === 'function') {
+            updateMagicFeedback(window.storeConfig.magicCategories);
         }
+
     } catch (error) {
         console.error("Erro ao salvar categoria mágica:", error);
         showToast("Erro ao salvar preferência.");
