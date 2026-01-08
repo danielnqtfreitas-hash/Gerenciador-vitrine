@@ -2126,32 +2126,70 @@ const profit = price - cost;
         
         window.handleCategorySubmit = async (e) => {
     e.preventDefault();
-    const name = document.getElementById('catInputName').value;
+
+    const name = document.getElementById('catInputName').value.trim();
+    const isMagic = document.getElementById('catMagic')?.checked || false;
     const editId = document.getElementById('editingCategoryId').value;
 
+    if (!name) {
+        showToast("Informe o nome da categoria.");
+        return;
+    }
+
     try {
+        const catRef = editId
+            ? doc(db, `stores/${currentStoreId}/categories`, editId)
+            : null;
+
         if (editId) {
-            const oldDoc = await getDoc(doc(db, `stores/${currentStoreId}/categories`, editId));
+            const oldDoc = await getDoc(catRef);
             const oldName = oldDoc.exists() ? oldDoc.data().name : null;
 
-            await updateDoc(doc(db, `stores/${currentStoreId}/categories`, editId), { name });
+            await updateDoc(catRef, {
+                name,
+                magic: isMagic
+            });
 
+            // Atualiza produtos se o nome mudou
             if (oldName && oldName !== name) {
-                const q = query(collection(db, `stores/${currentStoreId}/products`), where("category", "==", oldName));
+                const q = query(
+                    collection(db, `stores/${currentStoreId}/products`),
+                    where("category", "==", oldName)
+                );
+
                 const snap = await getDocs(q);
-                const updates = snap.docs.map(d => updateDoc(doc(db, `stores/${currentStoreId}/products`, d.id), { category: name }));
+                const updates = snap.docs.map(d =>
+                    updateDoc(
+                        doc(db, `stores/${currentStoreId}/products`, d.id),
+                        { category: name }
+                    )
+                );
                 await Promise.all(updates);
             }
+
         } else {
-            await addDoc(collection(db, `stores/${currentStoreId}/categories`), { name, status: 'active' });
+            await addDoc(
+                collection(db, `stores/${currentStoreId}/categories`),
+                {
+                    name,
+                    status: 'active',
+                    magic: isMagic,
+                    createdAt: Date.now()
+                }
+            );
         }
 
-        await updateDoc(doc(db, `stores/${currentStoreId}/config/store`), { lastUpdate: Date.now() });
+        // Marca atualização geral da loja
+        await updateDoc(
+            doc(db, `stores/${currentStoreId}/config/store`),
+            { lastUpdate: Date.now() }
+        );
+
         cancelCategoryEdit();
-        showToast("Categoria e produtos atualizados.");
+        showToast("Categoria salva com sucesso.");
     } catch (err) {
         console.error(err);
-        showToast("Erro ao atualizar categoria.");
+        showToast("Erro ao salvar categoria.");
     }
 };
 
