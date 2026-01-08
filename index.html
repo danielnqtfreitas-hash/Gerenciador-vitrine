@@ -1633,10 +1633,10 @@ setPersistence(auth, browserLocalPersistence)
                     if (currentStoreId) {
                         fetchPublicPlansEagerly();
                         initStoreData(); 
-                        initAnalyticsChart(); 
+                        initAnalyticsChart();
+                        initAnalyticsInsights();
                         initOrderListener(currentStoreId);
                         loadMagicCategoriesFeedback();
-                        initAnalyticsInsights();
                         // Abre nos pedidos por padrão
                         changeTab('orders');       
                         setTimeout(requestNotificationPermission, 5000);
@@ -1801,7 +1801,6 @@ window.initOrderListener = (storeId) => {
   ? data.deliveryAreas
   : [];
   renderDeliveryAreas();
-  initAnalyticsInsights();
 });
     // --- NOVA PARTE: LISTENER DE ANALYTICS GLOBAL ---
     onSnapshot(doc(db, `stores/${currentStoreId}/analytics/global`), d => {
