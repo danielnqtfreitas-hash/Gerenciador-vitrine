@@ -121,59 +121,10 @@
         .variation-matrix-table { width: 100%; border-collapse: separate; border-spacing: 0 8px; }
         .variation-matrix-table th { @apply text-[10px] uppercase font-black text-slate-400 px-4 py-2 text-left; }
         .variation-matrix-table td { @apply bg-white border-y border-slate-100 px-4 py-3 text-sm first:rounded-l-xl first:border-l last:rounded-r-xl last:border-r; }
-   
-    /* Tooltip com estilo cinza (Apple-like) */
-.tooltip {
-  position: relative;
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  cursor: default;
-}
-
-.tooltip-icon {
-  background: #e2e8f0;
-  color: #475569;
-  font-size: 10px;
-  width: 16px;
-  height: 16px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: 999px;
-  font-weight: bold;
-  transition: background 0.2s;
-}
-
-.tooltip-icon:hover {
-  background: #cbd5e1;
-}
-
-.tooltip-box {
-  position: absolute;
-  top: -8px;
-  left: 50%;
-  transform: translate(-50%, -100%);
-  background: #1f2937;
-  color: white;
-  padding: 8px 10px;
-  border-radius: 8px;
-  font-size: 10px;
-  width: max-content;
-  max-width: 200px;
-  text-align: center;
-  opacity: 0;
-  pointer-events: none;
-  transition: opacity .2s ease;
-  z-index: 50;
-}
-
-.tooltip:hover .tooltip-box {
-  opacity: 1;
-}
     </style>
 </head>
-<body class="text-slate-800 antialiased h-screen overflow-y-auto flex bg-slate-50">
+<body class="text-slate-800 antialiased h-screen overflow-hidden flex bg-slate-50">
+
     <!-- LOGIN / REGISTER SCREEN -->
     <div id="auth-screen" class="fixed inset-0 z-[200] bg-slate-900 flex items-center justify-center p-4">
         <!-- LOGIN CARD -->
@@ -348,7 +299,9 @@
     <button id="nav-products" onclick="changeTab('products')" class="w-full flex items-center px-6 py-4 ...">Produtos</button>
     <button id="nav-categories" onclick="changeTab('categories')" class="w-full flex items-center px-6 py-4 ...">Categorias</button>
     <button id="nav-config" onclick="changeTab('config')" class="w-full flex items-center px-6 py-4 ...">Configurações</button>
-     <button id="nav-finance" onclick="changeTab('finance')" class="w-full flex items-center px-6 py-4 text-slate-600 font-medium"><i data-lucide="dollar-sign" class="w-5 h-5 mr-3"></i> Financeiro</button>
+     <button id="nav-finance" onclick="changeTab('finance')" class="w-full flex items-center px-6 py-4 text-slate-600 font-medium">
+    <i data-lucide="dollar-sign" class="w-5 h-5 mr-3"></i> Financeiro
+     </button>
             
         </nav>
 
@@ -421,7 +374,159 @@
                 <div class="bg-white p-6 border border-slate-100 rounded-3xl shadow-sm"><p class="text-xs font-bold text-slate-400 uppercase tracking-widest mb-2">Categorias</p><h3 class="text-4xl font-bold text-slate-800" id="dash-total-cats">0</h3></div>
                 <div class="bg-white p-5 border border-slate-100 rounded-3xl shadow-sm"><p class="text-xs font-bold text-slate-400 uppercase tracking-widest mb-2">Visitas</p><h3 class="text-4xl font-bold text-slate-800" id="dash-total-visits">0</h3></div>
             </div>
-                
+
+<div id="view-finance" class="max-w-6xl mx-auto space-y-6 hidden animate-fade-in">
+    
+    <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+        <div>
+            <h3 class="text-2xl font-bold text-slate-800">Inteligência Financeira</h3>
+            <p class="text-sm text-slate-500">Acompanhe a saúde real do seu estoque e vendas.</p>
+        </div>
+        <div class="bg-white p-2 rounded-2xl border shadow-sm flex gap-2">
+             <div class="px-4 py-2 bg-green-50 rounded-xl border border-green-100">
+                 <p class="text-[9px] font-black text-green-600 uppercase">Status do Caixa</p>
+                 <p class="text-xs font-bold text-green-700">Fluxo Ativo</p>
+             </div>
+        </div>
+    </div>
+
+    <div id="financeContent" class="space-y-6">
+        
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div class="bg-white p-5 rounded-3xl border border-slate-100 shadow-sm">
+                <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Faturação (Hoje)</p>
+                <h3 class="text-2xl font-black text-slate-800" id="fin-rev-day">R$ 0,00</h3>
+                <span class="text-[9px] font-bold text-green-600 bg-green-50 px-2 py-0.5 rounded-full" id="fin-orders-day">0 pedidos</span>
+            </div>
+            <div class="bg-white p-5 rounded-3xl border border-slate-100 shadow-sm">
+                <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Este Mês</p>
+                <h3 class="text-2xl font-black text-primary-600" id="fin-rev-month">R$ 0,00</h3>
+            </div>
+            <div class="bg-white p-5 rounded-3xl border border-slate-100 shadow-sm bg-slate-900">
+                <p class="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1">Faturação Total</p>
+                <h3 class="text-2xl font-black text-white" id="fin-rev-total">R$ 0,00</h3>
+            </div>
+            <div class="bg-white p-5 rounded-3xl border border-slate-100 shadow-sm border-l-4 border-l-green-500">
+                <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Lucro Potencial</p>
+                <h3 class="text-2xl font-black text-green-600" id="fin-profit-potential">R$ 0,00</h3>
+            </div>
+        </div>
+
+        <div class="bg-white p-8 rounded-[2.5rem] border border-slate-200 shadow-sm">
+            <h3 class="text-lg font-bold text-slate-800 mb-6">Crescimento de Vendas (Últimos 6 meses)</h3>
+            <div class="relative h-64">
+                <canvas id="growthChart"></canvas>
+            </div>
+        </div>
+
+        <div class="bg-slate-50 p-6 rounded-[2.5rem] border border-dashed border-slate-200 grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div class="bg-white p-6 rounded-3xl shadow-sm">
+                <p class="text-[10px] font-black text-slate-400 uppercase mb-1">Valor Total em Stock</p>
+                <h3 class="text-3xl font-black text-slate-800" id="fin-stock-value">R$ 0,00</h3>
+                <p class="text-[10px] text-slate-500 mt-2 font-bold" id="fin-stock-count">0 unidades</p>
+            </div>
+            <div class="bg-white p-6 rounded-3xl shadow-sm">
+                <p class="text-[10px] font-black text-slate-400 uppercase mb-1">Custo de Aquisição</p>
+                <h3 class="text-3xl font-black text-slate-800" id="fin-stock-cost">R$ 0,00</h3>
+            </div>
+        </div>
+
+    </div> </div>
+                    
+                    <div class="flex items-center gap-4 bg-slate-50 px-6 py-3 rounded-2xl border">
+                        <span class="text-sm font-bold text-slate-600" id="statusLabel">Aberto</span>
+                        <label class="toggle-switch"><input type="checkbox" id="dashboardStoreToggle" onchange="toggleStoreStatusQuick(this)"><span class="slider"></span></label>
+                    </div>
+                </div> <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 w-full">
+                    <div class="bg-white p-6 border border-slate-100 rounded-3xl shadow-sm"><p class="text-xs font-bold text-slate-400 uppercase tracking-widest mb-2">Produtos</p><h3 class="text-4xl font-bold text-slate-800"><span id="dash-total-products">0</span></h3></div>
+                    <div class="bg-white p-6 border border-slate-100 rounded-3xl shadow-sm"><p class="text-xs font-bold text-slate-400 uppercase tracking-widest mb-2">Banners</p><h3 class="text-4xl font-bold text-primary-600"><span id="dash-total-banners">0</span></h3></div>
+                    <div class="bg-white p-6 border border-slate-100 rounded-3xl shadow-sm"><p class="text-xs font-bold text-slate-400 uppercase tracking-widest mb-2">Categorias</p><h3 class="text-4xl font-bold text-slate-800" id="dash-total-cats">0</h3></div>
+                    <div class="bg-white p-5 border border-slate-100 rounded-3xl shadow-sm"><p class="text-xs font-bold text-slate-400 uppercase tracking-widest mb-2">Visitas</p><h3 class="text-4xl font-bold text-slate-800" id="dash-total-visits">0</h3></div>
+                </div>
+
+                </div> <div id="view-finance" class="max-w-6xl mx-auto space-y-6 hidden animate-fade-in">
+                <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+                    <div>
+                        <h3 class="text-2xl font-bold text-slate-800">Inteligência Financeira</h3>
+                        <p class="text-sm text-slate-500">Acompanhe a saúde real do seu estoque e vendas.</p>
+                    </div>
+                    <div class="bg-white p-2 rounded-2xl border shadow-sm flex gap-2">
+                         <div class="px-4 py-2 bg-green-50 rounded-xl border border-green-100">
+                             <p class="text-[9px] font-black text-green-600 uppercase">Status do Caixa</p>
+                             <p class="text-xs font-bold text-green-700">Fluxo Ativo</p>
+                         </div>
+                    </div>
+                </div>
+        <div class="bg-white p-5 rounded-3xl border border-slate-100 shadow-sm">
+            <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Este Mês</p>
+            <h3 class="text-2xl font-black text-primary-600" id="fin-rev-month">R$ 0,00</h3>
+        </div>
+        <div class="bg-white p-5 rounded-3xl border border-slate-100 shadow-sm bg-slate-900">
+            <p class="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1">Faturação Total</p>
+            <h3 class="text-2xl font-black text-white" id="fin-rev-total">R$ 0,00</h3>
+        </div>
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div class="lg:col-span-1 bg-gradient-to-br from-primary-600 to-indigo-700 rounded-[2.5rem] p-8 text-white shadow-xl relative overflow-hidden">
+            <div class="relative z-10">
+                <h4 class="text-sm font-bold opacity-80 uppercase tracking-widest mb-4">Análise Mensal</h4>
+                <div id="fin-growth-feedback" class="space-y-4">
+                    <p class="text-lg font-medium leading-tight">A analisar os seus dados de venda...</p>
+                </div>
+            </div>
+            <i data-lucide="trending-up" class="absolute -bottom-4 -right-4 w-32 h-32 opacity-10"></i>
+        </div>
+
+        <div class="lg:col-span-2 bg-white p-8 rounded-[2.5rem] border border-slate-200 shadow-sm">
+            <div class="flex justify-between items-center mb-6">
+                <h3 class="text-lg font-bold text-slate-800">Crescimento de Vendas</h3>
+                <i data-lucide="calendar" class="w-5 h-5 text-slate-400"></i>
+            </div>
+            <div class="relative h-64">
+                <canvas id="growthChart"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <div class="bg-slate-100/50 p-6 rounded-[2.5rem] border border-dashed border-slate-200">
+        <h4 class="text-xs font-black text-slate-400 uppercase tracking-widest mb-4 ml-2">Património em Stock (Preço de Venda)</h4>
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div class="bg-white p-6 rounded-3xl shadow-sm">
+                <p class="text-[10px] font-black text-slate-400 uppercase mb-1">Valor Total em Stock</p>
+                <h3 class="text-3xl font-black text-slate-800" id="fin-stock-value">R$ 0,00</h3>
+                <p class="text-[10px] text-slate-500 mt-2 font-bold" id="fin-stock-count">0 unidades disponíveis</p>
+            </div>
+            <div class="bg-white p-6 rounded-3xl shadow-sm">
+                <p class="text-[10px] font-black text-slate-400 uppercase mb-1">Investimento (Custo)</p>
+                <h3 class="text-3xl font-black text-slate-800" id="fin-stock-cost">R$ 0,00</h3>
+                <p class="text-[10px] text-slate-500 mt-2 font-bold uppercase tracking-tighter">Capital imobilizado</p>
+            </div>
+            <div class="bg-white p-6 rounded-3xl shadow-sm border-2 border-green-100">
+                <p class="text-[10px] font-black text-green-600 uppercase mb-1">Lucro Potencial</p>
+                <h3 class="text-3xl font-black text-green-600" id="fin-profit-potential">R$ 0,00</h3>
+                <p class="text-[10px] text-green-600/60 mt-2 font-bold uppercase tracking-tighter">Previsão de retorno</p>
+            </div>
+        </div>
+    </div>
+    </div>
+                    
+                    <div class="flex items-center gap-4 bg-slate-50 px-6 py-3 rounded-2xl border">
+                        <span class="text-sm font-bold text-slate-600" id="statusLabel">Aberto</span>
+                        <label class="toggle-switch"><input type="checkbox" id="dashboardStoreToggle" onchange="toggleStoreStatusQuick(this)"><span class="slider"></span></label>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 w-full">
+                    <div class="bg-white p-6 border border-slate-100 rounded-3xl shadow-sm"><p class="text-xs font-bold text-slate-400 uppercase tracking-widest mb-2">Produtos</p><h3 class="text-4xl font-bold text-slate-800"><span id="dash-total-products">0</span><span class="text-sm text-slate-400 font-normal ml-1" id="dash-limit-products">/--</span></h3></div>
+                    <div class="bg-white p-6 border border-slate-100 rounded-3xl shadow-sm"><p class="text-xs font-bold text-slate-400 uppercase tracking-widest mb-2">Banners</p><h3 class="text-4xl font-bold text-primary-600"><span id="dash-total-banners">0</span><span class="text-sm text-slate-400 font-normal ml-1" id="dash-limit-banners">/--</span></h3></div>
+                    <div class="bg-white p-6 border border-slate-100 rounded-3xl shadow-sm"><p class="text-xs font-bold text-slate-400 uppercase tracking-widest mb-2">Categorias</p><h3 class="text-4xl font-bold text-slate-800" id="dash-total-cats">0</h3></div>
+                    <div class="bg-white p-5 border border-slate-100 rounded-3xl shadow-sm flex flex-col justify-between">
+                        <p class="text-[10px] font-black text-slate-400 uppercase">Visitas Totais</p>
+                        <h3 class="text-3xl md:text-4xl font-black text-slate-800" id="dash-total-visits">0</h3>
+                    </div>
+                </div>
+
                 <div class="bg-white p-6 md:p-8 border border-slate-200 rounded-3xl shadow-sm">
                     <div class="flex justify-between items-center mb-8">
                         <h3 class="text-xl font-bold text-slate-800">Tráfego da Vitrine</h3>
@@ -431,8 +536,7 @@
                         </div>
                     </div>
                     <div class="relative h-64 w-full"><canvas id="analyticsChart"></canvas></div>
-                </div> 
-                 
+                </div>
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
     <div class="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm">
         <h3 class="text-sm font-black text-slate-400 uppercase mb-4 flex items-center gap-2">
@@ -442,7 +546,8 @@
             <p class="text-xs text-slate-400 italic">Aguardando dados da vitrine...</p>
         </div>
     </div>
-                    <div class="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm">
+
+    <div class="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm">
         <h3 class="text-sm font-black text-slate-400 uppercase mb-4 flex items-center gap-2">
             <i data-lucide="search-x" class="w-4 h-4 text-amber-500"></i> Buscas Perdidas
         </h3>
@@ -450,143 +555,30 @@
             <p class="text-xs text-slate-400 italic">Nenhum termo perdido ainda.</p>
         </div>
     </div>
-                </div>
-             </div>
+</div>
 
-         <div id="view-finance" class="max-w-6xl mx-auto space-y-8 hidden animate-fade-in">
-
-    <!-- HEADER -->
-    <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-        <div>
-            <h3 class="text-3xl font-black text-slate-900">Inteligência Financeira</h3>
-            <p class="text-sm text-slate-500">Resumo completo do desempenho da loja.</p>
-        </div>
-        <div class="bg-white p-2 rounded-2xl border shadow-sm flex gap-2">
-            <div class="px-4 py-2 bg-green-50 rounded-xl border border-green-100">
-                <p class="text-[9px] font-black text-green-600 uppercase">Status do Caixa</p>
-                <p class="text-xs font-bold text-green-700">Fluxo Ativo</p>
+<div class="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm mt-6">
+    <h3 class="text-sm font-black text-slate-400 uppercase mb-6 tracking-widest">Categorias Inteligentes (Automáticas)</h3>
+    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div class="flex items-center justify-between p-4 bg-slate-50 rounded-2xl border border-slate-100">
+            <div class="flex items-center gap-3">
+                <div class="p-2 bg-blue-100 text-blue-600 rounded-lg"><i data-lucide="sparkles" class="w-5 h-5"></i></div>
+                <div><p class="text-xs font-bold text-slate-700">Setor "Novidades"</p><p class="text-[9px] text-slate-400 uppercase">Últimos 15 dias</p></div>
             </div>
+            <label class="toggle-switch"><input type="checkbox" id="magicNew" onchange="toggleMagicCategory('showNew', this.checked)"><span class="slider"></span></label>
+        </div>
+        <div class="flex items-center justify-between p-4 bg-slate-50 rounded-2xl border border-slate-100">
+            <div class="flex items-center gap-3">
+                <div class="p-2 bg-orange-100 text-orange-600 rounded-lg"><i data-lucide="flame" class="w-5 h-5"></i></div>
+                <div><p class="text-xs font-bold text-slate-700">Setor "Mais Vendidos"</p><p class="text-[9px] text-slate-400 uppercase">Top 10 Vistos</p></div>
+            </div>
+            <label class="toggle-switch"><input type="checkbox" id="magicTop" onchange="toggleMagicCategory('showTop', this.checked)"><span class="slider"></span></label>
         </div>
     </div>
-
-    <!-- MÉTRICAS -->
-    <div id="financeContent" class="space-y-8">
-
-        <!-- GRID 1 -->
-        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
-
-            <!-- Faturação Hoje -->
-            <div class="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm">
-                <div class="tooltip">
-                    <p class="text-[10px] font-black text-slate-400 uppercase">Faturação (Hoje)</p>
-                    <span class="tooltip-icon">?</span>
-                    <div class="tooltip-box">Total recebido hoje em pedidos concluídos.</div>
-                </div>
-                <h3 class="text-3xl font-black text-slate-800 mt-1" id="fin-rev-day">R$ 0,00</h3>
-                <span class="text-[10px] font-bold text-green-600 bg-green-50 px-2 py-1 rounded-full" id="fin-orders-day">0 pedidos</span>
+</div>
+                
             </div>
 
-            <!-- Este mês -->
-            <div class="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm">
-                <div class="tooltip">
-                    <p class="text-[10px] font-black text-slate-400 uppercase">Este Mês</p>
-                    <span class="tooltip-icon">?</span>
-                    <div class="tooltip-box">Total faturado desde o início do mês atual.</div>
-                </div>
-                <h3 class="text-3xl font-black text-primary-600 mt-1" id="fin-rev-month">R$ 0,00</h3>
-            </div>
-
-            <!-- Esta semana -->
-            <div class="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm">
-                <div class="tooltip">
-                    <p class="text-[10px] font-black text-slate-400 uppercase">Esta Semana</p>
-                    <span class="tooltip-icon">?</span>
-                    <div class="tooltip-box">Total faturado desde o último domingo.</div>
-                </div>
-                <h3 class="text-3xl font-black text-slate-800 mt-1" id="fin-rev-week">R$ 0,00</h3>
-            </div>
-
-            <!-- Total -->
-            <div class="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm bg-slate-900">
-                <div class="tooltip">
-                    <p class="text-[10px] font-black text-slate-500 uppercase">Faturação Total</p>
-                    <span class="tooltip-icon">?</span>
-                    <div class="tooltip-box">Soma de todas as vendas confirmadas.</div>
-                </div>
-                <h3 class="text-3xl font-black text-white mt-1" id="fin-rev-total">R$ 0,00</h3>
-            </div>
-        </div>
-
-        <!-- Lucro Potencial -->
-        <div class="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm">
-            <div class="tooltip">
-                <p class="text-[10px] font-black text-slate-400 uppercase">Lucro Potencial</p>
-                <span class="tooltip-icon">?</span>
-                <div class="tooltip-box">Diferença entre preço de venda e custo de aquisição multiplicado pelo estoque.</div>
-            </div>
-            <h3 class="text-3xl font-black text-green-600 mt-1" id="fin-profit-potential">R$ 0,00</h3>
-        </div>
-
-        <!-- Gráfico Crescimento -->
-        <div class="bg-white p-8 rounded-[2.5rem] border border-slate-200 shadow-sm">
-            <h3 class="text-lg font-bold text-slate-800 mb-6 flex items-center gap-2">
-                Crescimento de Vendas (Últimos 6 meses)
-                <span class="tooltip-icon tooltip">
-                    ?
-                    <div class="tooltip-box">Comparação automática da evolução mensal das vendas.</div>
-                </span>
-            </h3>
-            <div class="relative h-64">
-                <canvas id="growthChart"></canvas>
-            </div>
-        </div>
-
-        <!-- Feedback -->
-        <div id="fin-growth-feedback" class="text-slate-700 text-center text-sm"></div>
-
-        <!-- ESTOQUE -->
-        <div class="bg-slate-50 p-6 rounded-[2.5rem] border border-dashed border-slate-200 grid grid-cols-1 md:grid-cols-2 gap-6">
-
-            <!-- Valor do estoque -->
-            <div class="bg-white p-6 rounded-3xl shadow-sm">
-                <div class="tooltip">
-                    <p class="text-[10px] font-black text-slate-400 uppercase">Valor Total em Stock</p>
-                    <span class="tooltip-icon">?</span>
-                    <div class="tooltip-box">Soma do preço de venda multiplicado por cada unidade em estoque.</div>
-                </div>
-                <h3 class="text-3xl font-black text-slate-800 mt-1" id="fin-stock-value">R$ 0,00</h3>
-                <p class="text-[10px] text-slate-500 mt-2 font-bold" id="fin-stock-count">0 unidades</p>
-            </div>
-
-            <!-- Custo total -->
-            <div class="bg-white p-6 rounded-3xl shadow-sm">
-                <div class="tooltip">
-                    <p class="text-[10px] font-black text-slate-400 uppercase">Custo de Aquisição</p>
-                    <span class="tooltip-icon">?</span>
-                    <div class="tooltip-box">Soma do custo de compra de todos os produtos em estoque.</div>
-                </div>
-                <h3 class="text-3xl font-black text-slate-800 mt-1" id="fin-stock-cost">R$ 0,00</h3>
-            </div>
-
-        </div>
-
-    </div>
-         </div>
-
-      <div id="orderDetailModal" class="fixed inset-0 bg-black/40 backdrop-blur-sm flex justify-center items-center z-50 hidden">
-    <div class="auth-card w-[90%] max-w-lg bg-white rounded-3xl overflow-hidden shadow-2xl animate-fade-in-up">
-        <div class="auth-card-content p-6 max-h-[80vh] overflow-y-auto">
-            <!-- O CONTEÚDO VEM PELO JS -->
-        </div>
-
-        <button onclick="document.getElementById('orderDetailModal').classList.add('hidden')" 
-                class="absolute top-3 right-3 bg-white/80 rounded-full p-2 border border-slate-200 shadow">
-            <i data-lucide="x" class="w-5 h-5"></i>
-        </button>
-    </div>
-      </div>
-
-             
             <div id="view-banners" class="max-w-6xl mx-auto space-y-6 hidden animate-fade-in">
                 <div class="flex justify-between items-center">
                     <h3 class="text-2xl font-bold text-slate-800">Banners de Destaque</h3>
@@ -614,25 +606,6 @@
                     </form>
                 </div>
                 <div id="categoryList" class="bg-white rounded-3xl border border-slate-200 divide-y overflow-hidden shadow-xl"></div>
-                <div class="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm mt-6">
-    <h3 class="text-sm font-black text-slate-400 uppercase mb-6 tracking-widest">Categorias Inteligentes (Automáticas)</h3>
-            </div>
-                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        <div class="flex items-center justify-between p-4 bg-slate-50 rounded-2xl border border-slate-100">
-            <div class="flex items-center gap-3">
-                <div class="p-2 bg-blue-100 text-blue-600 rounded-lg"><i data-lucide="sparkles" class="w-5 h-5"></i></div>
-                <div><p class="text-xs font-bold text-slate-700">Setor "Novidades"</p><p class="text-[9px] text-slate-400 uppercase">Últimos 15 dias</p></div>
-            </div>
-            <label class="toggle-switch"><input type="checkbox" id="magicNew" onchange="toggleMagicCategory('showNew', this.checked)"><span class="slider"></span></label>
-        </div>
-        <div class="flex items-center justify-between p-4 bg-slate-50 rounded-2xl border border-slate-100">
-            <div class="flex items-center gap-3">
-                <div class="p-2 bg-orange-100 text-orange-600 rounded-lg"><i data-lucide="flame" class="w-5 h-5"></i></div>
-                <div><p class="text-xs font-bold text-slate-700">Setor "Mais Vendidos"</p><p class="text-[9px] text-slate-400 uppercase">Top 10 Vistos</p></div>
-            </div>
-            <label class="toggle-switch"><input type="checkbox" id="magicTop" onchange="toggleMagicCategory('showTop', this.checked)"><span class="slider"></span></label>
-             </div>
-           </div>
             </div>
 
             <div id="view-config" class="max-w-4xl mx-auto space-y-8 hidden animate-fade-in">
@@ -1634,8 +1607,7 @@ setPersistence(auth, browserLocalPersistence)
                         fetchPublicPlansEagerly();
                         initStoreData(); 
                         initAnalyticsChart(); 
-                        initOrderListener(currentStoreId);
-                        loadMagicCategoriesFeedback();
+                        initOrderListener(currentStoreId); 
                         // Abre nos pedidos por padrão
                         changeTab('orders');       
                         setTimeout(requestNotificationPermission, 5000);
@@ -2127,70 +2099,32 @@ const profit = price - cost;
         
         window.handleCategorySubmit = async (e) => {
     e.preventDefault();
-
-    const name = document.getElementById('catInputName').value.trim();
-    const isMagic = document.getElementById('catMagic')?.checked || false;
+    const name = document.getElementById('catInputName').value;
     const editId = document.getElementById('editingCategoryId').value;
 
-    if (!name) {
-        showToast("Informe o nome da categoria.");
-        return;
-    }
-
     try {
-        const catRef = editId
-            ? doc(db, `stores/${currentStoreId}/categories`, editId)
-            : null;
-
         if (editId) {
-            const oldDoc = await getDoc(catRef);
+            const oldDoc = await getDoc(doc(db, `stores/${currentStoreId}/categories`, editId));
             const oldName = oldDoc.exists() ? oldDoc.data().name : null;
 
-            await updateDoc(catRef, {
-                name,
-                magic: isMagic
-            });
+            await updateDoc(doc(db, `stores/${currentStoreId}/categories`, editId), { name });
 
-            // Atualiza produtos se o nome mudou
             if (oldName && oldName !== name) {
-                const q = query(
-                    collection(db, `stores/${currentStoreId}/products`),
-                    where("category", "==", oldName)
-                );
-
+                const q = query(collection(db, `stores/${currentStoreId}/products`), where("category", "==", oldName));
                 const snap = await getDocs(q);
-                const updates = snap.docs.map(d =>
-                    updateDoc(
-                        doc(db, `stores/${currentStoreId}/products`, d.id),
-                        { category: name }
-                    )
-                );
+                const updates = snap.docs.map(d => updateDoc(doc(db, `stores/${currentStoreId}/products`, d.id), { category: name }));
                 await Promise.all(updates);
             }
-
         } else {
-            await addDoc(
-                collection(db, `stores/${currentStoreId}/categories`),
-                {
-                    name,
-                    status: 'active',
-                    magic: isMagic,
-                    createdAt: Date.now()
-                }
-            );
+            await addDoc(collection(db, `stores/${currentStoreId}/categories`), { name, status: 'active' });
         }
 
-        // Marca atualização geral da loja
-        await updateDoc(
-            doc(db, `stores/${currentStoreId}/config/store`),
-            { lastUpdate: Date.now() }
-        );
-
+        await updateDoc(doc(db, `stores/${currentStoreId}/config/store`), { lastUpdate: Date.now() });
         cancelCategoryEdit();
-        showToast("Categoria salva com sucesso.");
+        showToast("Categoria e produtos atualizados.");
     } catch (err) {
         console.error(err);
-        showToast("Erro ao salvar categoria.");
+        showToast("Erro ao atualizar categoria.");
     }
 };
 
@@ -2705,7 +2639,7 @@ window.toggleMagicCategory = async function(type, isVisible) {
     if (!currentStoreId) return;
 
     try {
-        const storeRef = doc(db, `stores/${currentStoreId}/config`);
+        const storeRef = doc(db, `stores/${currentStoreId}/config/store`);
         
         // Atualiza o estado e força o timestamp de atualização
         await updateDoc(storeRef, {
@@ -2747,7 +2681,7 @@ window.toggleMagicCategory = async function(type, isVisible) {
         await Promise.all(promises);
 
         // Notifica a vitrine para atualizar o cache
-        const storeRef = doc(db, `stores/${currentStoreId}/config`);
+        const storeRef = doc(db, `stores/${currentStoreId}/config/store`);
         await updateDoc(storeRef, { lastUpdate: Date.now() });
 
         showToast(`✅ Categoria "${categoryName}" ${newStatus === 'paused' ? 'pausada' : 'ativada'}!`);
@@ -3122,23 +3056,7 @@ window.deleteOrder = async (id) => {
         }
     });
 };
-
-
-                      async function loadMagicCategoriesFeedback() {
-    try {
-        const storeRef = doc(db, `stores/${currentStoreId}/config/store`);
-        const storeDoc = await getDoc(storeRef);
-
-        if (!storeDoc.exists()) return;
-
-        const magics = storeDoc.data().magicCategories;
-        if (magics) {
-            updateMagicFeedback(magics);
-        }
-    } catch (err) {
-        console.error("Erro ao carregar feedback mágico:", err);
-    }
-                      }
+        
     </script>
 </body>
 </html>
