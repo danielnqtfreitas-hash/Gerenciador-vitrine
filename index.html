@@ -2657,12 +2657,6 @@ async function initAnalyticsInsights() {
         }
 
         const data = snap.data();
-
-        
-        const listProd = document.getElementById('topProductsList');
-const listSearch = document.getElementById('failedSearchesList');
-
-if (!listProd || !listSearch) return;
         
         // --- 1. PROCESSAR PRODUTOS POPULARES (Lendo do Mapa 'stats') ---
         const stats = data.stats || {};
