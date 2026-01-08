@@ -2658,75 +2658,79 @@ async function initAnalyticsInsights() {
 
         const data = snap.data();
         
-        // --- 1. PROCESSAR PRODUTOS POPULARES (Lendo do Mapa 'stats') ---
-        const stats = data.stats || {};
-        const ranking = Object.keys(stats).map(id => ({
-            name: stats[id].name || "Produto",
-            views: stats[id].views || 0
-        })).sort((a, b) => b.views - a.views).slice(0, 5);
+        // --- PRODUTOS MAIS VISTOS ---
+const stats = data.stats || {};
+const ranking = Object.keys(stats).map(id => ({
+    name: stats[id].name || "Produto",
+    views: stats[id].views || 0
+})).sort((a, b) => b.views - a.views).slice(0, 5);
 
-        const listProd = document.getElementById('topProductsList');
-        if (ranking.length > 0) {
-            listProd.innerHTML = ranking.map((p, index) => {
-    const max = ranking[0]?.views || 1;
-    const percent = Math.round((p.views / max) * 100);
+const listProd = document.getElementById('topProductsList');
 
-    return `
-    <div class="relative p-4 rounded-2xl bg-gradient-to-r from-slate-50 to-white border border-slate-200">
-        
-        <!-- Ranking -->
-        <div class="absolute -left-3 top-1/2 -translate-y-1/2 w-7 h-7 rounded-full 
-            ${index === 0 ? 'bg-yellow-400' : index === 1 ? 'bg-slate-300' : index === 2 ? 'bg-amber-600' : 'bg-slate-200'}
-            text-white text-xs font-black flex items-center justify-center">
-            ${index + 1}
-        </div>
+if (listProd) {
+    if (ranking.length > 0) {
+        const maxViews = ranking[0]?.views || 1;
 
-        <!-- Nome -->
-        <p class="text-sm font-bold text-slate-700 truncate">${p.name}</p>
+        listProd.innerHTML = ranking.map((p, index) => {
+            const percent = Math.round((p.views / maxViews) * 100);
 
-        <!-- Barra -->
-        <div class="mt-2 h-2 bg-slate-100 rounded-full overflow-hidden">
-            <div class="h-full bg-primary-500 rounded-full transition-all" style="width:${percent}%"></div>
-        </div>
+            return `
+            <div class="relative p-4 rounded-2xl bg-gradient-to-r from-slate-50 to-white border border-slate-200">
+                <div class="absolute -left-3 top-1/2 -translate-y-1/2 w-7 h-7 rounded-full 
+                    ${index === 0 ? 'bg-yellow-400' : index === 1 ? 'bg-slate-300' : index === 2 ? 'bg-amber-600' : 'bg-slate-200'}
+                    text-white text-xs font-black flex items-center justify-center">
+                    ${index + 1}
+                </div>
 
-        <!-- Views -->
-        <div class="mt-1 text-[11px] text-slate-500 font-semibold">
-            👀 ${p.views} visualizações
-        </div>
-    </div>`;
-}).join('');
-        }
+                <p class="text-sm font-bold text-slate-700 truncate">${p.name}</p>
 
-        // --- 2. PROCESSAR BUSCAS FALHAS (Lendo do Mapa 'searches') ---
-        const searches = data.searches || {};
-        const listSearch = document.getElementById('failedSearchesList');
-        
-        const searchRanking = Object.entries(searches)
-            .sort((a, b) => b[1] - a[1])
-            .slice(0, 5);
+                <div class="mt-2 h-2 bg-slate-100 rounded-full overflow-hidden">
+                    <div class="h-full bg-primary-500 rounded-full transition-all" style="width:${percent}%"></div>
+                </div>
 
-        if (searchRanking.length > 0) {
-            listSearch.innerHTML = searchRanking.map(([term, count]) => `
-    <div class="p-4 rounded-2xl bg-gradient-to-r from-amber-50 to-white border border-amber-200">
-        
-        <div class="flex items-start justify-between gap-2">
-            <p class="text-sm font-bold text-amber-800 italic">"${term}"</p>
-            <span class="text-[10px] font-black bg-amber-200 text-amber-800 px-2 py-1 rounded-lg">
-                ${count}x
-            </span>
-        </div>
-
-        <p class="mt-1 text-[11px] text-amber-700">
-            Clientes buscaram isso e não encontraram
-        </p>
-
-        <div class="mt-2 text-[10px] text-amber-600 font-semibold">
-            💡 Oportunidade de venda
-        </div>
-    </div>
-`).join(''); 
+                <div class="mt-1 text-[11px] text-slate-500 font-semibold">
+                    👀 ${p.views} visualizações
+                </div>
+            </div>`;
+        }).join('');
+    } else {
+        listProd.innerHTML = `<p class="text-xs text-slate-400 italic">Nenhum dado ainda.</p>`;
+    }
 }
 
+
+// --- BUSCAS PERDIDAS ---
+const searches = data.searches || {};
+const searchRanking = Object.entries(searches)
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 5);
+
+const listSearch = document.getElementById('failedSearchesList');
+
+if (listSearch) {
+    if (searchRanking.length > 0) {
+        listSearch.innerHTML = searchRanking.map(([term, count]) => `
+            <div class="p-4 rounded-2xl bg-gradient-to-r from-amber-50 to-white border border-amber-200">
+                <div class="flex items-start justify-between gap-2">
+                    <p class="text-sm font-bold text-amber-800 italic">"${term}"</p>
+                    <span class="text-[10px] font-black bg-amber-200 text-amber-800 px-2 py-1 rounded-lg">
+                        ${count}x
+                    </span>
+                </div>
+
+                <p class="mt-1 text-[11px] text-amber-700">
+                    Clientes buscaram isso e não encontraram
+                </p>
+
+                <div class="mt-2 text-[10px] text-amber-600 font-semibold">
+                    💡 Oportunidade de venda
+                </div>
+            </div>
+        `).join('');
+    } else {
+        listSearch.innerHTML = `<p class="text-xs text-slate-400 italic">Nenhuma busca perdida.</p>`;
+    }
+}
         // Adicione o window. para garantir que o botão no HTML ache a função
   window.toggleMagicCategory = async function(type, isVisible) {
     if (!currentStoreId) return;
