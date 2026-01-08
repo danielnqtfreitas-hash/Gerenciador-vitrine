@@ -1636,6 +1636,7 @@ setPersistence(auth, browserLocalPersistence)
                         initAnalyticsChart(); 
                         initOrderListener(currentStoreId);
                         loadMagicCategoriesFeedback();
+                        initAnalyticsInsights();
                         // Abre nos pedidos por padrão
                         changeTab('orders');       
                         setTimeout(requestNotificationPermission, 5000);
@@ -3135,22 +3136,38 @@ window.deleteOrder = async (id) => {
     });
 };
 
+async function loadMagicCategoriesFeedback() {
+    if (!currentStoreId) return;
 
-                      async function loadMagicCategoriesFeedback() {
     try {
         const storeRef = doc(db, `stores/${currentStoreId}/config/store`);
-        const storeDoc = await getDoc(storeRef);
+        const snap = await getDoc(storeRef);
 
-        if (!storeDoc.exists()) return;
+        if (!snap.exists()) return;
 
-        const magics = storeDoc.data().magicCategories;
-        if (magics) {
+        const data = snap.data();
+        const magics = data.magicCategories || {};
+
+        // 🔹 Cache global
+        window.storeConfig = data;
+
+        // 🔹 Aplica estado nos toggles
+        const inputNew = document.getElementById('magicNew');
+        const inputTop = document.getElementById('magicTop');
+
+        if (inputNew) inputNew.checked = !!magics.showNew;
+        if (inputTop) inputTop.checked = !!magics.showTop;
+
+        // 🔹 Atualiza feedback visual
+        if (typeof updateMagicFeedback === 'function') {
             updateMagicFeedback(magics);
         }
+
     } catch (err) {
-        console.error("Erro ao carregar feedback mágico:", err);
+        console.error("Erro ao carregar categorias mágicas:", err);
     }
-                      }
+}
+                      
     </script>
 </body>
 </html>
