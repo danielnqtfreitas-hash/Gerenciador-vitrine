@@ -1634,7 +1634,8 @@ setPersistence(auth, browserLocalPersistence)
                         fetchPublicPlansEagerly();
                         initStoreData(); 
                         initAnalyticsChart(); 
-                        initOrderListener(currentStoreId); 
+                        initOrderListener(currentStoreId);
+                        loadMagicCategoriesFeedback();
                         // Abre nos pedidos por padrão
                         changeTab('orders');       
                         setTimeout(requestNotificationPermission, 5000);
@@ -3121,7 +3122,23 @@ window.deleteOrder = async (id) => {
         }
     });
 };
-        
+
+
+                      async function loadMagicCategoriesFeedback() {
+    try {
+        const storeRef = doc(db, `stores/${currentStoreId}/config/store`);
+        const storeDoc = await getDoc(storeRef);
+
+        if (!storeDoc.exists()) return;
+
+        const magics = storeDoc.data().magicCategories;
+        if (magics) {
+            updateMagicFeedback(magics);
+        }
+    } catch (err) {
+        console.error("Erro ao carregar feedback mágico:", err);
+    }
+                      }
     </script>
 </body>
 </html>
