@@ -1,44 +1,64 @@
-importScripts('https://www.gstatic.com/firebasejs/11.6.1/firebase-app-compat.js');
-importScripts('https://www.gstatic.com/firebasejs/11.6.1/firebase-messaging-compat.js');
+importScripts('https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js');
+importScripts('https://www.gstatic.com/firebasejs/10.7.1/firebase-messaging-compat.js');
 
-// 1. Inicializa o Firebase dentro do Service Worker
-firebase.initializeApp({
-    apiKey: "AIzaSyAdwsGBTApwOwqr37qCv72gdPRbipsZG0Q",
-    authDomain: "meuestoque-1badc.firebaseapp.com",
-    projectId: "meuestoque-1badc",
-    messagingSenderId: "730003067834",
-    appId: "1:730003067834:web:b205f1ea59053345960383"
-});
+// CONFIGURAÇÃO DO FIREBASE (Use as mesmas chaves do seu index.html)
+const firebaseConfig = {
+    apiKey: "SUA_API_KEY",
+    authDomain: "SEU_PROJETO.firebaseapp.com",
+    projectId: "SEU_PROJETO",
+    storageBucket: "SEU_PROJETO.appspot.com",
+    messagingSenderId: "SEU_SENDER_ID",
+    appId: "SEU_APP_ID"
+};
 
+firebase.initializeApp(firebaseConfig);
 const messaging = firebase.messaging();
 
-// 2. Listener para mensagens em SEGUNDO PLANO (App Fechado)
+// --- LÓGICA DO PWA (CACHE) ---
+const CACHE_NAME = 'shopwave-cache-v1';
+const ASSETS = [
+    '/',
+    '/index.html',
+    '/manifest.json',
+    // Adicione outros arquivos essenciais aqui
+];
+
+self.addEventListener('install', (event) => {
+    event.waitUntil(
+        caches.open(CACHE_NAME).then((cache) => cache.addAll(ASSETS))
+    );
+});
+
+self.addEventListener('fetch', (event) => {
+    event.respondWith(
+        caches.match(event.request).then((response) => {
+            return response || fetch(event.request);
+        })
+    );
+});
+
+// --- LÓGICA DE NOTIFICAÇÕES (BACKGROUND) ---
 messaging.onBackgroundMessage((payload) => {
-    console.log('Pedido recebido em segundo plano:', payload);
-    const notificationTitle = payload.notification.title || 'Novo Pedido! 🛒';
+    console.log('Mensagem em segundo plano recebida:', payload);
+
+    const notificationTitle = payload.notification.title || "Novo Pedido!";
     const notificationOptions = {
-        body: payload.notification.body || 'Abra o painel para conferir.',
-        icon: 'https://cdn-icons-png.flaticon.com/512/1162/1162456.png',
-        badge: 'https://cdn-icons-png.flaticon.com/512/1162/1162456.png',
-        data: { url: './index.html' }
+        body: payload.notification.body || "Você tem uma nova atualização na loja.",
+        icon: '/icon-192x192.png', // Certifique-se que o caminho do ícone está correto
+        badge: '/icon-192x192.png',
+        vibrate: [200, 100, 200],
+        data: {
+            url: self.location.origin
+        }
     };
+
     self.registration.showNotification(notificationTitle, notificationOptions);
 });
 
-// 3. Cache de arquivos (Mantenha sua lógica atual abaixo)
-const CACHE_NAME = 'painel-v1';
-const ASSETS = ['./', './index.html', './manifest.json'];
-
-self.addEventListener('install', (e) => {
-    self.skipWaiting();
-    e.waitUntil(caches.open(CACHE_NAME).then((cache) => cache.addAll(ASSETS)));
-});
-
-self.addEventListener('fetch', (e) => {
-    e.respondWith(fetch(e.request).catch(() => caches.match(e.request)));
-});
-
+// Ao clicar na notificação, abre o app
 self.addEventListener('notificationclick', (event) => {
     event.notification.close();
-    event.waitUntil(clients.openWindow('./index.html'));
+    event.waitUntil(
+        clients.openWindow('/')
+    );
 });
