@@ -204,12 +204,16 @@
 </head>
 <body class="text-slate-800 antialiased h-screen overflow-y-auto flex bg-slate-50">
 
-<button onclick="document.getElementById('orderDetailModal').classList.add('hidden')" 
-                class="absolute top-3 right-3 bg-white/80 rounded-full p-2 border border-slate-200 shadow">
-            <i data-lucide="x" class="w-5 h-5"></i>
-    <div id="btnVendaRapidaContainer" style="position: fixed; bottom: 24px; right: 24px; z-index: 9999; display: none;">
-    </div>
-        </button>
+<div id="btnVendaRapidaContainer" style="position: fixed; bottom: 24px; right: 24px; z-index: 9999; display: none;">
+    <button onclick="abrirVendaRapida()" 
+        style="width: 64px; height: 64px; background-color: #4f46e5; color: white; border-radius: 50%; border: none; box-shadow: 0 10px 25px rgba(0,0,0,0.3); display: flex; align-items: center; justify-content: center; cursor: pointer; position: relative;">
+        <i data-lucide="plus" style="width: 32px; height: 32px;"></i>
+        <span style="position: absolute; top: -5px; left: -5px; background-color: #f59e0b; color: white; font-size: 10px; font-weight: bold; padding: 2px 8px; border-radius: 10px; text-transform: uppercase;">
+            Venda
+        </span>
+    </button>
+</div>
+ 
     
     <div id="modalVenda" class="hidden fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
     <div class="bg-white w-full max-w-lg rounded-2xl overflow-hidden flex flex-col max-h-[90vh]">
@@ -3368,17 +3372,83 @@ async function finalizarVendaRapida() {
     }
 }
 
-        window.abrirVendaRapida = () => {
-    const modal = document.getElementById('modalVenda');
-    modal.classList.remove('hidden');
-    // Se quiser que o scanner inicie automaticamente ao abrir:
-    // abrirScanner(); 
+        
+// --- LÓGICA DE VENDA RÁPIDA ---
+window.abrirVendaRapida = () => document.getElementById('modalVenda').classList.remove('hidden');
+window.fecharVendaRapida = () => {
+    document.getElementById('modalVenda').classList.add('hidden');
+    carrinhoVenda = [];
+    document.getElementById('carrinhoInterno').innerHTML = '';
+    document.getElementById('totalVendaRapida').innerText = 'R$ 0,00';
 };
 
-window.fecharVendaRapida = () => {
-    const modal = document.getElementById('modalVenda');
-    modal.classList.add('hidden');
-    if(html5QrCode) html5QrCode.stop(); // Para a câmara ao fechar
+window.buscarProdutos = (termo) => {
+    const div = document.getElementById('listaResultados');
+    if (termo.length < 2) { div.innerHTML = ''; return; }
+    
+    // Filtra na variável allProducts que já existe no seu painel
+    const resultados = allProducts.filter(p => 
+        p.name.toLowerCase().includes(termo.toLowerCase()) || 
+        (p.sku && String(p.sku).toLowerCase().includes(termo.toLowerCase()))
+    );
+
+    div.innerHTML = resultados.map(p => `
+        <div onclick='adicionarAoCarrinhoInterno(${JSON.stringify(p).replace(/'/g, "&apos;")})' 
+             class="p-3 bg-white border rounded-xl flex justify-between items-center cursor-pointer hover:bg-slate-50 transition-colors">
+            <div>
+                <p class="font-bold text-sm text-slate-800">${p.name}</p>
+                <p class="text-[10px] text-slate-500 font-mono">SKU: ${p.sku || 'N/A'}</p>
+            </div>
+            <span class="text-primary-600 font-black text-sm">R$ ${(p.price || p.value).toFixed(2)}</span>
+        </div>
+    `).join('');
+};
+
+window.adicionarAoCarrinhoInterno = (p) => {
+    const existe = carrinhoVenda.find(i => i.id === p.id);
+    if (existe) { existe.qty++; } 
+    else {
+        carrinhoVenda.push({ id: p.id, name: p.name, price: parseFloat(p.price || p.value), qty: 1 });
+    }
+    document.getElementById('buscaProduto').value = '';
+    document.getElementById('listaResultados').innerHTML = '';
+    
+    // Atualiza UI do carrinho
+    let total = 0;
+    document.getElementById('carrinhoInterno').innerHTML = carrinhoVenda.map(i => {
+        total += (i.price * i.qty);
+        return `<div class="text-xs bg-slate-50 p-2 rounded-lg border flex justify-between"><span>${i.name} (x${i.qty})</span><b>R$ ${(i.price * i.qty).toFixed(2)}</b></div>`;
+    }).join('');
+    document.getElementById('totalVendaRapida').textContent = `R$ ${total.toFixed(2).replace('.',',')}`;
+};
+
+window.finalizarVendaRapida = async () => {
+    if (carrinhoVenda.length === 0) return;
+    try {
+        const batch = writeBatch(db);
+        const pedidoRef = doc(collection(db, `stores/${currentStoreId}/orders`));
+        
+        batch.set(pedidoRef, {
+            customer: { name: "Venda Presencial (Balcão)", phone: "" },
+            items: carrinhoVenda,
+            total: carrinhoVenda.reduce((acc, i) => acc + (i.price * i.qty), 0),
+            status: 'completed',
+            paymentMethod: 'Presencial',
+            createdAt: serverTimestamp()
+        });
+
+        for (const item of carrinhoVenda) {
+            const prodRef = doc(db, `stores/${currentStoreId}/products/${item.id}`);
+            batch.update(prodRef, { stock: increment(-item.qty) });
+        }
+
+        await batch.commit();
+        showToast("✅ Venda e Estoque atualizados!");
+        fecharVendaRapida();
+    } catch (e) {
+        console.error(e);
+        showToast("Erro ao processar venda.");
+    }
 };
 
                       
