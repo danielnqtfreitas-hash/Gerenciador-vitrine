@@ -1,6 +1,7 @@
 {
   "name": "Painel do Lojista",
   "short_name": "Painel Loja",
+   "gcm_sender_id": "103953800507",
   "description": "Gestão de pedidos em tempo real",
   "start_url": "./index.html",
   "display": "standalone",
