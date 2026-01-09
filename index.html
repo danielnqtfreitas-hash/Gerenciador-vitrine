@@ -1730,37 +1730,42 @@ setPersistence(auth, browserLocalPersistence)
 // --- LISTENER DE PEDIDOS (VERSÃO 5 CARACTERES) ---
 
 window.initOrderListener = (storeId) => {
-    const q = query(collection(db, `stores/${storeId}/orders`), orderBy("createdAt", "desc"));
-    const container = document.getElementById('ordersCardsContainer');
+    const q = query(
+        collection(db, `stores/${storeId}/orders`),
+        orderBy("createdAt", "desc")
+    );
+
+    const container = document.getElementById("ordersCardsContainer");
 
     onSnapshot(q, (snapshot) => {
         if (!container) return;
 
-        ordersCache = {};
+        // Conta pedidos atuais
+        const currentCount = snapshot.size;
 
+        // --- TOCA O SOM SE CHEGOU PEDIDO NOVO ---
+        if (!isFirstLoad && currentCount > lastOrderCount) {
+            try {
+                const audio = new Audio('assets/sound/notification.mp3');
+                audio.play();
+            } catch (e) {
+                console.warn("Falha ao tocar o som:", e);
+            }
+        }
+
+        // Atualiza controle
+        lastOrderCount = currentCount;
+        isFirstLoad = false;
+
+        // Atualiza cache
+        ordersCache = {};
         snapshot.forEach(doc => {
             const p = { id: doc.id, ...doc.data() };
             ordersCache[p.id] = p;
         });
 
+        // Re-renderiza lista
         window.renderFilteredOrders();
-    });
-};
-        // --- LÓGICA DE SOM CORRIGIDA ---
-        // Se a quantidade atual for maior que a última gravada, significa que chegou algo NOVO
-        if (!isFirstLoad && currentCount > lastOrderCount) {
-            const audio = document.getElementById('notifSound');
-            if(audio) {
-                audio.currentTime = 0; // Reinicia o som se já estiver tocando
-                audio.play().catch(e => console.log("Áudio bloqueado"));
-            }
-            showToast("🛒 Novo pedido recebido!");
-            document.getElementById('menuBadgeMobile')?.classList.remove('hidden');
-        }
-        
-        lastOrderCount = currentCount; // Atualiza o contador para a próxima verificação
-        isFirstLoad = false;
-        if (window.lucide) lucide.createIcons();
     });
 };
 
