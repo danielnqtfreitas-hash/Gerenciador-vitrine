@@ -204,6 +204,12 @@
 </head>
 <body class="text-slate-800 antialiased h-screen overflow-y-auto flex bg-slate-50">
 
+<button onclick="document.getElementById('orderDetailModal').classList.add('hidden')" 
+                class="absolute top-3 right-3 bg-white/80 rounded-full p-2 border border-slate-200 shadow">
+            <i data-lucide="x" class="w-5 h-5"></i>
+    <div id="btnVendaRapidaContainer" style="position: fixed; bottom: 24px; right: 24px; z-index: 9999; display: none;">
+    </div>
+        </button>
     
     <div id="modalVenda" class="hidden fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
     <div class="bg-white w-full max-w-lg rounded-2xl overflow-hidden flex flex-col max-h-[90vh]">
@@ -660,11 +666,7 @@
         <div class="auth-card-content p-6 max-h-[80vh] overflow-y-auto">
             <!-- O CONTEÚDO VEM PELO JS -->
         </div>
-
-        <button onclick="document.getElementById('orderDetailModal').classList.add('hidden')" 
-                class="absolute top-3 right-3 bg-white/80 rounded-full p-2 border border-slate-200 shadow">
-            <i data-lucide="x" class="w-5 h-5"></i>
-        </button>
+        
     </div>
       </div>
 
@@ -1772,6 +1774,12 @@ setPersistence(auth, browserLocalPersistence)
                         loadMagicCategoriesFeedback();
                         // Abre nos pedidos por padrão
                         changeTab('orders');       
+                        // Forçar visibilidade se iniciar nos pedidos
+
+const btnVenda = document.getElementById('btnVendaRapidaContainer');
+    if (btnVenda) {
+        btnVenda.style.display = 'block';
+    }
                         setTimeout(requestNotificationPermission, 5000);
                     }
                 } catch (e) {
@@ -2668,6 +2676,16 @@ window.handleBannerSubmit = async (e) => {
     // 6. Atualiza o título no Header e ícones
     const titles = { orders: 'Pedidos', dashboard: 'Dashboard', banners: 'Banners', products: 'Produtos', categories: 'Categorias', config: 'Configurações' };
     document.getElementById('page-title').innerText = titles[tabName] || 'Painel';
+
+     const btnVenda = document.getElementById('btnVendaRapidaContainer');
+    
+    // Se a aba selecionada for a de pedidos, mostra o botão. Senão, esconde.
+    if (nomeDaAba === 'pedidos') { // Ajuste 'pedidos' para o ID exato da sua aba
+        btnVenda.style.display = 'block';
+    } else {
+        btnVenda.style.display = 'none';
+    }
+}
     
     lucide.createIcons();
     
@@ -3281,18 +3299,24 @@ function abrirScanner() {
 }
 
 // Buscar no Firestore
-async function buscarProdutos(termo, autoAdd = false) {
-    if (termo.length < 2) return;
+window.buscarProdutosVenda = async (termo, autoAdd = false) => {
+    if (termo.length < 2) {
+        document.getElementById('listaResultados').innerHTML = '';
+        return;
+    }
     
-    // Busca por SKU ou Nome (precisa ter os dados carregados ou fazer query)
-    // Dica: Use a lista de produtos que você já tem carregada no painel para ser instantâneo
-    const resultados = produtosGerais.filter(p => 
-        p.name.toLowerCase().includes(termo.toLowerCase()) || 
-        p.sku == termo
-    );
+    // Tentamos usar 'allProducts' ou 'produtosGerais'. O que estiver preenchido.
+    const fonteDados = (typeof allProducts !== 'undefined') ? allProducts : (typeof produtosGerais !== 'undefined' ? produtosGerais : []);
+
+    const resultados = fonteDados.filter(p => {
+        const nomeMatch = p.name?.toLowerCase().includes(termo.toLowerCase());
+        const skuMatch = p.sku && String(p.sku).toLowerCase() === termo.toLowerCase();
+        return nomeMatch || skuMatch;
+    });
 
     exibirResultados(resultados, autoAdd);
-}
+};
+
 
 function exibirResultados(lista, autoAdd) {
     const div = document.getElementById('listaResultados');
