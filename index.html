@@ -1039,56 +1039,55 @@ let currentPlan = null;   // 🔹 vem da collection plans
 let isFirstLoad = true;
         let variationsMatrix = [];
 
-        // Este observador garante que a sessão persista
-onAuthStateChanged(auth, (user) => {
-    if (user) {
-        // Se o Firebase encontrar o login salvo, ele entra aqui
-        console.log("Usuário autenticado:", user.uid);
-        currentStoreId = user.uid;
-        CarregarDadosPainel();
-    } else {
-        // Se não encontrar login, apenas mostre a tela de login que já existe no seu index
-        console.log("Nenhum usuário logado. Mostrando tela de autenticação.");
-        
-        // Em vez de redirecionar para outro arquivo, 
-        // apenas garanta que a sua DIV de login apareça:
-        document.getElementById('auth-screen').classList.remove('hidden');
-        document.getElementById('main-content').classList.add('hidden');
+  
+// 1. Forçamos o login a ser LOCAL (não apaga quando fecha a aba)
+setPersistence(auth, browserLocalPersistence)
+    .then(() => {
+        // O observador agora roda "dentro" da garantia de persistência
+        return onAuthStateChanged(auth, (user) => {
+            const authScreen = document.getElementById('auth-screen');
+            const mainContent = document.getElementById('main-content');
+
+            if (user) {
+                console.log("Sessão recuperada com sucesso:", user.uid);
+                currentStoreId = user.uid;
+                
+                // Garante a troca de telas
+                if (authScreen) authScreen.classList.add('hidden');
+                if (mainContent) mainContent.classList.remove('hidden');
+                
+                CarregarDadosPainel();
+            } else {
+                console.log("Nenhum usuário logado.");
+                if (authScreen) authScreen.classList.remove('hidden');
+                if (mainContent) mainContent.classList.add('hidden');
+            }
+        });
+    })
+    .catch((error) => {
+        console.error("Erro ao configurar persistência:", error);
+    });
+
+// 2. Escuta de mensagens (mantido igual)
+onMessage(messaging, (payload) => {
+    console.log('Mensagem recebida com app aberto:', payload);
+    const audio = document.getElementById('notifSound');
+    if(audio) audio.play().catch(e => console.log("Áudio bloqueado"));
+    if (typeof showToast === 'function') {
+        showToast(`🔔 ${payload.notification.title}: ${payload.notification.body}`);
     }
 });
 
-        onMessage(messaging, (payload) => {
-  console.log('Mensagem recebida com app aberto:', payload);
-  
-  // 1. Toca o som de notificação
-  const audio = document.getElementById('notifSound');
-  if(audio) audio.play().catch(e => console.log("Áudio bloqueado pelo navegador"));
-
-  // 2. Mostra o Toast visual no painel
-  if (typeof showToast === 'function') {
-      showToast(`🔔 ${payload.notification.title}: ${payload.notification.body}`);
-  }
-});
-           async function CarregarDadosPainel() {
-            try {
-                // 1. Chame aqui as funções que carregam os dados do banco
-                await loadMagicCategoriesFeedback();
-                
-                // 2. Se você tiver outras funções, chame-as aqui também:
-                // await loadProducts();
-                // await loadBanners();
-
-                // 3. Feedback visual: "Tudo pronto!"
-                console.log("Painel carregado com sucesso.");
-                
-                // 4. (Opcional) Esconda um loading se você tiver um
-                // document.getElementById('loading-screen').classList.add('hidden');
-
-            } catch (error) {
-                console.error("Erro ao carregar os dados do painel:", error);
-                showToast("Erro ao carregar dados", "error");
-            }
-           }
+// 3. Função de carregar dados (mantida igual)
+async function CarregarDadosPainel() {
+    try {
+        await loadMagicCategoriesFeedback();
+        console.log("Dados do painel carregados.");
+    } catch (error) {
+        console.error("Erro no carregamento:", error);
+        if (typeof showToast === 'function') showToast("Erro ao carregar dados", "error");
+    }
+}
 
         // Função para aplicar máscara nos campos de WhatsApp
 function applyPhoneMask(elementId) {
