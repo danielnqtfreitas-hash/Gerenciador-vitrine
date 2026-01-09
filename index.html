@@ -204,6 +204,20 @@
 </head>
 <body class="text-slate-800 antialiased h-screen overflow-y-auto flex bg-slate-50">
 
+   <div id="btnVendaRapidaContainer" style="position: fixed; bottom: 24px; right: 24px; z-index: 9999;">
+    <button onclick="abrirVendaRapida()" 
+        style="width: 64px; height: 64px; background-color: #4f46e5; color: white; border-radius: 50%; border: none; box-shadow: 0 10px 25px rgba(0,0,0,0.3); display: flex; align-items: center; justify-content: center; cursor: pointer;">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" style="width: 32px; height: 32px;" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+        </svg>
+        
+        <span style="position: absolute; top: -5px; left: -5px; background-color: #f59e0b; color: white; font-size: 10px; font-weight: bold; padding: 2px 8px; border-radius: 10px; text-transform: uppercase;">
+            Venda
+        </span>
+    </button>
+     </div>
+    
     <div id="modalVenda" class="hidden fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
     <div class="bg-white w-full max-w-lg rounded-2xl overflow-hidden flex flex-col max-h-[90vh]">
         <div class="p-4 border-b flex justify-between items-center bg-slate-50">
@@ -1057,20 +1071,6 @@
     </div>
 </div>
 <audio id="notifSound" src="https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3" preload="auto" loop></audio>
-
-     <div id="btnVendaRapidaContainer" style="position: fixed; bottom: 24px; right: 24px; z-index: 9999;">
-    <button onclick="abrirVendaRapida()" 
-        style="width: 64px; height: 64px; background-color: #4f46e5; color: white; border-radius: 50%; border: none; box-shadow: 0 10px 25px rgba(0,0,0,0.3); display: flex; align-items: center; justify-content: center; cursor: pointer;">
-        
-        <svg xmlns="http://www.w3.org/2000/svg" style="width: 32px; height: 32px;" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
-        </svg>
-        
-        <span style="position: absolute; top: -5px; left: -5px; background-color: #f59e0b; color: white; font-size: 10px; font-weight: bold; padding: 2px 8px; border-radius: 10px; text-transform: uppercase;">
-            Venda
-        </span>
-    </button>
-     </div>
 
     
     <script type="module">
