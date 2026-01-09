@@ -1,69 +1,44 @@
-const CACHE_NAME = 'painel-v1';
-const ASSETS = [
-  './',
-  './index.html',
-  './manifest.json'
-];
+importScripts('https://www.gstatic.com/firebasejs/11.6.1/firebase-app-compat.js');
+importScripts('https://www.gstatic.com/firebasejs/11.6.1/firebase-messaging-compat.js');
 
-// Instalação: Salva os arquivos básicos no cache usando caminhos relativos (./)
-self.addEventListener('install', (e) => {
-  self.skipWaiting(); // Força o novo Service Worker a assumir o controle imediatamente
-  e.waitUntil(
-    caches.open(CACHE_NAME).then((cache) => cache.addAll(ASSETS))
-  );
+// 1. Inicializa o Firebase dentro do Service Worker
+firebase.initializeApp({
+    apiKey: "AIzaSyAdwsGBTApwOwqr37qCv72gdPRbipsZG0Q",
+    authDomain: "meuestoque-1badc.firebaseapp.com",
+    projectId: "meuestoque-1badc",
+    messagingSenderId: "730003067834",
+    appId: "1:730003067834:web:b205f1ea59053345960383"
 });
 
-// Ativação: Limpa caches antigos se você mudar a versão (CACHE_NAME)
-self.addEventListener('activate', (e) => {
-  e.waitUntil(
-    caches.keys().then((keys) => {
-      return Promise.all(
-        keys.filter(key => key !== CACHE_NAME).map(key => caches.delete(key))
-      );
-    })
-  );
-});
+const messaging = firebase.messaging();
 
-// Estratégia: Tenta buscar na rede primeiro. Se falhar (offline), usa o cache.
-self.addEventListener('fetch', (e) => {
-  e.respondWith(
-    fetch(e.request).catch(() => caches.match(e.request))
-  );
-});
-
-// Listener de Notificações Push (Acorda o celular)
-self.addEventListener('push', (event) => {
-    let data = { title: 'Novo Pedido! 🛒', body: 'Abra o painel para conferir.' };
-    
-    if (event.data) {
-        try {
-            data = event.data.json();
-        } catch (e) {
-            data.body = event.data.text();
-        }
-    }
-
-    const options = {
-        body: data.body,
-        icon: './https://cdn-icons-png.flaticon.com/512/1162/1162456.png', // Ícone do app
-        badge: './https://cdn-icons-png.flaticon.com/512/1162/1162456.png',
-        vibrate: [200, 100, 200, 100, 200, 100, 400], // Vibração padrão iFood
-        data: { url: './index.html' },
-        tag: 'novo-pedido', // Evita empilhar várias notificações iguais
-        renotify: true
+// 2. Listener para mensagens em SEGUNDO PLANO (App Fechado)
+messaging.onBackgroundMessage((payload) => {
+    console.log('Pedido recebido em segundo plano:', payload);
+    const notificationTitle = payload.notification.title || 'Novo Pedido! 🛒';
+    const notificationOptions = {
+        body: payload.notification.body || 'Abra o painel para conferir.',
+        icon: 'https://cdn-icons-png.flaticon.com/512/1162/1162456.png',
+        badge: 'https://cdn-icons-png.flaticon.com/512/1162/1162456.png',
+        data: { url: './index.html' }
     };
-
-    event.waitUntil(
-        self.registration.showNotification(data.title, options)
-    );
+    self.registration.showNotification(notificationTitle, notificationOptions);
 });
 
-// Clique na notificação abre o Painel
+// 3. Cache de arquivos (Mantenha sua lógica atual abaixo)
+const CACHE_NAME = 'painel-v1';
+const ASSETS = ['./', './index.html', './manifest.json'];
+
+self.addEventListener('install', (e) => {
+    self.skipWaiting();
+    e.waitUntil(caches.open(CACHE_NAME).then((cache) => cache.addAll(ASSETS)));
+});
+
+self.addEventListener('fetch', (e) => {
+    e.respondWith(fetch(e.request).catch(() => caches.match(e.request)));
+});
+
 self.addEventListener('notificationclick', (event) => {
     event.notification.close();
-    event.waitUntil(
-        clients.openWindow(event.notification.data.url)
-    );
+    event.waitUntil(clients.openWindow('./index.html'));
 });
-
-
