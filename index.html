@@ -1000,7 +1000,6 @@
         // Procure onde começam os imports e adicione este:
         import { getMessaging, getToken, onMessage } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-messaging.js";
         
-        
         const CONFIG = { 
             apiKey: "AIzaSyAdwsGBTApwOwqr37qCv72gdPRbipsZG0Q", 
             authDomain: "meuestoque-1badc.firebaseapp.com", 
@@ -1030,6 +1029,40 @@ let currentPlan = null;   // 🔹 vem da collection plans
 let isFirstLoad = true;
         let variationsMatrix = [];
 
+        // Este observador garante que a sessão persista
+onAuthStateChanged(auth, (user) => {
+    if (user) {
+        // O usuário está logado! 
+        // Aqui você carrega os dados do lojista
+        console.log("Usuário autenticado:", user.uid);
+        currentStoreId = user.uid; // Ou como você identifica a loja
+        CarregarDadosPainel(); // Função que carrega seu painel
+    } else {
+        // Nenhum usuário logado, redireciona para o login
+        window.location.href = 'login.html';
+    }
+});
+
+           async function CarregarDadosPainel() {
+            try {
+                // 1. Chame aqui as funções que carregam os dados do banco
+                await loadMagicCategoriesFeedback();
+                
+                // 2. Se você tiver outras funções, chame-as aqui também:
+                // await loadProducts();
+                // await loadBanners();
+
+                // 3. Feedback visual: "Tudo pronto!"
+                console.log("Painel carregado com sucesso.");
+                
+                // 4. (Opcional) Esconda um loading se você tiver um
+                // document.getElementById('loading-screen').classList.add('hidden');
+
+            } catch (error) {
+                console.error("Erro ao carregar os dados do painel:", error);
+                showToast("Erro ao carregar dados", "error");
+            }
+           }
 
         // Função para aplicar máscara nos campos de WhatsApp
 function applyPhoneMask(elementId) {
