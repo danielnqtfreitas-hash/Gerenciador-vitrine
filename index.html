@@ -1058,13 +1058,19 @@
 </div>
 <audio id="notifSound" src="https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3" preload="auto" loop></audio>
 
-     <button onclick="abrirVendaRapida()" 
-    class="fixed bottom-6 right-6 w-16 h-16 bg-primary-600 text-white rounded-full shadow-2xl flex items-center justify-center z-40 active:scale-95 transition-transform hover:bg-primary-700">
-    <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
-    </svg>
-    <span class="absolute -top-1 -left-1 bg-amber-500 text-[10px] font-bold px-2 py-0.5 rounded-full uppercase shadow-sm">Venda</span>
-</button>
+     <div id="btnVendaRapidaContainer" style="position: fixed; bottom: 24px; right: 24px; z-index: 9999;">
+    <button onclick="abrirVendaRapida()" 
+        style="width: 64px; height: 64px; background-color: #4f46e5; color: white; border-radius: 50%; border: none; box-shadow: 0 10px 25px rgba(0,0,0,0.3); display: flex; align-items: center; justify-content: center; cursor: pointer;">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" style="width: 32px; height: 32px;" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+        </svg>
+        
+        <span style="position: absolute; top: -5px; left: -5px; background-color: #f59e0b; color: white; font-size: 10px; font-weight: bold; padding: 2px 8px; border-radius: 10px; text-transform: uppercase;">
+            Venda
+        </span>
+    </button>
+     </div>
 
     
     <script type="module">
