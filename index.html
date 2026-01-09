@@ -19,12 +19,21 @@
     <script>
   if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => {
+      // Registra o sw.js
       navigator.serviceWorker.register('sw.js')
-        .then(reg => console.log('PWA ativo!', reg))
-        .catch(err => console.log('Erro no PWA', err));
+        .then(reg => {
+          console.log('SW e PWA ativos!', reg);
+          
+          // Conecta o Firebase Messaging ao Service Worker registrado
+          // Isso é o que garante que as notificações cheguem
+          const messaging = firebase.messaging(); 
+          messaging.useServiceWorker(reg);
+        })
+        .catch(err => console.log('Erro ao registrar SW:', err));
     });
   }
     </script>
+    
     <script>
         tailwind.config = {
             theme: {
@@ -1047,6 +1056,18 @@ onAuthStateChanged(auth, (user) => {
     }
 });
 
+        onMessage(messaging, (payload) => {
+  console.log('Mensagem recebida com app aberto:', payload);
+  
+  // 1. Toca o som de notificação
+  const audio = document.getElementById('notifSound');
+  if(audio) audio.play().catch(e => console.log("Áudio bloqueado pelo navegador"));
+
+  // 2. Mostra o Toast visual no painel
+  if (typeof showToast === 'function') {
+      showToast(`🔔 ${payload.notification.title}: ${payload.notification.body}`);
+  }
+});
            async function CarregarDadosPainel() {
             try {
                 // 1. Chame aqui as funções que carregam os dados do banco
