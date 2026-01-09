@@ -1032,14 +1032,18 @@ let isFirstLoad = true;
         // Este observador garante que a sessão persista
 onAuthStateChanged(auth, (user) => {
     if (user) {
-        // O usuário está logado! 
-        // Aqui você carrega os dados do lojista
+        // Se o Firebase encontrar o login salvo, ele entra aqui
         console.log("Usuário autenticado:", user.uid);
-        currentStoreId = user.uid; // Ou como você identifica a loja
-        CarregarDadosPainel(); // Função que carrega seu painel
+        currentStoreId = user.uid;
+        CarregarDadosPainel();
     } else {
-        // Nenhum usuário logado, redireciona para o login
-        window.location.href = 'login.html';
+        // Se não encontrar login, apenas mostre a tela de login que já existe no seu index
+        console.log("Nenhum usuário logado. Mostrando tela de autenticação.");
+        
+        // Em vez de redirecionar para outro arquivo, 
+        // apenas garanta que a sua DIV de login apareça:
+        document.getElementById('auth-screen').classList.remove('hidden');
+        document.getElementById('main-content').classList.add('hidden');
     }
 });
 
