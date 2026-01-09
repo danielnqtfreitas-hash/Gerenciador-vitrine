@@ -3204,7 +3204,7 @@ async function loadMagicCategoriesFeedback() {
         return;
     }
 
-    // AGRUPAMENTO POR DATA
+    // --- AGRUPAMENTO POR DATA ---
     const groups = {};
 
     list.forEach(p => {
@@ -3217,7 +3217,7 @@ async function loadMagicCategoriesFeedback() {
 
     let html = "";
 
-    // LOOP PARA MONTAR SEÇÕES POR DATA
+    // --- MONTA AS SEÇÕES POR DATA ---
     Object.keys(groups).forEach(date => {
         html += `
             <div class="bg-slate-100 text-slate-600 text-[10px] font-black px-4 py-2 rounded-full border border-slate-200 uppercase mt-4 mb-2">
@@ -3226,6 +3226,7 @@ async function loadMagicCategoriesFeedback() {
         `;
 
         groups[date].forEach(p => {
+
             const hour = p.createdAt
                 ? new Date(p.createdAt.toDate()).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
                 : "--:--";
@@ -3240,7 +3241,7 @@ async function loadMagicCategoriesFeedback() {
 
             const shortId = p.id.toUpperCase().slice(-5);
 
-            // CARD ORIGINAL
+            // --- CARD ORIGINAL ---
             html += `
                 <div onclick="window.openOrderModal('${p.id}')"
                      class="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm active:scale-[0.98] transition-all flex justify-between items-center mb-3">
