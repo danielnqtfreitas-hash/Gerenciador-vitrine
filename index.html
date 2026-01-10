@@ -3075,17 +3075,54 @@ async function initAnalyticsInsights() {
 
 
         
-
 window.deleteOrder = async (id) => {
-    if(!confirm("Tens a certeza que desejas excluir este pedido permanentemente?")) return;
+    // 1. Confirmação de segurança
+    if(!confirm("Tem a certeza que deseja excluir este pedido? Se houver estoque deduzido, ele será devolvido automaticamente antes da exclusão.")) return;
+    
     try {
+        const p = ordersCache[id];
+        if(!p) return;
+
+        // 2. VERIFICAÇÃO DE ESTOQUE: Se o estoque foi tirado, precisamos devolver antes de apagar
+        if (p.stockDeducted === true) {
+            console.log("Devolvendo estoque antes de excluir o pedido...");
+            
+            const restorePromises = p.items.map(async (item) => {
+                const productRef = doc(db, `stores/${currentStoreId}/products`, item.id);
+                const snap = await getDoc(productRef);
+                
+                if (snap.exists()) {
+                    const currentStock = Number(snap.data().stock) || 0;
+                    const newStock = currentStock + Number(item.qty);
+                    
+                    // Devolve o item e garante que o produto fique ativo se o estoque for > 0
+                    return updateDoc(productRef, { 
+                        stock: newStock,
+                        status: 'active' 
+                    });
+                }
+            });
+            
+            await Promise.all(restorePromises);
+        }
+
+        // 3. AGORA SIM, EXCLUIMOS O PEDIDO
         await deleteDoc(doc(db, `stores/${currentStoreId}/orders`, id));
-        showToast("Pedido excluído! 🗑️");
+
+        // 4. LIMPEZA DE CACHE E SINCRONIZAÇÃO
+        localStorage.removeItem('app_cache_v4_' + currentStoreId);
+        await updateDoc(doc(db, `stores/${currentStoreId}/config/store`), { lastUpdate: Date.now() });
+
+        showToast("Pedido excluído e estoque restaurado! 🗑️");
         document.getElementById('orderDetailModal').classList.add('hidden');
+
     } catch (e) {
-        showToast("Erro ao excluir.");
+        console.error("Erro ao excluir pedido:", e);
+        showToast("Erro ao excluir o pedido.");
     }
-};  
+};
+
+
 
     window.calculateProfit = () => {
   const cost = parseFloat(document.getElementById('prodCost').value) || 0;
