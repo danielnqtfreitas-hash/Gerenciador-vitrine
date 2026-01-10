@@ -3597,18 +3597,32 @@ window.updateOrderStatus = async (id, status) => {
         const orderUpdate = { status: status };
 
         if ((status === 'confirmed' || status === 'completed') && !alreadyDeducted) {
+            console.log("Iniciando baixa de estoque para o pedido:", id);
+            
             const stockPromises = p.items.map(async (item) => {
                 const productRef = doc(db, `stores/${currentStoreId}/products`, item.id);
                 const snap = await getDoc(productRef);
                 
                 if (snap.exists()) {
-                    const newStock = (snap.data().stock || 0) - item.qty;
+                    const data = snap.data();
+                    const currentStock = Number(data.stock) || 0;
+                    const qtyVendida = Number(item.qty) || 0;
+                    const newStock = Math.max(0, currentStock - qtyVendida);
+                    
+                    console.log(`Produto: ${data.name} | Tinha: ${currentStock} | Vendeu: ${qtyVendida} | Sobrou: ${newStock}`);
+                    
                     const updateData = { stock: newStock };
-                    // Se zerar, oculta o produto (muda status para paused)
-                    if (newStock <= 0) updateData.status = 'paused';
+                    
+                    // Só oculta se realmente chegar a zero
+                    if (newStock <= 0) {
+                        updateData.status = 'paused';
+                        console.log("Estoque zerado. Ocultando produto na vitrine.");
+                    }
+                    
                     return updateDoc(productRef, updateData);
                 }
             });
+
             await Promise.all(stockPromises);
             orderUpdate.stockDeducted = true; 
         }
@@ -3620,12 +3634,15 @@ window.updateOrderStatus = async (id, status) => {
             window.open(`https://wa.me/55${p.customer.phone.replace(/\D/g,'')}?text=${encodeURIComponent(msg)}`, '_blank');
         }
 
-        showToast("Estoque e Vitrine sincronizados! ✅");
+        showToast("Estoque e Status atualizados! ✅");
         document.getElementById('orderDetailModal').classList.add('hidden');
     } catch (e) {
+        console.error("ERRO CRÍTICO NO ESTOQUE:", e);
         showToast("Erro ao processar estoque.");
     }
 };
+
+
 
 window.startBarcodeScanner = () => {
     const container = document.getElementById('scanner-container');
