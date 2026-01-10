@@ -2714,14 +2714,8 @@ window.handleBannerSubmit = async (e) => {
         toggleMobileSidebar();
     }
 };
-
-
     
-            if (tabName === 'finance') {
-    window.initFinanceDashboard();
-            }
-};
-
+            
         window.toggleMobileSidebar = () => { 
             const sb = document.getElementById('mobileSidebar'); const ov = document.getElementById('mobileOverlay'); 
             if(sb.classList.contains('sidebar-hidden')){ sb.classList.replace('sidebar-hidden','sidebar-visible'); ov.classList.remove('hidden'); } 
