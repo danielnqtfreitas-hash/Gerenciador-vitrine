@@ -198,6 +198,12 @@
                 class="w-full p-3 rounded-xl border border-slate-200">
             <input id="manualAddress" type="text" placeholder="Endereço (opcional)"
                 class="w-full p-3 rounded-xl border border-slate-200">
+            <select id="manualPayment" class="w-full p-3 rounded-xl border border-slate-200 bg-white">
+    <option value="">Selecione a forma de pagamento</option>
+    <option value="pix">PIX</option>
+    <option value="cartao_credito">Cartão</option>
+    <option value="dinheiro">Dinheiro</option>
+            </select>
         </div>
 
         <!-- Campo de busca de produtos -->
@@ -3483,6 +3489,12 @@ window.finishManualOrder = async () => {
     const name = document.getElementById("manualName")?.value || "Cliente Local";
     const phone = document.getElementById("manualPhone")?.value || "";
     const address = document.getElementById("manualAddress")?.value || "";
+    const payment = document.getElementById("manualPayment").value;
+
+if (!payment) {
+    alert("Escolha a forma de pagamento.");
+    return;
+}
 
     const total = manualOrder.reduce((sum, i) => sum + i.qty * i.price, 0);
 
@@ -3490,6 +3502,7 @@ window.finishManualOrder = async () => {
         customer: {
             name,
             phone,
+            paymentMethod: payment,
             address
         },
         items: manualOrder,
