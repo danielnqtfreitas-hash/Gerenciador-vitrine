@@ -587,9 +587,7 @@
                 </div>
              </div>
 
-         <div id="view-finance" class="max-w-6xl mx-auto space-y-8 hidden animate-fade-in">
-
-    <div class="max-w-6xl mx-auto space-y-8 p-4 md:p-0">
+             <div id="view-finance" class="max-w-6xl mx-auto space-y-8 hidden animate-fade-in">
     <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div>
             <h3 class="text-3xl font-extrabold text-slate-900 tracking-tight">Gestão Financeira</h3>
@@ -613,7 +611,7 @@
                 <h3 class="text-4xl font-black mb-4" id="fin-rev-day">R$ 0,00</h3>
                 <div class="flex items-center gap-2 text-green-400 text-xs font-bold">
                     <i data-lucide="shopping-bag" class="w-4 h-4"></i>
-                    <span id="fin-orders-day">0 pedidos realizados</span>
+                    <span id="fin-orders-day">0 pedidos hoje</span>
                 </div>
             </div>
             <div class="absolute -right-10 -bottom-10 w-40 h-40 bg-primary-600/20 rounded-full blur-3xl"></div>
@@ -630,16 +628,13 @@
         <div class="bg-white rounded-[2.5rem] p-8 border border-slate-200 shadow-sm border-l-4 border-l-green-500">
             <p class="text-xs font-bold text-slate-400 uppercase tracking-widest mb-2">Lucro Potencial</p>
             <h3 class="text-3xl font-black text-green-600" id="fin-profit-potential">R$ 0,00</h3>
-            <p class="text-[10px] text-slate-400 mt-2 font-medium italic">Baseado no estoque atual vs custo.</p>
+            <p class="text-[10px] text-slate-400 mt-2 font-medium italic">Baseado no stock atual.</p>
         </div>
     </div>
 
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
         <div class="lg:col-span-2 bg-white rounded-[2.5rem] p-8 border border-slate-200 shadow-sm">
-            <div class="flex justify-between items-center mb-8">
-                <h4 class="font-bold text-slate-800">Evolução de Vendas</h4>
-                <i data-lucide="bar-chart-3" class="w-5 h-5 text-slate-300"></i>
-            </div>
+            <h4 class="font-bold text-slate-800 mb-8">Evolução de Vendas</h4>
             <div class="h-64 relative">
                 <canvas id="growthChart"></canvas>
             </div>
@@ -649,33 +644,24 @@
             <div class="bg-primary-600 rounded-[2.5rem] p-6 text-white shadow-xl">
                 <p class="text-[10px] font-black opacity-60 uppercase tracking-widest mb-1">Total Histórico</p>
                 <h3 class="text-2xl font-black" id="fin-rev-total">R$ 0,00</h3>
-                <div class="mt-4 pt-4 border-t border-white/10 flex justify-between items-center">
-                    <span class="text-[10px] font-bold opacity-80 uppercase">Desde a abertura</span>
-                    <i data-lucide="globe" class="w-4 h-4 opacity-50"></i>
-                </div>
             </div>
 
             <div class="bg-white rounded-[2.5rem] p-6 border border-slate-200 shadow-sm">
-                <div class="flex items-center gap-3 mb-4">
-                    <div class="w-8 h-8 bg-slate-100 rounded-lg flex items-center justify-center text-slate-600">
-                        <i data-lucide="package-search" class="w-4 h-4"></i>
-                    </div>
-                    <p class="text-xs font-black text-slate-500 uppercase tracking-widest">Valor em Estoque</p>
-                </div>
+                <p class="text-xs font-black text-slate-500 uppercase tracking-widest mb-4">Patrimônio em Stock</p>
                 <h3 class="text-xl font-bold text-slate-800" id="fin-stock-value">R$ 0,00</h3>
-                <p class="text-[10px] text-slate-400 font-bold mt-1" id="fin-stock-count">0 unidades</p>
-                
                 <div class="mt-4 p-3 bg-slate-50 rounded-2xl border border-slate-100">
                     <p class="text-[9px] font-black text-slate-400 uppercase">Custo de Aquisição</p>
                     <p class="text-sm font-bold text-slate-700" id="fin-stock-cost">R$ 0,00</p>
                 </div>
+                <p class="text-[10px] text-slate-400 font-bold mt-2 text-center" id="fin-stock-count">0 unidades</p>
             </div>
         </div>
     </div>
 
-    <div id="fin-growth-feedback" class="bg-gradient-to-r from-primary-500 to-indigo-600 rounded-[2rem] p-6 text-white text-center shadow-lg transform transition-hover hover:scale-[1.01]">
-        </div>
+    <div id="fin-growth-feedback" class="bg-slate-100 rounded-[2rem] p-6 text-slate-600 text-center border-2 border-dashed border-slate-200">
     </div>
+</div>
+         
 
             <div id="view-banners" class="max-w-6xl mx-auto space-y-6 hidden animate-fade-in">
                 <div class="flex justify-between items-center">
@@ -3246,7 +3232,7 @@ window.deleteOrder = async (id) => {
     // 2. Destruir gráfico anterior se existir (evita sobreposição)
     if (growthChartInstance) growthChartInstance.destroy();
 
-        // 3. Criar o novo gráfico
+          // 3. Criar o novo gráfico
     growthChartInstance = new Chart(ctx, {
         type: 'bar', 
         data: {
@@ -3254,50 +3240,22 @@ window.deleteOrder = async (id) => {
             datasets: [{
                 label: 'Faturação Mensal',
                 data: values,
-                // --- AJUSTES ESTÉTICOS AQUI ---
-                backgroundColor: '#7c3aed',     // Roxo Primary 600
-                borderRadius: 12,               // Mais arredondado (estilo iOS/Moderno)
-                hoverBackgroundColor: '#4f46e5', // Muda para um azul/índigo ao passar o mouse
-                borderSkipped: false,           // Garante que todas as quinas fiquem redondas se quiser
-                // ------------------------------
+                backgroundColor: '#7c3aed',
+                borderRadius: 12,
+                hoverBackgroundColor: '#4f46e5'
             }]
         },
         options: {
             responsive: true,
             maintainAspectRatio: false,
-            plugins: { 
-                legend: { display: false },
-                tooltip: {
-                    backgroundColor: '#1e293b', // Fundo do balãozinho em Slate 800
-                    titleFont: { size: 12, weight: 'bold' },
-                    bodyFont: { size: 12 },
-                    padding: 12,
-                    displayColors: false,
-                    callbacks: {
-                        label: (context) => ` R$ ${context.parsed.y.toFixed(2).replace('.', ',')}`
-                    }
-                }
-            },
+            plugins: { legend: { display: false } },
             scales: {
-                y: { 
-                    beginAtZero: true, 
-                    grid: { display: false }, 
-                    ticks: { 
-                        font: { size: 10, weight: '600' },
-                        color: '#94a3b8',
-                        callback: (value) => 'R$ ' + value
-                    } 
-                },
-                x: { 
-                    grid: { display: false }, 
-                    ticks: { 
-                        font: { size: 10, weight: '600' },
-                        color: '#94a3b8' 
-                    } 
-                }
+                y: { beginAtZero: true, grid: { display: false }, ticks: { font: { size: 10 } } },
+                x: { grid: { display: false }, ticks: { font: { size: 10 } } }
             }
         }
     });
+};
 
 
 async function loadMagicCategoriesFeedback() {
