@@ -2122,18 +2122,25 @@ if (!skuInput.value) {
             }
         }
 
-        // --- CONVERSÃO EXPLÍCITA PARA NÚMERO (Evita erros de salvamento) ---
-        const stock = parseInt(document.getElementById('prodStock').value) || 0;
-        const cost = parseFloat(document.getElementById('prodCost').value) || 0;
-        const price = parseFloat(document.getElementById('prodValue').value) || 0;
+        // --- CORREÇÃO CRÍTICA: CAPTURA E CONVERSÃO SEGURA ---
+        // Pegamos os valores brutos e garantimos que sejam números reais
+        const stockInput = document.getElementById('prodStock').value;
+        const costInput = document.getElementById('prodCost').value;
+        const priceInput = document.getElementById('prodValue').value;
+
+        const stock = parseInt(stockInput) || 0;
+        const cost = parseFloat(costInput) || 0;
+        const price = parseFloat(priceInput) || 0;
         const profit = price - cost;
 
-        // 2. Lógica de Status (Ocultação de segurança)
+        // 2. Lógica de Status (Mantendo o estado atual ou pausando se zerar)
         const existingProd = allProducts.find(p => p.id === id);
         let statusFinal = existingProd ? (existingProd.status || 'active') : 'active';
         
-        // Se salvar com estoque zerado, força o status 'paused'
+        // Se o lojista salvou com 0, o produto deve ser pausado automaticamente
         if (stock <= 0) statusFinal = 'paused';
+        // Se o lojista adicionou estoque (>0) e o produto estava pausado, podemos manter pausado 
+        // ou você pode decidir reativar aqui.
 
         const data = {
             name: document.getElementById('prodName').value,
@@ -2141,7 +2148,7 @@ if (!skuInput.value) {
             category: document.getElementById('prodCategory').value,
             value: price,
             promoValue: parseFloat(document.getElementById('prodPromo').value) || null,            
-            stock: stock, // Aqui garantimos que é um número
+            stock: stock, 
             cost: cost,
             profit: profit,
             images: imageUrls,
@@ -2158,16 +2165,15 @@ if (!skuInput.value) {
         const docRef = doc(db, `stores/${currentStoreId}/products`, finalId);
         await setDoc(docRef, data, { merge: true });
 
-        // --- SOLUÇÃO PARA O SEU PROBLEMA: LIMPAR CACHE LOCAL ---
-        // Isso obriga o navegador a ler o valor novo (10) em vez do antigo (0)
+        // --- LIMPEZA DE CACHE ---
+        // Se você não limpar o cache, o navegador continuará lendo "0" do localStorage
         const CACHE_KEY = `app_cache_v4_${currentStoreId}`;
         localStorage.removeItem(CACHE_KEY);
 
-        // Atualizar o carimbo de tempo da loja
         const storeRef = doc(db, `stores/${currentStoreId}/config/store`);
         await setDoc(storeRef, { lastUpdate: Date.now() }, { merge: true });
 
-        showToast("✅ Publicado e estoque atualizado!");
+        showToast("✅ Produto salvo com estoque: " + stock);
         if(modal) modal.classList.add('hidden'); 
         currentProductImages = []; 
 
@@ -2179,6 +2185,7 @@ if (!skuInput.value) {
         if(loader) loader.classList.add('hidden');
     }
 };
+
 
         
        window.deleteProduct = async (id, imageUrls = []) => {
