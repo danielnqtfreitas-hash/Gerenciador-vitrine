@@ -184,6 +184,59 @@
 </head>
 <body class="text-slate-800 antialiased h-screen overflow-y-auto flex bg-slate-50">
     
+   <!-- MODAL: Pedido Manual -->
+<div id="manualOrderModal" class="fixed inset-0 bg-black/40 backdrop-blur-sm z-[999] hidden flex items-center justify-center">
+    <div class="bg-white w-[95%] max-w-lg p-6 rounded-2xl shadow-xl max-h-[90vh] overflow-y-auto">
+
+        <h2 class="text-xl font-bold text-slate-800 mb-4">Novo Pedido Rápido</h2>
+
+        <!-- Dados do cliente -->
+        <div class="space-y-3 mb-6">
+            <input id="manualName" type="text" placeholder="Nome do cliente (opcional)"
+                class="w-full p-3 rounded-xl border border-slate-200">
+            <input id="manualPhone" type="text" placeholder="WhatsApp (opcional)"
+                class="w-full p-3 rounded-xl border border-slate-200">
+            <input id="manualAddress" type="text" placeholder="Endereço (opcional)"
+                class="w-full p-3 rounded-xl border border-slate-200">
+        </div>
+
+        <!-- Campo de busca de produtos -->
+        <div class="relative mb-3">
+            <i data-lucide="search" class="absolute left-4 top-3 text-slate-400 w-4 h-4"></i>
+            <input 
+    id="manualProductSearch"
+    oninput="window.renderManualProductSearch()"
+    type="text" 
+    placeholder="Buscar produto por nome ou código..."
+    class="w-full pl-12 p-3 rounded-xl border border-slate-200 bg-white shadow-sm">
+        </div>
+
+        <!-- Resultados da busca -->
+        <div id="manualSearchResults" class="space-y-2 max-h-52 overflow-y-auto mb-4"></div>
+
+        <!-- Items adicionados -->
+        <div id="manualOrderItems" class="space-y-3 mb-6"></div>
+
+        <!-- Total -->
+        <div class="flex justify-between items-center text-lg font-bold text-slate-800 border-t pt-3 mb-4">
+            <span>Total:</span>
+            <span id="manualTotal">R$ 0,00</span>
+        </div>
+
+        <!-- Botões -->
+        <div class="flex justify-end gap-3">
+            <button onclick="window.closeManualOrderModal()" class="px-4 py-2 rounded-xl border border-slate-300">
+                Cancelar
+            </button>
+
+            <button class="px-4 py-2 rounded-xl bg-primary-600 text-white shadow">
+                Finalizar Pedido
+            </button>
+        </div>
+
+    </div>
+</div>
+    
     <div id="toast-container" class="fixed top-5 right-5 z-[999] flex flex-col gap-2 pointer-events-none"></div>
     <!-- LOGIN / REGISTER SCREEN -->
     <div id="auth-screen" class="fixed inset-0 z-[200] bg-slate-900 flex items-center justify-center p-4">
