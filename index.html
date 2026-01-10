@@ -510,10 +510,11 @@
             
             </div>
              <button 
+    id="fabAddOrder"
     onclick="window.openManualOrderModal()"
-    class="fixed bottom-6 right-6 bg-primary-600 text-white w-14 h-14 rounded-full shadow-lg flex items-center justify-center active:scale-95 transition-all z-[9999]">
+    class="fixed bottom-6 right-6 bg-primary-600 text-white w-14 h-14 rounded-full shadow-lg flex items-center justify-center active:scale-95 transition-all z-40">
     <i data-lucide="plus" class="w-6 h-6"></i>
-</button>
+           </button>
 
              <div id="view-dashboard" class="max-w-6xl mx-auto space-y-6 hidden animate-fade-in">
             <div class="bg-white rounded-3xl border border-slate-200 p-8 flex flex-col md:flex-row items-center justify-between shadow-sm gap-6">
@@ -3380,16 +3381,24 @@ async function loadMagicCategoriesFeedback() {
 
 window.openManualOrderModal = () => {
     const modal = document.getElementById("manualOrderModal");
+    const fab = document.getElementById("fabAddOrder");
+    
     if (modal) {
         modal.classList.remove("hidden");
-        lucide.createIcons(); // garante que os ícones carregam no modal
+        // Esconde o FAB para não atrapalhar a digitação
+        if (fab) fab.classList.add("hidden"); 
+        lucide.createIcons();
     }
 };
 
 window.closeManualOrderModal = () => {
     const modal = document.getElementById("manualOrderModal");
+    const fab = document.getElementById("fabAddOrder");
+    
     if (modal) {
         modal.classList.add("hidden");
+        // Mostra o FAB novamente ao fechar o modal
+        if (fab) fab.classList.remove("hidden");
     }
 };
 
