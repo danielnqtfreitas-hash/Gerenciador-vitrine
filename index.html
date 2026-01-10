@@ -3790,12 +3790,13 @@ window.updateFinanceRange = (range) => {
 window.initFinanceDashboard = () => {
     const now = new Date();
     const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
+    const monthStart = new Date(now.getFullYear(), now.getMonth(), 1).getTime(); // Fixo: 1º dia deste mês
     
     let filterStart = todayStart;
     let filterEnd = Infinity;
     let label = "Vendas Hoje";
 
-    // Lógica de definição do tempo
+    // Lógica do filtro de botões
     if (currentFinanceRange === 'yesterday') {
         filterStart = todayStart - (24 * 60 * 60 * 1000);
         filterEnd = todayStart;
@@ -3804,7 +3805,7 @@ window.initFinanceDashboard = () => {
         filterStart = now.getTime() - (7 * 24 * 60 * 60 * 1000);
         label = "Últimos 7 Dias";
     } else if (currentFinanceRange === 'month') {
-        filterStart = new Date(now.getFullYear(), now.getMonth(), 1).getTime();
+        filterStart = monthStart;
         label = "Vendas no Mês";
     } else if (currentFinanceRange === 'custom') {
         filterStart = customStart;
@@ -3812,7 +3813,10 @@ window.initFinanceDashboard = () => {
         label = "Período Selecionado";
     }
 
-    let revFiltered = 0, countFiltered = 0, revTotalAll = 0;
+    let revFiltered = 0;      // Valor que muda com o filtro
+    let countFiltered = 0;    // Quantidade que muda com o filtro
+    let revMonthFixed = 0;    // Valor SEMPRE do mês atual (acumulado)
+    let revTotalAll = 0;      // Valor histórico total
 
     Object.values(ordersCache).forEach(order => {
         let orderTime = 0;
@@ -3820,30 +3824,40 @@ window.initFinanceDashboard = () => {
         else if (order.createdAt?.toDate) orderTime = order.createdAt.toDate().getTime();
         
         const value = Number(order.total) || 0;
+
         if (order.status !== 'canceled' && order.status !== 'Cancelado') {
             revTotalAll += value;
+
+            // 1. Soma para o filtro selecionado (Hoje/Ontem/Calendário)
             if (orderTime >= filterStart && orderTime <= filterEnd) {
                 revFiltered += value;
                 countFiltered++;
             }
+
+            // 2. Soma FIXA para o acumulado do mês (Independente do filtro)
+            if (orderTime >= monthStart) {
+                revMonthFixed += value;
+            }
         }
     });
 
-    // Atualiza a tela
     const setTxt = (id, txt) => {
         const el = document.getElementById(id);
         if(el) el.textContent = txt;
     };
 
-    // Atualiza o título do card principal
+    // Atualiza o título do card principal conforme o botão
     const cardTitle = document.querySelector('#view-finance p.text-slate-400');
     if(cardTitle) cardTitle.textContent = label.toUpperCase();
 
-    setTxt('fin-rev-day', `R$ ${revFiltered.toFixed(2).replace('.',',')}`);
+    // EXIBIÇÃO DOS DADOS
+    setTxt('fin-rev-day', `R$ ${revFiltered.toFixed(2).replace('.',',')}`); // Valor Filtrado
     setTxt('fin-orders-day', `${countFiltered} pedidos no período`);
+    
+    setTxt('fin-rev-month', `R$ ${revMonthFixed.toFixed(2).replace('.',',')}`); // FIXO: Acumulado do Mês
     setTxt('fin-rev-total', `R$ ${revTotalAll.toFixed(2).replace('.',',')}`);
 
-    // Cálculo de estoque permanece sempre atualizado
+    // Cálculos de estoque permanecem iguais
     let stockValue = 0, stockCost = 0, totalItems = 0;
     allProducts.forEach(p => {
         const qty = Number(p.stock) || 0;
@@ -3859,8 +3873,6 @@ window.initFinanceDashboard = () => {
 
     if (typeof initGrowthChart === 'function') initGrowthChart();
 };
-
-
 
     </script>
 </body>
