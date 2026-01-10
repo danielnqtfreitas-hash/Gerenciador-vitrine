@@ -2649,10 +2649,11 @@ window.handleBannerSubmit = async (e) => {
         window.changeTab = (tabName) => {
     // 1. Lista de todas as suas abas
     const tabs = ['orders', 'dashboard', 'banners', 'products', 'categories', 'config', 'finance'];
+    const fab = document.getElementById('fabAddOrder'); // [NOVO] Referência ao botão
 
     // 2. Loop para esconder todas as views e resetar os botões
     tabs.forEach(tab => {
-        // Esconde a div de conteúdo (ex: view-products, view-orders...)
+        // Esconde a div de conteúdo
         const view = document.getElementById(`view-${tab}`);
         if (view) view.classList.add('hidden');
 
@@ -2679,13 +2680,37 @@ window.handleBannerSubmit = async (e) => {
     if (tabName === 'orders') {
         document.getElementById('menuBadge')?.classList.add('hidden');
         document.getElementById('menuBadgeMobile')?.classList.add('hidden');
+        if (fab) fab.classList.remove('hidden'); // [NOVO] Mostra o botão se for Pedidos
+    } else {
+        if (fab) fab.classList.add('hidden'); // [NOVO] Esconde o botão nas outras abas
     }
 
     // 6. Atualiza o título no Header e ícones
-    const titles = { orders: 'Pedidos', dashboard: 'Dashboard', banners: 'Banners', products: 'Produtos', categories: 'Categorias', config: 'Configurações' };
+    const titles = { 
+        orders: 'Pedidos', 
+        dashboard: 'Dashboard', 
+        banners: 'Banners', 
+        products: 'Produtos', 
+        categories: 'Categorias', 
+        config: 'Configurações',
+        finance: 'Financeiro' 
+    };
     document.getElementById('page-title').innerText = titles[tabName] || 'Painel';
     
+    // 7. Mantém a inicialização do financeiro (se existir no seu código)
+    if (tabName === 'finance' && typeof window.initFinanceDashboard === 'function') {
+        window.initFinanceDashboard();
+    }
+
     lucide.createIcons();
+
+    // Fecha sidebar mobile se estiver aberta
+    if (typeof toggleMobileSidebar === 'function' && !document.getElementById('mobileSidebar').classList.contains('sidebar-hidden')) {
+        toggleMobileSidebar();
+    }
+};
+
+    
     
     // Fecha sidebar mobile se estiver aberta
     if (typeof toggleMobileSidebar === 'function' && !document.getElementById('mobileSidebar').classList.contains('sidebar-hidden')) {
@@ -3395,12 +3420,17 @@ window.closeManualOrderModal = () => {
     const modal = document.getElementById("manualOrderModal");
     const fab = document.getElementById("fabAddOrder");
     
-    if (modal) {
-        modal.classList.add("hidden");
-        // Mostra o FAB novamente ao fechar o modal
-        if (fab) fab.classList.remove("hidden");
+    // Verifica se a aba de pedidos está ativa no momento
+    const isOrdersTab = document.getElementById('nav-orders').classList.contains('active');
+
+    if (modal) modal.classList.add("hidden");
+    
+    // Só mostra o FAB novamente se o modal fechar E o usuário ainda estiver na aba de pedidos
+    if (fab && isOrdersTab) {
+        fab.classList.remove("hidden");
     }
 };
+
 
         // --- BUSCA DE PRODUTOS PARA PEDIDO MANUAL ---
 
@@ -3519,7 +3549,6 @@ window.updateManualTotal = () => {
 
         // --- FINALIZAR E SALVAR O PEDIDO MANUAL ---
 window.finishManualOrder = async () => {
-
     if (manualOrder.length === 0) {
         alert("Adicione pelo menos 1 item ao pedido.");
         return;
@@ -3530,10 +3559,10 @@ window.finishManualOrder = async () => {
     const address = document.getElementById("manualAddress")?.value || "";
     const payment = document.getElementById("manualPayment").value;
 
-if (!payment) {
-    alert("Escolha a forma de pagamento.");
-    return;
-}
+    if (!payment) {
+        alert("Escolha a forma de pagamento.");
+        return;
+    }
 
     const total = manualOrder.reduce((sum, i) => sum + i.qty * i.price, 0);
 
@@ -3541,31 +3570,35 @@ if (!payment) {
         customer: {
             name,
             phone,
-            paymentMethod: payment,
             address
         },
+        paymentMethod: payment, // MOVIDO PARA FORA: Agora o modal de detalhes vai encontrar
         items: manualOrder,
         total: Number(total.toFixed(2)),
-        status: "confirmed", // considerado venda normal
+        status: "confirmed",
         createdAt: new Date(),
-        manual: true // identificação opcional
+        manual: true
     };
 
     try {
         await addDoc(collection(db, `stores/${currentStoreId}/orders`), newOrder);
-
-        alert("Pedido manual criado com sucesso!");
-
+        showToast("✅ Pedido manual criado!"); // Usando seu sistema de Toast
+        
+        // Limpeza
         manualOrder = [];
         window.renderManualOrderItems();
-
+        document.getElementById("manualName").value = "";
+        document.getElementById("manualPhone").value = "";
+        document.getElementById("manualAddress").value = "";
+        document.getElementById("manualPayment").value = "";
+        
         window.closeManualOrderModal();
-
     } catch (e) {
         console.error("Erro ao criar pedido manual:", e);
-        alert("Erro ao criar pedido.");
+        showToast("❌ Erro ao criar pedido.");
     }
 };
+
     </script>
 </body>
 </html>
