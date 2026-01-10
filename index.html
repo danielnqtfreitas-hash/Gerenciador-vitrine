@@ -1113,7 +1113,7 @@
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
         import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged, updatePassword, setPersistence, browserLocalPersistence, browserSessionPersistence } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        import { getFirestore, doc, getDoc, setDoc, updateDoc, deleteDoc, onSnapshot, collection, addDoc, query, where, getDocs, orderBy, limit, Timestamp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        import { getFirestore, doc, getDoc, setDoc, updateDoc, deleteDoc, onSnapshot, collection, addDoc, query, where, getDocs, orderBy, limit, Timestamp, increment } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
         import { getStorage, ref, uploadString, getDownloadURL, deleteObject } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-storage.js";
         // Procure onde começam os imports e adicione este:
         import { getMessaging, getToken, onMessage } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-messaging.js";
@@ -3545,54 +3545,107 @@ window.updateManualTotal = () => {
         // --- FINALIZAR E SALVAR O PEDIDO MANUAL ---
 window.finishManualOrder = async () => {
     if (manualOrder.length === 0) {
-        alert("Adicione pelo menos 1 item ao pedido.");
+        showToast("⚠️ Adicione pelo menos 1 item.");
         return;
     }
 
-    const name = document.getElementById("manualName")?.value || "Cliente Local";
-    const phone = document.getElementById("manualPhone")?.value || "";
-    const address = document.getElementById("manualAddress")?.value || "";
     const payment = document.getElementById("manualPayment").value;
-
     if (!payment) {
-        alert("Escolha a forma de pagamento.");
+        showToast("⚠️ Escolha a forma de pagamento.");
         return;
     }
 
     const total = manualOrder.reduce((sum, i) => sum + i.qty * i.price, 0);
 
-    const newOrder = {
-        customer: {
-            name,
-            phone,
-            address
-        },
-        paymentMethod: payment, // MOVIDO PARA FORA: Agora o modal de detalhes vai encontrar
-        items: manualOrder,
-        total: Number(total.toFixed(2)),
-        status: "confirmed",
-        createdAt: new Date(),
-        manual: true
-    };
-
     try {
+        // 1. Salva o pedido
+        const newOrder = {
+            customer: {
+                name: document.getElementById("manualName")?.value || "Cliente Local",
+                phone: document.getElementById("manualPhone")?.value || "",
+                address: document.getElementById("manualAddress")?.value || ""
+            },
+            paymentMethod: payment,
+            items: manualOrder,
+            total: Number(total.toFixed(2)),
+            status: "completed", // Venda manual já nasce concluída
+            createdAt: new Date(),
+            manual: true
+        };
+
         await addDoc(collection(db, `stores/${currentStoreId}/orders`), newOrder);
-        showToast("✅ Pedido manual criado!"); // Usando seu sistema de Toast
+
+        // 2. ATUALIZA ESTOQUE (BAIXA AUTOMÁTICA)
+        const stockPromises = manualOrder.map(item => {
+            const productRef = doc(db, `stores/${currentStoreId}/products`, item.id);
+            return updateDoc(productRef, {
+                stock: increment(-item.qty) // Subtrai a quantidade vendida
+            });
+        });
+
+        await Promise.all(stockPromises);
+
+        showToast("✅ Venda finalizada e estoque atualizado!");
         
-        // Limpeza
+        // Limpeza do formulário
         manualOrder = [];
         window.renderManualOrderItems();
-        document.getElementById("manualName").value = "";
-        document.getElementById("manualPhone").value = "";
-        document.getElementById("manualAddress").value = "";
-        document.getElementById("manualPayment").value = "";
-        
+        ["manualName", "manualPhone", "manualAddress", "manualPayment"].forEach(id => document.getElementById(id).value = "");
         window.closeManualOrderModal();
+
     } catch (e) {
-        console.error("Erro ao criar pedido manual:", e);
-        showToast("❌ Erro ao criar pedido.");
+        console.error(e);
+        showToast("❌ Erro ao processar venda.");
     }
 };
+// FUNÇÃO PARA ATUALIZAR STATUS E BAIXAR ESTOQUE
+window.updateOrderStatus = async (id, status) => {
+    try {
+        const p = ordersCache[id];
+        const btn = document.getElementById('btnActionMain');
+        if(btn) btn.innerText = "Processando...";
+        
+        // 1. Evita baixar estoque duas vezes do mesmo pedido
+        const alreadyDeducted = p.stockDeducted || false;
+        const orderUpdate = { status: status };
+
+        // 2. Se o status for Confirmado ou Entregue, e ainda não baixou o estoque
+        if ((status === 'confirmed' || status === 'completed') && !alreadyDeducted) {
+            // Cria uma lista de atualizações para cada item do pedido
+            const stockPromises = p.items.map(item => {
+                const productRef = doc(db, `stores/${currentStoreId}/products`, item.id);
+                // Subtrai a quantidade do estoque usando a função increment do Firebase
+                return updateDoc(productRef, {
+                    stock: increment(-item.qty)
+                });
+            });
+
+            // Executa todas as baixas de uma vez
+            await Promise.all(stockPromises);
+            orderUpdate.stockDeducted = true; // Marca o pedido como "estoque já baixado"
+        }
+
+        // 3. Atualiza o pedido no banco de dados
+        await updateDoc(doc(db, `stores/${currentStoreId}/orders`, id), orderUpdate);
+        
+        // 4. Se confirmou, abre o WhatsApp com a mensagem automática
+        if (status === 'confirmed' && p) {
+            const mensagem = `Olá ${p.customer.name}! Seu pedido #${p.id.slice(-5).toUpperCase()} foi confirmado e já entrou em preparo. 🎉`;
+            const fone = p.customer.phone.replace(/\D/g,'');
+            const link = `https://wa.me/55${fone}?text=${encodeURIComponent(mensagem)}`;
+            window.open(link, '_blank');
+        }
+
+        showToast("Estoque atualizado e status alterado! ✅");
+        document.getElementById('orderDetailModal').classList.add('hidden');
+        
+    } catch (e) {
+        console.error("Erro ao atualizar pedido:", e);
+        showToast("Erro ao salvar. Verifique sua conexão.");
+        if(btn) btn.innerText = "Tentar Novamente";
+    }
+};
+
 
     </script>
 </body>
