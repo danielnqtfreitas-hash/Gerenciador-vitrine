@@ -15,6 +15,8 @@
 <meta name="theme-color" content="#8b5cf6">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+
+    <script src="https://unpkg.com/html5-qrcode"></script>
     
     <script>
   if ('serviceWorker' in navigator) {
@@ -231,18 +233,30 @@
                 </div>
 
                 <div class="space-y-4">
-                    <h4 class="text-[11px] font-black uppercase text-slate-400 tracking-widest border-b border-slate-100 pb-2">Adicionar Itens</h4>
-                    <div class="relative">
-                        <i data-lucide="search" class="absolute left-4 top-3.5 text-slate-400 w-5 h-5"></i>
-                        <input 
-                            id="manualProductSearch"
-                            oninput="window.renderManualProductSearch()"
-                            type="text" 
-                            placeholder="Buscar produto por nome ou código..."
-                            class="w-full pl-12 p-3.5 rounded-2xl border border-slate-200 bg-slate-50/50 focus:bg-white focus:ring-2 focus:ring-primary-500 outline-none transition-all">
-                    </div>
-                    <div id="manualSearchResults" class="grid grid-cols-1 gap-2 max-h-48 overflow-y-auto pr-2 custom-scrollbar"></div>
-                </div>
+    <h4 class="text-[11px] font-black uppercase text-slate-400 tracking-widest border-b border-slate-100 pb-2">Adicionar Itens</h4>
+    <div class="flex gap-2">
+        <div class="relative flex-1">
+            <i data-lucide="search" class="absolute left-4 top-3.5 text-slate-400 w-5 h-5"></i>
+            <input 
+                id="manualProductSearch"
+                oninput="window.renderManualProductSearch()"
+                type="text" 
+                placeholder="Nome ou código..."
+                class="w-full pl-12 p-3.5 rounded-2xl border border-slate-200 bg-slate-50/50 focus:bg-white focus:ring-2 focus:ring-primary-500 outline-none transition-all">
+        </div>
+        <button onclick="window.startBarcodeScanner()" class="bg-slate-900 text-white p-3.5 rounded-2xl hover:bg-slate-800 transition-all shadow-lg">
+            <i data-lucide="camera" class="w-6 h-6"></i>
+        </button>
+    </div>
+
+    <div id="scanner-container" class="hidden overflow-hidden rounded-2xl border-2 border-primary-500 bg-black relative">
+        <div id="reader" class="w-full"></div>
+        <button onclick="window.stopBarcodeScanner()" class="absolute top-2 right-2 bg-red-600 text-white px-4 py-1 rounded-full text-[10px] font-bold z-20">FECHAR X</button>
+    </div>
+
+    <div id="manualSearchResults" class="grid grid-cols-1 gap-2 max-h-48 overflow-y-auto pr-2 custom-scrollbar"></div>
+</div>
+
 
                 <div class="space-y-4">
                     <h4 class="text-[11px] font-black uppercase text-slate-400 tracking-widest border-b border-slate-100 pb-2">Carrinho</h4>
@@ -1144,6 +1158,7 @@ let currentPlan = null;   // 🔹 vem da collection plans
         let cropper = null;
         let growthChartInstance = null;
         let manualOrder = [];
+        let html5QrCode = null;
         let lastOrderCount = 0; // Variável global para controle de som
         let ordersCache = {}; // Guarda os pedidos para o modal de detalhes
 let isFirstLoad = true;
@@ -3629,6 +3644,45 @@ window.updateOrderStatus = async (id, status) => {
         showToast("Erro ao processar estoque.");
     }
 };
+
+window.startBarcodeScanner = () => {
+    const container = document.getElementById('scanner-container');
+    container.classList.remove('hidden');
+    
+    html5QrCode = new Html5Qrcode("reader");
+    
+    const config = { fps: 10, qrbox: { width: 250, height: 150 } };
+
+    // Inicia a câmera traseira
+    html5QrCode.start({ facingMode: "environment" }, config, (decodedText) => {
+        // Quando ler o código:
+        document.getElementById('manualProductSearch').value = decodedText;
+        window.renderManualProductSearch(); // Filtra a lista
+        
+        // Tenta adicionar automaticamente se achar um match exato
+        const found = allProducts.find(p => p.sku === decodedText);
+        if(found) {
+            window.addManualItem(found.id);
+            showToast(`✅ ${found.name} adicionado!`);
+        }
+
+        window.stopBarcodeScanner(); // Fecha a câmera após ler
+    }).catch((err) => {
+        console.error("Erro na câmera:", err);
+        showToast("❌ Erro ao abrir câmera.");
+    });
+};
+
+window.stopBarcodeScanner = () => {
+    if (html5QrCode) {
+        html5QrCode.stop().then(() => {
+            document.getElementById('scanner-container').classList.add('hidden');
+        });
+    } else {
+        document.getElementById('scanner-container').classList.add('hidden');
+    }
+};
+
 
     </script>
 </body>
