@@ -2110,7 +2110,7 @@ if (!skuInput.value) {
         const finalId = id || 'prod_' + Date.now();
         const imageUrls = [];
 
-        // 1. Upload das Imagens (Sua lógica original)
+        // 1. Upload das Imagens
         for (let i = 0; i < currentProductImages.length; i++) {
             const img = currentProductImages[i];
             if (img.startsWith('http')) { 
@@ -2121,21 +2121,29 @@ if (!skuInput.value) {
                 imageUrls.push(await getDownloadURL(fileRef));
             }
         }
-        const stock = Number(document.getElementById('prodStock').value) || 0;
-const cost = Number(document.getElementById('prodCost').value) || 0;
-const price = Number(document.getElementById('prodValue').value) || 0;
 
-const profit = price - cost;
-        // 2. Dados do Produto (Mantendo SKU e Matriz)
+        // --- CONVERSÃO EXPLÍCITA PARA NÚMERO (Evita erros de salvamento) ---
+        const stock = parseInt(document.getElementById('prodStock').value) || 0;
+        const cost = parseFloat(document.getElementById('prodCost').value) || 0;
+        const price = parseFloat(document.getElementById('prodValue').value) || 0;
+        const profit = price - cost;
+
+        // 2. Lógica de Status (Ocultação de segurança)
+        const existingProd = allProducts.find(p => p.id === id);
+        let statusFinal = existingProd ? (existingProd.status || 'active') : 'active';
+        
+        // Se salvar com estoque zerado, força o status 'paused'
+        if (stock <= 0) statusFinal = 'paused';
+
         const data = {
             name: document.getElementById('prodName').value,
             sku: document.getElementById('prodSku').value || '',
             category: document.getElementById('prodCategory').value,
-            value: parseFloat(document.getElementById('prodValue').value) || 0,
+            value: price,
             promoValue: parseFloat(document.getElementById('prodPromo').value) || null,            
-            stock,
-            cost,
-            profit,
+            stock: stock, // Aqui garantimos que é um número
+            cost: cost,
+            profit: profit,
             images: imageUrls,
             description: document.getElementById('prodDesc').value || '',
             isFeatured: document.getElementById('prodFeatured').checked,
@@ -2143,21 +2151,23 @@ const profit = price - cost;
             colors: document.getElementById('prodColorsInput').value.split(',').map(c => c.trim()).filter(c => c !== ''),
             variations: typeof variationsMatrix !== 'undefined' ? variationsMatrix : [],
             lastUpdate: Date.now(),
-            status: id ? (allProducts.find(p => p.id === id)?.status || 'active') : 'active'
+            status: statusFinal
         };
 
         // 3. Salvar no Firebase
         const docRef = doc(db, `stores/${currentStoreId}/products`, finalId);
         await setDoc(docRef, data, { merge: true });
 
-        // Atualizar o carimbo de tempo da loja (Para a Vitrine atualizar)
-        const storeRef = doc(db, `stores/${currentStoreId}/config/store`);
-        await updateDoc(storeRef, { lastUpdate: Date.now() }).catch(() => {
-            // Se o update falhar, tenta o set merge
-            setDoc(storeRef, { lastUpdate: Date.now() }, { merge: true });
-        });
+        // --- SOLUÇÃO PARA O SEU PROBLEMA: LIMPAR CACHE LOCAL ---
+        // Isso obriga o navegador a ler o valor novo (10) em vez do antigo (0)
+        const CACHE_KEY = `app_cache_v4_${currentStoreId}`;
+        localStorage.removeItem(CACHE_KEY);
 
-        showToast("✅ Publicado com sucesso!");
+        // Atualizar o carimbo de tempo da loja
+        const storeRef = doc(db, `stores/${currentStoreId}/config/store`);
+        await setDoc(storeRef, { lastUpdate: Date.now() }, { merge: true });
+
+        showToast("✅ Publicado e estoque atualizado!");
         if(modal) modal.classList.add('hidden'); 
         currentProductImages = []; 
 
@@ -2168,7 +2178,8 @@ const profit = price - cost;
         if(btn) btn.disabled = false;
         if(loader) loader.classList.add('hidden');
     }
-        };
+};
+
         
        window.deleteProduct = async (id, imageUrls = []) => {
     if(!confirm("Deseja apagar este produto permanentemente? Suas fotos também serão removidas do servidor.")) return;
