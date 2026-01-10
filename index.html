@@ -3053,34 +3053,7 @@ async function initAnalyticsInsights() {
     document.getElementById('orderDetailModal').classList.remove('hidden');
 };
 
-// FUNÇÕES GLOBAIS (Garantem que o onclick encontre o código)
-window.updateOrderStatus = async (id, status) => {
-    try {
-        const p = ordersCache[id];
-        const btn = document.getElementById('btnActionMain');
-        if(btn) btn.innerText = "Salvando...";
-        
-        // 1. Atualiza no Firebase
-        await updateDoc(doc(db, `stores/${currentStoreId}/orders`, id), { status });
-        
-        // 2. Se for uma CONFIRMAÇÃO, dispara o WhatsApp
-        if (status === 'confirmed' && p) {
-            const mensagem = `Olá ${p.customer.name}! Seu pedido #${p.id.slice(-5).toUpperCase()} foi confirmado e já entrou em preparo. 🎉`;
-            const fone = p.customer.phone.replace(/\D/g,'');
-            const link = `https://wa.me/55${fone}?text=${encodeURIComponent(mensagem)}`;
-            
-            // Abre o WhatsApp em uma nova aba
-            window.open(link, '_blank');
-        }
 
-        showToast("Status atualizado! ✅");
-        document.getElementById('orderDetailModal').classList.add('hidden');
-    } catch (e) {
-        showToast("Erro ao atualizar.");
-        console.error(e);
-        if(btn) btn.innerText = "Tentar Novamente";
-    }
-};
         
 
 window.deleteOrder = async (id) => {
