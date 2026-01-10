@@ -3469,7 +3469,49 @@ window.updateManualTotal = () => {
     document.getElementById("manualTotal").textContent =
         "R$ " + total.toFixed(2).replace(".", ",");
 };
-        
+
+        // --- FINALIZAR E SALVAR O PEDIDO MANUAL ---
+window.finishManualOrder = async () => {
+
+    if (manualOrder.length === 0) {
+        alert("Adicione pelo menos 1 item ao pedido.");
+        return;
+    }
+
+    const name = document.getElementById("manualName")?.value || "Cliente Local";
+    const phone = document.getElementById("manualPhone")?.value || "";
+    const address = document.getElementById("manualAddress")?.value || "";
+
+    const total = manualOrder.reduce((sum, i) => sum + i.qty * i.price, 0);
+
+    const newOrder = {
+        customer: {
+            name,
+            phone,
+            address
+        },
+        items: manualOrder,
+        total: Number(total.toFixed(2)),
+        status: "confirmed", // considerado venda normal
+        createdAt: new Date(),
+        manual: true // identificação opcional
+    };
+
+    try {
+        await addDoc(collection(db, `stores/${currentStoreId}/orders`), newOrder);
+
+        alert("Pedido manual criado com sucesso!");
+
+        manualOrder = [];
+        window.renderManualOrderItems();
+
+        window.closeManualOrderModal();
+
+    } catch (e) {
+        console.error("Erro ao criar pedido manual:", e);
+        alert("Erro ao criar pedido.");
+    }
+};
     </script>
 </body>
 </html>
