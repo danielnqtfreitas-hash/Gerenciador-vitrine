@@ -489,7 +489,7 @@
             id="orderSearchInput"
             oninput="window.renderFilteredOrders()"
             type="text" 
-            placeholder="Buscar pedidos por nome, ID ou telefone..."
+            placeholder="Buscar por nome, ID ou telefone..."
             class="w-full pl-12 py-3.5 rounded-2xl border border-slate-200 shadow-sm outline-none bg-white"
         >
     </div>
@@ -497,12 +497,13 @@
                 <div id="ordersCardsContainer" class="grid grid-cols-1 gap-1">
     <p class="text-center text-slate-400 py-10 italic text-sm">Carregando pedidos...</p>
                 </div>
-                <button 
+            
+            </div>
+             <button 
     onclick="window.openManualOrderModal()"
-    class="fixed bottom-6 right-6 bg-primary-600 text-white w-14 h-14 rounded-full shadow-lg flex items-center justify-center active:scale-95 transition-all z-50">
+    class="fixed bottom-6 right-6 bg-primary-600 text-white w-14 h-14 rounded-full shadow-lg flex items-center justify-center active:scale-95 transition-all z-[9999]">
     <i data-lucide="plus" class="w-6 h-6"></i>
 </button>
-            </div>
 
              <div id="view-dashboard" class="max-w-6xl mx-auto space-y-6 hidden animate-fade-in">
             <div class="bg-white rounded-3xl border border-slate-200 p-8 flex flex-col md:flex-row items-center justify-between shadow-sm gap-6">
