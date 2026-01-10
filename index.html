@@ -491,19 +491,19 @@
                 <div class="flex items-center gap-2 px-3 py-1 bg-green-100 text-green-700 rounded-full text-[10px] font-bold border border-green-200 w-fit animate-pulse">
                     <span class="w-2 h-2 bg-green-500 rounded-full"></span> Radar Ativo
                 </div>
-      <div class="w-full mb-4">
-    <div class="relative">
-        <i data-lucide="search" class="absolute left-4 top-3.5 text-slate-400 w-4 h-4"></i>
+      <div class="w-full mb-6"> <div class="relative group">
+        <i data-lucide="search" class="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 w-4 h-4 transition-colors group-focus-within:text-primary-500"></i>
 
         <input 
             id="orderSearchInput"
             oninput="window.renderFilteredOrders()"
             type="text" 
             placeholder="Buscar por nome, ID ou telefone..."
-            class="w-full pl-12 py-3.5 rounded-2xl border border-slate-200 shadow-sm outline-none bg-white"
+            class="w-full pl-11 pr-4 py-3 rounded-2xl border border-slate-200/60 bg-slate-100/40 focus:bg-white focus:border-primary-400 focus:ring-4 focus:ring-primary-500/10 outline-none transition-all duration-300 placeholder:text-slate-400 text-sm font-medium"
         >
     </div>
 </div>
+
                 <div id="ordersCardsContainer" class="grid grid-cols-1 gap-1">
     <p class="text-center text-slate-400 py-10 italic text-sm">Carregando pedidos...</p>
                 </div>
@@ -2646,18 +2646,18 @@ window.handleBannerSubmit = async (e) => {
             reader.readAsDataURL(files[0]);
         };
 
-        window.changeTab = (tabName) => {
-    // 1. Lista de todas as suas abas
-    const tabs = ['orders', 'dashboard', 'banners', 'products', 'categories', 'config', 'finance'];
-    const fab = document.getElementById('fabAddOrder'); // [NOVO] Referência ao botão
+        
 
-    // 2. Loop para esconder todas as views e resetar os botões
+    window.changeTab = (tabName) => {
+    // 1. Lista de abas e referência ao FAB
+    const tabs = ['orders', 'dashboard', 'banners', 'products', 'categories', 'config', 'finance'];
+    const fab = document.getElementById('fabAddOrder');
+
+    // 2. Loop para esconder views e resetar botões
     tabs.forEach(tab => {
-        // Esconde a div de conteúdo
         const view = document.getElementById(`view-${tab}`);
         if (view) view.classList.add('hidden');
 
-        // Reseta o estilo do botão na sidebar
         const btn = document.getElementById(`nav-${tab}`);
         if (btn) {
             btn.classList.remove('text-primary', 'bg-primary/5', 'border-r-4', 'border-primary', 'font-bold', 'active');
@@ -2665,57 +2665,49 @@ window.handleBannerSubmit = async (e) => {
         }
     });
 
-    // 3. Mostra a aba clicada
+    // 3. Mostra a aba clicada e destaca o botão
     const activeView = document.getElementById(`view-${tabName}`);
     if (activeView) activeView.classList.remove('hidden');
 
-    // 4. Destaca o botão clicado
     const activeBtn = document.getElementById(`nav-${tabName}`);
     if (activeBtn) {
         activeBtn.classList.add('text-primary', 'bg-primary/5', 'border-r-4', 'border-primary', 'font-bold', 'active');
         activeBtn.classList.remove('text-slate-600', 'font-medium');
     }
 
-    // 5. Ajustes extras
+    // 4. Controle do Botão Flutuante (Exclusivo Pedidos)
+    if (fab) {
+        if (tabName === 'orders') {
+            fab.classList.remove('hidden');
+        } else {
+            fab.classList.add('hidden');
+        }
+    }
+
+    // 5. Ajustes extras (Badges)
     if (tabName === 'orders') {
         document.getElementById('menuBadge')?.classList.add('hidden');
         document.getElementById('menuBadgeMobile')?.classList.add('hidden');
-        if (fab) fab.classList.remove('hidden'); // [NOVO] Mostra o botão se for Pedidos
-    } else {
-        if (fab) fab.classList.add('hidden'); // [NOVO] Esconde o botão nas outras abas
     }
 
-    // 6. Atualiza o título no Header e ícones
-    const titles = { 
-        orders: 'Pedidos', 
-        dashboard: 'Dashboard', 
-        banners: 'Banners', 
-        products: 'Produtos', 
-        categories: 'Categorias', 
-        config: 'Configurações',
-        finance: 'Financeiro' 
-    };
+    // 6. Atualiza o título e ícones
+    const titles = { orders: 'Pedidos', dashboard: 'Dashboard', banners: 'Banners', products: 'Produtos', categories: 'Categorias', config: 'Configurações', finance: 'Financeiro' };
     document.getElementById('page-title').innerText = titles[tabName] || 'Painel';
     
-    // 7. Mantém a inicialização do financeiro (se existir no seu código)
+    // 7. Inicializa dashboard financeiro
     if (tabName === 'finance' && typeof window.initFinanceDashboard === 'function') {
         window.initFinanceDashboard();
     }
 
     lucide.createIcons();
 
-    // Fecha sidebar mobile se estiver aberta
+    // 8. Fecha sidebar mobile
     if (typeof toggleMobileSidebar === 'function' && !document.getElementById('mobileSidebar').classList.contains('sidebar-hidden')) {
         toggleMobileSidebar();
     }
 };
 
     
-    
-    // Fecha sidebar mobile se estiver aberta
-    if (typeof toggleMobileSidebar === 'function' && !document.getElementById('mobileSidebar').classList.contains('sidebar-hidden')) {
-        toggleMobileSidebar();
-    }
             if (tabName === 'finance') {
     window.initFinanceDashboard();
             }
