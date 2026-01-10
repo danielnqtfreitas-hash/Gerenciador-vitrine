@@ -417,6 +417,11 @@
                 <div id="ordersCardsContainer" class="grid grid-cols-1 gap-1">
     <p class="text-center text-slate-400 py-10 italic text-sm">Carregando pedidos...</p>
                 </div>
+                <button 
+    onclick="window.openManualOrderModal()"
+    class="fixed bottom-6 right-6 bg-primary-600 text-white w-14 h-14 rounded-full shadow-lg flex items-center justify-center active:scale-95 transition-all z-50">
+    <i data-lucide="plus" class="w-6 h-6"></i>
+</button>
             </div>
 
              <div id="view-dashboard" class="max-w-6xl mx-auto space-y-6 hidden animate-fade-in">
@@ -1012,7 +1017,58 @@
     </div>
 </div>
 <audio id="notifSound" src="https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3" preload="auto" loop></audio>
+<!-- MODAL: Pedido Manual -->
+<div id="manualOrderModal" class="fixed inset-0 bg-black/40 backdrop-blur-sm z-[999] hidden flex items-center justify-center">
+    <div class="bg-white w-[95%] max-w-lg p-6 rounded-2xl shadow-xl max-h-[90vh] overflow-y-auto">
 
+        <h2 class="text-xl font-bold text-slate-800 mb-4">Novo Pedido Rápido</h2>
+
+        <!-- Dados do cliente -->
+        <div class="space-y-3 mb-6">
+            <input id="manualName" type="text" placeholder="Nome do cliente (opcional)"
+                class="w-full p-3 rounded-xl border border-slate-200">
+            <input id="manualPhone" type="text" placeholder="WhatsApp (opcional)"
+                class="w-full p-3 rounded-xl border border-slate-200">
+            <input id="manualAddress" type="text" placeholder="Endereço (opcional)"
+                class="w-full p-3 rounded-xl border border-slate-200">
+        </div>
+
+        <!-- Campo de busca de produtos -->
+        <div class="relative mb-3">
+            <i data-lucide="search" class="absolute left-4 top-3 text-slate-400 w-4 h-4"></i>
+            <input 
+    id="manualProductSearch"
+    oninput="window.renderManualProductSearch()"
+    type="text" 
+    placeholder="Buscar produto por nome ou código..."
+    class="w-full pl-12 p-3 rounded-xl border border-slate-200 bg-white shadow-sm">
+        </div>
+
+        <!-- Resultados da busca -->
+        <div id="manualSearchResults" class="space-y-2 max-h-52 overflow-y-auto mb-4"></div>
+
+        <!-- Items adicionados -->
+        <div id="manualOrderItems" class="space-y-3 mb-6"></div>
+
+        <!-- Total -->
+        <div class="flex justify-between items-center text-lg font-bold text-slate-800 border-t pt-3 mb-4">
+            <span>Total:</span>
+            <span id="manualTotal">R$ 0,00</span>
+        </div>
+
+        <!-- Botões -->
+        <div class="flex justify-end gap-3">
+            <button onclick="window.closeManualOrderModal()" class="px-4 py-2 rounded-xl border border-slate-300">
+                Cancelar
+            </button>
+
+            <button class="px-4 py-2 rounded-xl bg-primary-600 text-white shadow">
+                Finalizar Pedido
+            </button>
+        </div>
+
+    </div>
+</div>
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
         import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged, updatePassword, setPersistence, browserLocalPersistence, browserSessionPersistence } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
@@ -3277,6 +3333,63 @@ async function loadMagicCategoriesFeedback() {
     });
 
     container.innerHTML = html;
+};
+
+        // --- FUNÇÕES DO MODAL DE PEDIDO MANUAL ---
+
+window.openManualOrderModal = () => {
+    const modal = document.getElementById("manualOrderModal");
+    if (modal) {
+        modal.classList.remove("hidden");
+        lucide.createIcons(); // garante que os ícones carregam no modal
+    }
+};
+
+window.closeManualOrderModal = () => {
+    const modal = document.getElementById("manualOrderModal");
+    if (modal) {
+        modal.classList.add("hidden");
+    }
+};
+
+        // --- BUSCA DE PRODUTOS PARA PEDIDO MANUAL ---
+
+window.renderManualProductSearch = () => {
+    const query = document.getElementById("manualProductSearch").value.toLowerCase();
+    const container = document.getElementById("manualSearchResults");
+    container.innerHTML = "";
+
+    if (!query) return;
+
+    // Usa allProducts diretamente
+    const products = allProducts.filter(p =>
+        p.name.toLowerCase().includes(query) ||
+        (p.sku && p.sku.toLowerCase().includes(query))
+    );
+
+    products.forEach(p => {
+        const normal = p.value.toFixed(2).replace(".", ",");
+        const promo = p.promoValue ? p.promoValue.toFixed(2).replace(".", ",") : null;
+
+        container.innerHTML += `
+            <div onclick="window.addManualItem('${p.id}')" 
+                class="p-3 bg-white border rounded-xl shadow-sm flex justify-between items-center active:scale-95 transition cursor-pointer">
+                
+                <div>
+                    <p class="font-bold text-slate-800">${p.name}</p>
+                    <span class="text-sm text-slate-500">
+                        R$ ${promo || normal}
+                    </span>
+                </div>
+
+                <button class="bg-primary-600 text-white px-3 py-1 rounded-lg text-sm font-bold">
+                    Adicionar
+                </button>
+            </div>
+        `;
+    });
+
+    lucide.createIcons();
 };
                       
     </script>
