@@ -187,10 +187,11 @@
 <body class="text-slate-800 antialiased h-screen overflow-y-auto flex bg-slate-50">
     
    <!-- MODAL: Pedido Manual -->
-<div id="manualOrderModal" class="modal-overlay fixed inset-0 z-[150] flex items-center justify-center p-4 hidden">
+  
+    <div id="manualOrderModal" class="modal-overlay fixed inset-0 z-[150] flex items-center justify-center p-4 hidden">
     <div class="bg-white rounded-[2.5rem] shadow-2xl w-full max-w-2xl auth-card-container overflow-hidden">
         
-        <div class="bg-slate-900 p-6 flex items-center justify-between">
+        <div class="bg-slate-900 p-6 flex items-center justify-between flex-shrink-0">
             <div class="flex items-center gap-3">
                 <div class="bg-primary-500/20 p-2 rounded-xl">
                     <i data-lucide="shopping-cart" class="w-6 h-6 text-primary-400"></i>
@@ -202,7 +203,7 @@
             </button>
         </div>
 
-        <div class="auth-card-content p-8">
+        <div class="auth-card-content p-8 overflow-y-auto">
             <div class="space-y-8">
                 
                 <div class="space-y-4">
@@ -217,7 +218,7 @@
                             <input id="manualPhone" type="text" placeholder="(00) 00000-0000" class="input-pro">
                         </div>
                         <div class="md:col-span-2 space-y-1">
-                            <label class="text-[10px] font-bold text-slate-500 uppercase ml-1">Endereço de Entrega (Opcional)</label>
+                            <label class="text-[10px] font-bold text-slate-500 uppercase ml-1">Endereço (Opcional)</label>
                             <input id="manualAddress" type="text" placeholder="Rua, número, bairro..." class="input-pro">
                         </div>
                         <div class="md:col-span-2 space-y-1">
@@ -233,34 +234,26 @@
                 </div>
 
                 <div class="space-y-4">
-    <h4 class="text-[11px] font-black uppercase text-slate-400 tracking-widest border-b border-slate-100 pb-2">Adicionar Itens</h4>
-    <div class="flex gap-2">
-        <div class="relative flex-1">
-            <i data-lucide="search" class="absolute left-4 top-3.5 text-slate-400 w-5 h-5"></i>
-            <input 
-                id="manualProductSearch"
-                oninput="window.renderManualProductSearch()"
-                type="text" 
-                placeholder="Nome ou código..."
-                class="w-full pl-12 p-3.5 rounded-2xl border border-slate-200 bg-slate-50/50 focus:bg-white focus:ring-2 focus:ring-primary-500 outline-none transition-all">
-        </div>
-        <button onclick="window.startBarcodeScanner()" class="bg-slate-900 text-white p-3.5 rounded-2xl hover:bg-slate-800 transition-all shadow-lg">
-            <i data-lucide="camera" class="w-6 h-6"></i>
-        </button>
-    </div>
-
-    <div id="scanner-container" class="hidden overflow-hidden rounded-2xl border-2 border-primary-500 bg-black relative">
-        <div id="reader" class="w-full"></div>
-        <button onclick="window.stopBarcodeScanner()" class="absolute top-2 right-2 bg-red-600 text-white px-4 py-1 rounded-full text-[10px] font-bold z-20">FECHAR X</button>
-    </div>
-
-    <div id="manualSearchResults" class="grid grid-cols-1 gap-2 max-h-48 overflow-y-auto pr-2 custom-scrollbar"></div>
-</div>
-
+                    <h4 class="text-[11px] font-black uppercase text-slate-400 tracking-widest border-b border-slate-100 pb-2">Adicionar Itens</h4>
+                    <div class="flex gap-2">
+                        <div class="relative flex-1">
+                            <i data-lucide="search" class="absolute left-4 top-3.5 text-slate-400 w-5 h-5"></i>
+                            <input id="manualProductSearch" oninput="window.renderManualProductSearch()" type="text" placeholder="Nome ou código..." class="w-full pl-12 p-3.5 rounded-2xl border border-slate-200 bg-slate-50/50 focus:bg-white focus:ring-2 focus:ring-primary-500 outline-none transition-all">
+                        </div>
+                        <button onclick="window.startBarcodeScanner()" class="bg-slate-900 text-white p-3.5 rounded-2xl hover:bg-slate-800 transition-all shadow-lg">
+                            <i data-lucide="camera" class="w-6 h-6"></i>
+                        </button>
+                    </div>
+                    <div id="scanner-container" class="hidden overflow-hidden rounded-2xl border-2 border-primary-500 bg-black relative mt-2">
+                        <div id="reader" class="w-full"></div>
+                        <button onclick="window.stopBarcodeScanner()" class="absolute top-2 right-2 bg-red-600 text-white px-4 py-1 rounded-full text-[10px] font-bold z-20">FECHAR X</button>
+                    </div>
+                    <div id="manualSearchResults" class="grid grid-cols-1 gap-2 max-h-48 overflow-y-auto pr-2 mt-2"></div>
+                </div>
 
                 <div class="space-y-4">
                     <h4 class="text-[11px] font-black uppercase text-slate-400 tracking-widest border-b border-slate-100 pb-2">Carrinho</h4>
-                    <div id="manualOrderItems" class="space-y-3">
+                    <div id="manualOrderItems" class="space-y-3 min-h-[50px]">
                         </div>
                 </div>
 
@@ -271,23 +264,19 @@
                     </div>
 
                     <div class="flex flex-col md:flex-row gap-3">
-                        <button onclick="window.closeManualOrderModal()" 
-                            class="flex-1 py-4 text-slate-400 font-bold hover:text-slate-600 uppercase text-[10px] tracking-widest">
+                        <button onclick="window.closeManualOrderModal()" class="flex-1 py-4 text-slate-400 font-bold hover:text-slate-600 uppercase text-[10px] tracking-widest">
                             Cancelar
                         </button>
-                        <button onclick="window.finishManualOrder()"
-                            class="flex-[2] bg-primary-600 text-white py-4 rounded-2xl font-bold shadow-xl hover:bg-primary-700 uppercase tracking-widest text-xs transition-all flex items-center justify-center gap-2">
+                        <button onclick="window.finishManualOrder()" class="flex-[2] bg-primary-600 text-white py-4 rounded-2xl font-bold shadow-xl hover:bg-primary-700 uppercase tracking-widest text-xs transition-all flex items-center justify-center gap-2">
                             <i data-lucide="check-circle" class="w-4 h-4"></i> Finalizar Pedido
                         </button>
                     </div>
                 </div>
-
             </div>
         </div>
     </div>
 </div>
 
-    
     <div id="toast-container" class="fixed top-5 right-5 z-[999] flex flex-col gap-2 pointer-events-none"></div>
     <!-- LOGIN / REGISTER SCREEN -->
     <div id="auth-screen" class="fixed inset-0 z-[200] bg-slate-900 flex items-center justify-center p-4">
