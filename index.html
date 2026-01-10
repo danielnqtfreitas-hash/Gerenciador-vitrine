@@ -2690,8 +2690,16 @@ window.handleBannerSubmit = async (e) => {
         document.getElementById('menuBadgeMobile')?.classList.add('hidden');
     }
 
-    // 6. Atualiza o título e ícones
-    const titles = { orders: 'Pedidos', dashboard: 'Dashboard', banners: 'Banners', products: 'Produtos', categories: 'Categorias', config: 'Configurações', finance: 'Financeiro' };
+    // 6. Atualiza o título no Header
+    const titles = { 
+        orders: 'Pedidos', 
+        dashboard: 'Dashboard', 
+        banners: 'Banners', 
+        products: 'Produtos', 
+        categories: 'Categorias', 
+        config: 'Configurações', 
+        finance: 'Financeiro' 
+    };
     document.getElementById('page-title').innerText = titles[tabName] || 'Painel';
     
     // 7. Inicializa dashboard financeiro
@@ -2701,11 +2709,12 @@ window.handleBannerSubmit = async (e) => {
 
     lucide.createIcons();
 
-    // 8. Fecha sidebar mobile
+    // 8. Fecha sidebar mobile se estiver aberta
     if (typeof toggleMobileSidebar === 'function' && !document.getElementById('mobileSidebar').classList.contains('sidebar-hidden')) {
         toggleMobileSidebar();
     }
 };
+
 
     
             if (tabName === 'finance') {
