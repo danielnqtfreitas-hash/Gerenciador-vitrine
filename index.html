@@ -3544,21 +3544,12 @@ window.updateManualTotal = () => {
 
         // --- FINALIZAR E SALVAR O PEDIDO MANUAL ---
 window.finishManualOrder = async () => {
-    if (manualOrder.length === 0) {
-        showToast("⚠️ Adicione pelo menos 1 item.");
-        return;
-    }
-
+    if (manualOrder.length === 0) return showToast("⚠️ Carrinho vazio!");
     const payment = document.getElementById("manualPayment").value;
-    if (!payment) {
-        showToast("⚠️ Escolha a forma de pagamento.");
-        return;
-    }
-
-    const total = manualOrder.reduce((sum, i) => sum + i.qty * i.price, 0);
+    if (!payment) return showToast("⚠️ Escolha o pagamento!");
 
     try {
-        // 1. Salva o pedido
+        const total = manualOrder.reduce((sum, i) => sum + i.qty * i.price, 0);
         const newOrder = {
             customer: {
                 name: document.getElementById("manualName")?.value || "Cliente Local",
@@ -3568,84 +3559,76 @@ window.finishManualOrder = async () => {
             paymentMethod: payment,
             items: manualOrder,
             total: Number(total.toFixed(2)),
-            status: "completed", // Venda manual já nasce concluída
+            status: "completed",
             createdAt: new Date(),
-            manual: true
+            manual: true,
+            stockDeducted: true
         };
 
         await addDoc(collection(db, `stores/${currentStoreId}/orders`), newOrder);
 
-        // 2. ATUALIZA ESTOQUE (BAIXA AUTOMÁTICA)
-        const stockPromises = manualOrder.map(item => {
+        const stockPromises = manualOrder.map(async (item) => {
             const productRef = doc(db, `stores/${currentStoreId}/products`, item.id);
-            return updateDoc(productRef, {
-                stock: increment(-item.qty) // Subtrai a quantidade vendida
-            });
+            const snap = await getDoc(productRef);
+            if (snap.exists()) {
+                const newStock = (snap.data().stock || 0) - item.qty;
+                const updateData = { stock: newStock };
+                if (newStock <= 0) updateData.status = 'paused';
+                return updateDoc(productRef, updateData);
+            }
         });
 
         await Promise.all(stockPromises);
-
-        showToast("✅ Venda finalizada e estoque atualizado!");
-        
-        // Limpeza do formulário
+        showToast("✅ Venda concluída e estoque atualizado!");
         manualOrder = [];
         window.renderManualOrderItems();
-        ["manualName", "manualPhone", "manualAddress", "manualPayment"].forEach(id => document.getElementById(id).value = "");
         window.closeManualOrderModal();
-
     } catch (e) {
-        console.error(e);
-        showToast("❌ Erro ao processar venda.");
+        showToast("❌ Erro na venda manual.");
     }
 };
+
 // FUNÇÃO PARA ATUALIZAR STATUS E BAIXAR ESTOQUE
 window.updateOrderStatus = async (id, status) => {
     try {
         const p = ordersCache[id];
+        if(!p) return;
         const btn = document.getElementById('btnActionMain');
         if(btn) btn.innerText = "Processando...";
         
-        // 1. Evita baixar estoque duas vezes do mesmo pedido
         const alreadyDeducted = p.stockDeducted || false;
         const orderUpdate = { status: status };
 
-        // 2. Se o status for Confirmado ou Entregue, e ainda não baixou o estoque
         if ((status === 'confirmed' || status === 'completed') && !alreadyDeducted) {
-            // Cria uma lista de atualizações para cada item do pedido
-            const stockPromises = p.items.map(item => {
+            const stockPromises = p.items.map(async (item) => {
                 const productRef = doc(db, `stores/${currentStoreId}/products`, item.id);
-                // Subtrai a quantidade do estoque usando a função increment do Firebase
-                return updateDoc(productRef, {
-                    stock: increment(-item.qty)
-                });
+                const snap = await getDoc(productRef);
+                
+                if (snap.exists()) {
+                    const newStock = (snap.data().stock || 0) - item.qty;
+                    const updateData = { stock: newStock };
+                    // Se zerar, oculta o produto (muda status para paused)
+                    if (newStock <= 0) updateData.status = 'paused';
+                    return updateDoc(productRef, updateData);
+                }
             });
-
-            // Executa todas as baixas de uma vez
             await Promise.all(stockPromises);
-            orderUpdate.stockDeducted = true; // Marca o pedido como "estoque já baixado"
+            orderUpdate.stockDeducted = true; 
         }
 
-        // 3. Atualiza o pedido no banco de dados
         await updateDoc(doc(db, `stores/${currentStoreId}/orders`, id), orderUpdate);
         
-        // 4. Se confirmou, abre o WhatsApp com a mensagem automática
-        if (status === 'confirmed' && p) {
-            const mensagem = `Olá ${p.customer.name}! Seu pedido #${p.id.slice(-5).toUpperCase()} foi confirmado e já entrou em preparo. 🎉`;
-            const fone = p.customer.phone.replace(/\D/g,'');
-            const link = `https://wa.me/55${fone}?text=${encodeURIComponent(mensagem)}`;
-            window.open(link, '_blank');
+        if (status === 'confirmed') {
+            const msg = `Olá ${p.customer.name}! Seu pedido #${p.id.slice(-5).toUpperCase()} foi confirmado! 🎉`;
+            window.open(`https://wa.me/55${p.customer.phone.replace(/\D/g,'')}?text=${encodeURIComponent(msg)}`, '_blank');
         }
 
-        showToast("Estoque atualizado e status alterado! ✅");
+        showToast("Estoque e Vitrine sincronizados! ✅");
         document.getElementById('orderDetailModal').classList.add('hidden');
-        
     } catch (e) {
-        console.error("Erro ao atualizar pedido:", e);
-        showToast("Erro ao salvar. Verifique sua conexão.");
-        if(btn) btn.innerText = "Tentar Novamente";
+        showToast("Erro ao processar estoque.");
     }
 };
-
 
     </script>
 </body>
