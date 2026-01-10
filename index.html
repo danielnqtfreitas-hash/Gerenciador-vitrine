@@ -2652,6 +2652,17 @@ window.handleBannerSubmit = async (e) => {
         activeBtn.classList.remove('text-slate-600', 'font-medium');
     }
 
+       if (tabName === 'finance') {
+        // Dá um pequeno tempo (100ms) para o HTML aparecer antes de calcular
+        setTimeout(() => {
+            if (typeof window.initFinanceDashboard === 'function') {
+                window.initFinanceDashboard();
+            }
+        }, 100);
+    }
+
+    lucide.createIcons();
+        
     // 4. Controle do Botão Flutuante (Exclusivo Pedidos)
     if (fab) {
         if (tabName === 'orders') {
@@ -2679,12 +2690,7 @@ window.handleBannerSubmit = async (e) => {
     };
     document.getElementById('page-title').innerText = titles[tabName] || 'Painel';
     
-    // 7. Inicializa dashboard financeiro
-    if (tabName === 'finance' && typeof window.initFinanceDashboard === 'function') {
-        window.initFinanceDashboard();
-    }
-
-    lucide.createIcons();
+  
 
     // 8. Fecha sidebar mobile se estiver aberta
     if (typeof toggleMobileSidebar === 'function' && !document.getElementById('mobileSidebar').classList.contains('sidebar-hidden')) {
@@ -3136,15 +3142,23 @@ window.deleteOrder = async (id) => {
     const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1).getTime();
     const startOfLastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1).getTime();
 
-    // 1. CÁLCULOS DE FATURAMENTO (Baseado nos pedidos no cache)
     let revDay = 0, revWeek = 0, revMonth = 0, revTotal = 0, countDay = 0;
     let revLastMonth = 0;
 
+    // 1. CÁLCULO DE FATURAMENTO (CORRIGIDO PARA TODOS OS FORMATOS DE DATA)
     Object.values(ordersCache).forEach(order => {
-        const orderTime = order.createdAt?.toMillis ? order.createdAt.toMillis() : 0;
-        const value = order.total || 0;
+        let orderTime = 0;
+        
+        // Verifica todos os formatos possíveis de data do Firebase e JS
+        if (order.createdAt?.toMillis) orderTime = order.createdAt.toMillis();
+        else if (order.createdAt?.toDate) orderTime = order.createdAt.toDate().getTime();
+        else if (order.createdAt instanceof Date) orderTime = order.createdAt.getTime();
+        else if (typeof order.createdAt === 'number') orderTime = order.createdAt;
 
-        if (order.status !== 'canceled') {
+        const value = Number(order.total) || 0;
+
+        // Filtra pedidos cancelados (aceita 'canceled' e 'Cancelado')
+        if (order.status !== 'canceled' && order.status !== 'Cancelado') {
             revTotal += value;
             if (orderTime >= startOfDay) { revDay += value; countDay++; }
             if (orderTime >= startOfWeek) { revWeek += value; }
@@ -3153,57 +3167,41 @@ window.deleteOrder = async (id) => {
         }
     });
 
-    // 2. CÁLCULOS DE ESTOQUE (Baseado nos produtos)
+    // 2. CÁLCULOS DE ESTOQUE (GARANTINDO CONVERSÃO DE NÚMERO)
     let stockValue = 0, stockCost = 0, totalItems = 0;
 
     allProducts.forEach(p => {
-        const qty = parseFloat(p.stock) || 0;
-        const price = parseFloat(p.value) || 0;
-        const cost = parseFloat(p.cost) || 0;
+        const qty = Number(p.stock) || 0;
+        const price = Number(p.value) || 0;
+        const cost = Number(p.cost) || 0;
 
         stockValue += (price * qty);
         stockCost += (cost * qty);
         totalItems += qty;
     });
 
-    // 3. ATUALIZAÇÃO DA UI
-    document.getElementById('fin-rev-day').textContent = `R$ ${revDay.toFixed(2).replace('.',',')}`;
-    document.getElementById('fin-orders-day').textContent = `${countDay} pedidos hoje`;
-    document.getElementById('fin-rev-week').textContent = `R$ ${revWeek.toFixed(2).replace('.',',')}`;
-    document.getElementById('fin-rev-month').textContent = `R$ ${revMonth.toFixed(2).replace('.',',')}`;
-    document.getElementById('fin-rev-total').textContent = `R$ ${revTotal.toFixed(2).replace('.',',')}`;
-    
-    document.getElementById('fin-stock-value').textContent = `R$ ${stockValue.toFixed(2).replace('.',',')}`;
-    document.getElementById('fin-stock-cost').textContent = `R$ ${stockCost.toFixed(2).replace('.',',')}`;
-    document.getElementById('fin-profit-potential').textContent = `R$ ${(stockValue - stockCost).toFixed(2).replace('.',',')}`;
-    document.getElementById('fin-stock-count').textContent = `${totalItems} unidades disponíveis`;
+    // 3. ATUALIZAÇÃO DA UI (COM VERIFICAÇÃO DE SEGURANÇA)
+    const setTxt = (id, txt) => {
+        const el = document.getElementById(id);
+        if(el) el.textContent = txt;
+    };
 
-    // 4. FEEDBACK DE CRESCIMENTO
-    renderGrowthFeedback(revMonth, revLastMonth);
+    setTxt('fin-rev-day', `R$ ${revDay.toFixed(2).replace('.',',')}`);
+    setTxt('fin-orders-day', `${countDay} pedidos hoje`);
+    setTxt('fin-rev-week', `R$ ${revWeek.toFixed(2).replace('.',',')}`);
+    setTxt('fin-rev-month', `R$ ${revMonth.toFixed(2).replace('.',',')}`);
+    setTxt('fin-rev-total', `R$ ${revTotal.toFixed(2).replace('.',',')}`);
     
-    // 5. GRÁFICO 
-    initGrowthChart();
+    setTxt('fin-stock-value', `R$ ${stockValue.toFixed(2).replace('.',',')}`);
+    setTxt('fin-stock-cost', `R$ ${stockCost.toFixed(2).replace('.',',')}`);
+    setTxt('fin-profit-potential', `R$ ${(stockValue - stockCost).toFixed(2).replace('.',',')}`);
+    setTxt('fin-stock-count', `${totalItems} unidades disponíveis`);
+
+    // 4. CHAMA OS COMPONENTES VISUAIS
+    if (typeof renderGrowthFeedback === 'function') renderGrowthFeedback(revMonth, revLastMonth);
+    if (typeof initGrowthChart === 'function') initGrowthChart();
 };
-        function renderGrowthFeedback(current, last) {
-    const container = document.getElementById('fin-growth-feedback');
-    if (last === 0) {
-        container.innerHTML = `<p class="text-lg font-medium leading-tight">Primeiro mês de análise. Continue vendendo para gerar comparativos!</p>`;
-        return;
-    }
 
-    const diff = ((current - last) / last) * 100;
-    const isPositive = diff >= 0;
-
-    container.innerHTML = `
-        <p class="text-3xl font-black">${isPositive ? '+' : ''}${diff.toFixed(1)}%</p>
-        <p class="text-sm font-medium opacity-90">
-            Este mês você faturou <b>R$ ${(current - last).toFixed(2)}</b> ${isPositive ? 'a mais' : 'a menos'} que no mês passado.
-        </p>
-        <div class="mt-4 py-2 px-4 bg-white/20 rounded-xl inline-block text-[10px] font-bold uppercase">
-            ${isPositive ? 'Desempenho em Alta 🚀' : 'Atenção ao Fluxo 📉'}
-        </div>
-    `;
-        }
 
         window.initGrowthChart = () => {
     const ctx = document.getElementById('growthChart').getContext('2d');
