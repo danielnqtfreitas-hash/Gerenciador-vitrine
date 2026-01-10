@@ -589,138 +589,94 @@
 
          <div id="view-finance" class="max-w-6xl mx-auto space-y-8 hidden animate-fade-in">
 
-    <!-- HEADER -->
+    <div class="max-w-6xl mx-auto space-y-8 p-4 md:p-0">
     <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div>
-            <h3 class="text-3xl font-black text-slate-900">Inteligência Financeira</h3>
-            <p class="text-sm text-slate-500">Resumo completo do desempenho da loja.</p>
+            <h3 class="text-3xl font-extrabold text-slate-900 tracking-tight">Gestão Financeira</h3>
+            <p class="text-slate-500 font-medium">Controle de lucros e desempenho em tempo real.</p>
         </div>
-        <div class="bg-white p-2 rounded-2xl border shadow-sm flex gap-2">
-            <div class="px-4 py-2 bg-green-50 rounded-xl border border-green-100">
-                <p class="text-[9px] font-black text-green-600 uppercase">Status do Caixa</p>
-                <p class="text-xs font-bold text-green-700">Fluxo Ativo</p>
+        <div class="flex items-center gap-2 bg-white p-2 rounded-2xl shadow-sm border border-slate-100">
+            <div class="w-10 h-10 bg-green-100 text-green-600 rounded-xl flex items-center justify-center">
+                <i data-lucide="trending-up" class="w-6 h-6"></i>
+            </div>
+            <div class="pr-4">
+                <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Status do Caixa</p>
+                <p class="text-xs font-bold text-green-600">Fluxo Positivo</p>
             </div>
         </div>
     </div>
 
-    <!-- MÉTRICAS -->
-    <div id="financeContent" class="space-y-8">
-
-        <!-- GRID 1 -->
-        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
-
-            <!-- Faturação Hoje -->
-            <div class="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm">
-                <div class="tooltip">
-                    <p class="text-[10px] font-black text-slate-400 uppercase">Faturação (Hoje)</p>
-                    <span class="tooltip-icon">?</span>
-                    <div class="tooltip-box">Total recebido hoje em pedidos concluídos.</div>
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div class="relative overflow-hidden bg-slate-900 rounded-[2.5rem] p-8 text-white shadow-2xl">
+            <div class="relative z-10">
+                <p class="text-xs font-bold text-slate-400 uppercase tracking-[0.2em] mb-2">Vendas Hoje</p>
+                <h3 class="text-4xl font-black mb-4" id="fin-rev-day">R$ 0,00</h3>
+                <div class="flex items-center gap-2 text-green-400 text-xs font-bold">
+                    <i data-lucide="shopping-bag" class="w-4 h-4"></i>
+                    <span id="fin-orders-day">0 pedidos realizados</span>
                 </div>
-                <h3 class="text-3xl font-black text-slate-800 mt-1" id="fin-rev-day">R$ 0,00</h3>
-                <span class="text-[10px] font-bold text-green-600 bg-green-50 px-2 py-1 rounded-full" id="fin-orders-day">0 pedidos</span>
             </div>
+            <div class="absolute -right-10 -bottom-10 w-40 h-40 bg-primary-600/20 rounded-full blur-3xl"></div>
+        </div>
 
-            <!-- Este mês -->
-            <div class="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm">
-                <div class="tooltip">
-                    <p class="text-[10px] font-black text-slate-400 uppercase">Este Mês</p>
-                    <span class="tooltip-icon">?</span>
-                    <div class="tooltip-box">Total faturado desde o início do mês atual.</div>
-                </div>
-                <h3 class="text-3xl font-black text-primary-600 mt-1" id="fin-rev-month">R$ 0,00</h3>
-            </div>
-
-            <!-- Esta semana -->
-            <div class="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm">
-                <div class="tooltip">
-                    <p class="text-[10px] font-black text-slate-400 uppercase">Esta Semana</p>
-                    <span class="tooltip-icon">?</span>
-                    <div class="tooltip-box">Total faturado desde o último domingo.</div>
-                </div>
-                <h3 class="text-3xl font-black text-slate-800 mt-1" id="fin-rev-week">R$ 0,00</h3>
-            </div>
-
-            <!-- Total -->
-            <div class="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm bg-slate-900">
-                <div class="tooltip">
-                    <p class="text-[10px] font-black text-slate-500 uppercase">Faturação Total</p>
-                    <span class="tooltip-icon">?</span>
-                    <div class="tooltip-box">Soma de todas as vendas confirmadas.</div>
-                </div>
-                <h3 class="text-3xl font-black text-white mt-1" id="fin-rev-total">R$ 0,00</h3>
+        <div class="bg-white rounded-[2.5rem] p-8 border border-slate-200 shadow-sm">
+            <p class="text-xs font-bold text-slate-400 uppercase tracking-widest mb-2">Faturamento Mensal</p>
+            <h3 class="text-3xl font-black text-slate-800" id="fin-rev-month">R$ 0,00</h3>
+            <div class="mt-4 flex items-center gap-2">
+                <span class="px-2 py-1 bg-blue-50 text-blue-600 text-[10px] font-black rounded-lg uppercase">Acumulado</span>
             </div>
         </div>
 
-        <!-- Lucro Potencial -->
-        <div class="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm">
-            <div class="tooltip">
-                <p class="text-[10px] font-black text-slate-400 uppercase">Lucro Potencial</p>
-                <span class="tooltip-icon">?</span>
-                <div class="tooltip-box">Diferença entre preço de venda e custo de aquisição multiplicado pelo estoque.</div>
-            </div>
-            <h3 class="text-3xl font-black text-green-600 mt-1" id="fin-profit-potential">R$ 0,00</h3>
+        <div class="bg-white rounded-[2.5rem] p-8 border border-slate-200 shadow-sm border-l-4 border-l-green-500">
+            <p class="text-xs font-bold text-slate-400 uppercase tracking-widest mb-2">Lucro Potencial</p>
+            <h3 class="text-3xl font-black text-green-600" id="fin-profit-potential">R$ 0,00</h3>
+            <p class="text-[10px] text-slate-400 mt-2 font-medium italic">Baseado no estoque atual vs custo.</p>
         </div>
+    </div>
 
-        <!-- Gráfico Crescimento -->
-        <div class="bg-white p-8 rounded-[2.5rem] border border-slate-200 shadow-sm">
-            <h3 class="text-lg font-bold text-slate-800 mb-6 flex items-center gap-2">
-                Crescimento de Vendas (Últimos 6 meses)
-                <span class="tooltip-icon tooltip">
-                    ?
-                    <div class="tooltip-box">Comparação automática da evolução mensal das vendas.</div>
-                </span>
-            </h3>
-            <div class="relative h-64">
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <div class="lg:col-span-2 bg-white rounded-[2.5rem] p-8 border border-slate-200 shadow-sm">
+            <div class="flex justify-between items-center mb-8">
+                <h4 class="font-bold text-slate-800">Evolução de Vendas</h4>
+                <i data-lucide="bar-chart-3" class="w-5 h-5 text-slate-300"></i>
+            </div>
+            <div class="h-64 relative">
                 <canvas id="growthChart"></canvas>
             </div>
         </div>
 
-        <!-- Feedback -->
-        <div id="fin-growth-feedback" class="text-slate-700 text-center text-sm"></div>
-
-        <!-- ESTOQUE -->
-        <div class="bg-slate-50 p-6 rounded-[2.5rem] border border-dashed border-slate-200 grid grid-cols-1 md:grid-cols-2 gap-6">
-
-            <!-- Valor do estoque -->
-            <div class="bg-white p-6 rounded-3xl shadow-sm">
-                <div class="tooltip">
-                    <p class="text-[10px] font-black text-slate-400 uppercase">Valor Total em Stock</p>
-                    <span class="tooltip-icon">?</span>
-                    <div class="tooltip-box">Soma do preço de venda multiplicado por cada unidade em estoque.</div>
+        <div class="space-y-6">
+            <div class="bg-primary-600 rounded-[2.5rem] p-6 text-white shadow-xl">
+                <p class="text-[10px] font-black opacity-60 uppercase tracking-widest mb-1">Total Histórico</p>
+                <h3 class="text-2xl font-black" id="fin-rev-total">R$ 0,00</h3>
+                <div class="mt-4 pt-4 border-t border-white/10 flex justify-between items-center">
+                    <span class="text-[10px] font-bold opacity-80 uppercase">Desde a abertura</span>
+                    <i data-lucide="globe" class="w-4 h-4 opacity-50"></i>
                 </div>
-                <h3 class="text-3xl font-black text-slate-800 mt-1" id="fin-stock-value">R$ 0,00</h3>
-                <p class="text-[10px] text-slate-500 mt-2 font-bold" id="fin-stock-count">0 unidades</p>
             </div>
 
-            <!-- Custo total -->
-            <div class="bg-white p-6 rounded-3xl shadow-sm">
-                <div class="tooltip">
-                    <p class="text-[10px] font-black text-slate-400 uppercase">Custo de Aquisição</p>
-                    <span class="tooltip-icon">?</span>
-                    <div class="tooltip-box">Soma do custo de compra de todos os produtos em estoque.</div>
+            <div class="bg-white rounded-[2.5rem] p-6 border border-slate-200 shadow-sm">
+                <div class="flex items-center gap-3 mb-4">
+                    <div class="w-8 h-8 bg-slate-100 rounded-lg flex items-center justify-center text-slate-600">
+                        <i data-lucide="package-search" class="w-4 h-4"></i>
+                    </div>
+                    <p class="text-xs font-black text-slate-500 uppercase tracking-widest">Valor em Estoque</p>
                 </div>
-                <h3 class="text-3xl font-black text-slate-800 mt-1" id="fin-stock-cost">R$ 0,00</h3>
+                <h3 class="text-xl font-bold text-slate-800" id="fin-stock-value">R$ 0,00</h3>
+                <p class="text-[10px] text-slate-400 font-bold mt-1" id="fin-stock-count">0 unidades</p>
+                
+                <div class="mt-4 p-3 bg-slate-50 rounded-2xl border border-slate-100">
+                    <p class="text-[9px] font-black text-slate-400 uppercase">Custo de Aquisição</p>
+                    <p class="text-sm font-bold text-slate-700" id="fin-stock-cost">R$ 0,00</p>
+                </div>
             </div>
-
         </div>
-
     </div>
-         </div>
 
-      <div id="orderDetailModal" class="fixed inset-0 bg-black/40 backdrop-blur-sm flex justify-center items-center z-50 hidden">
-    <div class="auth-card w-[90%] max-w-lg bg-white rounded-3xl overflow-hidden shadow-2xl animate-fade-in-up">
-        <div class="auth-card-content p-6 max-h-[80vh] overflow-y-auto">
-            <!-- O CONTEÚDO VEM PELO JS -->
+    <div id="fin-growth-feedback" class="bg-gradient-to-r from-primary-500 to-indigo-600 rounded-[2rem] p-6 text-white text-center shadow-lg transform transition-hover hover:scale-[1.01]">
         </div>
-
-        <button onclick="document.getElementById('orderDetailModal').classList.add('hidden')" 
-                class="absolute top-3 right-3 bg-white/80 rounded-full p-2 border border-slate-200 shadow">
-            <i data-lucide="x" class="w-5 h-5"></i>
-        </button>
     </div>
-      </div>
 
-             
             <div id="view-banners" class="max-w-6xl mx-auto space-y-6 hidden animate-fade-in">
                 <div class="flex justify-between items-center">
                     <h3 class="text-2xl font-bold text-slate-800">Banners de Destaque</h3>
@@ -3290,30 +3246,59 @@ window.deleteOrder = async (id) => {
     // 2. Destruir gráfico anterior se existir (evita sobreposição)
     if (growthChartInstance) growthChartInstance.destroy();
 
-    // 3. Criar o novo gráfico
+        // 3. Criar o novo gráfico
     growthChartInstance = new Chart(ctx, {
-        type: 'bar', // Barra é melhor para ver crescimento mensal
+        type: 'bar', 
         data: {
             labels: months,
             datasets: [{
                 label: 'Faturação Mensal',
                 data: values,
-                backgroundColor: '#7c3aed',
-                borderRadius: 8,
-                hoverBackgroundColor: '#6d28d9'
+                // --- AJUSTES ESTÉTICOS AQUI ---
+                backgroundColor: '#7c3aed',     // Roxo Primary 600
+                borderRadius: 12,               // Mais arredondado (estilo iOS/Moderno)
+                hoverBackgroundColor: '#4f46e5', // Muda para um azul/índigo ao passar o mouse
+                borderSkipped: false,           // Garante que todas as quinas fiquem redondas se quiser
+                // ------------------------------
             }]
         },
         options: {
             responsive: true,
             maintainAspectRatio: false,
-            plugins: { legend: { display: false } },
+            plugins: { 
+                legend: { display: false },
+                tooltip: {
+                    backgroundColor: '#1e293b', // Fundo do balãozinho em Slate 800
+                    titleFont: { size: 12, weight: 'bold' },
+                    bodyFont: { size: 12 },
+                    padding: 12,
+                    displayColors: false,
+                    callbacks: {
+                        label: (context) => ` R$ ${context.parsed.y.toFixed(2).replace('.', ',')}`
+                    }
+                }
+            },
             scales: {
-                y: { beginAtZero: true, grid: { display: false }, ticks: { font: { size: 10 } } },
-                x: { grid: { display: false }, ticks: { font: { size: 10 } } }
+                y: { 
+                    beginAtZero: true, 
+                    grid: { display: false }, 
+                    ticks: { 
+                        font: { size: 10, weight: '600' },
+                        color: '#94a3b8',
+                        callback: (value) => 'R$ ' + value
+                    } 
+                },
+                x: { 
+                    grid: { display: false }, 
+                    ticks: { 
+                        font: { size: 10, weight: '600' },
+                        color: '#94a3b8' 
+                    } 
+                }
             }
         }
     });
-};
+
 
 async function loadMagicCategoriesFeedback() {
     if (!currentStoreId) return;
