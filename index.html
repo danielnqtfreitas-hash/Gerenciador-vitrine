@@ -1017,58 +1017,7 @@
     </div>
 </div>
 <audio id="notifSound" src="https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3" preload="auto" loop></audio>
-<!-- MODAL: Pedido Manual -->
-<div id="manualOrderModal" class="fixed inset-0 bg-black/40 backdrop-blur-sm z-[999] hidden flex items-center justify-center">
-    <div class="bg-white w-[95%] max-w-lg p-6 rounded-2xl shadow-xl max-h-[90vh] overflow-y-auto">
 
-        <h2 class="text-xl font-bold text-slate-800 mb-4">Novo Pedido Rápido</h2>
-
-        <!-- Dados do cliente -->
-        <div class="space-y-3 mb-6">
-            <input id="manualName" type="text" placeholder="Nome do cliente (opcional)"
-                class="w-full p-3 rounded-xl border border-slate-200">
-            <input id="manualPhone" type="text" placeholder="WhatsApp (opcional)"
-                class="w-full p-3 rounded-xl border border-slate-200">
-            <input id="manualAddress" type="text" placeholder="Endereço (opcional)"
-                class="w-full p-3 rounded-xl border border-slate-200">
-        </div>
-
-        <!-- Campo de busca de produtos -->
-        <div class="relative mb-3">
-            <i data-lucide="search" class="absolute left-4 top-3 text-slate-400 w-4 h-4"></i>
-            <input 
-    id="manualProductSearch"
-    oninput="window.renderManualProductSearch()"
-    type="text" 
-    placeholder="Buscar produto por nome ou código..."
-    class="w-full pl-12 p-3 rounded-xl border border-slate-200 bg-white shadow-sm">
-        </div>
-
-        <!-- Resultados da busca -->
-        <div id="manualSearchResults" class="space-y-2 max-h-52 overflow-y-auto mb-4"></div>
-
-        <!-- Items adicionados -->
-        <div id="manualOrderItems" class="space-y-3 mb-6"></div>
-
-        <!-- Total -->
-        <div class="flex justify-between items-center text-lg font-bold text-slate-800 border-t pt-3 mb-4">
-            <span>Total:</span>
-            <span id="manualTotal">R$ 0,00</span>
-        </div>
-
-        <!-- Botões -->
-        <div class="flex justify-end gap-3">
-            <button onclick="window.closeManualOrderModal()" class="px-4 py-2 rounded-xl border border-slate-300">
-                Cancelar
-            </button>
-
-            <button class="px-4 py-2 rounded-xl bg-primary-600 text-white shadow">
-                Finalizar Pedido
-            </button>
-        </div>
-
-    </div>
-</div>
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
         import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged, updatePassword, setPersistence, browserLocalPersistence, browserSessionPersistence } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
@@ -1102,6 +1051,7 @@ let currentPlan = null;   // 🔹 vem da collection plans
         let analyticsUnsubscribe = null; // Variável para desligar a escuta anterior
         let cropper = null;
         let growthChartInstance = null;
+        let manualOrder = [];
         let lastOrderCount = 0; // Variável global para controle de som
         let ordersCache = {}; // Guarda os pedidos para o modal de detalhes
 let isFirstLoad = true;
@@ -3391,7 +3341,85 @@ window.renderManualProductSearch = () => {
 
     lucide.createIcons();
 };
-                      
+
+    // =========================
+// PASSO 5 — SISTEMA DE ITENS DO PEDIDO MANUAL
+// =========================
+
+// Variável global do pedido manual
+let manualOrder = [];
+
+// --- ADICIONAR ITEM AO PEDIDO MANUAL ---
+window.addManualItem = (id) => {
+    const p = allProducts.find(prod => prod.id === id);
+    if (!p) return;
+
+    const existing = manualOrder.find(item => item.id === id);
+
+    if (existing) {
+        existing.qty++;
+    } else {
+        manualOrder.push({
+            id: id,
+            name: p.name,
+            price: p.promoValue || p.value,
+            qty: 1
+        });
+    }
+
+    window.renderManualOrderItems();
+};
+
+// --- MOSTRA OS ITENS ADICIONADOS NO PEDIDO ---
+window.renderManualOrderItems = () => {
+    const container = document.getElementById("manualOrderItems");
+    container.innerHTML = "";
+
+    manualOrder.forEach(item => {
+        const subtotal = (item.qty * item.price).toFixed(2).replace('.', ',');
+
+        container.innerHTML += `
+            <div class="p-3 border rounded-xl bg-white shadow-sm flex justify-between items-center">
+                
+                <div>
+                    <p class="font-bold text-slate-800">${item.name}</p>
+                    <p class="text-sm text-slate-500">R$ ${subtotal}</p>
+                </div>
+
+                <div class="flex items-center gap-2">
+                    <button onclick="window.changeManualQty('${item.id}', -1)" class="px-2 py-1 bg-slate-200 rounded-lg">-</button>
+                    <span class="font-bold">${item.qty}</span>
+                    <button onclick="window.changeManualQty('${item.id}', 1)" class="px-2 py-1 bg-slate-200 rounded-lg">+</button>
+                </div>
+
+            </div>
+        `;
+    });
+
+    window.updateManualTotal();
+};
+
+// --- ALTERAR QUANTIDADE (+/-) ---
+window.changeManualQty = (id, diff) => {
+    const item = manualOrder.find(i => i.id === id);
+    if (!item) return;
+
+    item.qty += diff;
+
+    if (item.qty <= 0) {
+        manualOrder = manualOrder.filter(i => i.id !== id);
+    }
+
+    window.renderManualOrderItems();
+};
+
+// --- ATUALIZA TOTAL DO PEDIDO ---
+window.updateManualTotal = () => {
+    const total = manualOrder.reduce((sum, i) => sum + i.qty * i.price, 0);
+    document.getElementById("manualTotal").textContent =
+        "R$ " + total.toFixed(2).replace(".", ",");
+};
+        
     </script>
 </body>
 </html>
