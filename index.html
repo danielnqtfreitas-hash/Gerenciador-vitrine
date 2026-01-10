@@ -3567,23 +3567,30 @@ window.finishManualOrder = async () => {
         const stockPromises = manualOrder.map(async (item) => {
             const productRef = doc(db, `stores/${currentStoreId}/products`, item.id);
             const snap = await getDoc(productRef);
+            
             if (snap.exists()) {
-                const newStock = (snap.data().stock || 0) - item.qty;
+                // Forçamos a conversão para Número para evitar que 10 - 1 vire 0
+                const currentStock = Number(snap.data().stock) || 0;
+                const qtyVendida = Number(item.qty) || 0;
+                const newStock = Math.max(0, currentStock - qtyVendida);
+                
                 const updateData = { stock: newStock };
                 if (newStock <= 0) updateData.status = 'paused';
+                
                 return updateDoc(productRef, updateData);
             }
         });
 
         await Promise.all(stockPromises);
-        showToast("✅ Venda concluída e estoque atualizado!");
+        showToast("✅ Venda e estoque processados!");
         manualOrder = [];
         window.renderManualOrderItems();
         window.closeManualOrderModal();
     } catch (e) {
-        showToast("❌ Erro na venda manual.");
+        showToast("❌ Erro na baixa de estoque manual.");
     }
 };
+
 
 // FUNÇÃO PARA ATUALIZAR STATUS E BAIXAR ESTOQUE
 window.updateOrderStatus = async (id, status) => {
