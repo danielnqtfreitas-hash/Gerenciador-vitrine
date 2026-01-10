@@ -594,12 +594,39 @@
             <p class="text-slate-500 font-medium">Faturamento e desempenho em tempo real.</p>
         </div>
         
-<div class="flex bg-slate-100 p-1 rounded-2xl w-fit mb-6 border border-slate-200">
-    <button onclick="updateFinanceRange('today')" id="fin-range-today" class="px-4 py-2 rounded-xl text-xs font-black transition-all bg-white shadow-sm text-primary-600">HOJE</button>
-    <button onclick="updateFinanceRange('yesterday')" id="fin-range-yesterday" class="px-4 py-2 rounded-xl text-xs font-black transition-all text-slate-500">ONTEM</button>
-    <button onclick="updateFinanceRange('week')" id="fin-range-week" class="px-4 py-2 rounded-xl text-xs font-black transition-all text-slate-500">7 DIAS</button>
-    <button onclick="updateFinanceRange('month')" id="fin-range-month" class="px-4 py-2 rounded-xl text-xs font-black transition-all text-slate-500">ESTE MÊS</button>
+<div class="flex flex-wrap items-center gap-2 mb-6">
+    <div class="flex bg-slate-100 p-1 rounded-2xl border border-slate-200">
+        <button onclick="updateFinanceRange('today')" id="fin-range-today" class="px-4 py-2 rounded-xl text-[10px] font-black transition-all bg-white shadow-sm text-primary-600">HOJE</button>
+        <button onclick="updateFinanceRange('yesterday')" id="fin-range-yesterday" class="px-4 py-2 rounded-xl text-[10px] font-black transition-all text-slate-500">ONTEM</button>
+        <button onclick="updateFinanceRange('week')" id="fin-range-week" class="px-4 py-2 rounded-xl text-[10px] font-black transition-all text-slate-500">7 DIAS</button>
+        <button onclick="updateFinanceRange('month')" id="fin-range-month" class="px-4 py-2 rounded-xl text-[10px] font-black transition-all text-slate-500">MÊS</button>
+    </div>
+    
+    <button onclick="document.getElementById('modalCustomDate').classList.remove('hidden')" class="flex items-center gap-2 px-4 py-2 bg-white border border-slate-200 rounded-2xl text-[10px] font-black text-slate-600 hover:bg-slate-50 transition-all shadow-sm">
+        <i data-lucide="calendar" class="w-3.5 h-3.5"></i> PERSONALIZADO
+    </button>
 </div>
+
+<div id="modalCustomDate" class="modal-overlay fixed inset-0 z-[200] flex items-center justify-center p-4 hidden">
+    <div class="bg-white rounded-[2rem] shadow-2xl w-full max-w-xs p-6 animate-fade-in">
+        <h4 class="text-sm font-black text-slate-800 uppercase mb-4 tracking-widest">Filtrar Período</h4>
+        <div class="space-y-4">
+            <div>
+                <label class="text-[10px] font-bold text-slate-400 uppercase ml-1">Data Inicial</label>
+                <input type="date" id="customDateStart" class="input-pro">
+            </div>
+            <div>
+                <label class="text-[10px] font-bold text-slate-400 uppercase ml-1">Data Final</label>
+                <input type="date" id="customDateEnd" class="input-pro">
+            </div>
+            <div class="flex gap-2 pt-2">
+                <button onclick="document.getElementById('modalCustomDate').classList.add('hidden')" class="flex-1 py-3 text-slate-400 text-[10px] font-black uppercase">Fechar</button>
+                <button onclick="applyCustomDate()" class="flex-1 bg-slate-900 text-white py-3 rounded-xl text-[10px] font-black uppercase shadow-lg">Filtrar</button>
+            </div>
+        </div>
+    </div>
+</div>
+
 
         <div class="flex items-center gap-2 bg-white p-2 rounded-2xl shadow-sm border border-slate-100">
             <div class="w-10 h-10 bg-green-100 text-green-600 rounded-xl flex items-center justify-center">
