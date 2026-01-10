@@ -185,84 +185,94 @@
 <body class="text-slate-800 antialiased h-screen overflow-y-auto flex bg-slate-50">
     
    <!-- MODAL: Pedido Manual -->
-<div id="manualOrderModal" class="fixed inset-0 bg-black/40 backdrop-blur-sm z-[999] hidden flex items-center justify-center">
-    <div class="bg-white w-[95%] max-w-lg p-6 rounded-3xl shadow-2xl max-h-[90vh] overflow-y-auto border border-slate-200">
-
-        <!-- Cabeçalho -->
-        <div class="mb-5 flex items-center justify-between">
-            <h2 class="text-2xl font-extrabold text-slate-800">Novo Pedido Rápido</h2>
-            <button onclick="window.closeManualOrderModal()"
-                class="p-2 rounded-xl hover:bg-slate-100 active:scale-95 transition">
-                <i data-lucide="x" class="w-5 h-5 text-slate-500"></i>
+<div id="manualOrderModal" class="modal-overlay fixed inset-0 z-[150] flex items-center justify-center p-4 hidden">
+    <div class="bg-white rounded-[2.5rem] shadow-2xl w-full max-w-2xl auth-card-container overflow-hidden">
+        
+        <div class="bg-slate-900 p-6 flex items-center justify-between">
+            <div class="flex items-center gap-3">
+                <div class="bg-primary-500/20 p-2 rounded-xl">
+                    <i data-lucide="shopping-cart" class="w-6 h-6 text-primary-400"></i>
+                </div>
+                <h3 class="text-xl font-bold text-white">Venda Presencial / Manual</h3>
+            </div>
+            <button onclick="window.closeManualOrderModal()" class="p-2 text-slate-400 hover:text-white transition-colors">
+                <i data-lucide="x" class="w-6 h-6"></i>
             </button>
         </div>
 
-        <!-- Bloco do cliente -->
-        <div class="space-y-3 mb-6 p-4 bg-slate-50 rounded-2xl border border-slate-200">
-            <p class="text-xs font-bold text-slate-500 uppercase tracking-wide">Dados do Cliente</p>
+        <div class="auth-card-content p-8">
+            <div class="space-y-8">
+                
+                <div class="space-y-4">
+                    <h4 class="text-[11px] font-black uppercase text-slate-400 tracking-widest border-b border-slate-100 pb-2">Informações do Cliente</h4>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div class="space-y-1">
+                            <label class="text-[10px] font-bold text-slate-500 uppercase ml-1">Nome do Cliente</label>
+                            <input id="manualName" type="text" placeholder="Ex: João Silva" class="input-pro">
+                        </div>
+                        <div class="space-y-1">
+                            <label class="text-[10px] font-bold text-slate-500 uppercase ml-1">WhatsApp</label>
+                            <input id="manualPhone" type="text" placeholder="(00) 00000-0000" class="input-pro">
+                        </div>
+                        <div class="md:col-span-2 space-y-1">
+                            <label class="text-[10px] font-bold text-slate-500 uppercase ml-1">Endereço de Entrega (Opcional)</label>
+                            <input id="manualAddress" type="text" placeholder="Rua, número, bairro..." class="input-pro">
+                        </div>
+                        <div class="md:col-span-2 space-y-1">
+                            <label class="text-[10px] font-bold text-slate-500 uppercase ml-1">Forma de Pagamento</label>
+                            <select id="manualPayment" class="input-pro bg-white">
+                                <option value="">Selecione...</option>
+                                <option value="pix">PIX</option>
+                                <option value="dinheiro">Dinheiro</option>
+                                <option value="cartao_credito">Cartão</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
 
-            <input id="manualName" type="text" placeholder="Nome do cliente (opcional)"
-                class="w-full p-3 rounded-xl border border-slate-200 bg-white focus:border-primary-400 outline-none">
-            
-            <input id="manualPhone" type="text" placeholder="WhatsApp (opcional)"
-                class="w-full p-3 rounded-xl border border-slate-200 bg-white focus:border-primary-400 outline-none">
-            
-            <input id="manualAddress" type="text" placeholder="Endereço (opcional)"
-                class="w-full p-3 rounded-xl border border-slate-200 bg-white focus:border-primary-400 outline-none">
+                <div class="space-y-4">
+                    <h4 class="text-[11px] font-black uppercase text-slate-400 tracking-widest border-b border-slate-100 pb-2">Adicionar Itens</h4>
+                    <div class="relative">
+                        <i data-lucide="search" class="absolute left-4 top-3.5 text-slate-400 w-5 h-5"></i>
+                        <input 
+                            id="manualProductSearch"
+                            oninput="window.renderManualProductSearch()"
+                            type="text" 
+                            placeholder="Buscar produto por nome ou código..."
+                            class="w-full pl-12 p-3.5 rounded-2xl border border-slate-200 bg-slate-50/50 focus:bg-white focus:ring-2 focus:ring-primary-500 outline-none transition-all">
+                    </div>
+                    <div id="manualSearchResults" class="grid grid-cols-1 gap-2 max-h-48 overflow-y-auto pr-2 custom-scrollbar"></div>
+                </div>
 
-            <select id="manualPayment" 
-                class="w-full p-3 rounded-xl border border-slate-200 bg-white focus:border-primary-400 outline-none">
-                <option value="">Forma de pagamento</option>
-                <option value="pix">PIX</option>
-                <option value="cartao_credito">Cartão de Crédito</option>
-                <option value="cartao_debito">Cartão de Débito</option>
-                <option value="dinheiro">Dinheiro</option>
-                <option value="fiado">Fiado</option>
-            </select>
+                <div class="space-y-4">
+                    <h4 class="text-[11px] font-black uppercase text-slate-400 tracking-widest border-b border-slate-100 pb-2">Carrinho</h4>
+                    <div id="manualOrderItems" class="space-y-3">
+                        </div>
+                </div>
+
+                <div class="pt-6 border-t border-slate-100">
+                    <div class="flex justify-between items-center mb-6 p-4 bg-primary-50 rounded-2xl border border-primary-100">
+                        <span class="text-primary-700 font-bold uppercase text-xs tracking-widest">Valor Total</span>
+                        <span id="manualTotal" class="text-2xl font-black text-primary-800">R$ 0,00</span>
+                    </div>
+
+                    <div class="flex flex-col md:flex-row gap-3">
+                        <button onclick="window.closeManualOrderModal()" 
+                            class="flex-1 py-4 text-slate-400 font-bold hover:text-slate-600 uppercase text-[10px] tracking-widest">
+                            Cancelar
+                        </button>
+                        <button onclick="window.finishManualOrder()"
+                            class="flex-[2] bg-primary-600 text-white py-4 rounded-2xl font-bold shadow-xl hover:bg-primary-700 uppercase tracking-widest text-xs transition-all flex items-center justify-center gap-2">
+                            <i data-lucide="check-circle" class="w-4 h-4"></i> Finalizar Pedido
+                        </button>
+                    </div>
+                </div>
+
+            </div>
         </div>
-
-        <!-- Busca de produtos -->
-        <div class="relative mb-3">
-            <i data-lucide="search" class="absolute left-4 top-3.5 text-slate-400 w-5 h-5"></i>
-            <input 
-                id="manualProductSearch"
-                oninput="window.renderManualProductSearch()"
-                type="text" 
-                placeholder="Buscar produto por nome ou código..."
-                class="w-full pl-12 p-3.5 rounded-2xl border border-slate-200 bg-white shadow-sm focus:border-primary-400 outline-none">
-        </div>
-
-        <!-- Resultados de busca -->
-        <div id="manualSearchResults" class="space-y-2 max-h-52 overflow-y-auto mb-5"></div>
-
-        <!-- Itens -->
-        <div class="space-y-3 mb-6">
-            <p class="text-xs font-bold text-slate-500 uppercase tracking-wide">Itens do Pedido</p>
-            <div id="manualOrderItems" class="space-y-3"></div>
-        </div>
-
-        <!-- Total -->
-        <div class="flex justify-between items-center text-lg font-extrabold text-slate-800 border-t pt-4 mb-5">
-            <span>Total:</span>
-            <span id="manualTotal">R$ 0,00</span>
-        </div>
-
-        <!-- Botões -->
-        <div class="flex justify-end gap-3">
-            <button onclick="window.closeManualOrderModal()" 
-                class="px-4 py-3 rounded-xl border border-slate-300 hover:bg-slate-100 active:scale-95 transition">
-                Cancelar
-            </button>
-
-            <button 
-                onclick="window.finishManualOrder()"
-                class="px-5 py-3 rounded-xl bg-primary-600 text-white font-bold shadow active:scale-95 transition">
-                Finalizar Pedido
-            </button>
-        </div>
-
     </div>
 </div>
+
     
     <div id="toast-container" class="fixed top-5 right-5 z-[999] flex flex-col gap-2 pointer-events-none"></div>
     <!-- LOGIN / REGISTER SCREEN -->
