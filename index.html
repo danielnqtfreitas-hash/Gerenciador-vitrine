@@ -2061,6 +2061,8 @@ window.initOrderListener = (storeId) => {
                 document.getElementById('prodCategory').value = p.category; 
                 document.getElementById('prodValue').value = p.value;
                 document.getElementById('prodPromo').value = p.promoValue || ''; 
+                document.getElementById('prodStock').value = p.stock || 0;
+
                 document.getElementById('prodDesc').value = p.description || '';
                 document.getElementById('prodFeatured').checked = p.isFeatured; 
                 document.getElementById('prodSizesInput').value = p.sizes ? p.sizes.join(', ') : '';
