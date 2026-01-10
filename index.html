@@ -593,6 +593,13 @@
             <h3 class="text-3xl font-extrabold text-slate-900 tracking-tight">Gestão Financeira</h3>
             <p class="text-slate-500 font-medium">Controle de lucros e desempenho em tempo real.</p>
         </div>
+        <div class="flex bg-slate-100 p-1 rounded-2xl w-fit mb-6 border border-slate-200">
+    <button onclick="updateFinanceRange('today')" id="fin-range-today" class="px-4 py-2 rounded-xl text-xs font-black transition-all bg-white shadow-sm text-primary-600">HOJE</button>
+    <button onclick="updateFinanceRange('yesterday')" id="fin-range-yesterday" class="px-4 py-2 rounded-xl text-xs font-black transition-all text-slate-500">ONTEM</button>
+    <button onclick="updateFinanceRange('week')" id="fin-range-week" class="px-4 py-2 rounded-xl text-xs font-black transition-all text-slate-500">7 DIAS</button>
+    <button onclick="updateFinanceRange('month')" id="fin-range-month" class="px-4 py-2 rounded-xl text-xs font-black transition-all text-slate-500">ESTE MÊS</button>
+</div>
+
         <div class="flex items-center gap-2 bg-white p-2 rounded-2xl shadow-sm border border-slate-100">
             <div class="w-10 h-10 bg-green-100 text-green-600 rounded-xl flex items-center justify-center">
                 <i data-lucide="trending-up" class="w-6 h-6"></i>
@@ -3698,6 +3705,115 @@ window.stopBarcodeScanner = () => {
     } else {
         document.getElementById('scanner-container').classList.add('hidden');
     }
+};
+// Variável global para guardar o filtro atual
+let currentFinanceRange = 'today';
+
+window.updateFinanceRange = (range) => {
+    currentFinanceRange = range;
+    
+    // Atualiza visual dos botões
+    const ranges = ['today', 'yesterday', 'week', 'month'];
+    ranges.forEach(r => {
+        const btn = document.getElementById(`fin-range-${r}`);
+        if(btn) {
+            btn.classList.toggle('bg-white', r === range);
+            btn.classList.toggle('shadow-sm', r === range);
+            btn.classList.toggle('text-primary-600', r === range);
+            btn.classList.toggle('text-slate-500', r !== range);
+        }
+    });
+
+    // Recalcula o dashboard
+    window.initFinanceDashboard();
+};
+
+window.initFinanceDashboard = () => {
+    const now = new Date();
+    const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
+    const yesterdayStart = todayStart - (24 * 60 * 60 * 1000);
+    const weekStart = now.getTime() - (7 * 24 * 60 * 60 * 1000);
+    const monthStart = new Date(now.getFullYear(), now.getMonth(), 1).getTime();
+
+    // Define qual o limite de tempo baseado no botão clicado
+    let filterStart = todayStart;
+    let filterEnd = Infinity; // Para pegar tudo até agora
+
+    if (currentFinanceRange === 'yesterday') {
+        filterStart = yesterdayStart;
+        filterEnd = todayStart; // Termina onde hoje começa
+    } else if (currentFinanceRange === 'week') {
+        filterStart = weekStart;
+    } else if (currentFinanceRange === 'month') {
+        filterStart = monthStart;
+    }
+
+    let revFiltered = 0, countFiltered = 0, revTotalAll = 0;
+    let revLastMonth = 0; // Para o feedback comparativo
+
+    Object.values(ordersCache).forEach(order => {
+        let orderTime = 0;
+        if (order.createdAt?.toMillis) orderTime = order.createdAt.toMillis();
+        else if (order.createdAt?.toDate) orderTime = order.createdAt.toDate().getTime();
+        
+        const value = Number(order.total) || 0;
+
+        if (order.status !== 'canceled' && order.status !== 'Cancelado') {
+            revTotalAll += value; // Faturamento Total histórico
+            
+            // Soma apenas o que estiver dentro do período filtrado
+            if (orderTime >= filterStart && orderTime < filterEnd) {
+                revFiltered += value;
+                countFiltered++;
+            }
+
+            // Cálculo para o comparativo de meses (Feedback)
+            const startOfLastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1).getTime();
+            if (orderTime >= startOfLastMonth && orderTime < monthStart) {
+                revLastMonth += value;
+            }
+        }
+    });
+
+    // ATUALIZAÇÃO DA UI
+    const setTxt = (id, txt) => {
+        const el = document.getElementById(id);
+        if(el) el.textContent = txt;
+    };
+
+    // O card "Vendas Hoje" agora muda o título e valor conforme o filtro
+    const rangeTitles = { today: 'Vendas Hoje', yesterday: 'Vendas Ontem', week: 'Últimos 7 Dias', month: 'Vendas no Mês' };
+    const titleEl = document.querySelector('#view-finance p.text-slate-400'); // Seleciona o título do card principal
+    if(titleEl) titleEl.textContent = rangeTitles[currentFinanceRange];
+
+    setTxt('fin-rev-day', `R$ ${revFiltered.toFixed(2).replace('.',',')}`);
+    setTxt('fin-orders-day', `${countFiltered} pedidos no período`);
+    setTxt('fin-rev-total', `R$ ${revTotalAll.toFixed(2).replace('.',',')}`);
+
+    // Cálculos de estoque permanecem os mesmos (pois o estoque é atual)
+    let stockValue = 0, stockCost = 0, totalItems = 0;
+    allProducts.forEach(p => {
+        const qty = Number(p.stock) || 0;
+        stockValue += (Number(p.value) || 0) * qty;
+        stockCost += (Number(p.cost) || 0) * qty;
+        totalItems += qty;
+    });
+
+    setTxt('fin-stock-value', `R$ ${stockValue.toFixed(2).replace('.',',')}`);
+    setTxt('fin-stock-cost', `R$ ${stockCost.toFixed(2).replace('.',',')}`);
+    setTxt('fin-profit-potential', `R$ ${(stockValue - stockCost).toFixed(2).replace('.',',')}`);
+    setTxt('fin-stock-count', `${totalItems} unidades disponíveis`);
+
+    if (typeof renderGrowthFeedback === 'function') {
+        // Para o feedback, sempre comparamos o Mês Atual vs Mês Passado
+        const revThisMonth = Object.values(ordersCache).reduce((acc, o) => {
+            const time = o.createdAt?.toMillis || 0;
+            return (time >= monthStart && o.status !== 'canceled') ? acc + (o.total || 0) : acc;
+        }, 0);
+        renderGrowthFeedback(revThisMonth, revLastMonth);
+    }
+    
+    if (typeof initGrowthChart === 'function') initGrowthChart();
 };
 
 
