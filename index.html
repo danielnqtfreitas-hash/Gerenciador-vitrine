@@ -3465,6 +3465,13 @@ window.addManualItem = (id) => {
     if (!p) return;
 
     const existing = manualOrder.find(item => item.id === id);
+    const currentQty = existing ? existing.qty : 0;
+
+    // TRAVA DE SEGURANÇA:
+    if (currentQty + 1 > p.stock) {
+        showToast(`⚠️ Estoque insuficiente! Você só tem ${p.stock} unidades de ${p.name}.`);
+        return;
+    }
 
     if (existing) {
         existing.qty++;
@@ -3472,6 +3479,7 @@ window.addManualItem = (id) => {
         manualOrder.push({
             id: id,
             name: p.name,
+            sku: p.sku || '',
             price: p.promoValue || p.value,
             qty: 1
         });
@@ -3479,6 +3487,7 @@ window.addManualItem = (id) => {
 
     window.renderManualOrderItems();
 };
+
 
 // --- MOSTRA OS ITENS ADICIONADOS NO PEDIDO ---
 window.renderManualOrderItems = () => {
