@@ -186,60 +186,79 @@
     
    <!-- MODAL: Pedido Manual -->
 <div id="manualOrderModal" class="fixed inset-0 bg-black/40 backdrop-blur-sm z-[999] hidden flex items-center justify-center">
-    <div class="bg-white w-[95%] max-w-lg p-6 rounded-2xl shadow-xl max-h-[90vh] overflow-y-auto">
+    <div class="bg-white w-[95%] max-w-lg p-6 rounded-3xl shadow-2xl max-h-[90vh] overflow-y-auto border border-slate-200">
 
-        <h2 class="text-xl font-bold text-slate-800 mb-4">Novo Pedido Rápido</h2>
+        <!-- Cabeçalho -->
+        <div class="mb-5 flex items-center justify-between">
+            <h2 class="text-2xl font-extrabold text-slate-800">Novo Pedido Rápido</h2>
+            <button onclick="window.closeManualOrderModal()"
+                class="p-2 rounded-xl hover:bg-slate-100 active:scale-95 transition">
+                <i data-lucide="x" class="w-5 h-5 text-slate-500"></i>
+            </button>
+        </div>
 
-        <!-- Dados do cliente -->
-        <div class="space-y-3 mb-6">
+        <!-- Bloco do cliente -->
+        <div class="space-y-3 mb-6 p-4 bg-slate-50 rounded-2xl border border-slate-200">
+            <p class="text-xs font-bold text-slate-500 uppercase tracking-wide">Dados do Cliente</p>
+
             <input id="manualName" type="text" placeholder="Nome do cliente (opcional)"
-                class="w-full p-3 rounded-xl border border-slate-200">
+                class="w-full p-3 rounded-xl border border-slate-200 bg-white focus:border-primary-400 outline-none">
+            
             <input id="manualPhone" type="text" placeholder="WhatsApp (opcional)"
-                class="w-full p-3 rounded-xl border border-slate-200">
+                class="w-full p-3 rounded-xl border border-slate-200 bg-white focus:border-primary-400 outline-none">
+            
             <input id="manualAddress" type="text" placeholder="Endereço (opcional)"
-                class="w-full p-3 rounded-xl border border-slate-200">
-            <select id="manualPayment" class="w-full p-3 rounded-xl border border-slate-200 bg-white">
-    <option value="">Selecione a forma de pagamento</option>
-    <option value="pix">PIX</option>
-    <option value="cartao_credito">Cartão</option>
-    <option value="dinheiro">Dinheiro</option>
+                class="w-full p-3 rounded-xl border border-slate-200 bg-white focus:border-primary-400 outline-none">
+
+            <select id="manualPayment" 
+                class="w-full p-3 rounded-xl border border-slate-200 bg-white focus:border-primary-400 outline-none">
+                <option value="">Forma de pagamento</option>
+                <option value="pix">PIX</option>
+                <option value="cartao_credito">Cartão de Crédito</option>
+                <option value="cartao_debito">Cartão de Débito</option>
+                <option value="dinheiro">Dinheiro</option>
+                <option value="fiado">Fiado</option>
             </select>
         </div>
 
-        <!-- Campo de busca de produtos -->
+        <!-- Busca de produtos -->
         <div class="relative mb-3">
-            <i data-lucide="search" class="absolute left-4 top-3 text-slate-400 w-4 h-4"></i>
+            <i data-lucide="search" class="absolute left-4 top-3.5 text-slate-400 w-5 h-5"></i>
             <input 
-    id="manualProductSearch"
-    oninput="window.renderManualProductSearch()"
-    type="text" 
-    placeholder="Buscar produto por nome ou código..."
-    class="w-full pl-12 p-3 rounded-xl border border-slate-200 bg-white shadow-sm">
+                id="manualProductSearch"
+                oninput="window.renderManualProductSearch()"
+                type="text" 
+                placeholder="Buscar produto por nome ou código..."
+                class="w-full pl-12 p-3.5 rounded-2xl border border-slate-200 bg-white shadow-sm focus:border-primary-400 outline-none">
         </div>
 
-        <!-- Resultados da busca -->
-        <div id="manualSearchResults" class="space-y-2 max-h-52 overflow-y-auto mb-4"></div>
+        <!-- Resultados de busca -->
+        <div id="manualSearchResults" class="space-y-2 max-h-52 overflow-y-auto mb-5"></div>
 
-        <!-- Items adicionados -->
-        <div id="manualOrderItems" class="space-y-3 mb-6"></div>
+        <!-- Itens -->
+        <div class="space-y-3 mb-6">
+            <p class="text-xs font-bold text-slate-500 uppercase tracking-wide">Itens do Pedido</p>
+            <div id="manualOrderItems" class="space-y-3"></div>
+        </div>
 
         <!-- Total -->
-        <div class="flex justify-between items-center text-lg font-bold text-slate-800 border-t pt-3 mb-4">
+        <div class="flex justify-between items-center text-lg font-extrabold text-slate-800 border-t pt-4 mb-5">
             <span>Total:</span>
             <span id="manualTotal">R$ 0,00</span>
         </div>
 
         <!-- Botões -->
         <div class="flex justify-end gap-3">
-            <button onclick="window.closeManualOrderModal()" class="px-4 py-2 rounded-xl border border-slate-300">
+            <button onclick="window.closeManualOrderModal()" 
+                class="px-4 py-3 rounded-xl border border-slate-300 hover:bg-slate-100 active:scale-95 transition">
                 Cancelar
             </button>
 
             <button 
-    onclick="window.finishManualOrder()"
-    class="px-4 py-2 rounded-xl bg-primary-600 text-white shadow">
-    Finalizar Pedido
-</button>
+                onclick="window.finishManualOrder()"
+                class="px-5 py-3 rounded-xl bg-primary-600 text-white font-bold shadow active:scale-95 transition">
+                Finalizar Pedido
+            </button>
         </div>
 
     </div>
