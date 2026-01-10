@@ -3617,57 +3617,70 @@ window.updateOrderStatus = async (id, status) => {
     try {
         const p = ordersCache[id];
         if(!p) return;
-        const btn = document.getElementById('btnActionMain');
-        if(btn) btn.innerText = "Processando...";
         
-        const alreadyDeducted = p.stockDeducted || false;
+        const orderRef = doc(db, `stores/${currentStoreId}/orders`, id);
         const orderUpdate = { status: status };
+        const alreadyDeducted = p.stockDeducted || false;
 
+        // --- CASO A: CONFIRMAR OU COMPLETAR (BAIXAR ESTOQUE) ---
         if ((status === 'confirmed' || status === 'completed') && !alreadyDeducted) {
-            console.log("Iniciando baixa de estoque para o pedido:", id);
-            
+            console.log("Baixando estoque...");
             const stockPromises = p.items.map(async (item) => {
                 const productRef = doc(db, `stores/${currentStoreId}/products`, item.id);
                 const snap = await getDoc(productRef);
-                
                 if (snap.exists()) {
-                    const data = snap.data();
-                    const currentStock = Number(data.stock) || 0;
-                    const qtyVendida = Number(item.qty) || 0;
-                    const newStock = Math.max(0, currentStock - qtyVendida);
-                    
-                    console.log(`Produto: ${data.name} | Tinha: ${currentStock} | Vendeu: ${qtyVendida} | Sobrou: ${newStock}`);
-                    
-                    const updateData = { stock: newStock };
-                    
-                    // Só oculta se realmente chegar a zero
-                    if (newStock <= 0) {
-                        updateData.status = 'paused';
-                        console.log("Estoque zerado. Ocultando produto na vitrine.");
-                    }
-                    
-                    return updateDoc(productRef, updateData);
+                    const currentStock = Number(snap.data().stock) || 0;
+                    const newStock = Math.max(0, currentStock - Number(item.qty));
+                    return updateDoc(productRef, { 
+                        stock: newStock,
+                        status: newStock <= 0 ? 'paused' : snap.data().status 
+                    });
                 }
             });
-
             await Promise.all(stockPromises);
-            orderUpdate.stockDeducted = true; 
+            orderUpdate.stockDeducted = true; // Marca que o estoque SAIU
         }
 
-        await updateDoc(doc(db, `stores/${currentStoreId}/orders`, id), orderUpdate);
-        
+        // --- CASO B: CANCELAR (DEVOLVER ESTOQUE) ---
+        else if (status === 'canceled' && alreadyDeducted) {
+            console.log("Devolvendo estoque ao inventário...");
+            const restorePromises = p.items.map(async (item) => {
+                const productRef = doc(db, `stores/${currentStoreId}/products`, item.id);
+                const snap = await getDoc(productRef);
+                if (snap.exists()) {
+                    const currentStock = Number(snap.data().stock) || 0;
+                    const newStock = currentStock + Number(item.qty);
+                    // Se o estoque voltou a ser positivo, podemos reativar o produto ('active')
+                    return updateDoc(productRef, { 
+                        stock: newStock,
+                        status: 'active' 
+                    });
+                }
+            });
+            await Promise.all(restorePromises);
+            orderUpdate.stockDeducted = false; // Marca que o estoque VOLTOU
+        }
+
+        // Atualiza o pedido no Firebase
+        await updateDoc(orderRef, orderUpdate);
+
+        // Limpa cache para refletir no painel e na vitrine
+        localStorage.removeItem('app_cache_v4_' + currentStoreId);
+        await updateDoc(doc(db, `stores/${currentStoreId}/config/store`), { lastUpdate: Date.now() });
+
         if (status === 'confirmed') {
             const msg = `Olá ${p.customer.name}! Seu pedido #${p.id.slice(-5).toUpperCase()} foi confirmado! 🎉`;
             window.open(`https://wa.me/55${p.customer.phone.replace(/\D/g,'')}?text=${encodeURIComponent(msg)}`, '_blank');
         }
 
-        showToast("Estoque e Status atualizados! ✅");
+        showToast(`Pedido ${status} e estoque atualizado! ✅`);
         document.getElementById('orderDetailModal').classList.add('hidden');
     } catch (e) {
-        console.error("ERRO CRÍTICO NO ESTOQUE:", e);
-        showToast("Erro ao processar estoque.");
+        console.error(e);
+        showToast("Erro ao processar alteração.");
     }
 };
+
 
 
 
