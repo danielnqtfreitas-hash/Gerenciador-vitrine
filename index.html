@@ -2750,21 +2750,56 @@ window.handleBannerSubmit = async (e) => {
             await updateDoc(doc(db, `stores/${currentStoreId}/config/store`), { isStoreOpen: el.checked, lastUpdate: Date.now() }); 
         };
 
-        window.addDeliveryArea = () => { 
-            const n = document.getElementById('areaName').value; const f = parseFloat(document.getElementById('areaFee').value); 
-            if(n && !isNaN(f)) { deliveryAreas.push({name:n, fee:f}); renderDeliveryAreas(); document.getElementById('areaName').value=''; document.getElementById('areaFee').value=''; } 
-        };
-        window.removeArea = (i) => { deliveryAreas.splice(i,1); renderDeliveryAreas(); };
-        function renderDeliveryAreas() { 
-            document.getElementById('deliveryAreasList').innerHTML = deliveryAreas.map((a,i) => `
-                <div class="flex justify-between items-center p-4 bg-white">
-                    <span class="text-slate-700 font-medium text-sm">${a.name}</span>
-                    <div class="flex items-center gap-4">
-                        <b class="text-slate-900 text-sm">R$ ${a.fee.toFixed(2)}</b>
-                        <button type="button" onclick="removeArea(${i})" class="text-red-500 font-bold p-2 px-3 rounded-lg">×</button>
-                    </div>
-                </div>`).join(''); 
+        window.addDeliveryArea = async () => { 
+    const n = document.getElementById('areaName').value; 
+    const f = parseFloat(document.getElementById('areaFee').value); 
+    
+    if(n && !isNaN(f)) { 
+        // Adiciona ao array local
+        deliveryAreas.push({name: n, fee: f}); 
+        
+        // Atualiza a interface
+        renderDeliveryAreas(); 
+        
+        // Limpa os campos
+        document.getElementById('areaName').value = ''; 
+        document.getElementById('areaFee').value = ''; 
+        
+        // OPCIONAL: Salvar imediatamente no Firebase para evitar perda
+        try {
+            const storeRef = doc(db, "stores", currentStoreId, "config", "store");
+            await updateDoc(storeRef, { 
+                deliveryAreas: deliveryAreas,
+                lastUpdate: Date.now()
+            });
+            showToast("Bairro adicionado!");
+        } catch (e) {
+            console.error("Erro ao salvar bairro:", e);
         }
+    } 
+};
+
+        window.removeArea = async (i) => {
+    // Remove do array local
+    deliveryAreas.splice(i, 1);
+    
+    // Atualiza a interface visual imediatamente
+    renderDeliveryAreas();
+
+    try {
+        // Salva o novo estado do array no Firebase
+        const storeRef = doc(db, `stores/${currentStoreId}/config/store`);
+        await updateDoc(storeRef, { 
+            deliveryAreas: deliveryAreas,
+            lastUpdate: Date.now()
+        });
+        showToast("Bairro removido com sucesso");
+    } catch (e) {
+        console.error("Erro ao excluir bairro:", e);
+        showToast("Erro ao salvar alteração no banco");
+    }
+};
+
 
        window.saveStoreConfig = async function (event) {
     event.preventDefault();
