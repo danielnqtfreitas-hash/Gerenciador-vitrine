@@ -1940,9 +1940,10 @@ window.initOrderListener = (storeId) => {
 
           // ... (seu código anterior)
   deliveryAreas = Array.isArray(data.deliveryAreas) ? data.deliveryAreas : [];
-  renderDeliveryAreas();
-}); // Fim do onSnapshot da Store Config
-
+  setTimeout(() => {
+      window.renderDeliveryAreas();
+  }, 100);
+});
     // --- ADICIONE ESTE BLOCO ABAIXO PARA CARREGAR AS CATEGORIAS E PRODUTOS ---
 
     // LISTENER: Categorias (Departamentos)
