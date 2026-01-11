@@ -1916,35 +1916,35 @@ window.initOrderListener = (storeId) => {
   // Aplica o plano na UI
   updateUIByPlan();
 
-// --- SINCRONIZAÇÃO DAS CATEGORIAS MÁGICAS ---
-if (data.magicCategories) {
+  // --- SINCRONIZAÇÃO DAS CATEGORIAS MÁGICAS ---
+  if (data.magicCategories) {
     const magics = data.magicCategories;
-
+    
+    // Toggles do Dashboard
     const mNew = document.getElementById('magicNew');
     const mTop = document.getElementById('magicTop');
     if (mNew) mNew.checked = !!magics.showNew;
     if (mTop) mTop.checked = !!magics.showTop;
 
+    // Toggles da aba Categorias (se você usar os IDs magicNewCat/magicTopCat)
     const mNewCat = document.getElementById('magicNewCat');
     const mTopCat = document.getElementById('magicTopCat');
     if (mNewCat) mNewCat.checked = !!magics.showNew;
     if (mTopCat) mTopCat.checked = !!magics.showTop;
 
+    // Dispara o feedback visual (criaremos a função no próximo passo)
     if (typeof updateMagicFeedback === 'function') {
         updateMagicFeedback(magics);
     }
-}
+  }
 
-// --- DELIVERY AREAS (correto, sem sobrescrever) ---
-if (Array.isArray(data.deliveryAreas)) {
-    deliveryAreas = [...data.deliveryAreas];
-
-    setTimeout(() => {
-        if (typeof window.renderDeliveryAreas === "function") {
-            window.renderDeliveryAreas();
-        }
-    }, 60);
-} 
+          // ... (seu código anterior)
+  deliveryAreas = Array.isArray(data.deliveryAreas) ? data.deliveryAreas : [];
+  setTimeout(() => {
+      window.renderDeliveryAreas();
+  }, 100);
+});
+    // --- ADICIONE ESTE BLOCO ABAIXO PARA CARREGAR AS CATEGORIAS E PRODUTOS ---
 
     // LISTENER: Categorias (Departamentos)
     onSnapshot(collection(db, `stores/${currentStoreId}/categories`), s => {
@@ -2803,19 +2803,20 @@ window.handleBannerSubmit = async (e) => {
     // 2. Atualiza a lista visualmente
     renderDeliveryAreas(); 
     
-    // 3. Limpa os campos
+    // 3. Limpa os campos de texto
     nameInput.value = ''; 
     feeInput.value = ''; 
 
-    // 4. Salva NO FIRESTORE SEM APAGAR CAMPOS
+    // 4. Salva no Firebase imediatamente
     try {
+        const { getFirestore, doc, updateDoc } = await import("https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js");
         const storeRef = doc(db, `stores/${currentStoreId}/config/store`);
         
-        await setDoc(storeRef, { 
+        await updateDoc(storeRef, { 
             deliveryAreas: deliveryAreas,
             lastUpdate: Date.now() 
-        }, { merge: true });
-
+        });
+        
         showToast("✅ Bairro salvo!");
     } catch (e) { 
         console.error("Erro ao salvar no banco:", e);
@@ -2911,8 +2912,8 @@ window.handleBannerSubmit = async (e) => {
             lastUpdate: Date.now()
         };
 
-        // 4. Gravação no Firestore (agora SEM APAGAR CAMPOS ANTIGOS)
-await setDoc(storeRef, dataToSave, { merge: true });
+        // 4. Gravação no Firestore
+        await updateDoc(storeRef, dataToSave);
 
         showToast("✅ Configurações e Logo atualizadas!");
         
