@@ -1864,7 +1864,7 @@ window.initOrderListener = (storeId) => {
 };
 
 
-        function initStoreData() {
+      function initStoreData() {
     // 1. Configuração da URL da Vitrine e Menu
     const url = `https://danielnqtfreitas-hash.github.io/Vitrine/?id=${currentStoreId}`;
     const urlDisplay = document.getElementById('urlDisplay');
@@ -1873,24 +1873,32 @@ window.initOrderListener = (storeId) => {
     const storeBtn = document.getElementById('storeMenuBtn');
     if (storeBtn) storeBtn.classList.remove('opacity-50', 'pointer-events-none');
 
-    // --- LISTENER A: IDENTIDADE, LIMITES DO PLANO E CONFIGURAÇÕES ---
+    // --- LISTENER A: IDENTIDADE, LIMITES DO PLANO E STATUS DE ASSINATURA ---
     onSnapshot(doc(db, `stores/${currentStoreId}/config/store`), async (d) => {
         if (!d.exists()) return;
 
         const data = d.data();
-        
-        // --- TRAVA DE SEGURANÇA: SINCRONIZAÇÃO DE LIMITES ---
-        // Aqui garantimos que o lojista use exatamente o que o Super Admin definiu
+
+        // >>> TRAVA DE SUSPENSÃO (EXECUTA EM TEMPO REAL) <<<
+        const suspendedScreen = document.getElementById('suspended-screen');
+        if (data.subscriptionStatus === 'suspended') {
+            if (suspendedScreen) suspendedScreen.classList.remove('hidden');
+            return; // Bloqueia o processamento do restante do painel
+        } else {
+            if (suspendedScreen) suspendedScreen.classList.add('hidden');
+        }
+
+        // --- SINCRONIZAÇÃO DE LIMITES (Vem do Super Admin) ---
         storeConfig = {
             ...data,
-            maxProducts: parseInt(data.plan?.maxProducts ?? data.maxProducts ?? 0),
-            maxBanners: parseInt(data.plan?.maxBanners ?? data.maxBanners ?? 0),
-            hasCarousel: data.plan?.hasCarousel ?? data.hasCarousel ?? false
+            maxProducts: parseInt(data.maxProducts || 0),
+            maxBanners: parseInt(data.maxBanners || 0),
+            hasCarousel: data.hasCarousel === true || data.hasCarousel === "true"
         };
 
         // Bairros de entrega
         deliveryAreas = (data.deliveryAreas && Array.isArray(data.deliveryAreas)) ? data.deliveryAreas : [];
-        window.renderDeliveryAreas();
+        if (typeof window.renderDeliveryAreas === "function") window.renderDeliveryAreas();
 
         // Identidade Visual (Sidebar e Mobile)
         const nameSidebar = document.getElementById('sidebarStoreName');
@@ -1928,33 +1936,18 @@ window.initOrderListener = (storeId) => {
 
         if (dashToggle) dashToggle.checked = data.isStoreOpen !== false;
         if (statusLbl) statusLbl.textContent = data.isStoreOpen !== false ? 'Aberto' : 'Fechado';
-        if (planBadge) planBadge.textContent = (data.plan?.name || data.planId || "Básico").toUpperCase();
+        if (planBadge) planBadge.textContent = (data.planId || "Plano Ativo").toUpperCase();
 
-        // Executa as travas visuais (botões cinzas se bater o limite)
+        // Atualiza botões cinzas se bater o limite
         updateUIByPlan();
     });
 
-    // --- LISTENER B: CATEGORIAS (DEPARTAMENTOS) ---
+    // --- LISTENER B: CATEGORIAS ---
     onSnapshot(collection(db, `stores/${currentStoreId}/categories`), (s) => {
         allCategories = s.docs.map(doc => ({ id: doc.id, ...doc.data() }));
         const dashCats = document.getElementById('dash-total-cats');
         if (dashCats) dashCats.textContent = allCategories.length;
-        
         renderCategoryList();
-        
-        // Atualiza os selects de categoria em tempo real
-        const selects = ['prodCategory', 'bannerTarget'];
-        selects.forEach(id => {
-            const el = document.getElementById(id);
-            if(el) {
-                if(id === 'bannerTarget') {
-                    el.innerHTML = '<option value="offers">Todas as Ofertas</option>' + 
-                                   allCategories.map(c => `<option value="${c.name}">${c.name}</option>`).join('');
-                } else {
-                    el.innerHTML = allCategories.map(c => `<option value="${c.name}">${c.name}</option>`).join('');
-                }
-            }
-        });
     });
 
     // --- LISTENER C: PRODUTOS ---
@@ -1963,16 +1956,16 @@ window.initOrderListener = (storeId) => {
         const dashProds = document.getElementById('dash-total-products');
         if (dashProds) dashProds.textContent = allProducts.length;
         renderProductList();
-        updateQuotas(); // Reavalia se deve bloquear o botão "Novo"
+        updateQuotas(); 
     });
 
-    // --- LISTENER D: BANNERS (HERO CARDS) ---
+    // --- LISTENER D: BANNERS ---
     onSnapshot(collection(db, `stores/${currentStoreId}/hero_cards`), (s) => {
         allBanners = s.docs.map(doc => ({ id: doc.id, ...doc.data() }));
         const dashBanners = document.getElementById('dash-total-banners');
         if (dashBanners) dashBanners.textContent = allBanners.length;
         renderBannerList();
-        updateQuotas(); // Reavalia se deve bloquear o botão de Banner
+        updateQuotas();
     });
 
     // --- LISTENER E: VISITAS GLOBAIS ---
@@ -1982,7 +1975,7 @@ window.initOrderListener = (storeId) => {
             if (dashVisits) dashVisits.textContent = d.data().totalVisits || 0;
         }
     });
- }
+      }   
 
         function updateUIByPlan() {
     // Define os limites com base no que veio do Super Admin
