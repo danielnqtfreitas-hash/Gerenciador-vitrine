@@ -1917,6 +1917,15 @@ window.initOrderListener = (storeId) => {
   // Aplica o plano na UI
   updateUIByPlan();
 
+if (data.deliveryAreas && Array.isArray(data.deliveryAreas)) {
+    deliveryAreas = data.deliveryAreas; // Atualiza a variável global do topo
+} else {
+    deliveryAreas = [];
+}
+
+// 🔥 DESENHA NA TELA
+window.renderDeliveryAreas();  
+        
   // --- SINCRONIZAÇÃO DAS CATEGORIAS MÁGICAS ---
   if (data.magicCategories) {
     const magics = data.magicCategories;
@@ -1939,13 +1948,7 @@ window.initOrderListener = (storeId) => {
     }
   }
 
-          // ... (seu código anterior)
-  deliveryAreas = Array.isArray(data.deliveryAreas) ? data.deliveryAreas : [];
-  setTimeout(() => {
-      window.renderDeliveryAreas();
-  }, 100);
-});
-    // --- ADICIONE ESTE BLOCO ABAIXO PARA CARREGAR AS CATEGORIAS E PRODUTOS ---
+     
 
     // LISTENER: Categorias (Departamentos)
     onSnapshot(collection(db, `stores/${currentStoreId}/categories`), s => {
