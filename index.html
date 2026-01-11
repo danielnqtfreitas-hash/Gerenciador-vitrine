@@ -2790,26 +2790,53 @@ window.handleBannerSubmit = async (e) => {
 };
 
 
-        window.removeArea = async (i) => {
-    // Remove do array local
-    deliveryAreas.splice(i, 1);
+        window.removeArea = async (i) => { 
+    if(!confirm("Remover esta taxa de entrega?")) return;
     
-    // Atualiza a interface visual imediatamente
-    renderDeliveryAreas();
-
+    deliveryAreas.splice(i, 1); 
+    
     try {
-        // Salva o novo estado do array no Firebase
         const storeRef = doc(db, `stores/${currentStoreId}/config/store`);
         await updateDoc(storeRef, { 
-            deliveryAreas: deliveryAreas,
-            lastUpdate: Date.now()
+            deliveryAreas: deliveryAreas, 
+            lastUpdate: Date.now() 
         });
-        showToast("Bairro removido com sucesso");
-    } catch (e) {
-        console.error("Erro ao excluir bairro:", e);
-        showToast("Erro ao salvar alteração no banco");
+        showToast("Bairro removido!");
+        // O renderDeliveryAreas() será chamado automaticamente pelo onSnapshot acima
+    } catch (e) { 
+        showToast("Erro ao excluir."); 
     }
 };
+
+
+        function renderDeliveryAreas() { 
+    const list = document.getElementById('deliveryAreasList');
+    if(!list) return;
+
+    // Se a lista estiver vazia, limpa o container
+    if (!deliveryAreas || deliveryAreas.length === 0) {
+        list.innerHTML = '<div class="p-6 text-center text-slate-400 text-xs italic">Nenhum bairro cadastrado.</div>';
+        return;
+    }
+
+    // Gera o HTML para cada bairro salvo
+    list.innerHTML = deliveryAreas.map((a, i) => `
+        <div class="flex justify-between items-center p-4 bg-white border-b border-slate-100 last:border-0 animate-fade-in">
+            <div class="flex flex-col">
+                <span class="text-slate-700 font-bold text-sm">${a.name}</span>
+                <span class="text-[10px] text-slate-400 uppercase font-black tracking-widest">Entrega Local</span>
+            </div>
+            <div class="flex items-center gap-4">
+                <b class="text-primary-600 font-bold text-sm">R$ ${Number(a.fee).toFixed(2).replace('.',',')}</b>
+                <button type="button" onclick="window.removeArea(${i})" class="text-red-400 hover:text-red-600 hover:bg-red-50 p-2 rounded-xl transition-all">
+                    <i data-lucide="trash-2" class="w-4 h-4"></i>
+                </button>
+            </div>
+        </div>`).join(''); 
+    
+    // Atualiza os ícones (Lixeirinha)
+    if(typeof lucide !== 'undefined') lucide.createIcons();
+}
 
 
        window.saveStoreConfig = async function (event) {
