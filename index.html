@@ -2751,33 +2751,44 @@ window.handleBannerSubmit = async (e) => {
         };
 
         window.addDeliveryArea = async () => { 
-    const n = document.getElementById('areaName').value; 
-    const f = parseFloat(document.getElementById('areaFee').value); 
+    const nameInput = document.getElementById('areaName');
+    const feeInput = document.getElementById('areaFee');
     
-    if(n && !isNaN(f)) { 
-        // Adiciona ao array local
-        deliveryAreas.push({name: n, fee: f}); 
+    const n = nameInput.value.trim(); 
+    const f = parseFloat(feeInput.value); 
+    
+    if(!n || isNaN(f)) {
+        showToast("⚠️ Digite o nome do bairro e o valor da taxa.");
+        return;
+    }
+
+    // 1. Adiciona ao array local
+    deliveryAreas.push({ name: n, fee: f }); 
+    
+    // 2. Atualiza a lista visualmente
+    renderDeliveryAreas(); 
+    
+    // 3. Limpa os campos de texto
+    nameInput.value = ''; 
+    feeInput.value = ''; 
+
+    // 4. Salva no Firebase imediatamente
+    try {
+        const { getFirestore, doc, updateDoc } = await import("https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js");
+        const storeRef = doc(db, `stores/${currentStoreId}/config/store`);
         
-        // Atualiza a interface
-        renderDeliveryAreas(); 
+        await updateDoc(storeRef, { 
+            deliveryAreas: deliveryAreas,
+            lastUpdate: Date.now() 
+        });
         
-        // Limpa os campos
-        document.getElementById('areaName').value = ''; 
-        document.getElementById('areaFee').value = ''; 
-        
-        // OPCIONAL: Salvar imediatamente no Firebase para evitar perda
-        try {
-            const storeRef = doc(db, "stores", currentStoreId, "config", "store");
-            await updateDoc(storeRef, { 
-                deliveryAreas: deliveryAreas,
-                lastUpdate: Date.now()
-            });
-            showToast("Bairro adicionado!");
-        } catch (e) {
-            console.error("Erro ao salvar bairro:", e);
-        }
-    } 
+        showToast("✅ Bairro salvo!");
+    } catch (e) { 
+        console.error("Erro ao salvar no banco:", e);
+        showToast("❌ Erro ao sincronizar com o servidor.");
+    }
 };
+
 
         window.removeArea = async (i) => {
     // Remove do array local
