@@ -1391,32 +1391,37 @@ function applyPhoneMask(elementId) {
         function renderImagePreviews() {
     const gallery = document.getElementById('imageGallery');
     const counter = document.getElementById('photoCount');
-    const notice = document.getElementById('photoLimitNotice'); // Pegamos o novo ID
-    const max = storeConfig.hasCarousel ? 4 : 1;
+    const notice = document.getElementById('photoLimitNotice');
+    
+    // Se o plano permite carrossel, limite é 4. Se não, é apenas 1.
+    const maxPhotos = (currentPlan?.hasCarousel || storeConfig.hasCarousel) ? 4 : 1;
     
     gallery.innerHTML = '';
     currentProductImages.forEach((img, idx) => {
-        // ... seu código atual de criar a div da imagem ...
         const div = document.createElement('div');
         div.className = "relative aspect-square rounded-xl overflow-hidden border border-slate-200 shadow-sm animate-fade-in";
-        div.innerHTML = `<img src="${img}" class="w-full h-full object-cover"><button type="button" onclick="removeImage(${idx})" class="absolute top-1 right-1 bg-red-500 text-white p-1 rounded-lg transition-opacity"><i data-lucide="x" class="w-3 h-3"></i></button>`;
+        div.innerHTML = `
+            <img src="${img}" class="w-full h-full object-cover">
+            <button type="button" onclick="removeImage(${idx})" class="absolute top-1 right-1 bg-red-500 text-white p-1 rounded-lg">
+                <i data-lucide="x" class="w-3 h-3"></i>
+            </button>`;
         gallery.appendChild(div);
     });
 
-    counter.textContent = `${currentProductImages.length}/${max} fotos`;
+    if (counter) counter.textContent = `${currentProductImages.length}/${maxPhotos} fotos`;
 
-    // --- NOVA LÓGICA DE MENSAGEM ---
-    if (currentProductImages.length >= max) {
-        notice.textContent = "✅ Limite de fotos atingido para este produto.";
-        notice.className = "text-[10px] font-bold mt-2 text-amber-600 animate-pulse";
+    // Mensagem de Feedback para o lojista
+    if (currentProductImages.length >= maxPhotos) {
+        notice.textContent = "✅ Limite de fotos atingido.";
+        notice.className = "text-[10px] font-bold mt-2 text-amber-600";
     } else {
-        const resta = max - currentProductImages.length;
-        notice.textContent = `💡 Você ainda pode adicionar mais ${resta} foto(s).`;
+        notice.textContent = `💡 Seu plano permite ${maxPhotos} foto(s).`;
         notice.className = "text-[10px] font-bold mt-2 text-slate-400";
     }
     
     lucide.createIcons();
-        }
+}
+
 
         // --- AUTH ---
         window.handleLogin = async (e) => {
@@ -1984,48 +1989,69 @@ window.initOrderListener = (storeId) => {
 
   
         function updateUIByPlan() {
-  console.log("📦 storeConfig aplicado:", storeConfig);
+    // Prioriza os limites do Plano (config_plans), se não houver, usa o storeConfig
+    const maxProds = currentPlan?.maxProducts ?? storeConfig.maxProducts ?? 0;
+    const maxBanners = currentPlan?.maxBanners ?? storeConfig.maxBanners ?? 0;
+    const planName = currentPlan?.name || storeConfig.planId || "Sem Plano";
 
-  // Nome do plano
-  const planName =
-    currentPlan?.name ||
-    storeConfig.planId ||
-    "Sem Plano";
+    // Nome do plano
+    const badge = document.getElementById('currentPlanBadge');
+    if (badge) badge.textContent = planName.toUpperCase();
 
-  const badge = document.getElementById('currentPlanBadge');
-  if (badge) {
-    badge.textContent = planName.toUpperCase();
-  }
+    // Atualiza os textos de limite no Dashboard (ex: /50)
+    const limitProdEl = document.getElementById('dash-limit-products');
+    const limitBannerEl = document.getElementById('dash-limit-banners');
+    if (limitProdEl) limitProdEl.textContent = `/${maxProds}`;
+    if (limitBannerEl) limitBannerEl.textContent = `/${maxBanners}`;
 
-  // Limites
-  document.getElementById('dash-limit-products').textContent =
-    `/${storeConfig.maxProducts ?? 0}`;
+    // Gerenciamento dos Menus de Banners
+    const navBanner = document.getElementById('nav-banners');
+    const mobBanner = document.getElementById('nav-banners-mobile'); 
 
-  document.getElementById('dash-limit-banners').textContent =
-    `/${storeConfig.maxBanners ?? 0}`;
+    if (maxBanners > 0) {
+        navBanner?.classList.remove('hidden');
+        mobBanner?.classList.remove('hidden');
+    } else {
+        navBanner?.classList.add('hidden');
+        mobBanner?.classList.add('hidden');
+    }
 
-  // Menu de banners
-  const navBanner = document.getElementById('nav-banners');
-  const mobBanner = document.getElementById('mob-nav-banners');
+    updateQuotas();
+}
 
-  if ((storeConfig.maxBanners ?? 0) > 0) {
-    navBanner?.classList.remove('hidden');
-    mobBanner?.classList.remove('hidden');
-  } else {
-    navBanner?.classList.add('hidden');
-    mobBanner?.classList.add('hidden');
-  }
+function updateQuotas() {
+    const maxProds = currentPlan?.maxProducts ?? storeConfig.maxProducts ?? 0;
+    const maxBanners = currentPlan?.maxBanners ?? storeConfig.maxBanners ?? 0;
 
-  updateQuotas();
+    // --- TRAVA DE PRODUTOS ---
+    const pBtn = document.getElementById('btnNewProduct');
+    const isProdLimitReached = allProducts.length >= maxProds;
+
+    if (pBtn) {
+        pBtn.disabled = isProdLimitReached;
+        if (isProdLimitReached) {
+            pBtn.classList.replace('bg-slate-900', 'bg-slate-200');
+            pBtn.classList.replace('text-white', 'text-slate-400');
+        } else {
+            pBtn.classList.replace('bg-slate-200', 'bg-slate-900');
+            pBtn.classList.replace('text-slate-400', 'text-white');
         }
+    }
 
-        function updateQuotas() {
-            const pBtn = document.getElementById('btnNewProduct');
-            if(allProducts.length >= storeConfig.maxProducts) { pBtn.classList.replace('bg-slate-900', 'bg-slate-200'); pBtn.classList.replace('text-white', 'text-slate-400'); }
-            else { pBtn.classList.replace('bg-slate-200', 'bg-slate-900'); pBtn.classList.replace('text-slate-400', 'text-white'); }
-            document.getElementById('productQuotaText').textContent = `${allProducts.length}/${storeConfig.maxProducts}`;
-            document.getElementById('bannerQuotaText').textContent = `${allBanners.length}/${storeConfig.maxBanners}`;
-        }
+    // --- TRAVA DE BANNERS ---
+    const bBtn = document.querySelector('[onclick="window.openBannerModal()"]');
+    const isBannerLimitReached = allBanners.length >= maxBanners;
+    if (bBtn) {
+        bBtn.disabled = isBannerLimitReached;
+        bBtn.classList.toggle('opacity-50', isBannerLimitReached);
+    }
+
+    // Atualiza textos de contagem (ex: "12/50")
+    const pQuota = document.getElementById('productQuotaText');
+    const bQuota = document.getElementById('bannerQuotaText');
+    if (pQuota) pQuota.textContent = `${allProducts.length}/${maxProds}`;
+    if (bQuota) bQuota.textContent = `${allBanners.length}/${maxBanners}`;
+}
 
         // --- GESTÃO DE PRODUTOS ---
         window.openProductModal = (p = null) => {
