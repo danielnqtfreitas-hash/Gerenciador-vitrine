@@ -1916,38 +1916,35 @@ window.initOrderListener = (storeId) => {
   // Aplica o plano na UI
   updateUIByPlan();
 
-  // --- SINCRONIZAÇÃO DAS CATEGORIAS MÁGICAS ---
-  if (data.magicCategories) {
+// --- SINCRONIZAÇÃO DAS CATEGORIAS MÁGICAS ---
+if (data.magicCategories) {
     const magics = data.magicCategories;
-    
-    // Toggles do Dashboard
+
     const mNew = document.getElementById('magicNew');
     const mTop = document.getElementById('magicTop');
     if (mNew) mNew.checked = !!magics.showNew;
     if (mTop) mTop.checked = !!magics.showTop;
 
-    // Toggles da aba Categorias (se você usar os IDs magicNewCat/magicTopCat)
     const mNewCat = document.getElementById('magicNewCat');
     const mTopCat = document.getElementById('magicTopCat');
     if (mNewCat) mNewCat.checked = !!magics.showNew;
     if (mTopCat) mTopCat.checked = !!magics.showTop;
 
-    // Dispara o feedback visual (criaremos a função no próximo passo)
     if (typeof updateMagicFeedback === 'function') {
         updateMagicFeedback(magics);
     }
-  }
+}
 
-  // --- DELIVERY AREAS (solução definitiva sem sobrescrever) ---
+// --- DELIVERY AREAS (correto, sem sobrescrever) ---
 if (Array.isArray(data.deliveryAreas)) {
-    deliveryAreas = data.deliveryAreas.slice(); // cópia segura
-    
+    deliveryAreas = [...data.deliveryAreas];
+
     setTimeout(() => {
         if (typeof window.renderDeliveryAreas === "function") {
             window.renderDeliveryAreas();
         }
     }, 60);
-}
+} 
 
     // LISTENER: Categorias (Departamentos)
     onSnapshot(collection(db, `stores/${currentStoreId}/categories`), s => {
