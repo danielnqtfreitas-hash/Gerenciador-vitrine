@@ -2702,6 +2702,12 @@ window.handleBannerSubmit = async (e) => {
     const activeView = document.getElementById(`view-${tabName}`);
     if (activeView) activeView.classList.remove('hidden');
 
+        if (tabName === "config") {
+    if (typeof window.renderDeliveryAreas === "function") {
+        setTimeout(() => window.renderDeliveryAreas(), 50);
+    }
+}
+
     const activeBtn = document.getElementById(`nav-${tabName}`);
     if (activeBtn) {
         activeBtn.classList.add('text-primary', 'bg-primary/5', 'border-r-4', 'border-primary', 'font-bold', 'active');
