@@ -1854,152 +1854,133 @@ window.initOrderListener = (storeId) => {
 
 
         function initStoreData() {
+    // 1. Configuração da URL da Vitrine
     const url = `https://danielnqtfreitas-hash.github.io/Vitrine/?id=${currentStoreId}`;
-    document.getElementById('urlDisplay').textContent = url;
-    document.getElementById('storeMenuBtn').classList.remove('opacity-50', 'pointer-events-none');
-
-                // LISTENER: Configurações da Loja (ATUALIZADO)
-    onSnapshot(doc(db, `stores/${currentStoreId}/config/store`), async d => {
-  if (!d.exists()) return;
-
-  const data = d.data();
-  storeConfig = data;
-
-  // Nome da loja
-  document.getElementById('sidebarStoreName').textContent = data.storeName;
-  document.getElementById('sidebarStoreNameMobile').textContent = data.storeName;
-
-  // Logo
-  if (data.logoUrl) {
-    const lD = document.getElementById('sidebarStoreLogo'); 
-    const lM = document.getElementById('sidebarStoreLogoMobile');
-    const lP = document.getElementById('logoPreviewImg');
-    const lI = document.getElementById('logoPlaceholderIcon');
-
-    lD.src = lM.src = lP.src = data.logoUrl;
-    lD.classList.remove('hidden');
-    lM.classList.remove('hidden');
-    lP.classList.remove('hidden');
-    if (lI) lI.classList.add('hidden');
-  }
-
-  // Campos de configuração
-  document.getElementById('confStoreName').value = data.storeName || '';
-  document.getElementById('confWhatsapp').value = data.whatsappNumber || '';
-  document.getElementById('confFooter').value = data.footerText || '';
-  document.getElementById('confColorPrimary').value = data.primaryColor || '#8b5cf6';
-
-  // Status
-  document.getElementById('dashboardStoreToggle').checked = data.isStoreOpen !== false;
-  document.getElementById('statusLabel').textContent =
-    data.isStoreOpen !== false ? 'Aberto' : 'Fechado';
-
-  // 🔥 AGORA A PARTE MAIS IMPORTANTE 🔥
-  // Buscar o plano REAL
-  try {
-    if (data.plan?.id) {
-      const planSnap = await getDoc(
-        doc(db, "config_plans", data.plan.id)
-      );
-
-      if (planSnap.exists()) {
-        currentPlan = planSnap.data();
-
-        storeConfig.maxProducts = currentPlan.maxProducts;
-        storeConfig.maxBanners = currentPlan.maxBanners;
-        storeConfig.hasCarousel = currentPlan.hasCarousel;
-      }
-    }
-  } catch (err) {
-    console.error("Erro ao carregar plano:", err);
-  }
-
-  // Aplica o plano na UI
-  updateUIByPlan();
-
-  // --- SINCRONIZAÇÃO DAS CATEGORIAS MÁGICAS ---
-  if (data.magicCategories) {
-    const magics = data.magicCategories;
+    const urlDisplay = document.getElementById('urlDisplay');
+    if (urlDisplay) urlDisplay.textContent = url;
     
-    // Toggles do Dashboard
-    const mNew = document.getElementById('magicNew');
-    const mTop = document.getElementById('magicTop');
-    if (mNew) mNew.checked = !!magics.showNew;
-    if (mTop) mTop.checked = !!magics.showTop;
+    const storeBtn = document.getElementById('storeMenuBtn');
+    if (storeBtn) storeBtn.classList.remove('opacity-50', 'pointer-events-none');
 
-    // Toggles da aba Categorias (se você usar os IDs magicNewCat/magicTopCat)
-    const mNewCat = document.getElementById('magicNewCat');
-    const mTopCat = document.getElementById('magicTopCat');
-    if (mNewCat) mNewCat.checked = !!magics.showNew;
-    if (mTopCat) mTopCat.checked = !!magics.showTop;
+    // --- LISTENER A: CONFIGURAÇÕES, IDENTIDADE E BAIRROS ---
+    onSnapshot(doc(db, `stores/${currentStoreId}/config/store`), async (d) => {
+        if (!d.exists()) return;
 
-    // Dispara o feedback visual (criaremos a função no próximo passo)
-    if (typeof updateMagicFeedback === 'function') {
-        updateMagicFeedback(magics);
-    }
-  }
+        const data = d.data();
+        storeConfig = data; // Atualiza cache global
 
-          // ... (seu código anterior)
-  deliveryAreas = Array.isArray(data.deliveryAreas) ? data.deliveryAreas : [];
-  setTimeout(() => {
-      window.renderDeliveryAreas();
-  }, 100);
-});
-    // --- ADICIONE ESTE BLOCO ABAIXO PARA CARREGAR AS CATEGORIAS E PRODUTOS ---
+        // Sincroniza variável global de bairros e renderiza
+        deliveryAreas = (data.deliveryAreas && Array.isArray(data.deliveryAreas)) ? data.deliveryAreas : [];
+        window.renderDeliveryAreas();
 
-    // LISTENER: Categorias (Departamentos)
-    onSnapshot(collection(db, `stores/${currentStoreId}/categories`), s => {
-        allCategories = s.docs.map(d => ({id: d.id, ...d.data()}));
-        
-        // Atualiza o contador no Dashboard
-        const dashCats = document.getElementById('dash-total-cats');
-        if(dashCats) dashCats.textContent = allCategories.length;
-        
-        // Atualiza a lista visual na aba Categorias
-        renderCategoryList();
-        
-        // Atualiza os selects de Categoria no formulário de Produto
-        const prodCatSelect = document.getElementById('prodCategory');
-        if(prodCatSelect) {
-            prodCatSelect.innerHTML = allCategories.map(c => `<option value="${c.name}">${c.name}</option>`).join('');
+        // Nome e Logo na Sidebar
+        const nameSidebar = document.getElementById('sidebarStoreName');
+        const nameMobile = document.getElementById('sidebarStoreNameMobile');
+        if (nameSidebar) nameSidebar.textContent = data.storeName || 'Minha Loja';
+        if (nameMobile) nameMobile.textContent = data.storeName || 'Minha Loja';
+
+        if (data.logoUrl) {
+            const lD = document.getElementById('sidebarStoreLogo'); 
+            const lM = document.getElementById('sidebarStoreLogoMobile');
+            const lP = document.getElementById('logoPreviewImg');
+            const lI = document.getElementById('logoPlaceholderIcon');
+
+            if (lD) { lD.src = data.logoUrl; lD.classList.remove('hidden'); }
+            if (lM) { lM.src = data.logoUrl; lM.classList.remove('hidden'); }
+            if (lP) { lP.src = data.logoUrl; lP.classList.remove('hidden'); }
+            if (lI) lI.classList.add('hidden');
         }
 
-        // Atualiza o select de Destino no formulário de Banners
+        // Preenche campos da aba Configurações
+        const confName = document.getElementById('confStoreName');
+        const confWhats = document.getElementById('confWhatsapp');
+        const confFoot = document.getElementById('confFooter');
+        const confColor = document.getElementById('confColorPrimary');
+
+        if (confName) confName.value = data.storeName || '';
+        if (confWhats) confWhats.value = data.whatsappNumber || '';
+        if (confFoot) confFoot.value = data.footerText || '';
+        if (confColor) confColor.value = data.primaryColor || '#8b5cf6';
+
+        // Status da Loja (Aberto/Fechado) no Dashboard
+        const dashToggle = document.getElementById('dashboardStoreToggle');
+        const statusLbl = document.getElementById('statusLabel');
+        if (dashToggle) dashToggle.checked = data.isStoreOpen !== false;
+        if (statusLbl) statusLbl.textContent = data.isStoreOpen !== false ? 'Aberto' : 'Fechado';
+
+        // Lógica de Plano de Assinatura
+        try {
+            if (data.plan?.id) {
+                const planSnap = await getDoc(doc(db, "config_plans", data.plan.id));
+                if (planSnap.exists()) {
+                    currentPlan = planSnap.data();
+                    storeConfig.maxProducts = currentPlan.maxProducts;
+                    storeConfig.maxBanners = currentPlan.maxBanners;
+                    storeConfig.hasCarousel = currentPlan.hasCarousel;
+                }
+            }
+        } catch (err) {
+            console.error("Erro ao carregar plano:", err);
+        }
+
+        // Atualiza a interface baseada no limite do plano
+        updateUIByPlan();
+
+        // Sincroniza Categorias Mágicas
+        if (data.magicCategories && typeof updateMagicFeedback === 'function') {
+            updateMagicFeedback(data.magicCategories);
+        }
+    });
+
+    // --- LISTENER B: CATEGORIAS (DEPARTAMENTOS) ---
+    onSnapshot(collection(db, `stores/${currentStoreId}/categories`), (s) => {
+        allCategories = s.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        
+        const dashCats = document.getElementById('dash-total-cats');
+        if (dashCats) dashCats.textContent = allCategories.length;
+        
+        renderCategoryList(); // Atualiza aba categorias
+        
+        // Atualiza selects de categoria nos produtos e banners
+        const prodCatSelect = document.getElementById('prodCategory');
+        if (prodCatSelect) {
+            prodCatSelect.innerHTML = allCategories.map(c => `<option value="${c.name}">${c.name}</option>`).join('');
+        }
         const bannerTargetSelect = document.getElementById('bannerTarget');
-        if(bannerTargetSelect) {
+        if (bannerTargetSelect) {
             bannerTargetSelect.innerHTML = '<option value="offers">Todas as Ofertas</option>' + 
                                          allCategories.map(c => `<option value="${c.name}">${c.name}</option>`).join('');
         }
-        
-        renderProductList(); // Re-agrupa produtos
+        renderProductList(); 
     });
 
-    // LISTENER: Produtos
-    onSnapshot(collection(db, `stores/${currentStoreId}/products`), s => {
-        allProducts = s.docs.map(d => ({id: d.id, ...d.data()}));
+    // --- LISTENER C: PRODUTOS ---
+    onSnapshot(collection(db, `stores/${currentStoreId}/products`), (s) => {
+        allProducts = s.docs.map(doc => ({ id: doc.id, ...doc.data() }));
         const dashProds = document.getElementById('dash-total-products');
-        if(dashProds) dashProds.textContent = allProducts.length;
+        if (dashProds) dashProds.textContent = allProducts.length;
         renderProductList();
         updateQuotas();
     });
 
-    // LISTENER: Banners
-    onSnapshot(collection(db, `stores/${currentStoreId}/hero_cards`), s => {
-        allBanners = s.docs.map(d => ({id: d.id, ...d.data()}));
+    // --- LISTENER D: BANNERS ---
+    onSnapshot(collection(db, `stores/${currentStoreId}/hero_cards`), (s) => {
+        allBanners = s.docs.map(doc => ({ id: doc.id, ...doc.data() }));
         const dashBanners = document.getElementById('dash-total-banners');
-        if(dashBanners) dashBanners.textContent = allBanners.length;
+        if (dashBanners) dashBanners.textContent = allBanners.length;
         renderBannerList();
         updateQuotas();
     });
 
-    // LISTENER: Analytics Global
-    onSnapshot(doc(db, `stores/${currentStoreId}/analytics/global`), d => {
-        if(d.exists()) {
+    // --- LISTENER E: VISITAS GLOBAIS ---
+    onSnapshot(doc(db, `stores/${currentStoreId}/analytics/global`), (d) => {
+        if (d.exists()) {
             const dashVisits = document.getElementById('dash-total-visits');
-            if(dashVisits) dashVisits.textContent = d.data().totalVisits || 0;
+            if (dashVisits) dashVisits.textContent = d.data().totalVisits || 0;
         }
     });
-} // AGORA SIM fecha a função initStoreData corretamente
+}
+
 
   
         function updateUIByPlan() {
