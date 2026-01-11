@@ -1125,7 +1125,7 @@ let currentPlan = null;   // 🔹 vem da collection plans
         let cropper = null;
         let growthChartInstance = null;
         let manualOrder = [];
-        let deliveryAreas = [];
+       
         let html5QrCode = null;
         let customStart = null;
 let customEnd = null;
@@ -2789,7 +2789,6 @@ window.handleBannerSubmit = async (e) => {
         window.addDeliveryArea = async () => { 
     const nameInput = document.getElementById('areaName');
     const feeInput = document.getElementById('areaFee');
-    
     const n = nameInput.value.trim(); 
     const f = parseFloat(feeInput.value); 
     
@@ -2798,32 +2797,33 @@ window.handleBannerSubmit = async (e) => {
         return;
     }
 
-    // 1. Adiciona ao array local
-    deliveryAreas.push({ name: n, fee: f }); 
-    
-    // 2. Atualiza a lista visualmente
-    renderDeliveryAreas(); 
-    
-    // 3. Limpa os campos de texto
-    nameInput.value = ''; 
-    feeInput.value = ''; 
-
-    // 4. Salva no Firebase imediatamente
     try {
-        const { getFirestore, doc, updateDoc } = await import("https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js");
         const storeRef = doc(db, `stores/${currentStoreId}/config/store`);
         
+        // BUSCA DIRETA NO BANCO PARA GARANTIR QUE NÃO VAI SOBRESCREVER NADA
+        const docSnap = await getDoc(storeRef);
+        let currentAreas = [];
+        if (docSnap.exists() && docSnap.data().deliveryAreas) {
+            currentAreas = docSnap.data().deliveryAreas;
+        }
+
+        // Adiciona à lista que veio do banco
+        const updatedAreas = [...currentAreas, { name: n, fee: f }];
+        
         await updateDoc(storeRef, { 
-            deliveryAreas: deliveryAreas,
+            deliveryAreas: updatedAreas,
             lastUpdate: Date.now() 
         });
         
+        // Limpa campos
+        nameInput.value = ''; 
+        feeInput.value = ''; 
         showToast("✅ Bairro salvo!");
     } catch (e) { 
-        console.error("Erro ao salvar no banco:", e);
-        showToast("❌ Erro ao sincronizar com o servidor.");
+        showToast("❌ Erro ao salvar.");
     }
 };
+
 
 
         window.removeArea = async (i) => { 
