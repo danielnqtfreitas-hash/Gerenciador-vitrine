@@ -2912,8 +2912,8 @@ window.handleBannerSubmit = async (e) => {
             lastUpdate: Date.now()
         };
 
-        // 4. Gravação no Firestore
-        await updateDoc(storeRef, dataToSave);
+        // 4. Gravação no Firestore (agora SEM APAGAR CAMPOS ANTIGOS)
+await setDoc(storeRef, dataToSave, { merge: true });
 
         showToast("✅ Configurações e Logo atualizadas!");
         
