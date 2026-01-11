@@ -1938,9 +1938,16 @@ window.initOrderListener = (storeId) => {
     }
   }
 
-          if (Array.isArray(data.deliveryAreas)) {
-    deliveryAreas = data.deliveryAreas;
-          }
+  // --- DELIVERY AREAS (solução definitiva sem sobrescrever) ---
+if (Array.isArray(data.deliveryAreas)) {
+    deliveryAreas = data.deliveryAreas.slice(); // cópia segura
+    
+    setTimeout(() => {
+        if (typeof window.renderDeliveryAreas === "function") {
+            window.renderDeliveryAreas();
+        }
+    }, 60);
+}
 
     // LISTENER: Categorias (Departamentos)
     onSnapshot(collection(db, `stores/${currentStoreId}/categories`), s => {
