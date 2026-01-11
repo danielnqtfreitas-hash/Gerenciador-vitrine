@@ -1388,13 +1388,15 @@ function applyPhoneMask(elementId) {
         
 
         window.removeImage = (index) => { currentProductImages.splice(index, 1); renderImagePreviews(); };
-        function renderImagePreviews() {
+        
+
+function renderImagePreviews() {
     const gallery = document.getElementById('imageGallery');
     const counter = document.getElementById('photoCount');
     const notice = document.getElementById('photoLimitNotice');
     
-    // Se o plano permite carrossel, limite é 4. Se não, é apenas 1.
-    const maxPhotos = (currentPlan?.hasCarousel || storeConfig.hasCarousel) ? 4 : 1;
+    // Se o plano permite carrossel, limite é 4. Caso contrário, apenas 1.
+    const maxPhotos = storeConfig.hasCarousel ? 4 : 1;
     
     gallery.innerHTML = '';
     currentProductImages.forEach((img, idx) => {
@@ -1410,18 +1412,16 @@ function applyPhoneMask(elementId) {
 
     if (counter) counter.textContent = `${currentProductImages.length}/${maxPhotos} fotos`;
 
-    // Mensagem de Feedback para o lojista
     if (currentProductImages.length >= maxPhotos) {
         notice.textContent = "✅ Limite de fotos atingido.";
         notice.className = "text-[10px] font-bold mt-2 text-amber-600";
     } else {
-        notice.textContent = `💡 Seu plano permite ${maxPhotos} foto(s).`;
+        notice.textContent = `💡 O seu plano permite ${maxPhotos} foto(s).`;
         notice.className = "text-[10px] font-bold mt-2 text-slate-400";
     }
     
     lucide.createIcons();
 }
-
 
         // --- AUTH ---
         window.handleLogin = async (e) => {
@@ -1859,7 +1859,7 @@ window.initOrderListener = (storeId) => {
 
 
         function initStoreData() {
-    // 1. Configuração da URL da Vitrine
+    // 1. Configuração da URL da Vitrine e Menu
     const url = `https://danielnqtfreitas-hash.github.io/Vitrine/?id=${currentStoreId}`;
     const urlDisplay = document.getElementById('urlDisplay');
     if (urlDisplay) urlDisplay.textContent = url;
@@ -1867,18 +1867,26 @@ window.initOrderListener = (storeId) => {
     const storeBtn = document.getElementById('storeMenuBtn');
     if (storeBtn) storeBtn.classList.remove('opacity-50', 'pointer-events-none');
 
-    // --- LISTENER A: CONFIGURAÇÕES, IDENTIDADE E BAIRROS ---
+    // --- LISTENER A: IDENTIDADE, LIMITES DO PLANO E CONFIGURAÇÕES ---
     onSnapshot(doc(db, `stores/${currentStoreId}/config/store`), async (d) => {
         if (!d.exists()) return;
 
         const data = d.data();
-        storeConfig = data; // Atualiza cache global
+        
+        // --- TRAVA DE SEGURANÇA: SINCRONIZAÇÃO DE LIMITES ---
+        // Aqui garantimos que o lojista use exatamente o que o Super Admin definiu
+        storeConfig = {
+            ...data,
+            maxProducts: parseInt(data.plan?.maxProducts ?? data.maxProducts ?? 0),
+            maxBanners: parseInt(data.plan?.maxBanners ?? data.maxBanners ?? 0),
+            hasCarousel: data.plan?.hasCarousel ?? data.hasCarousel ?? false
+        };
 
-        // Sincroniza variável global de bairros e renderiza
+        // Bairros de entrega
         deliveryAreas = (data.deliveryAreas && Array.isArray(data.deliveryAreas)) ? data.deliveryAreas : [];
         window.renderDeliveryAreas();
 
-        // Nome e Logo na Sidebar
+        // Identidade Visual (Sidebar e Mobile)
         const nameSidebar = document.getElementById('sidebarStoreName');
         const nameMobile = document.getElementById('sidebarStoreNameMobile');
         if (nameSidebar) nameSidebar.textContent = data.storeName || 'Minha Loja';
@@ -1888,75 +1896,59 @@ window.initOrderListener = (storeId) => {
             const lD = document.getElementById('sidebarStoreLogo'); 
             const lM = document.getElementById('sidebarStoreLogoMobile');
             const lP = document.getElementById('logoPreviewImg');
-            const lI = document.getElementById('logoPlaceholderIcon');
-
             if (lD) { lD.src = data.logoUrl; lD.classList.remove('hidden'); }
             if (lM) { lM.src = data.logoUrl; lM.classList.remove('hidden'); }
             if (lP) { lP.src = data.logoUrl; lP.classList.remove('hidden'); }
+            const lI = document.getElementById('logoPlaceholderIcon');
             if (lI) lI.classList.add('hidden');
         }
 
-        // Preenche campos da aba Configurações
-        const confName = document.getElementById('confStoreName');
-        const confWhats = document.getElementById('confWhatsapp');
-        const confFoot = document.getElementById('confFooter');
-        const confColor = document.getElementById('confColorPrimary');
+        // Preenchimento dos campos de Configuração
+        const fields = {
+            'confStoreName': data.storeName || '',
+            'confWhatsapp': data.whatsappNumber || '',
+            'confFooter': data.footerText || '',
+            'confColorPrimary': data.primaryColor || '#8b5cf6'
+        };
+        Object.keys(fields).forEach(id => {
+            const el = document.getElementById(id);
+            if(el) el.value = fields[id];
+        });
 
-        if (confName) confName.value = data.storeName || '';
-        if (confWhats) confWhats.value = data.whatsappNumber || '';
-        if (confFoot) confFoot.value = data.footerText || '';
-        if (confColor) confColor.value = data.primaryColor || '#8b5cf6';
-
-        // Status da Loja (Aberto/Fechado) no Dashboard
+        // Dashboard: Status Aberto/Fechado e Badge do Plano
         const dashToggle = document.getElementById('dashboardStoreToggle');
         const statusLbl = document.getElementById('statusLabel');
+        const planBadge = document.getElementById('currentPlanBadge');
+
         if (dashToggle) dashToggle.checked = data.isStoreOpen !== false;
         if (statusLbl) statusLbl.textContent = data.isStoreOpen !== false ? 'Aberto' : 'Fechado';
+        if (planBadge) planBadge.textContent = (data.plan?.name || data.planId || "Básico").toUpperCase();
 
-        // Lógica de Plano de Assinatura
-        try {
-            if (data.plan?.id) {
-                const planSnap = await getDoc(doc(db, "config_plans", data.plan.id));
-                if (planSnap.exists()) {
-                    currentPlan = planSnap.data();
-                    storeConfig.maxProducts = currentPlan.maxProducts;
-                    storeConfig.maxBanners = currentPlan.maxBanners;
-                    storeConfig.hasCarousel = currentPlan.hasCarousel;
-                }
-            }
-        } catch (err) {
-            console.error("Erro ao carregar plano:", err);
-        }
-
-        // Atualiza a interface baseada no limite do plano
+        // Executa as travas visuais (botões cinzas se bater o limite)
         updateUIByPlan();
-
-        // Sincroniza Categorias Mágicas
-        if (data.magicCategories && typeof updateMagicFeedback === 'function') {
-            updateMagicFeedback(data.magicCategories);
-        }
     });
 
     // --- LISTENER B: CATEGORIAS (DEPARTAMENTOS) ---
     onSnapshot(collection(db, `stores/${currentStoreId}/categories`), (s) => {
         allCategories = s.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-        
         const dashCats = document.getElementById('dash-total-cats');
         if (dashCats) dashCats.textContent = allCategories.length;
         
-        renderCategoryList(); // Atualiza aba categorias
+        renderCategoryList();
         
-        // Atualiza selects de categoria nos produtos e banners
-        const prodCatSelect = document.getElementById('prodCategory');
-        if (prodCatSelect) {
-            prodCatSelect.innerHTML = allCategories.map(c => `<option value="${c.name}">${c.name}</option>`).join('');
-        }
-        const bannerTargetSelect = document.getElementById('bannerTarget');
-        if (bannerTargetSelect) {
-            bannerTargetSelect.innerHTML = '<option value="offers">Todas as Ofertas</option>' + 
-                                         allCategories.map(c => `<option value="${c.name}">${c.name}</option>`).join('');
-        }
-        renderProductList(); 
+        // Atualiza os selects de categoria em tempo real
+        const selects = ['prodCategory', 'bannerTarget'];
+        selects.forEach(id => {
+            const el = document.getElementById(id);
+            if(el) {
+                if(id === 'bannerTarget') {
+                    el.innerHTML = '<option value="offers">Todas as Ofertas</option>' + 
+                                   allCategories.map(c => `<option value="${c.name}">${c.name}</option>`).join('');
+                } else {
+                    el.innerHTML = allCategories.map(c => `<option value="${c.name}">${c.name}</option>`).join('');
+                }
+            }
+        });
     });
 
     // --- LISTENER C: PRODUTOS ---
@@ -1965,16 +1957,16 @@ window.initOrderListener = (storeId) => {
         const dashProds = document.getElementById('dash-total-products');
         if (dashProds) dashProds.textContent = allProducts.length;
         renderProductList();
-        updateQuotas();
+        updateQuotas(); // Reavalia se deve bloquear o botão "Novo"
     });
 
-    // --- LISTENER D: BANNERS ---
+    // --- LISTENER D: BANNERS (HERO CARDS) ---
     onSnapshot(collection(db, `stores/${currentStoreId}/hero_cards`), (s) => {
         allBanners = s.docs.map(doc => ({ id: doc.id, ...doc.data() }));
         const dashBanners = document.getElementById('dash-total-banners');
         if (dashBanners) dashBanners.textContent = allBanners.length;
         renderBannerList();
-        updateQuotas();
+        updateQuotas(); // Reavalia se deve bloquear o botão de Banner
     });
 
     // --- LISTENER E: VISITAS GLOBAIS ---
@@ -1984,74 +1976,50 @@ window.initOrderListener = (storeId) => {
             if (dashVisits) dashVisits.textContent = d.data().totalVisits || 0;
         }
     });
-}
+ }
 
-
-  
         function updateUIByPlan() {
-    // Prioriza os limites do Plano (config_plans), se não houver, usa o storeConfig
-    const maxProds = currentPlan?.maxProducts ?? storeConfig.maxProducts ?? 0;
-    const maxBanners = currentPlan?.maxBanners ?? storeConfig.maxBanners ?? 0;
-    const planName = currentPlan?.name || storeConfig.planId || "Sem Plano";
+    // Define os limites com base no que veio do Super Admin
+    const maxProds = parseInt(storeConfig.maxProducts) || 0;
+    const maxBanners = storeConfig.hasCarousel ? (parseInt(storeConfig.maxBanners) || 0) : 1;
+    const planName = storeConfig.planId || "Plano Ativo";
 
-    // Nome do plano
+    // Atualiza o Badge do plano no Dashboard
     const badge = document.getElementById('currentPlanBadge');
     if (badge) badge.textContent = planName.toUpperCase();
 
-    // Atualiza os textos de limite no Dashboard (ex: /50)
+    // Atualiza os textos de limite (Ex: /50)
     const limitProdEl = document.getElementById('dash-limit-products');
     const limitBannerEl = document.getElementById('dash-limit-banners');
     if (limitProdEl) limitProdEl.textContent = `/${maxProds}`;
     if (limitBannerEl) limitBannerEl.textContent = `/${maxBanners}`;
 
-    // Gerenciamento dos Menus de Banners
-    const navBanner = document.getElementById('nav-banners');
-    const mobBanner = document.getElementById('nav-banners-mobile'); 
-
-    if (maxBanners > 0) {
-        navBanner?.classList.remove('hidden');
-        mobBanner?.classList.remove('hidden');
-    } else {
-        navBanner?.classList.add('hidden');
-        mobBanner?.classList.add('hidden');
-    }
-
     updateQuotas();
 }
 
 function updateQuotas() {
-    const maxProds = currentPlan?.maxProducts ?? storeConfig.maxProducts ?? 0;
-    const maxBanners = currentPlan?.maxBanners ?? storeConfig.maxBanners ?? 0;
+    const maxProds = parseInt(storeConfig.maxProducts) || 0;
+    const maxBanners = storeConfig.hasCarousel ? (parseInt(storeConfig.maxBanners) || 0) : 1;
 
-    // --- TRAVA DE PRODUTOS ---
-    const pBtn = document.getElementById('btnNewProduct');
-    const isProdLimitReached = allProducts.length >= maxProds;
-
+    // Bloqueio do Botão de Produtos
+    const pBtn = document.querySelector('[onclick="openProductModal()"]');
     if (pBtn) {
-        pBtn.disabled = isProdLimitReached;
-        if (isProdLimitReached) {
-            pBtn.classList.replace('bg-slate-900', 'bg-slate-200');
-            pBtn.classList.replace('text-white', 'text-slate-400');
-        } else {
-            pBtn.classList.replace('bg-slate-200', 'bg-slate-900');
-            pBtn.classList.replace('text-slate-400', 'text-white');
-        }
+        const reachedProd = allProducts.length >= maxProds;
+        pBtn.disabled = reachedProd;
+        pBtn.style.opacity = reachedProd ? "0.5" : "1";
+        pBtn.style.cursor = reachedProd ? "not-allowed" : "pointer";
     }
 
-    // --- TRAVA DE BANNERS ---
+    // Bloqueio do Botão de Banners
     const bBtn = document.querySelector('[onclick="window.openBannerModal()"]');
-    const isBannerLimitReached = allBanners.length >= maxBanners;
     if (bBtn) {
-        bBtn.disabled = isBannerLimitReached;
-        bBtn.classList.toggle('opacity-50', isBannerLimitReached);
+        const reachedBanner = allBanners.length >= maxBanners;
+        bBtn.disabled = reachedBanner;
+        bBtn.style.opacity = reachedBanner ? "0.5" : "1";
+        bBtn.style.cursor = reachedBanner ? "not-allowed" : "pointer";
     }
-
-    // Atualiza textos de contagem (ex: "12/50")
-    const pQuota = document.getElementById('productQuotaText');
-    const bQuota = document.getElementById('bannerQuotaText');
-    if (pQuota) pQuota.textContent = `${allProducts.length}/${maxProds}`;
-    if (bQuota) bQuota.textContent = `${allBanners.length}/${maxBanners}`;
 }
+
 
         // --- GESTÃO DE PRODUTOS ---
         window.openProductModal = (p = null) => {
@@ -2106,19 +2074,25 @@ if (!skuInput.value) {
         window.handleProductSubmit = async (e) => {
     e.preventDefault();
     
+    const id = document.getElementById('prodId').value;
+    const isNew = !id;
+
+    // VERIFICAÇÃO DE SEGURANÇA (SERVER-SIDE SIMULATED)
+    if (isNew && allProducts.length >= storeConfig.maxProducts) {
+        showToast(`❌ Limite de ${storeConfig.maxProducts} produtos atingido. Faça upgrade do seu plano.`);
+        return;
+    }
+
     const btn = document.getElementById('btnSaveProd');
-    const modal = document.getElementById('productModal');
     const loader = document.getElementById('imageLoading');
-    
     if(btn) btn.disabled = true;
     if(loader) loader.classList.remove('hidden');
 
     try {
-        const id = document.getElementById('prodId').value;
         const finalId = id || 'prod_' + Date.now();
         const imageUrls = [];
 
-        // 1. Upload das Imagens
+        // Upload das imagens (processadas no crop)
         for (let i = 0; i < currentProductImages.length; i++) {
             const img = currentProductImages[i];
             if (img.startsWith('http')) { 
@@ -2130,71 +2104,36 @@ if (!skuInput.value) {
             }
         }
 
-        // --- CORREÇÃO CRÍTICA: CAPTURA E CONVERSÃO SEGURA ---
-        // Pegamos os valores brutos e garantimos que sejam números reais
-        const stockInput = document.getElementById('prodStock').value;
-        const costInput = document.getElementById('prodCost').value;
-        const priceInput = document.getElementById('prodValue').value;
-
-        const stock = parseInt(stockInput) || 0;
-        const cost = parseFloat(costInput) || 0;
-        const price = parseFloat(priceInput) || 0;
-        const profit = price - cost;
-
-        // 2. Lógica de Status (Mantendo o estado atual ou pausando se zerar)
-        const existingProd = allProducts.find(p => p.id === id);
-        let statusFinal = existingProd ? (existingProd.status || 'active') : 'active';
-        
-        // Se o lojista salvou com 0, o produto deve ser pausado automaticamente
-        if (stock <= 0) statusFinal = 'paused';
-        // Se o lojista adicionou estoque (>0) e o produto estava pausado, podemos manter pausado 
-        // ou você pode decidir reativar aqui.
-
         const data = {
             name: document.getElementById('prodName').value,
             sku: document.getElementById('prodSku').value || '',
             category: document.getElementById('prodCategory').value,
-            value: price,
+            value: parseFloat(document.getElementById('prodValue').value) || 0,
             promoValue: parseFloat(document.getElementById('prodPromo').value) || null,            
-            stock: stock, 
-            cost: cost,
-            profit: profit,
+            stock: parseInt(document.getElementById('prodStock').value) || 0, 
+            cost: parseFloat(document.getElementById('prodCost').value) || 0,
             images: imageUrls,
             description: document.getElementById('prodDesc').value || '',
             isFeatured: document.getElementById('prodFeatured').checked,
-            sizes: document.getElementById('prodSizesInput').value.split(',').map(s => s.trim()).filter(s => s !== ''),
-            colors: document.getElementById('prodColorsInput').value.split(',').map(c => c.trim()).filter(c => c !== ''),
-            variations: typeof variationsMatrix !== 'undefined' ? variationsMatrix : [],
+            variations: variationsMatrix || [],
             lastUpdate: Date.now(),
-            status: statusFinal
+            status: parseInt(document.getElementById('prodStock').value) > 0 ? 'active' : 'paused'
         };
 
-        // 3. Salvar no Firebase
-        const docRef = doc(db, `stores/${currentStoreId}/products`, finalId);
-        await setDoc(docRef, data, { merge: true });
+        await setDoc(doc(db, `stores/${currentStoreId}/products`, finalId), data, { merge: true });
+        await updateDoc(doc(db, `stores/${currentStoreId}/config/store`), { lastUpdate: Date.now() });
 
-        // --- LIMPEZA DE CACHE ---
-        // Se você não limpar o cache, o navegador continuará lendo "0" do localStorage
-        const CACHE_KEY = `app_cache_v4_${currentStoreId}`;
-        localStorage.removeItem(CACHE_KEY);
-
-        const storeRef = doc(db, `stores/${currentStoreId}/config/store`);
-        await setDoc(storeRef, { lastUpdate: Date.now() }, { merge: true });
-
-        showToast("✅ Produto salvo com estoque: " + stock);
-        if(modal) modal.classList.add('hidden'); 
+        showToast("✅ Produto guardado!");
+        document.getElementById('productModal').classList.add('hidden'); 
         currentProductImages = []; 
-
     } catch (err) {
-        console.error("Erro ao salvar:", err);
-        showToast("❌ Erro ao salvar produto.");
+        console.error(err);
+        showToast("❌ Erro ao guardar.");
     } finally {
         if(btn) btn.disabled = false;
         if(loader) loader.classList.add('hidden');
     }
 };
-
-
         
        window.deleteProduct = async (id, imageUrls = []) => {
     if(!confirm("Deseja apagar este produto permanentemente? Suas fotos também serão removidas do servidor.")) return;
@@ -2563,16 +2502,28 @@ window.updateBannerPreview = () => {
 // 5. SALVAMENTO NO FIREBASE (STORAGE + FIRESTORE)
 window.handleBannerSubmit = async (e) => {
     e.preventDefault();
+    
+    const id = document.getElementById('bannerId').value;
+    const isNew = !id;
+    // O limite real é 1 se o carrossel estiver desativado, senão usa o maxBanners do plano
+    const maxAllowed = storeConfig.hasCarousel ? (parseInt(storeConfig.maxBanners) || 0) : 1;
+
+    // VERIFICAÇÃO DE SEGURANÇA
+    if (isNew && allBanners.length >= maxAllowed) {
+        const msg = storeConfig.hasCarousel 
+            ? `Limite de ${maxAllowed} banners atingido.` 
+            : "O seu plano não permite Carrossel (Limite: 1 banner).";
+        showToast(`❌ ${msg}`);
+        return;
+    }
+
     const btn = document.getElementById('btnSaveBanner');
     btn.disabled = true;
-    btn.textContent = "PUBLICANDO...";
-
-    const id = document.getElementById('bannerId').value;
-    const finalId = id || 'banner_' + Date.now();
-    let imageUrl = window.currentBannerImageData;
 
     try {
-        // Upload se for uma imagem nova em Base64
+        const finalId = id || 'banner_' + Date.now();
+        let imageUrl = window.currentBannerImageData;
+
         if (imageUrl && imageUrl.startsWith('data:image')) {
             const bannerRef = ref(storage, `stores/${currentStoreId}/banners/${finalId}.jpg`);
             await uploadString(bannerRef, imageUrl, 'data_url');
@@ -2583,7 +2534,7 @@ window.handleBannerSubmit = async (e) => {
             tag: document.getElementById('bannerTag').value, 
             title: document.getElementById('bannerTitle').value, 
             subtitle: document.getElementById('bannerSubtitle').value || '',
-            btnText: document.getElementById('bannerBtnText').value || 'Comprar Agora',
+            btnText: document.getElementById('bannerBtnText').value || 'Ver Agora',
             color1: document.getElementById('bannerColor1').value, 
             color2: document.getElementById('bannerColor2').value, 
             target: document.getElementById('bannerTarget').value,
@@ -2591,25 +2542,19 @@ window.handleBannerSubmit = async (e) => {
             lastUpdate: Date.now()
         };
 
-        if(id) {
-            await updateDoc(doc(db, `stores/${currentStoreId}/hero_cards`, id), data);
-        } else {
-            await addDoc(collection(db, `stores/${currentStoreId}/hero_cards`), data);
-        }
-
-        // Atualiza carimbo da loja para forçar refresh na vitrine
+        await setDoc(doc(db, `stores/${currentStoreId}/hero_cards`, finalId), data, { merge: true });
         await updateDoc(doc(db, `stores/${currentStoreId}/config/store`), { lastUpdate: Date.now() });
         
         document.getElementById('bannerModal').classList.add('hidden');
-        showToast("Banner Premium publicado! 🚀");
+        showToast("✅ Banner publicado!");
     } catch (err) {
         console.error(err);
-        showToast("Erro ao salvar banner.");
+        showToast("❌ Erro ao publicar banner.");
     } finally {
         btn.disabled = false;
-        btn.textContent = "SALVAR BANNER";
     }
 };
+
 
         window.deleteBanner = async (id) => {
     if(!confirm("Apagar banner? A imagem também será removida.")) return;
