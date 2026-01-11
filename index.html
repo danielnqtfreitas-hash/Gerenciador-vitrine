@@ -1997,27 +1997,50 @@ window.initOrderListener = (storeId) => {
 }
 
 function updateQuotas() {
+    // 1. Obtém os limites (garantindo que são números)
     const maxProds = parseInt(storeConfig.maxProducts) || 0;
+    // Se não tem carrossel, o limite é forçado a 1
     const maxBanners = storeConfig.hasCarousel ? (parseInt(storeConfig.maxBanners) || 0) : 1;
 
-    // Bloqueio do Botão de Produtos
+    // 2. Seletores (adicionamos suporte ao botão mobile se houver)
     const pBtn = document.querySelector('[onclick="openProductModal()"]');
+    const bBtn = document.querySelector('[onclick="window.openBannerModal()"]');
+
+    // --- LÓGICA DE PRODUTOS ---
     if (pBtn) {
         const reachedProd = allProducts.length >= maxProds;
         pBtn.disabled = reachedProd;
         pBtn.style.opacity = reachedProd ? "0.5" : "1";
         pBtn.style.cursor = reachedProd ? "not-allowed" : "pointer";
+        
+        // Feedback visual no texto
+        if (reachedProd) {
+            pBtn.innerHTML = `<i data-lucide="lock" class="w-4 h-4"></i> Limite Atingido`;
+        } else {
+            pBtn.innerHTML = `<i data-lucide="plus" class="w-5 h-5"></i> Novo Produto`;
+        }
     }
 
-    // Bloqueio do Botão de Banners
-    const bBtn = document.querySelector('[onclick="window.openBannerModal()"]');
+    // --- LÓGICA DE BANNERS ---
     if (bBtn) {
         const reachedBanner = allBanners.length >= maxBanners;
         bBtn.disabled = reachedBanner;
         bBtn.style.opacity = reachedBanner ? "0.5" : "1";
         bBtn.style.cursor = reachedBanner ? "not-allowed" : "pointer";
+
+        if (reachedBanner) {
+            bBtn.innerHTML = `<i data-lucide="lock" class="w-4 h-4"></i> Limite`;
+        } else {
+            bBtn.innerHTML = `<i data-lucide="plus" class="w-5 h-5"></i> Novo`;
+        }
+    }
+
+    // MUITO IMPORTANTE: Recria os ícones do Lucide nos botões atualizados
+    if (typeof lucide !== 'undefined') {
+        lucide.createIcons();
     }
 }
+
 
 
         // --- GESTÃO DE PRODUTOS ---
