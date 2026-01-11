@@ -2803,20 +2803,19 @@ window.handleBannerSubmit = async (e) => {
     // 2. Atualiza a lista visualmente
     renderDeliveryAreas(); 
     
-    // 3. Limpa os campos de texto
+    // 3. Limpa os campos
     nameInput.value = ''; 
     feeInput.value = ''; 
 
-    // 4. Salva no Firebase imediatamente
+    // 4. Salva NO FIRESTORE SEM APAGAR CAMPOS
     try {
-        const { getFirestore, doc, updateDoc } = await import("https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js");
         const storeRef = doc(db, `stores/${currentStoreId}/config/store`);
         
-        await updateDoc(storeRef, { 
+        await setDoc(storeRef, { 
             deliveryAreas: deliveryAreas,
             lastUpdate: Date.now() 
-        });
-        
+        }, { merge: true });
+
         showToast("✅ Bairro salvo!");
     } catch (e) { 
         console.error("Erro ao salvar no banco:", e);
