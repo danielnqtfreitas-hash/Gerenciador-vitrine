@@ -1938,40 +1938,68 @@ window.initOrderListener = (storeId) => {
     }
   }
 
-  deliveryAreas = Array.isArray(data.deliveryAreas)
-  ? data.deliveryAreas
-  : [];
+          // ... (seu código anterior)
+  deliveryAreas = Array.isArray(data.deliveryAreas) ? data.deliveryAreas : [];
   renderDeliveryAreas();
-});
-    // --- NOVA PARTE: LISTENER DE ANALYTICS GLOBAL ---
-    onSnapshot(doc(db, `stores/${currentStoreId}/analytics/global`), d => {
-        if(d.exists()) {
-            document.getElementById('dash-total-visits').textContent = d.data().totalVisits || 0;
+}); // Fim do onSnapshot da Store Config
+
+    // --- ADICIONE ESTE BLOCO ABAIXO PARA CARREGAR AS CATEGORIAS E PRODUTOS ---
+
+    // LISTENER: Categorias (Departamentos)
+    onSnapshot(collection(db, `stores/${currentStoreId}/categories`), s => {
+        allCategories = s.docs.map(d => ({id: d.id, ...d.data()}));
+        
+        // Atualiza o contador no Dashboard
+        const dashCats = document.getElementById('dash-total-cats');
+        if(dashCats) dashCats.textContent = allCategories.length;
+        
+        // Atualiza a lista visual na aba Categorias
+        renderCategoryList();
+        
+        // Atualiza os selects de Categoria no formulário de Produto
+        const prodCatSelect = document.getElementById('prodCategory');
+        if(prodCatSelect) {
+            prodCatSelect.innerHTML = allCategories.map(c => `<option value="${c.name}">${c.name}</option>`).join('');
         }
+
+        // Atualiza o select de Destino no formulário de Banners
+        const bannerTargetSelect = document.getElementById('bannerTarget');
+        if(bannerTargetSelect) {
+            bannerTargetSelect.innerHTML = '<option value="offers">Todas as Ofertas</option>' + 
+                                         allCategories.map(c => `<option value="${c.name}">${c.name}</option>`).join('');
+        }
+        
+        renderProductList(); // Re-agrupa produtos
     });
 
     // LISTENER: Produtos
     onSnapshot(collection(db, `stores/${currentStoreId}/products`), s => {
         allProducts = s.docs.map(d => ({id: d.id, ...d.data()}));
-        document.getElementById('dash-total-products').textContent = allProducts.length;
-        renderProductList(); updateQuotas();
+        const dashProds = document.getElementById('dash-total-products');
+        if(dashProds) dashProds.textContent = allProducts.length;
+        renderProductList();
+        updateQuotas();
     });
 
     // LISTENER: Banners
     onSnapshot(collection(db, `stores/${currentStoreId}/hero_cards`), s => {
         allBanners = s.docs.map(d => ({id: d.id, ...d.data()}));
-        document.getElementById('dash-total-banners').textContent = allBanners.length;
-        renderBannerList(); updateQuotas();
+        const dashBanners = document.getElementById('dash-total-banners');
+        if(dashBanners) dashBanners.textContent = allBanners.length;
+        renderBannerList();
+        updateQuotas();
     });
 
-    // LISTENER: Categorias
-    onSnapshot(collection(db, `stores/${currentStoreId}/categories`), s => {
-        allCategories = s.docs.map(d => ({id: d.id, ...d.data()}));
-        document.getElementById('dash-total-cats').textContent = allCategories.length;
-        renderProductList(); renderCategoryList();
+    // LISTENER: Analytics Global
+    onSnapshot(doc(db, `stores/${currentStoreId}/analytics/global`), d => {
+        if(d.exists()) {
+            const dashVisits = document.getElementById('dash-total-visits');
+            if(dashVisits) dashVisits.textContent = d.data().totalVisits || 0;
+        }
     });
-}
+} // AGORA SIM fecha a função initStoreData corretamente
 
+  
         function updateUIByPlan() {
   console.log("📦 storeConfig aplicado:", storeConfig);
 
