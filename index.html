@@ -790,6 +790,25 @@
                         <input type="password" id="confirmNewPass" required placeholder="Confirme a Senha" class="input-pro">
                         <button type="submit" class="w-full bg-slate-900 text-white font-bold py-4 rounded-2xl uppercase tracking-wider">Atualizar Senha</button>
                     </form>
+                    <div class="bg-slate-800/50 p-6 rounded-3xl border border-slate-700 space-y-4">
+    <h3 class="text-sm font-bold text-indigo-400 uppercase tracking-widest">Dados para Pagamento (PIX)</h3>
+    
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div class="space-y-1">
+            <label class="text-[10px] font-bold text-slate-500 ml-2">CHAVE PIX</label>
+            <input type="text" id="cfgPixKey" placeholder="E-mail, CPF ou Aleatória" class="input-premium">
+        </div>
+        <div class="space-y-1">
+            <label class="text-[10px] font-bold text-slate-500 ml-2">NOME DO TITULAR</label>
+            <input type="text" id="cfgPixName" placeholder="Nome Completo" class="input-premium">
+        </div>
+        <div class="space-y-1">
+            <label class="text-[10px] font-bold text-slate-500 ml-2">BANCO</label>
+            <input type="text" id="cfgPixBank" placeholder="Ex: Nubank, Inter..." class="input-premium">
+        </div>
+    </div>
+</div>
+
                 </div>
 
                                 <form id="storeConfigForm" onsubmit="saveStoreConfig(event)" class="space-y-8 pb-12">
@@ -2850,8 +2869,7 @@ window.handleBannerSubmit = async (e) => {
     if(typeof lucide !== 'undefined') lucide.createIcons();
 }
 
-
-       window.saveStoreConfig = async function (event) {
+window.saveStoreConfig = async function (event) {
     event.preventDefault();
     const btn = document.getElementById('btnSaveConfig');
     
@@ -2861,7 +2879,7 @@ window.handleBannerSubmit = async (e) => {
     try {
         const storeRef = doc(db, "stores", currentStoreId, "config", "store");
         
-        // --- NOVIDADE: Busca os dados atuais antes de salvar ---
+        // --- Busca os dados atuais antes de salvar ---
         const docSnap = await getDoc(storeRef);
         const currentData = docSnap.exists() ? docSnap.data() : {};
         
@@ -2875,24 +2893,30 @@ window.handleBannerSubmit = async (e) => {
             finalLogoUrl = await getDownloadURL(logoRef);
         }
 
-        // 2. Limpeza do WhatsApp (Mantendo sua função ativa)
+        // 2. Limpeza do WhatsApp
         const rawWhatsapp = document.getElementById('confWhatsapp').value.replace(/\D/g, '');
 
-        // 3. Preparação dos Dados (Mantendo todas as suas funções e corrigindo a logo)
+        // 3. Preparação dos Dados (Incluindo os novos campos de PIX)
         const dataToSave = {
             storeName: document.getElementById('confStoreName').value,
             whatsappNumber: rawWhatsapp,
             footerText: document.getElementById('confFooter').value,
             primaryColor: document.getElementById('confColorPrimary').value,
-            deliveryAreas: deliveryAreas, // Mantendo suas áreas de entrega
-            logoUrl: finalLogoUrl,        // Agora usa a URL garantida (nova ou antiga)
+            deliveryAreas: deliveryAreas, 
+            logoUrl: finalLogoUrl,
+            // --- NOVOS CAMPOS PIX ---
+            pix: {
+                key: document.getElementById('cfgPixKey').value,
+                name: document.getElementById('cfgPixName').value,
+                bank: document.getElementById('cfgPixBank').value
+            },
             lastUpdate: Date.now()
         };
 
-        // 4. Gravação no Firestore
-        await updateDoc(storeRef, dataToSave);
+        // 4. Gravação no Firestore (COM merge: true para preservar permissões de plano e abas)
+        await setDoc(storeRef, dataToSave, { merge: true });
 
-        showToast("✅ Configurações e Logo atualizadas!");
+        showToast("✅ Configurações e Dados PIX atualizados!");
         
         // Reset do cache de imagem local após salvar
         window.currentLogoData = null;
@@ -2905,6 +2929,8 @@ window.handleBannerSubmit = async (e) => {
         btn.textContent = "Guardar Alterações";
     }
 };
+
+       
         window.handleUpdatePassword = async (e) => { 
             e.preventDefault(); 
             const n = document.getElementById('newPass').value; 
@@ -3714,7 +3740,7 @@ window.finishManualOrder = async () => {
 };
 
 
-// FUNÇÃO PARA ATUALIZAR STATUS E BAIXAR ESTOQUE
+// FUNÇÃO PARA ATUALIZAR STATUS E BAIXAR ESTOQUE (COM RECIBO PIX)
 window.updateOrderStatus = async (id, status) => {
     try {
         const p = ordersCache[id];
@@ -3774,7 +3800,20 @@ window.updateOrderStatus = async (id, status) => {
                 return `• ${i.qty}x ${i.name}${vars} - *[REF: ${productRef}]* - R$ ${(i.price * i.qty).toFixed(2).replace('.', ',')}`;
             }).join('\n');
 
-            // 2. Montagem do Recibo Digital Estruturado
+            // 2. Lógica da Chave PIX (Busca do storeConfig)
+            const pixInfo = storeConfig.pix || {};
+            let pixBlock = "";
+
+            // Só adiciona o bloco se o método for PIX e houver chave cadastrada
+            if (p.paymentMethod.toLowerCase().includes('pix') && pixInfo.key) {
+                pixBlock = `\n\n🔹 *DADOS PARA PAGAMENTO (PIX)*\n` +
+                           `Chave: \`${pixInfo.key}\`\n` +
+                           `Titular: ${pixInfo.name || 'Não informado'}\n` +
+                           `Banco: ${pixInfo.bank || 'Não informado'}\n` +
+                           `_Toque na chave acima para copiar_ 👆`;
+            }
+
+            // 3. Montagem do Recibo Digital Estruturado
             const msg = `🛍️ *PEDIDO CONFIRMADO!*\n` +
                         `---------------------------\n` +
                         `Olá, *${p.customer.name}*! Seu pedido foi recebido e já está em processamento.\n\n` +
@@ -3783,7 +3822,8 @@ window.updateOrderStatus = async (id, status) => {
                         `📋 *ITENS DO PEDIDO:*\n${itemsText}\n\n` +
                         `💰 *RESUMO:*\n` +
                         `Total: R$ ${p.total.toFixed(2).replace('.', ',')}\n` +
-                        `Pagamento: ${p.paymentMethod.toUpperCase()}\n\n` +
+                        `Pagamento: ${p.paymentMethod.toUpperCase()}` +
+                        `${pixBlock}\n\n` +
                         `📍 *ENDEREÇO:*\n${p.customer.addressString || 'Retirada na Loja'}\n\n` +
                         `💡 _Dica: Guarde os códigos [REF] acima para facilitar sua próxima compra!_ \n\n` +
                         `⏳ *Já estamos preparando tudo por aqui!*`;
