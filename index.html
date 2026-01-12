@@ -1940,6 +1940,7 @@ window.initOrderListener = (storeId) => {
 
         // Atualiza botões cinzas se bater o limite
         updateUIByPlan();
+        if (typeof window.updatePremiumUI === 'function') window.updatePremiumUI();
     });
 
     // --- LISTENER B: CATEGORIAS ---
@@ -2654,9 +2655,13 @@ window.handleBannerSubmit = async (e) => {
             reader.readAsDataURL(files[0]);
         };
 
-        
+        window.changeTab = (tabName) => {
+    // --- NOVO: VALIDAÇÃO DE RECURSO PREMIUM (FINANCEIRO) ---
+    if (tabName === 'finance' && storeConfig.hasFinance !== true) {
+        showToast("💎 Recurso Premium: A Gestão Financeira requer o plano PRO.");
+        return; // Interrompe a função aqui
+    }
 
-    window.changeTab = (tabName) => {
     // 1. Lista de abas e referência ao FAB
     const tabs = ['orders', 'dashboard', 'banners', 'products', 'categories', 'config', 'finance'];
     const fab = document.getElementById('fabAddOrder');
@@ -2677,11 +2682,11 @@ window.handleBannerSubmit = async (e) => {
     const activeView = document.getElementById(`view-${tabName}`);
     if (activeView) activeView.classList.remove('hidden');
 
-        if (tabName === "config") {
-    if (typeof window.renderDeliveryAreas === "function") {
-        setTimeout(() => window.renderDeliveryAreas(), 50);
+    if (tabName === "config") {
+        if (typeof window.renderDeliveryAreas === "function") {
+            setTimeout(() => window.renderDeliveryAreas(), 50);
+        }
     }
-}
 
     const activeBtn = document.getElementById(`nav-${tabName}`);
     if (activeBtn) {
@@ -2689,8 +2694,7 @@ window.handleBannerSubmit = async (e) => {
         activeBtn.classList.remove('text-slate-600', 'font-medium');
     }
 
-       if (tabName === 'finance') {
-        // Dá um pequeno tempo (100ms) para o HTML aparecer antes de calcular
+    if (tabName === 'finance') {
         setTimeout(() => {
             if (typeof window.initFinanceDashboard === 'function') {
                 window.initFinanceDashboard();
@@ -2726,8 +2730,6 @@ window.handleBannerSubmit = async (e) => {
         finance: 'Financeiro' 
     };
     document.getElementById('page-title').innerText = titles[tabName] || 'Painel';
-    
-  
 
     // 8. Fecha sidebar mobile se estiver aberta
     if (typeof toggleMobileSidebar === 'function' && !document.getElementById('mobileSidebar').classList.contains('sidebar-hidden')) {
@@ -2974,10 +2976,21 @@ async function initAnalyticsInsights() {
   window.toggleMagicCategory = async function(type, isVisible) {
     if (!currentStoreId) return;
 
+    // --- BLOQUEIO DE SEGURANÇA (O segurança da porta) ---
+    if (storeConfig.hasMagicCategories !== true) {
+        showToast("💎 Recurso bloqueado: Upgrade seu plano para usar Categorias Mágicas.");
+        
+        // Forçamos o interruptor (toggle) a voltar para a posição original na tela
+        const input = document.getElementById(type === 'showNew' ? 'magicNew' : 'magicTop');
+        if (input) input.checked = !isVisible; 
+        
+        return; // Impede o salvamento no Firebase
+    }
+
     try {
         const storeRef = doc(db, `stores/${currentStoreId}/config/store`);
 
-        // 🔹 Garante que o documento exista
+        // Só chega aqui se o plano permitir!
         await setDoc(
             storeRef,
             {
@@ -2989,20 +3002,11 @@ async function initAnalyticsInsights() {
             { merge: true }
         );
 
-        showToast(
-            isVisible
-                ? "Setor automático ativado! ✨"
-                : "Setor removido da vitrine."
-        );
-
-        // 🔹 Garante cache local
-        window.storeConfig = window.storeConfig || {};
+        showToast(isVisible ? "Setor automático ativado! ✨" : "Setor removido da vitrine.");
+        
+        // Atualiza o cache local
         window.storeConfig.magicCategories = window.storeConfig.magicCategories || {};
         window.storeConfig.magicCategories[type] = isVisible;
-
-        if (typeof updateMagicFeedback === 'function') {
-            updateMagicFeedback(window.storeConfig.magicCategories);
-        }
 
     } catch (error) {
         console.error("Erro ao salvar categoria mágica:", error);
@@ -3365,32 +3369,44 @@ window.deleteOrder = async (id) => {
     });
 };
 
-
 async function loadMagicCategoriesFeedback() {
     if (!currentStoreId) return;
 
     try {
         const storeRef = doc(db, `stores/${currentStoreId}/config/store`);
         const snap = await getDoc(storeRef);
-
         if (!snap.exists()) return;
 
         const data = snap.data();
         const magics = data.magicCategories || {};
+        
+        // --- NOVO: VERIFICAÇÃO DE PERMISSÃO PREMIUM ---
+        const hasMagicAccess = data.hasMagicCategories === true;
 
-        // 🔹 Cache global
-        window.storeConfig = data;
-
-        // 🔹 Aplica estado nos toggles
         const inputNew = document.getElementById('magicNew');
         const inputTop = document.getElementById('magicTop');
 
-        if (inputNew) inputNew.checked = !!magics.showNew;
-        if (inputTop) inputTop.checked = !!magics.showTop;
+        if (inputNew && inputTop) {
+            // Se não tiver acesso, desativa os botões e aplica visual de bloqueado
+            inputNew.disabled = !hasMagicAccess;
+            inputTop.disabled = !hasMagicAccess;
+            
+            inputNew.closest('.flex').style.opacity = hasMagicAccess ? "1" : "0.5";
+            inputTop.closest('.flex').style.opacity = hasMagicAccess ? "1" : "0.5";
 
-        // 🔹 Atualiza feedback visual
+            // Se tiver acesso, carrega os valores salvos
+            if (hasMagicAccess) {
+                inputNew.checked = !!magics.showNew;
+                inputTop.checked = !!magics.showTop;
+            } else {
+                // Se não tiver acesso, força os botões para desativado visualmente
+                inputNew.checked = false;
+                inputTop.checked = false;
+            }
+        }
+
         if (typeof updateMagicFeedback === 'function') {
-            updateMagicFeedback(magics);
+            updateMagicFeedback(hasMagicAccess ? magics : {});
         }
 
     } catch (err) {
@@ -3946,6 +3962,24 @@ window.initFinanceDashboard = () => {
 
     if (typeof initGrowthChart === 'function') initGrowthChart();
 };
+
+        window.updatePremiumUI = () => {
+    if (!storeConfig) return;
+
+    // Ajuste Visual na Sidebar (Financeiro)
+    const navFinance = document.getElementById('nav-finance');
+    if (navFinance) {
+        if (storeConfig.hasFinance !== true) {
+            navFinance.innerHTML = `<i data-lucide="lock" class="w-5 h-5 mr-3"></i> <span class="opacity-50">Financeiro (PRO)</span>`;
+            navFinance.classList.add('cursor-not-allowed');
+        } else {
+            navFinance.innerHTML = `<i data-lucide="dollar-sign" class="w-5 h-5 mr-3"></i> Financeiro`;
+            navFinance.classList.remove('cursor-not-allowed');
+        }
+    }
+    lucide.createIcons();
+};
+
 
     </script>
 </body>
