@@ -1064,22 +1064,27 @@
                         </div>
 
                         <div id="variationMatrixContainer" class="hidden animate-fade-in">
-                            <h4 class="text-[11px] font-black uppercase text-slate-400 tracking-widest border-b border-slate-100 pb-2 mb-4">Matriz de Variações</h4>
-                            <div class="overflow-x-auto">
-                                <table class="variation-matrix-table">
-                                    <thead>
-                                        <tr>
-                                            <th>Ativo</th>
-                                            <th>Cor</th>
-                                            <th>Tamanho</th>
-                                            <th>Preço Individual (R$)</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody id="variationMatrixBody"></tbody>
-                                </table>
-                            </div>
-                        </div>
-                    </div>
+    <h4 class="text-[11px] font-black uppercase text-slate-400 tracking-widest border-b border-slate-100 pb-2 mb-4">
+        Matriz de Variações Inteligente
+    </h4>
+    <div class="overflow-x-auto">
+        <table class="variation-matrix-table">
+            <thead>
+                <tr>
+                    <th class="px-2 py-2">Ativo</th>
+                    <th class="px-2 py-2">Variação</th>
+                    <th class="px-2 py-2">Código Individual (SKU)</th>
+                    <th class="px-2 py-2 text-right">Preço (R$)</th>
+                </tr>
+            </thead>
+            <tbody id="variationMatrixBody" class="divide-y divide-slate-50">
+                </tbody>
+        </table>
+    </div>
+    <p class="text-[9px] text-slate-400 mt-2 italic font-medium">
+        * Os códigos são gerados automaticamente, mas você pode editá-los se preferir.
+    </p>
+    </div>
 
                     <div class="space-y-1">
                         <label class="text-[10px] font-bold text-slate-500 uppercase ml-1">Breve Descrição</label>
@@ -1226,84 +1231,112 @@ function applyPhoneMask(elementId) {
         }
 
         // --- SISTEMA DE MATRIZ DE VARIAÇÕES (FIXED: CIRÚRGICO) ---
-        window.generateVariationMatrix = () => {
-            const sizesInput = document.getElementById('prodSizesInput').value;
-            const colorsInput = document.getElementById('prodColorsInput').value;
-            const basePrice = document.getElementById('prodValue').value || 0;
+        // --- GERAÇÃO AUTOMÁTICA DE MATRIZ COM SKU INTELIGENTE ---
+window.generateVariationMatrix = () => {
+    const skuPrincipal = (document.getElementById('prodSku').value || 'PROD').toUpperCase();
+    const sizesInput = document.getElementById('prodSizesInput').value;
+    const colorsInput = document.getElementById('prodColorsInput').value;
+    const basePrice = parseFloat(document.getElementById('prodValue').value) || 0;
+    
+    const sizes = sizesInput.split(',').map(s => s.trim().toUpperCase()).filter(s => s !== '');
+    const colors = colorsInput.split(',').map(c => c.trim()).filter(c => c !== '');
+    
+    const container = document.getElementById('variationMatrixContainer');
+    if (sizes.length === 0 && colors.length === 0) {
+        container.classList.add('hidden');
+        variationsMatrix = [];
+        return;
+    }
+    
+    container.classList.remove('hidden');
+    
+    const existingMap = new Map();
+    variationsMatrix.forEach(v => existingMap.set(`${v.color}|${v.size}`, v));
+    
+    const newMatrix = [];
+    const loopColors = colors.length > 0 ? colors : ['PADRAO'];
+    const loopSizes = sizes.length > 0 ? sizes : ['UNICO'];
+    
+    loopColors.forEach(color => {
+        loopSizes.forEach(size => {
+            const key = `${color}|${size}`;
+            const existing = existingMap.get(key);
             
-            const sizes = sizesInput.split(',').map(s => s.trim().toUpperCase()).filter(s => s !== '');
-            const colors = colorsInput.split(',').map(c => c.trim()).filter(c => c !== '');
-            
-            const container = document.getElementById('variationMatrixContainer');
-            if (sizes.length === 0 && colors.length === 0) {
-                container.classList.add('hidden');
-                variationsMatrix = [];
-                return;
-            }
-            
-            container.classList.remove('hidden');
-            
-            // Criamos um mapa para recuperação rápida de dados existentes (previne sumiço de chaves inativas)
-            const existingMap = new Map();
-            variationsMatrix.forEach(v => existingMap.set(`${v.color}|${v.size}`, v));
-            
-            const newMatrix = [];
-            const loopColors = colors.length > 0 ? colors : ['--'];
-            const loopSizes = sizes.length > 0 ? sizes : ['--'];
-            
-            loopColors.forEach(color => {
-                loopSizes.forEach(size => {
-                    const key = `${color}|${size}`;
-                    const existing = existingMap.get(key);
-                    
-                    if (existing) {
-                        // Se já existia, mantém o estado (inclusive o "active" que o usuário definiu)
-                        newMatrix.push(existing);
-                    } else {
-                        // Se é nova combinação, nasce ativa
-                        newMatrix.push({
-                            active: true,
-                            color: color,
-                            size: size,
-                            price: parseFloat(basePrice) || 0
-                        });
-                    }
+            if (existing) {
+                newMatrix.push(existing);
+            } else {
+                // AUTOMAÇÃO DO SKU: Prefixo + 3 letras da cor + Tamanho
+                const cleanColor = color.substring(0, 3).toUpperCase().replace(/[^A-Z0-9]/g, '');
+                const cleanSize = size.replace(/[^A-Z0-9]/g, '');
+                const autoSku = `${skuPrincipal}-${cleanColor}-${cleanSize}`;
+                
+                newMatrix.push({
+                    active: true,
+                    color: color,
+                    size: size,
+                    sku: autoSku, // SKU Filho gerado
+                    price: basePrice
                 });
-            });
-            
-            variationsMatrix = newMatrix;
-            renderMatrixUI();
-        };
+            }
+        });
+    });
+    
+    variationsMatrix = newMatrix;
+    renderMatrixUI();
+};
 
-        function renderMatrixUI() {
-            const tbody = document.getElementById('variationMatrixBody');
-            tbody.innerHTML = '';
-            
-            variationsMatrix.forEach((v, idx) => {
-                const tr = document.createElement('tr');
-                tr.innerHTML = `
-                    <td>
-                        <label class="toggle-switch">
-                            <input type="checkbox" ${v.active ? 'checked' : ''} onchange="updateVariationStatus(${idx}, this.checked)">
-                            <span class="slider"></span>
-                        </label>
-                    </td>
-                    <td class="font-bold text-slate-800">${v.color}</td>
-                    <td class="font-bold text-slate-800">${v.size}</td>
-                    <td>
-                        <div class="relative">
-                            <span class="absolute left-3 top-3.5 text-xs text-slate-400 font-bold">R$</span>
-                            <input type="number" step="0.01" value="${v.price}" oninput="updateVariationPrice(${idx}, this.value)" 
-                                   class="w-full border border-slate-200 rounded-lg p-3 pl-10 outline-none focus:ring-1 focus:ring-primary-500 bg-white text-xs font-bold transition-all">
-                        </div>
-                    </td>
-                `;
-                tbody.appendChild(tr);
-            });
-        }
+// --- RENDERIZAÇÃO DA TABELA COM COLUNA DE SKU EDITÁVEL ---
+function renderMatrixUI() {
+    const tbody = document.getElementById('variationMatrixBody');
+    tbody.innerHTML = '';
+    
+    variationsMatrix.forEach((v, idx) => {
+        const tr = document.createElement('tr');
+        tr.className = v.active ? '' : 'opacity-40 bg-slate-50';
+        tr.innerHTML = `
+            <td class="p-2">
+                <label class="toggle-switch">
+                    <input type="checkbox" ${v.active ? 'checked' : ''} onchange="updateVariationStatus(${idx}, this.checked)">
+                    <span class="slider"></span>
+                </label>
+            </td>
+            <td class="p-2 font-bold text-slate-700 text-[10px]">
+                ${v.color} / ${v.size}
+            </td>
+            <td class="p-2">
+                <input type="text" value="${v.sku}" 
+                       oninput="updateVariationSku(${idx}, this.value)"
+                       placeholder="SKU"
+                       class="w-full border border-slate-200 rounded-lg p-2 outline-none focus:ring-1 focus:ring-primary-500 bg-slate-50 text-[9px] font-mono font-bold transition-all uppercase">
+            </td>
+            <td class="p-2">
+                <div class="relative">
+                    <span class="absolute left-2 top-2 text-[8px] text-slate-400 font-bold">R$</span>
+                    <input type="number" step="0.01" value="${v.price}" 
+                           oninput="updateVariationPrice(${idx}, this.value)" 
+                           class="w-full border border-slate-200 rounded-lg p-2 pl-6 outline-none focus:ring-1 focus:ring-primary-500 bg-white text-[10px] font-bold">
+                </div>
+            </td>
+        `;
+        tbody.appendChild(tr);
+    });
+}
 
-        window.updateVariationStatus = (idx, checked) => { variationsMatrix[idx].active = checked; };
-        window.updateVariationPrice = (idx, value) => { variationsMatrix[idx].price = parseFloat(value) || 0; };
+// --- FUNÇÃO AUXILIAR PARA ATUALIZAR O SKU INDIVIDUAL ---
+window.updateVariationSku = (idx, value) => {
+    // Mantém o SKU sempre padronizado (Maiúsculo e sem espaços)
+    variationsMatrix[idx].sku = value.toUpperCase().trim().replace(/\s+/g, '-');
+};
+
+window.updateVariationStatus = (idx, checked) => { 
+    variationsMatrix[idx].active = checked; 
+    // IMPORTANTE: Redesenha a tabela para aplicar o efeito visual de "desativado" (opacidade)
+    renderMatrixUI(); 
+};
+
+window.updateVariationPrice = (idx, value) => { 
+    variationsMatrix[idx].price = parseFloat(value) || 0; 
+};
 
         // --- SISTEMA DE RECORTE ---
         window.processImages = (files) => {
