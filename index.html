@@ -2976,43 +2976,41 @@ async function initAnalyticsInsights() {
   window.toggleMagicCategory = async function(type, isVisible) {
     if (!currentStoreId) return;
 
-    // --- BLOQUEIO DE SEGURANÇA (O segurança da porta) ---
+    // 1. SEGURANÇA: Bloqueio se não for plano PRO
     if (storeConfig.hasMagicCategories !== true) {
         showToast("💎 Recurso bloqueado: Upgrade seu plano para usar Categorias Mágicas.");
-        
-        // Forçamos o interruptor (toggle) a voltar para a posição original na tela
         const input = document.getElementById(type === 'showNew' ? 'magicNew' : 'magicTop');
         if (input) input.checked = !isVisible; 
-        
-        return; // Impede o salvamento no Firebase
+        return;
     }
 
     try {
         const storeRef = doc(db, `stores/${currentStoreId}/config/store`);
 
-        // Só chega aqui se o plano permitir!
-        await setDoc(
-            storeRef,
-            {
-                magicCategories: {
-                    [type]: isVisible
-                },
-                lastUpdate: Date.now()
+        // 2. ATUALIZAÇÃO: Usamos merge para não apagar outros dados
+        await setDoc(storeRef, {
+            magicCategories: {
+                [type]: isVisible
             },
-            { merge: true }
-        );
+            lastUpdate: Date.now()
+        }, { merge: true });
 
+        // 3. FEEDBACK ÚNICO: Remova qualquer outra chamada de toast que possa estar em funções auxiliares
         showToast(isVisible ? "Setor automático ativado! ✨" : "Setor removido da vitrine.");
         
-        // Atualiza o cache local
-        window.storeConfig.magicCategories = window.storeConfig.magicCategories || {};
+        // 4. ATUALIZAÇÃO LOCAL: Atualiza o objeto em memória para evitar re-disparos desnecessários
+        if(!window.storeConfig.magicCategories) window.storeConfig.magicCategories = {};
         window.storeConfig.magicCategories[type] = isVisible;
 
     } catch (error) {
-        console.error("Erro ao salvar categoria mágica:", error);
-        showToast("Erro ao salvar preferência.");
+        // Só mostra erro se realmente falhar no Firebase
+        console.error("Erro ao salvar:", error);
+        if (error.code !== 'permission-denied') {
+            showToast("Erro ao salvar preferência.");
+        }
     }
 };
+
 
     window.bulkToggleStatus = async (categoryName, newStatus) => {
     const actionText = newStatus === 'paused' ? 'pausar todos os produtos de' : 'ativar todos os produtos de';
@@ -3742,7 +3740,7 @@ window.updateOrderStatus = async (id, status) => {
                 }
             });
             await Promise.all(stockPromises);
-            orderUpdate.stockDeducted = true; // Marca que o estoque SAIU
+            orderUpdate.stockDeducted = true;
         }
 
         // --- CASO B: CANCELAR (DEVOLVER ESTOQUE) ---
@@ -3754,7 +3752,6 @@ window.updateOrderStatus = async (id, status) => {
                 if (snap.exists()) {
                     const currentStock = Number(snap.data().stock) || 0;
                     const newStock = currentStock + Number(item.qty);
-                    // Se o estoque voltou a ser positivo, podemos reativar o produto ('active')
                     return updateDoc(productRef, { 
                         stock: newStock,
                         status: 'active' 
@@ -3762,30 +3759,52 @@ window.updateOrderStatus = async (id, status) => {
                 }
             });
             await Promise.all(restorePromises);
-            orderUpdate.stockDeducted = false; // Marca que o estoque VOLTOU
+            orderUpdate.stockDeducted = false;
         }
 
-        // Atualiza o pedido no Firebase
+        // --- SALVAR NO FIREBASE ---
         await updateDoc(orderRef, orderUpdate);
 
-        // Limpa cache para refletir no painel e na vitrine
+        // --- LOGICA DE NOTIFICAÇÃO E RECIBO DIGITAL ---
+        if (status === 'confirmed') {
+            // 1. Formatação da lista de itens com Código de Referência
+            const itemsText = p.items.map(i => {
+                const productRef = i.sku || i.id?.slice(-4).toUpperCase() || 'N/A';
+                const vars = i.variations ? ` (${Object.values(i.variations).filter(Boolean).join('/')})` : '';
+                return `• ${i.qty}x ${i.name}${vars} - *[REF: ${productRef}]* - R$ ${(i.price * i.qty).toFixed(2).replace('.', ',')}`;
+            }).join('\n');
+
+            // 2. Montagem do Recibo Digital Estruturado
+            const msg = `🛍️ *PEDIDO CONFIRMADO!*\n` +
+                        `---------------------------\n` +
+                        `Olá, *${p.customer.name}*! Seu pedido foi recebido e já está em processamento.\n\n` +
+                        `🆔 *Pedido:* #${p.id.slice(-5).toUpperCase()}\n` +
+                        `📅 *Data:* ${new Date().toLocaleDateString('pt-BR')}\n\n` +
+                        `📋 *ITENS DO PEDIDO:*\n${itemsText}\n\n` +
+                        `💰 *RESUMO:*\n` +
+                        `Total: R$ ${p.total.toFixed(2).replace('.', ',')}\n` +
+                        `Pagamento: ${p.paymentMethod.toUpperCase()}\n\n` +
+                        `📍 *ENDEREÇO:*\n${p.customer.addressString || 'Retirada na Loja'}\n\n` +
+                        `💡 _Dica: Guarde os códigos [REF] acima para facilitar sua próxima compra!_ \n\n` +
+                        `⏳ *Já estamos preparando tudo por aqui!*`;
+
+            const phone = p.customer.phone.replace(/\D/g, '');
+            window.open(`https://wa.me/55${phone}?text=${encodeURIComponent(msg)}`, '_blank');
+        }
+
+        // Limpa cache e atualiza vitrine
         localStorage.removeItem('app_cache_v4_' + currentStoreId);
         await updateDoc(doc(db, `stores/${currentStoreId}/config/store`), { lastUpdate: Date.now() });
 
-        if (status === 'confirmed') {
-            const msg = `Olá ${p.customer.name}! Seu pedido #${p.id.slice(-5).toUpperCase()} foi confirmado! 🎉`;
-            window.open(`https://wa.me/55${p.customer.phone.replace(/\D/g,'')}?text=${encodeURIComponent(msg)}`, '_blank');
-        }
-
         showToast(`Pedido ${status} e estoque atualizado! ✅`);
-        document.getElementById('orderDetailModal').classList.add('hidden');
+        if (document.getElementById('orderDetailModal')) {
+            document.getElementById('orderDetailModal').classList.add('hidden');
+        }
     } catch (e) {
-        console.error(e);
+        console.error("Erro ao atualizar status:", e);
         showToast("Erro ao processar alteração.");
     }
 };
-
-
 
 
 window.startBarcodeScanner = () => {
