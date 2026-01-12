@@ -790,7 +790,9 @@
                         <input type="password" id="confirmNewPass" required placeholder="Confirme a Senha" class="input-pro">
                         <button type="submit" class="w-full bg-slate-900 text-white font-bold py-4 rounded-2xl uppercase tracking-wider">Atualizar Senha</button>
                     </form>
-                    <div class="bg-slate-800/50 p-6 rounded-3xl border border-slate-700 space-y-4">
+                </div>
+
+                 <div class="bg-slate-800/50 p-6 rounded-3xl border border-slate-700 space-y-4">
     <h3 class="text-sm font-bold text-indigo-400 uppercase tracking-widest">Dados para Pagamento (PIX)</h3>
     
     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -806,11 +808,8 @@
             <label class="text-[10px] font-bold text-slate-500 ml-2">BANCO</label>
             <input type="text" id="cfgPixBank" placeholder="Ex: Nubank, Inter..." class="input-premium">
         </div>
-    </div>
-</div>
-
-                </div>
-
+      </div>
+    </div>    
                                 <form id="storeConfigForm" onsubmit="saveStoreConfig(event)" class="space-y-8 pb-12">
                     <div class="bg-white rounded-3xl border border-slate-200 p-8 shadow-sm">
                         <h3 class="text-xl font-bold text-slate-800 mb-6 flex items-center gap-3"><i data-lucide="info" class="text-blue-600"></i> Identidade</h3>
@@ -2253,7 +2252,6 @@ if (!skuInput.value) {
         const isCollapsed = !expandedCategories.has(catName);
         const safeId = catName.replace(/\s+/g, '-');
         
-        // Verifica se há produtos ativos para decidir qual botão mostrar
         const hasActive = products.some(p => p.status !== 'paused');
 
         const groupDiv = document.createElement('div');
@@ -2282,14 +2280,27 @@ if (!skuInput.value) {
                     const isPaused = p.status === 'paused';
                     const valNormal = p.value.toFixed(2).replace('.', ',');
                     const valPromo = p.promoValue ? p.promoValue.toFixed(2).replace('.', ',') : null;
+                    
+                    // Lógica de Cor do Estoque (Vermelho se <= 3)
+                    const stock = Number(p.stock) || 0;
+                    const stockClass = stock <= 3 ? 'bg-red-50 text-red-600 border-red-100' : 'bg-slate-100 text-slate-500 border-slate-200';
 
                     return `<div class="flex items-center gap-4 p-3 rounded-2xl border border-slate-100 bg-white hover:border-primary-100 transition-all ${isPaused ? 'opacity-60 grayscale-[0.5]' : ''}">
                         <img src="${p.images?.[0]||''}" class="w-14 h-14 rounded-xl object-cover border">
                         <div class="flex-1 min-w-0">
                             <div class="flex items-center gap-2">
                                 <p class="font-bold text-slate-800 text-sm truncate">${p.name}</p>
+                                ${p.sku ? `<span class="text-[8px] font-mono bg-slate-100 text-slate-400 px-1.5 py-0.5 rounded uppercase tracking-tighter">${p.sku}</span>` : ''}
                             </div>
-                            <p class="text-[10px] font-bold text-slate-900 mt-0.5">R$ ${valNormal} ${valPromo ? `<span class="text-green-600 ml-2">R$ ${valPromo}</span>` : ''}</p>
+                            
+                            <div class="flex items-center gap-3 mt-1">
+                                <p class="text-[10px] font-bold text-slate-900">R$ ${valNormal} ${valPromo ? `<span class="text-green-600 ml-2">R$ ${valPromo}</span>` : ''}</p>
+                                
+                                <div class="flex items-center gap-1 px-2 py-0.5 rounded-lg border ${stockClass}">
+                                    <i data-lucide="package-2" class="w-3 h-3"></i>
+                                    <span class="text-[9px] font-black">${stock} un.</span>
+                                </div>
+                            </div>
                         </div>
                         <div class="flex gap-1">
                             <button onclick="toggleProductStatus('${p.id}', '${p.status || 'active'}')" class="p-2 ${isPaused ? 'text-green-600' : 'text-amber-500'} hover:bg-slate-100 rounded-lg"><i data-lucide="${isPaused ? 'eye' : 'eye-off'}" class="w-4 h-4"></i></button>
@@ -2302,7 +2313,8 @@ if (!skuInput.value) {
         container.appendChild(groupDiv);
     });
     lucide.createIcons();
-       }
+}
+
         
         window.handleCategorySubmit = async (e) => {
     e.preventDefault();
