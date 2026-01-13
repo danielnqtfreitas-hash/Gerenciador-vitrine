@@ -3275,10 +3275,10 @@ async function initAnalyticsInsights() {
    
        window.openOrderModal = (id) => {
     const p = ordersCache[id];
-    if(!p) return;
+    if (!p) return;
 
     const audio = document.getElementById('notifSound');
-    if(audio) {
+    if (audio) {
         audio.pause();
         audio.currentTime = 0;
     }
@@ -3309,49 +3309,33 @@ async function initAnalyticsInsights() {
                             <th class="px-4 py-2 text-right">Preço</th>
                         </tr>
                     </thead>
-                   
                     <tbody class="divide-y divide-slate-100">
                         ${p.items.map(i => {
-                            // --- AQUI ENTRA A LÓGICA QUE VOCÊ FICOU NA DÚVIDA ---
-                            
-                            // 1. Busca o produto original no estoque para ter a foto de backup
                             const prodRef = allProducts.find(prod => prod.id === i.id);
                             
-                            // 2. Define qual foto mostrar (Prioridade: Foto da Variação > Foto do Pai)
-                            let fotoExibicao = null;
-                            if (i.variationDetails && i.variationDetails.image) {
-                                // Se o item vendido tiver foto da variação (cor/tamanho), usa ela
-                                fotoExibicao = i.variationDetails.image;
-                            } else if (prodRef && prodRef.images && prodRef.images.length > 0) {
-                                // Se não, usa a primeira foto do produto pai
-                                fotoExibicao = prodRef.images[0];
-                            }
+                            // Prioridade: Foto da Variação -> Foto do Pai -> Ícone padrão
+                            let fotoParaExibir = (i.variationDetails && i.variationDetails.image) 
+                                                 ? i.variationDetails.image 
+                                                 : (prodRef && prodRef.images ? prodRef.images[0] : null);
 
                             const varDesc = i.variations ? Object.values(i.variations).filter(v => v && v !== "null").join(' / ') : '';
 
                             return `
                             <tr>
                                 <td class="px-4 py-3 flex items-center gap-3">
-                                    <div onclick="window.expandImage('${fotoExibicao}')" 
-                                         class="w-12 h-12 rounded-lg overflow-hidden bg-slate-50 border border-slate-100 flex-shrink-0 shadow-sm cursor-zoom-in active:scale-95 transition-all">
-                                        ${fotoExibicao 
-                                            ? `<img src="${fotoExibicao}" class="w-full h-full object-cover">` 
-                                            : `<div class="w-full h-full flex items-center justify-center text-slate-300"><i data-lucide="image" class="w-5 h-5"></i></div>`
-                                        }
+                                    <div onclick="window.expandImage('${fotoParaExibir}')" 
+                                         class="w-12 h-12 rounded-lg overflow-hidden border bg-white flex-shrink-0 cursor-zoom-in active:scale-95 transition-all">
+                                        ${fotoParaExibir 
+                                            ? `<img src="${fotoParaExibir}" class="w-full h-full object-cover">` 
+                                            : `<div class="w-full h-full flex items-center justify-center text-slate-300"><i data-lucide="image" class="w-5 h-5"></i></div>`}
                                     </div>
-                                    
                                     <div class="min-w-0">
-                                        <p class="font-bold text-slate-800 text-xs truncate leading-tight">${i.name}</p>
-                                        <p class="text-[9px] font-mono text-slate-400 uppercase tracking-tighter mt-0.5">
-                                            SKU: ${i.sku || (prodRef ? prodRef.sku : 'N/A')}
-                                        </p>
-                                        ${varDesc ? `<p class="text-[10px] text-primary-600 font-bold italic mt-0.5">${varDesc}</p>` : ''}
+                                        <p class="font-bold text-xs text-slate-800 truncate">${i.name}</p>
+                                        <p class="text-[9px] text-primary-600 font-bold italic">${varDesc}</p>
                                     </div>
                                 </td>
-                                <td class="px-4 py-3 text-center text-slate-600 text-xs font-bold">x${i.qty}</td>
-                                <td class="px-4 py-3 text-right font-black text-slate-900 text-xs">
-                                    R$ ${(i.price * i.qty).toFixed(2).replace('.',',')}
-                                </td>
+                                <td class="px-4 py-3 text-center text-xs font-bold text-slate-500">x${i.qty}</td>
+                                <td class="px-4 py-3 text-right text-xs font-black text-slate-900">R$ ${(i.price * i.qty).toFixed(2).replace('.',',')}</td>
                             </tr>`;
                         }).join('')}
                     </tbody>
@@ -3367,20 +3351,23 @@ async function initAnalyticsInsights() {
                 <button id="btnActionMain" class="py-4 bg-blue-600 text-white rounded-2xl font-bold flex justify-center shadow-lg">
                     ${p.status === 'pending_whatsapp' ? 'Confirmar Pedido' : 'Marcar como Entregue'}
                 </button>
-                <button id="btnActionEdit" class="py-4 border border-slate-200 text-slate-600 rounded-2xl font-bold text-[10px] uppercase">Mudar Status</button>
-                <a href="https://wa.me/55${p.customer.phone.replace(/\D/g,'')}" target="_blank" class="py-4 bg-green-500 text-white rounded-2xl font-bold flex justify-center items-center gap-2 shadow-lg col-span-2"><i data-lucide="message-circle" class="w-5 h-5"></i> WhatsApp</a>
+                <button id="btnActionEdit" class="py-4 border border-slate-200 text-slate-600 rounded-2xl font-bold text-[10px] uppercase">Status</button>
+                <a href="https://wa.me/55${p.customer.phone.replace(/\D/g,'')}" target="_blank" class="py-4 bg-green-500 text-white rounded-2xl font-bold flex justify-center items-center gap-2 shadow-lg col-span-2">
+                    <i data-lucide="message-circle" class="w-5 h-5"></i> WhatsApp
+                </a>
                 <button onclick="window.deleteOrder('${p.id}')" class="py-3 text-red-400 font-bold text-[10px] uppercase col-span-2 mt-2">Excluir Pedido</button>
             </div>
         `;
 
+        // Atribuição de eventos após injetar o HTML
         document.getElementById('btnActionMain').onclick = () => window.updateOrderStatus(p.id, p.status === 'pending_whatsapp' ? 'confirmed' : 'completed');
         
         document.getElementById('btnActionEdit').onclick = () => {
             modalContent.innerHTML = `
                 <div class="space-y-3 p-2">
                     <p class="text-[10px] font-black text-slate-400 uppercase text-center mb-4 tracking-widest">Alterar Status</p>
-                    <button onclick="window.updateOrderStatus('${p.id}', 'confirmed')" class="w-full p-5 bg-slate-50 rounded-2xl font-bold text-left flex justify-between items-center text-slate-700">✅ Confirmar <i data-lucide="chevron-right" class="w-4 h-4"></i></button>
-                    <button onclick="window.updateOrderStatus('${p.id}', 'completed')" class="w-full p-5 bg-slate-50 rounded-2xl font-bold text-left flex justify-between items-center text-slate-700">🏁 Entregue <i data-lucide="chevron-right" class="w-4 h-4"></i></button>
+                    <button onclick="window.updateOrderStatus('${p.id}', 'confirmed')" class="w-full p-5 bg-slate-50 rounded-2xl font-bold text-left flex justify-between items-center">✅ Confirmar <i data-lucide="chevron-right" class="w-4 h-4"></i></button>
+                    <button onclick="window.updateOrderStatus('${p.id}', 'completed')" class="w-full p-5 bg-slate-50 rounded-2xl font-bold text-left flex justify-between items-center">🏁 Entregue <i data-lucide="chevron-right" class="w-4 h-4"></i></button>
                     <button onclick="window.updateOrderStatus('${p.id}', 'canceled')" class="w-full p-5 bg-red-50 text-red-600 rounded-2xl font-bold text-left flex justify-between items-center">❌ Cancelar <i data-lucide="chevron-right" class="w-4 h-4"></i></button>
                     <button onclick="window.openOrderModal('${p.id}')" class="w-full p-4 text-slate-400 text-xs font-black uppercase mt-4 text-center">Voltar</button>
                 </div>
@@ -3393,8 +3380,7 @@ async function initAnalyticsInsights() {
     renderMainContent();
     document.getElementById('orderDetailModal').classList.remove('hidden');
 };
-
-
+                    
         
 window.deleteOrder = async (id) => {
     // 1. Confirmação de segurança
