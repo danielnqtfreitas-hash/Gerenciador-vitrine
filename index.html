@@ -3617,36 +3617,61 @@ window.renderManualProductSearch = () => {
 
     if (!query) return;
 
-    // Usa allProducts diretamente
-    const products = allProducts.filter(p =>
-        p.name.toLowerCase().includes(query) ||
-        (p.sku && p.sku.toLowerCase().includes(query))
-    );
-
-    products.forEach(p => {
-        const normal = p.value.toFixed(2).replace(".", ",");
-        const promo = p.promoValue ? p.promoValue.toFixed(2).replace(".", ",") : null;
-
-        container.innerHTML += `
-            <div onclick="window.addManualItem('${p.id}')" 
-                class="p-3 bg-white border rounded-xl shadow-sm flex justify-between items-center active:scale-95 transition cursor-pointer">
-                
-                <div>
-                    <p class="font-bold text-slate-800">${p.name}</p>
-                    <span class="text-sm text-slate-500">
-                        R$ ${promo || normal}
-                    </span>
-                </div>
-
-                <button class="bg-primary-600 text-white px-3 py-1 rounded-lg text-sm font-bold">
-                    Adicionar
-                </button>
-            </div>
-        `;
+    allProducts.forEach(p => {
+        // Caso 1: O produto tem variações (Cores/Tamanhos)
+        if (p.variations && p.variations.length > 0) {
+            p.variations.forEach(v => {
+                // Pesquisa no nome do Pai ou SKU da Variação
+                if (v.active && (p.name.toLowerCase().includes(query) || (v.sku && v.sku.toLowerCase().includes(query)))) {
+                    const varPrice = v.price || p.promoValue || p.value;
+                    renderItemRow(container, p, `${p.name} (${v.color}/${v.size})`, v.sku, varPrice, v);
+                }
+            });
+        } 
+        // Caso 2: Produto Simples
+        else {
+            if (p.name.toLowerCase().includes(query) || (p.sku && p.sku.toLowerCase().includes(query))) {
+                renderItemRow(container, p, p.name, p.sku, (p.promoValue || p.value));
+            }
+        }
     });
 
     lucide.createIcons();
 };
+
+// Nova função auxiliar para criar o HTML de cada linha com foto
+function renderItemRow(container, product, displayName, sku, price, varData = null) {
+    const priceFormatted = price.toFixed(2).replace(".", ",");
+    const fotoUrl = (product.images && product.images.length > 0) ? product.images[0] : null;
+    
+    // Escapa os dados da variação para o clique
+    const varAttr = varData ? JSON.stringify(varData).replace(/"/g, '&quot;') : 'null';
+    
+    container.innerHTML += `
+        <div onclick='window.addManualItem("${product.id}", ${varAttr})' 
+            class="p-2 bg-white border rounded-2xl shadow-sm flex items-center gap-3 active:scale-95 transition cursor-pointer mb-2 hover:border-primary-400">
+            
+            <div class="w-12 h-12 rounded-xl overflow-hidden bg-slate-50 flex-shrink-0 border border-slate-100">
+                ${fotoUrl 
+                    ? `<img src="${fotoUrl}" class="w-full h-full object-cover">` 
+                    : `<div class="w-full h-full flex items-center justify-center text-slate-300"><i data-lucide="image" class="w-5 h-5"></i></div>`
+                }
+            </div>
+
+            <div class="flex-1 min-w-0">
+                <p class="font-bold text-slate-800 text-[11px] truncate leading-tight">${displayName}</p>
+                <div class="flex gap-2 items-center mt-1">
+                    <span class="text-[8px] font-mono bg-slate-100 text-slate-500 px-1.5 py-0.5 rounded uppercase tracking-tighter">SKU: ${sku || 'N/A'}</span>
+                    <span class="text-[11px] font-black text-primary-600">R$ ${priceFormatted}</span>
+                </div>
+            </div>
+
+            <div class="text-primary-500 pr-2">
+                <i data-lucide="plus-circle" class="w-6 h-6"></i>
+            </div>
+        </div>
+    `;
+        }
 
     // =========================
 // PASSO 5 — SISTEMA DE ITENS DO PEDIDO MANUAL
