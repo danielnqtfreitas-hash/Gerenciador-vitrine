@@ -2128,52 +2128,59 @@ function updateQuotas() {
 
         // --- GESTÃO DE PRODUTOS ---
         window.openProductModal = (p = null) => {
+    if(!p && allProducts.length >= storeConfig.maxProducts) { 
+        showToast(`Limite do plano atingido.`); 
+        return; 
+    }
     
-            if(!p && allProducts.length >= storeConfig.maxProducts) { showToast(`Limite do plano atingido.`); return; }
-            document.getElementById('prodCategory').innerHTML = allCategories.map(c => `<option value="${c.name}">${c.name}</option>`).join('');
-            
-            if(p) {
-                document.getElementById('prodModalTitle').textContent = "Editar Produto Existente";
-                document.getElementById('prodId').value = p.id;
-                document.getElementById('prodName').value = p.name;
-                document.getElementById('prodSku').value = p.sku || ''; // SDK/SKU Field
-                document.getElementById('prodCategory').value = p.category; 
-                document.getElementById('prodValue').value = p.value;
-                document.getElementById('prodPromo').value = p.promoValue || ''; 
-                document.getElementById('prodStock').value = p.stock || 0;
+    document.getElementById('prodCategory').innerHTML = allCategories.map(c => `<option value="${c.name}">${c.name}</option>`).join('');
+    
+    if(p) {
+        document.getElementById('prodModalTitle').textContent = "Editar Produto Existente";
+        document.getElementById('prodId').value = p.id;
+        document.getElementById('prodName').value = p.name;
+        document.getElementById('prodSku').value = p.sku || ''; 
+        document.getElementById('prodCategory').value = p.category; 
+        document.getElementById('prodValue').value = p.value;
+        document.getElementById('prodPromo').value = p.promoValue || ''; 
+        document.getElementById('prodStock').value = p.stock || 0;
+        document.getElementById('prodCost').value = p.cost || 0; // Carrega o custo
+        document.getElementById('prodDesc').value = p.description || '';
+        document.getElementById('prodFeatured').checked = p.isFeatured; 
+        
+        // Carrega os textos nos campos de input
+        document.getElementById('prodSizesInput').value = p.sizes ? p.sizes.join(', ') : '';
+        document.getElementById('prodColorsInput').value = p.colors ? p.colors.join(', ') : '';
+        
+        currentProductImages = p.images ? [...p.images] : [];
+        variationsMatrix = p.variations || [];
+        
+        if (variationsMatrix.length > 0) {
+            document.getElementById('variationMatrixContainer').classList.remove('hidden');
+            renderMatrixUI();
+        } else {
+            document.getElementById('variationMatrixContainer').classList.add('hidden');
+        }
+        
+        // Calcula o lucro ao abrir
+        if(window.calculateProfit) window.calculateProfit();
 
-                document.getElementById('prodDesc').value = p.description || '';
-                document.getElementById('prodFeatured').checked = p.isFeatured; 
-                document.getElementById('prodSizesInput').value = p.sizes ? p.sizes.join(', ') : '';
-                document.getElementById('prodColorsInput').value = p.colors ? p.colors.join(', ') : '';
-                currentProductImages = p.images ? [...p.images] : [];
-                
-                // FIXED: Preservar toda a matriz ao abrir
-                variationsMatrix = p.variations || [];
-                if (variationsMatrix.length > 0) {
-                    document.getElementById('variationMatrixContainer').classList.remove('hidden');
-                    renderMatrixUI();
-                } else {
-                    document.getElementById('variationMatrixContainer').classList.add('hidden');
-                }
-            } else {
-                document.getElementById('prodModalTitle').textContent = "Adicionar Novo Produto";
-                document.getElementById('productForm').reset(); 
-                document.getElementById('prodId').value = ''; 
-                document.getElementById('prodSku').value = '';
-                const skuInput = document.getElementById('prodSku');
+    } else {
+        document.getElementById('prodModalTitle').textContent = "Adicionar Novo Produto";
+        document.getElementById('productForm').reset(); 
+        document.getElementById('prodId').value = ''; 
+        document.getElementById('prodSku').value = generateSKU();
+        document.getElementById('prodProfit').value = '';
+        currentProductImages = []; 
+        variationsMatrix = [];
+        document.getElementById('variationMatrixContainer').classList.add('hidden');
+    }
+    
+    renderImagePreviews();
+    document.getElementById('productModal').classList.remove('hidden');
+    lucide.createIcons();
+};
 
-if (!skuInput.value) {
-  skuInput.value = generateSKU();
-}
-                currentProductImages = []; 
-                variationsMatrix = [];
-                document.getElementById('variationMatrixContainer').classList.add('hidden');
-            }
-            renderImagePreviews();
-            document.getElementById('productModal').classList.remove('hidden');
-            lucide.createIcons();
-        };
 
        
         window.handleProductSubmit = async (e) => {
