@@ -573,85 +573,79 @@
     <i data-lucide="plus" class="w-6 h-6"></i>
            </button>
 
-             <div id="view-dashboard" class="max-w-6xl mx-auto space-y-6 hidden animate-fade-in">
-            <div class="bg-white rounded-3xl border border-slate-200 p-8 flex flex-col md:flex-row items-center justify-between shadow-sm gap-6">
-                <div class="flex items-center gap-5">
-                    <div class="p-4 bg-primary-50 text-primary-600 rounded-2xl shadow-inner"><i data-lucide="store" class="w-8 h-8"></i></div>
-                    <div>
-                        <h3 class="font-bold text-xl text-slate-800">Status da Loja</h3>
-                        <div class="flex items-center gap-2 mt-1">
-                            <span class="text-sm text-slate-500">Plano Atual:</span>
-                            <span id="currentPlanBadge" class="text-xs font-bold bg-slate-100 px-2 py-0.5 rounded border uppercase">Carregando...</span>
-                        </div>
-                    </div>
+           <div id="view-dashboard" class="max-w-6xl mx-auto space-y-6 hidden animate-fade-in">
+    <div class="bg-white rounded-3xl border border-slate-200 p-8 flex flex-col md:flex-row items-center justify-between shadow-sm gap-6">
+        <div class="flex items-center gap-5">
+            <div class="p-4 bg-primary-50 text-primary-600 rounded-2xl shadow-inner"><i data-lucide="store" class="w-8 h-8"></i></div>
+            <div>
+                <h3 class="font-bold text-xl text-slate-800">Status da Loja</h3>
+                <div class="flex items-center gap-2 mt-1">
+                    <span class="text-sm text-slate-500">Plano Atual:</span>
+                    <span id="currentPlanBadge" class="text-xs font-bold bg-slate-100 px-2 py-0.5 rounded border uppercase">Carregando...</span>
                 </div>
-                
-                <div class="flex items-center gap-4 bg-slate-50 px-6 py-3 rounded-2xl border">
-                    <span class="text-sm font-bold text-slate-600" id="statusLabel">Aberto</span>
-                    <label class="toggle-switch"><input type="checkbox" id="dashboardStoreToggle" onchange="toggleStoreStatusQuick(this)"><span class="slider"></span></label>
-                </div>
-            </div> 
-
-            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 w-full">
-                <div class="bg-white p-6 border border-slate-100 rounded-3xl shadow-sm"><p class="text-xs font-bold text-slate-400 uppercase tracking-widest mb-2">Produtos</p><h3 class="text-4xl font-bold text-slate-800">
-    <span id="dash-total-products">0</span>
-    <span id="dash-limit-products" class="text-lg text-slate-400 font-medium"> / 0</span>
-                </h3> </div>
-                <div class="bg-white p-6 border border-slate-100 rounded-3xl shadow-sm"><p class="text-xs font-bold text-slate-400 uppercase tracking-widest mb-2">Banners</p><h3 class="text-4xl font-bold text-primary-600">
-    <span id="dash-total-banners">0</span>
-    <span id="dash-limit-banners" class="text-lg text-slate-400 font-medium"> / 0</span>
-                </h3></div>
-                <div class="bg-white p-6 border border-slate-100 rounded-3xl shadow-sm"><p class="text-xs font-bold text-slate-400 uppercase tracking-widest mb-2">Categorias</p><h3 class="text-4xl font-bold text-slate-800" id="dash-total-cats">0</h3></div>
-                <div class="bg-white p-5 border border-slate-100 rounded-3xl shadow-sm"><p class="text-xs font-bold text-slate-400 uppercase tracking-widest mb-2">Visitas</p><h3 class="text-4xl font-bold text-slate-800" id="dash-total-visits">0</h3></div>
             </div>
-                
-                <div class="bg-white p-6 md:p-8 border border-slate-200 rounded-3xl shadow-sm">
-                    <div class="flex justify-between items-center mb-8">
-                        <h3 class="text-xl font-bold text-slate-800">Tráfego da Vitrine</h3>
-                        <div class="flex bg-slate-100 p-1 rounded-xl">
-                            <button onclick="updateAnalyticsRange('day')" id="range-day" class="range-btn active">Hoje</button>
-                            <button onclick="updateAnalyticsRange('week')" id="range-week" class="range-btn inactive">Semana</button>
-                        </div>
-                    </div>
-                    <div class="relative h-64 w-full"><canvas id="analyticsChart"></canvas></div>
-                </div> 
-                 
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
-    <div class="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm">
-        <h3 class="text-sm font-black text-slate-400 uppercase mb-4 flex items-center gap-2">
-            <i data-lucide="trending-up" class="w-4 h-4 text-primary-500"></i> Mais Vistos (Cliques)
-        </h3>
-        <div id="topProductsList" class="space-y-3">
-            <p class="text-xs text-slate-400 italic">Aguardando dados da vitrine...</p>
+        </div>
+        <div class="flex items-center gap-4 bg-slate-50 px-6 py-3 rounded-2xl border">
+            <span class="text-sm font-bold text-slate-600" id="statusLabel">Aberto</span>
+            <label class="toggle-switch"><input type="checkbox" id="dashboardStoreToggle" onchange="toggleStoreStatusQuick(this)"><span class="slider"></span></label>
+        </div>
+    </div> 
+
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 w-full">
+        <div class="bg-white p-6 border border-slate-100 rounded-3xl shadow-sm"><p class="text-xs font-bold text-slate-400 uppercase tracking-widest mb-2">Produtos</p><h3 class="text-4xl font-bold text-slate-800"><span id="dash-total-products">0</span><span id="dash-limit-products" class="text-lg text-slate-400 font-medium"> / 0</span></h3> </div>
+        <div class="bg-white p-6 border border-slate-100 rounded-3xl shadow-sm"><p class="text-xs font-bold text-slate-400 uppercase tracking-widest mb-2">Banners</p><h3 class="text-4xl font-bold text-primary-600"><span id="dash-total-banners">0</span><span id="dash-limit-banners" class="text-lg text-slate-400 font-medium"> / 0</span></h3></div>
+        <div class="bg-white p-6 border border-slate-100 rounded-3xl shadow-sm"><p class="text-xs font-bold text-slate-400 uppercase tracking-widest mb-2">Categorias</p><h3 class="text-4xl font-bold text-slate-800" id="dash-total-cats">0</h3></div>
+        <div class="bg-white p-5 border border-slate-100 rounded-3xl shadow-sm"><p class="text-xs font-bold text-slate-400 uppercase tracking-widest mb-2">Visitas</p><h3 class="text-4xl font-bold text-slate-800" id="dash-total-visits">0</h3></div>
+    </div>
+        
+    <div class="bg-white p-6 md:p-8 border border-slate-200 rounded-3xl shadow-sm">
+        <div class="flex justify-between items-center mb-8">
+            <h3 class="text-xl font-bold text-slate-800">Tráfego da Vitrine</h3>
+            <div class="flex bg-slate-100 p-1 rounded-xl">
+                <button onclick="updateAnalyticsRange('day')" id="range-day" class="range-btn active">Hoje</button>
+                <button onclick="updateAnalyticsRange('week')" id="range-week" class="range-btn inactive">Semana</button>
+            </div>
+        </div>
+        <div class="relative h-64 w-full"><canvas id="analyticsChart"></canvas></div>
+    </div> 
+         
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div class="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm">
+            <h3 class="text-sm font-black text-slate-400 uppercase mb-4 flex items-center gap-2">
+                <i data-lucide="trending-up" class="w-4 h-4 text-primary-500"></i> Mais Vistos (Cliques)
+            </h3>
+            <div id="topProductsList" class="space-y-3">
+                <p class="text-xs text-slate-400 italic">Aguardando dados...</p>
+            </div>
+        </div>
+
+        <div class="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm">
+            <h3 class="text-sm font-black text-slate-400 uppercase mb-4 flex items-center gap-2">
+                <i data-lucide="search-x" class="w-4 h-4 text-amber-500"></i> Buscas Perdidas
+            </h3>
+            <div id="failedSearchesList" class="space-y-3">
+                <p class="text-xs text-slate-400 italic">Nenhum termo perdido ainda.</p>
+            </div>
         </div>
     </div>
 
-    <div class="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm">
-        <h3 class="text-sm font-black text-slate-400 uppercase mb-4 flex items-center gap-2">
-            <i data-lucide="search-x" class="w-4 h-4 text-amber-500"></i> Buscas Perdidas
-        </h3>
-        <div id="failedSearchesList" class="space-y-3">
-            <p class="text-xs text-slate-400 italic">Nenhum termo perdido ainda.</p>
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div class="bg-white p-6 rounded-[2.5rem] border border-slate-200 shadow-sm">
+            <h3 class="text-sm font-black text-slate-400 uppercase mb-6 tracking-widest flex items-center gap-2">
+                <i data-lucide="trophy" class="w-4 h-4 text-yellow-500"></i> Produtos Campeões
+            </h3>
+            <div id="topSoldProducts" class="space-y-4">
+                <p class="text-xs text-slate-400 italic">Aguardando vendas...</p>
+            </div>
         </div>
-    </div>
-</div>
 
-<div class="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
-    <div class="bg-white p-6 rounded-[2.5rem] border border-slate-200 shadow-sm">
-        <h3 class="text-sm font-black text-slate-400 uppercase mb-6 tracking-widest flex items-center gap-2">
-            <i data-lucide="trophy" class="w-4 h-4 text-yellow-500"></i> Produtos Campeões
-        </h3>
-        <div id="topSoldProducts" class="space-y-4">
-            <p class="text-xs text-slate-400 italic">Processando vendas...</p>
-        </div>
-    </div>
-
-    <div class="bg-white p-6 rounded-[2.5rem] border border-slate-200 shadow-sm">
-        <h3 class="text-sm font-black text-slate-400 uppercase mb-6 tracking-widest flex items-center gap-2">
-            <i data-lucide="pie-chart" class="w-4 h-4 text-primary-500"></i> Categorias Lucrativas
-        </h3>
-        <div id="topSoldCategories" class="space-y-4">
-            <p class="text-xs text-slate-400 italic">Analisando departamentos...</p>
+        <div class="bg-white p-6 rounded-[2.5rem] border border-slate-200 shadow-sm">
+            <h3 class="text-sm font-black text-slate-400 uppercase mb-6 tracking-widest flex items-center gap-2">
+                <i data-lucide="pie-chart" class="w-4 h-4 text-primary-500"></i> Categorias Lucrativas
+            </h3>
+            <div id="topSoldCategories" class="space-y-4">
+                <p class="text-xs text-slate-400 italic">Analisando faturamento...</p>
+            </div>
         </div>
     </div>
 </div>
