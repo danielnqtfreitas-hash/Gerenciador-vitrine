@@ -4407,69 +4407,86 @@ window.uploadVariationImage = async (idx, files) => {
     };
     reader.readAsDataURL(files[0]);
 };
-window.calculateSalesInsights = () => {
-    const productSales = {}; // { nome: { qty: 0, revenue: 0 } }
-    const categorySales = {}; // { categoria: { qty: 0, revenue: 0 } }
 
-    // Percorre todos os pedidos do cache
-    Object.values(ordersCache).forEach(order => {
-        // Apenas pedidos concluídos ou confirmados entram na estatística
-        if (order.status === 'completed' || order.status === 'confirmed') {
+window.calculateSalesInsights = () => {
+    const productSales = {}; 
+    const categorySales = {}; 
+
+    // 1. Validar se temos pedidos no cache
+    const orders = Object.values(ordersCache);
+    if (orders.length === 0) return;
+
+    orders.forEach(order => {
+        // Consideramos pedidos Concluídos, Confirmados e os Manuais (Venda de Balcão)
+        if (['completed', 'confirmed'].includes(order.status) || order.manual === true) {
+            
             order.items.forEach(item => {
                 const qty = Number(item.qty) || 0;
                 const revenue = (Number(item.price) || 0) * qty;
+                const itemName = item.name || "Produto sem nome";
 
-                // 1. Acumular por Produto
-                if (!productSales[item.name]) productSales[item.name] = { qty: 0, revenue: 0 };
-                productSales[item.name].qty += qty;
-                productSales[item.name].revenue += revenue;
+                // --- Ranking de Produtos ---
+                if (!productSales[itemName]) {
+                    productSales[itemName] = { qty: 0, revenue: 0 };
+                }
+                productSales[itemName].qty += qty;
+                productSales[itemName].revenue += revenue;
 
-                // 2. Acumular por Categoria (buscando no allProducts para saber a categoria do item)
+                // --- Ranking de Categorias ---
+                // Tenta pegar a categoria salva no item do pedido, senão busca no catálogo atual
                 const prodOriginal = allProducts.find(p => p.id === item.id);
-                const catName = prodOriginal ? prodOriginal.category : "Outros";
+                const catName = item.category || (prodOriginal ? prodOriginal.category : "Geral");
 
-                if (!categorySales[catName]) categorySales[catName] = { qty: 0, revenue: 0 };
+                if (!categorySales[catName]) {
+                    categorySales[catName] = { qty: 0, revenue: 0 };
+                }
                 categorySales[catName].qty += qty;
                 categorySales[catName].revenue += revenue;
             });
         }
     });
 
-    // Renderizar Top Produtos (Ordenado por Quantidade)
+    // 2. Renderizar Produtos Campeões (Ordenado por Qtd Vendida)
     const topProds = Object.entries(productSales)
         .sort((a, b) => b[1].qty - a[1].qty)
         .slice(0, 5);
 
     const prodContainer = document.getElementById('topSoldProducts');
-    prodContainer.innerHTML = topProds.length ? topProds.map(([name, data]) => `
-        <div class="flex items-center justify-between p-3 bg-slate-50 rounded-2xl border border-slate-100">
-            <div class="flex flex-col">
-                <span class="text-xs font-bold text-slate-800 truncate w-40">${name}</span>
-                <span class="text-[9px] text-slate-400 font-bold uppercase">${data.qty} unidades vendidas</span>
+    if (prodContainer) {
+        prodContainer.innerHTML = topProds.length ? topProds.map(([name, data]) => `
+            <div class="flex items-center justify-between p-3 bg-slate-50 rounded-2xl border border-slate-100 animate-fade-in">
+                <div class="flex flex-col">
+                    <span class="text-xs font-bold text-slate-800 truncate w-40">${name}</span>
+                    <span class="text-[9px] text-slate-400 font-black uppercase">${data.qty} unidades vendidas</span>
+                </div>
+                <span class="text-[10px] font-black text-green-600">R$ ${data.revenue.toFixed(2).replace('.',',')}</span>
             </div>
-            <span class="text-[10px] font-black text-green-600">R$ ${data.revenue.toFixed(2).replace('.',',')}</span>
-        </div>
-    `).join('') : '<p class="text-xs text-slate-400 italic">Nenhuma venda realizada ainda.</p>';
+        `).join('') : '<p class="text-xs text-slate-400 italic">Aguardando primeiras vendas...</p>';
+    }
 
-    // Renderizar Top Categorias (Ordenado por Faturamento)
+    // 3. Renderizar Categorias Lucrativas (Ordenado por Faturamento R$)
     const topCats = Object.entries(categorySales)
         .sort((a, b) => b[1].revenue - a[1].revenue)
         .slice(0, 5);
 
     const catContainer = document.getElementById('topSoldCategories');
-    catContainer.innerHTML = topCats.length ? topCats.map(([name, data]) => {
-        // Cálculo de % de participação (opcional)
-        return `
-        <div class="space-y-1">
-            <div class="flex justify-between text-[11px] font-bold px-1">
-                <span class="text-slate-700">${name}</span>
-                <span class="text-slate-900">R$ ${data.revenue.toFixed(2).replace('.',',')}</span>
-            </div>
-            <div class="w-full bg-slate-100 h-2 rounded-full overflow-hidden">
-                <div class="bg-primary h-full rounded-full" style="width: ${Math.min(100, (data.qty * 5))}%"></div>
-            </div>
-        </div>`;
-    }).join('') : '<p class="text-xs text-slate-400 italic">Aguardando faturamento.</p>';
+    if (catContainer) {
+        const maxRevenue = topCats.length > 0 ? topCats[0][1].revenue : 1;
+
+        catContainer.innerHTML = topCats.length ? topCats.map(([name, data]) => {
+            const percentage = (data.revenue / maxRevenue) * 100;
+            return `
+            <div class="space-y-1 animate-fade-in">
+                <div class="flex justify-between text-[11px] font-bold px-1">
+                    <span class="text-slate-700 uppercase">${name}</span>
+                    <span class="text-slate-900">R$ ${data.revenue.toFixed(2).replace('.',',')}</span>
+                </div>
+                <div class="w-full bg-slate-100 h-2 rounded-full overflow-hidden">
+                    <div class="bg-primary-500 h-full rounded-full transition-all duration-1000" style="width: ${percentage}%"></div>
+                </div>
+            </div>`;
+        }).join('') : '<p class="text-xs text-slate-400 italic">Sem dados de categorias.</p>';
+    }
 
     if (window.lucide) lucide.createIcons();
 };
