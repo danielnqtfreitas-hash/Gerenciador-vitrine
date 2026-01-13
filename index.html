@@ -4010,41 +4010,103 @@ window.updateOrderStatus = async (id, status) => {
 
         // --- CASO A: CONFIRMAR OU COMPLETAR (BAIXAR ESTOQUE) ---
         if ((status === 'confirmed' || status === 'completed') && !alreadyDeducted) {
-            console.log("Baixando estoque...");
-            const stockPromises = p.items.map(async (item) => {
-                const productRef = doc(db, `stores/${currentStoreId}/products`, item.id);
-                const snap = await getDoc(productRef);
-                if (snap.exists()) {
-                    const currentStock = Number(snap.data().stock) || 0;
-                    const newStock = Math.max(0, currentStock - Number(item.qty));
-                    return updateDoc(productRef, { 
-                        stock: newStock,
-                        status: newStock <= 0 ? 'paused' : snap.data().status 
-                    });
-                }
-            });
-            await Promise.all(stockPromises);
-            orderUpdate.stockDeducted = true;
+    console.log("Iniciando baixa de estoque detalhada...");
+    
+    const stockPromises = p.items.map(async (item) => {
+        const productRef = doc(db, `stores/${currentStoreId}/products`, item.id);
+        const snap = await getDoc(productRef);
+        
+        if (snap.exists()) {
+            const prodData = snap.data();
+            let updatePayload = {};
+
+            // 1. BAIXA NA VARIAÇÃO ESPECÍFICA (Se houver detalhes da variação no item)
+            if (prodData.variations && item.variationDetails) {
+                const { color, size } = item.variationDetails;
+                
+                const novasVariacoes = prodData.variations.map(v => {
+                    // Compara cor e tamanho para achar a variação exata
+                    const matchColor = (v.color || "").trim().toLowerCase() === (color || "").trim().toLowerCase();
+                    const matchSize = (v.size || "").trim().toLowerCase() === (size || "").trim().toLowerCase();
+                    
+                    if (matchColor && matchSize) {
+                        const estoqueVarAntigo = Number(v.stock) || 0;
+                        return { ...v, stock: Math.max(0, estoqueVarAntigo - Number(item.qty)) };
+                    }
+                    return v;
+                });
+                
+                updatePayload.variations = novasVariacoes;
+                
+                // 2. RECALCULA O ESTOQUE GERAL (Soma de todas as variações ativas)
+                updatePayload.stock = novasVariacoes.reduce((sum, v) => sum + (v.active ? (Number(v.stock) || 0) : 0), 0);
+            } else {
+                // 3. BAIXA SIMPLES (Caso o produto não tenha variações)
+                const estoqueGeralAntigo = Number(prodData.stock) || 0;
+                updatePayload.stock = Math.max(0, estoqueGeralAntigo - Number(item.qty));
+            }
+
+            // 4. ATUALIZA STATUS (Pausa se o estoque geral zerar)
+            updatePayload.status = updatePayload.stock <= 0 ? 'paused' : prodData.status;
+
+            return updateDoc(productRef, updatePayload);
         }
+    });
+    
+    await Promise.all(stockPromises);
+    orderUpdate.stockDeducted = true;
+}
 
         // --- CASO B: CANCELAR (DEVOLVER ESTOQUE) ---
-        else if (status === 'canceled' && alreadyDeducted) {
-            console.log("Devolvendo estoque ao inventário...");
-            const restorePromises = p.items.map(async (item) => {
-                const productRef = doc(db, `stores/${currentStoreId}/products`, item.id);
-                const snap = await getDoc(productRef);
-                if (snap.exists()) {
-                    const currentStock = Number(snap.data().stock) || 0;
-                    const newStock = currentStock + Number(item.qty);
-                    return updateDoc(productRef, { 
-                        stock: newStock,
-                        status: 'active' 
-                    });
-                }
-            });
-            await Promise.all(restorePromises);
-            orderUpdate.stockDeducted = false;
+        if (status === 'canceled' && alreadyDeducted) {
+    console.log("Iniciando estorno de estoque detalhado (Cancelamento)...");
+    
+    const stockPromises = p.items.map(async (item) => {
+        const productRef = doc(db, `stores/${currentStoreId}/products`, item.id);
+        const snap = await getDoc(productRef);
+        
+        if (snap.exists()) {
+            const prodData = snap.data();
+            let updatePayload = {};
+
+            // 1. ESTORNO NA VARIAÇÃO ESPECÍFICA
+            if (prodData.variations && item.variationDetails) {
+                const { color, size } = item.variationDetails;
+                
+                const novasVariacoes = prodData.variations.map(v => {
+                    const matchColor = (v.color || "").trim().toLowerCase() === (color || "").trim().toLowerCase();
+                    const matchSize = (v.size || "").trim().toLowerCase() === (size || "").trim().toLowerCase();
+                    
+                    if (matchColor && matchSize) {
+                        const estoqueVarAntigo = Number(v.stock) || 0;
+                        // Soma de volta a quantidade cancelada
+                        return { ...v, stock: estoqueVarAntigo + Number(item.qty) };
+                    }
+                    return v;
+                });
+                
+                updatePayload.variations = novasVariacoes;
+                
+                // 2. RECALCULA O ESTOQUE GERAL (Soma as variações)
+                updatePayload.stock = novasVariacoes.reduce((sum, v) => sum + (v.active ? (Number(v.stock) || 0) : 0), 0);
+            } else {
+                // 3. ESTORNO SIMPLES (Produto sem variações)
+                const estoqueGeralAntigo = Number(prodData.stock) || 0;
+                updatePayload.stock = estoqueGeralAntigo + Number(item.qty);
+            }
+
+            // 4. REATIVAR PRODUTO (Se o estoque voltou a ser maior que zero, garante que ele saia do 'paused')
+            if (updatePayload.stock > 0 && prodData.status === 'paused') {
+                updatePayload.status = 'active';
+            }
+
+            return updateDoc(productRef, updatePayload);
         }
+    });
+    
+    await Promise.all(stockPromises);
+    orderUpdate.stockDeducted = false; // Marca que o estoque não está mais "deduzido"
+}
 
         // --- SALVAR NO FIREBASE ---
         await updateDoc(orderRef, orderUpdate);
