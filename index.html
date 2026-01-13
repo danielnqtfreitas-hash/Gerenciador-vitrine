@@ -1338,6 +1338,10 @@ function renderMatrixUI() {
                 </div>
             </td>
             <td class="p-2">
+                <input type="number" value="${v.stock || 0}" oninput="updateVariationStock(${idx}, this.value)" 
+                       class="w-full border border-slate-200 rounded-lg p-2 outline-none focus:ring-1 focus:ring-primary-500 bg-white text-xs font-bold text-center">
+            </td>
+            <td class="p-2">
                 <div class="relative">
                     <span class="absolute left-2 top-2.5 text-[10px] text-slate-400 font-bold">R$</span>
                     <input type="number" step="0.01" value="${v.price}" oninput="updateVariationPrice(${idx}, this.value)" 
@@ -1349,6 +1353,12 @@ function renderMatrixUI() {
     });
     if (typeof lucide !== 'undefined') lucide.createIcons();
 }
+
+// Função auxiliar para salvar o estoque na matriz
+window.updateVariationStock = (idx, value) => {
+    variationsMatrix[idx].stock = parseInt(value) || 0;
+};
+
 
 // --- FUNÇÃO AUXILIAR PARA ATUALIZAR O SKU INDIVIDUAL ---
 window.updateVariationSku = (idx, value) => {
@@ -2221,7 +2231,7 @@ function updateQuotas() {
             }
         }
 
-        // --- 3. UPLOAD DAS IMAGENS DE VARIAÇÕES ---
+                // --- 3. UPLOAD DAS IMAGENS DE VARIAÇÕES ---
         const updatedVariations = [];
         for (let v of variationsMatrix) {
             let varImageUrl = v.image || null;
@@ -2235,6 +2245,7 @@ function updateQuotas() {
                 ...v,
                 image: varImageUrl,
                 price: parseFloat(v.price) || 0,
+                stock: parseInt(v.stock) || 0, // GARANTE QUE O ESTOQUE DA VARIAÇÃO SEJA SALVO
                 active: v.active !== false
             });
         }
@@ -2258,7 +2269,6 @@ function updateQuotas() {
         const QUINZE_DIAS = 15 * 24 * 60 * 60 * 1000;
         const now = Date.now();
         const stillInTrash = [];
-
         for (const file of trashFiles) {
             if (now - file.deletedAt > QUINZE_DIAS) {
                 try {
@@ -2269,27 +2279,31 @@ function updateQuotas() {
             }
         }
 
-                // --- 6. SALVAMENTO FINAL (CIRÚRGICO: ADICIONANDO CORES E TAMANHOS) ---
+        // --- 5.5 CÁLCULO DE ESTOQUE TOTAL ---
+        let totalStock = parseInt(document.getElementById('prodStock').value) || 0;
+        if (updatedVariations.length > 0) {
+            totalStock = updatedVariations.reduce((sum, v) => sum + (v.active ? (parseInt(v.stock) || 0) : 0), 0);
+        }
+
+        // --- 6. SALVAMENTO FINAL ---
         const data = {
             name: document.getElementById('prodName').value,
             sku: document.getElementById('prodSku').value || '',
             category: document.getElementById('prodCategory').value,
             value: parseFloat(document.getElementById('prodValue').value) || 0,
             promoValue: parseFloat(document.getElementById('prodPromo').value) || null,            
-            stock: parseInt(document.getElementById('prodStock').value) || 0, 
+            stock: totalStock, 
             cost: parseFloat(document.getElementById('prodCost').value) || 0,
             images: imageUrls,
             description: document.getElementById('prodDesc').value || '',
             isFeatured: document.getElementById('prodFeatured').checked,
             variations: updatedVariations,
-            // ESTAS DUAS LINHAS CONSERTAM O SEU PROBLEMA:
             colors: [...new Set(updatedVariations.map(v => v.color))].filter(c => c && c !== 'PADRAO'),
             sizes: [...new Set(updatedVariations.map(v => v.size))].filter(s => s && s !== 'UNICO'),
             trashFiles: stillInTrash, 
             lastUpdate: now,
-            status: parseInt(document.getElementById('prodStock').value) > 0 ? 'active' : 'paused'
+            status: totalStock > 0 ? 'active' : 'paused'
         };
-
 
         await setDoc(docRef, data, { merge: true });
         await updateDoc(doc(db, `stores/${currentStoreId}/config/store`), { lastUpdate: now });
@@ -2298,6 +2312,9 @@ function updateQuotas() {
         document.getElementById('productModal').classList.add('hidden'); 
         currentProductImages = []; 
         variationsMatrix = [];
+        // Limpa o histórico de cache da sessão para o próximo produto
+        if (typeof variationsHistoryCache !== 'undefined') variationsHistoryCache = new Map();
+
     } catch (err) {
         console.error("Erro detalhado ao salvar:", err);
         showToast("❌ Erro ao salvar o produto.");
@@ -2306,41 +2323,50 @@ function updateQuotas() {
         if(loader) loader.classList.add('hidden');
     }
 };
-
-        
-       window.deleteProduct = async (id, imageUrls = []) => {
+            
+       
+               window.deleteProduct = async (id, imageUrls = []) => {
     if(!confirm("Deseja apagar este produto permanentemente? Suas fotos também serão removidas do servidor.")) return;
 
     try {
-        // 1. Apaga o documento no Firestore
         const docRef = doc(db, `stores/${currentStoreId}/products`, id);
-        await deleteDoc(docRef); 
+        const snap = await getDoc(docRef);
+        const data = snap.exists() ? snap.data() : null;
+
+        // 1. Coleta TODAS as URLs de imagens para deletar (Principais + Variações + Lixeira)
+        let allImagesToDelete = [...imageUrls];
         
-        // 2. Apaga as fotos no Storage (Limpeza Física)
-        if (imageUrls && imageUrls.length > 0) {
-            const deletePromises = imageUrls.map(url => {
-                if (url && url.includes('firebasestorage.googleapis.com')) {
-                    // Criamos a referência a partir da URL para deletar o arquivo real
-                    const imageRef = ref(storage, url);
-                    return deleteObject(imageRef).catch(e => console.warn("Arquivo não encontrado no Storage, ignorando..."));
-                }
-                return Promise.resolve();
-            });
-            await Promise.all(deletePromises);
+        if (data) {
+            if (data.variations) {
+                data.variations.forEach(v => { if (v.image) allImagesToDelete.push(v.image); });
+            }
+            if (data.trashFiles) {
+                data.trashFiles.forEach(t => { if (t.url) allImagesToDelete.push(t.url); });
+            }
         }
 
-        // 3. Atualiza a vitrine
-        const storeRef = doc(db, `stores/${currentStoreId}/config/store`);
-        await setDoc(storeRef, { lastUpdate: Date.now() }, { merge: true });
+        // 2. Apaga o documento no Firestore
+        await deleteDoc(docRef); 
+
+        // 3. Limpeza Física no Storage (Evita desperdício de espaço)
+        const deletePromises = allImagesToDelete.map(url => {
+            if (url && url.includes('firebasestorage')) {
+                const imageRef = ref(storage, url);
+                return deleteObject(imageRef).catch(e => console.warn("Imagem ignorada ou já removida."));
+            }
+        });
+        await Promise.all(deletePromises);
+
+        // 4. Sincroniza vitrine
+        await updateDoc(doc(db, `stores/${currentStoreId}/config/store`), { lastUpdate: Date.now() });
         
-        window.showToast("🗑️ Produto e fotos removidos com sucesso!");
+        showToast("🗑️ Produto e todos os arquivos removidos!");
     } catch (err) {
         console.error("Erro na exclusão:", err);
-        window.showToast("❌ Erro ao excluir.");
+        showToast("❌ Erro ao excluir.");
     }
 };
-        
-        
+
 
         window.toggleProductStatus = async (id, currentStatus) => {
             const newStatus = currentStatus === 'paused' ? 'active' : 'paused';
