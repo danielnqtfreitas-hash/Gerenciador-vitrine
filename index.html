@@ -419,6 +419,19 @@
         </div>
     </div>
 </div>
+
+   <div id="imageViewerModal" class="hidden fixed inset-0 z-[100] bg-black/90 flex items-center justify-center p-4" onclick="this.classList.add('hidden')">
+    <button class="absolute top-6 right-6 text-white bg-white/10 rounded-full p-2">
+        <i data-lucide="x" class="w-8 h-8"></i>
+    </button>
+    <img id="expandedImage" src="" class="max-w-full max-h-[90vh] rounded-lg shadow-2xl object-contain animate-zoom-in">
+</div>
+
+<style>
+.animate-zoom-in { animation: zoomIn 0.2s ease-out; }
+@keyframes zoomIn { from { transform: scale(0.8); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+</style>
+
     
     <!-- TELA DE SUSPENSÃO -->
     <div id="suspended-screen" class="fixed inset-0 z-[200] bg-slate-900 flex flex-col items-center justify-center p-4 hidden text-center text-white">
@@ -860,18 +873,7 @@
             </div>
         </div>
 
-        <div id="imageViewerModal" class="hidden fixed inset-0 z-[100] bg-black/90 flex items-center justify-center p-4" onclick="this.classList.add('hidden')">
-    <button class="absolute top-6 right-6 text-white bg-white/10 rounded-full p-2">
-        <i data-lucide="x" class="w-8 h-8"></i>
-    </button>
-    <img id="expandedImage" src="" class="max-w-full max-h-[90vh] rounded-lg shadow-2xl object-contain animate-zoom-in">
-</div>
-
-<style>
-.animate-zoom-in { animation: zoomIn 0.2s ease-out; }
-@keyframes zoomIn { from { transform: scale(0.8); opacity: 0; } to { transform: scale(1); opacity: 1; } }
-</style>
-
+      
     <!-- MODAL RECORTE -->
     <div id="cropModal" class="modal-overlay fixed inset-0 z-[200] flex items-center justify-center p-4 hidden">
         <div class="bg-white rounded-[2.5rem] shadow-2xl w-full max-w-xl overflow-hidden animate-fade-in">
@@ -1312,26 +1314,34 @@ function renderMatrixUI() {
                     <span class="slider"></span>
                 </label>
             </td>
-            <td class="p-2 font-bold text-slate-700 text-[10px]">
-                ${v.color} / ${v.size}
+            <td class="p-2">
+                <div onclick="document.getElementById('fileVar-${idx}').click()" 
+                     class="w-10 h-10 rounded-lg border-2 border-dashed border-slate-200 flex items-center justify-center cursor-pointer overflow-hidden bg-white hover:border-primary-400 transition-all">
+                    ${v.image 
+                        ? `<img src="${v.image}" class="w-full h-full object-cover">` 
+                        : `<i data-lucide="camera" class="w-4 h-4 text-slate-300"></i>`}
+                    <input type="file" id="fileVar-${idx}" class="hidden" accept="image/*" onchange="uploadVariationImage(${idx}, this.files)">
+                </div>
             </td>
             <td class="p-2">
-                <input type="text" value="${v.sku}" 
-                       oninput="updateVariationSku(${idx}, this.value)"
-                       placeholder="SKU"
-                       class="w-full border border-slate-200 rounded-lg p-2 outline-none focus:ring-1 focus:ring-primary-500 bg-slate-50 text-[9px] font-mono font-bold transition-all uppercase">
+                <div class="flex flex-col">
+                    <span class="font-bold text-slate-800 text-[10px] uppercase">${v.color} / ${v.size}</span>
+                    <input type="text" value="${v.sku || ''}" placeholder="SKU" 
+                           oninput="updateVariationSku(${idx}, this.value)"
+                           class="mt-1 text-[9px] font-mono border-none p-0 focus:ring-0 bg-transparent text-slate-400 uppercase">
+                </div>
             </td>
             <td class="p-2">
                 <div class="relative">
-                    <span class="absolute left-2 top-2 text-[8px] text-slate-400 font-bold">R$</span>
-                    <input type="number" step="0.01" value="${v.price}" 
-                           oninput="updateVariationPrice(${idx}, this.value)" 
-                           class="w-full border border-slate-200 rounded-lg p-2 pl-6 outline-none focus:ring-1 focus:ring-primary-500 bg-white text-[10px] font-bold">
+                    <span class="absolute left-2 top-2.5 text-[10px] text-slate-400 font-bold">R$</span>
+                    <input type="number" step="0.01" value="${v.price}" oninput="updateVariationPrice(${idx}, this.value)" 
+                           class="w-full border border-slate-200 rounded-lg p-2 pl-7 outline-none focus:ring-1 focus:ring-primary-500 bg-white text-xs font-bold">
                 </div>
             </td>
         `;
         tbody.appendChild(tr);
     });
+    if (typeof lucide !== 'undefined') lucide.createIcons();
 }
 
 // --- FUNÇÃO AUXILIAR PARA ATUALIZAR O SKU INDIVIDUAL ---
@@ -1355,7 +1365,7 @@ window.updateVariationPrice = (idx, value) => {
     if (!files || files.length === 0) return;
     
     // 1. Define o limite baseado no plano (4 para carrossel, 1 para simples)
-    const maxPhotos = storeConfig.hasCarousel ? 4 : 1;
+    const maxPhotos = parseInt(storeConfig.maxPhotosPerProduct) || 4;
     const currentCount = currentProductImages.length;
     const availableSlots = maxPhotos - currentCount;
 
@@ -2163,7 +2173,6 @@ if (!skuInput.value) {
     const id = document.getElementById('prodId').value;
     const isNew = !id;
 
-    // VERIFICAÇÃO DE SEGURANÇA (SERVER-SIDE SIMULATED)
     if (isNew && allProducts.length >= storeConfig.maxProducts) {
         showToast(`❌ Limite de ${storeConfig.maxProducts} produtos atingido. Faça upgrade do seu plano.`);
         return;
@@ -2171,23 +2180,41 @@ if (!skuInput.value) {
 
     const btn = document.getElementById('btnSaveProd');
     const loader = document.getElementById('imageLoading');
+    const loadingText = document.getElementById('loadingText'); // Opcional: para feedback
+
     if(btn) btn.disabled = true;
     if(loader) loader.classList.remove('hidden');
 
     try {
         const finalId = id || 'prod_' + Date.now();
+        
+        // --- 1. UPLOAD DAS IMAGENS PRINCIPAIS (LIMITE POR PLANO) ---
         const imageUrls = [];
-
-        // Upload das imagens (processadas no crop)
+        if (loadingText) loadingText.innerText = "Subindo fotos principais...";
+        
         for (let i = 0; i < currentProductImages.length; i++) {
             const img = currentProductImages[i];
             if (img.startsWith('http')) { 
                 imageUrls.push(img); 
             } else {
-                const fileRef = ref(storage, `stores/${currentStoreId}/products/${finalId}_${i}.jpg`);
+                const fileRef = ref(storage, `stores/${currentStoreId}/products/${finalId}_main_${i}.jpg`);
                 await uploadString(fileRef, img, 'data_url', { contentType: 'image/jpeg' });
                 imageUrls.push(await getDownloadURL(fileRef));
             }
+        }
+
+        // --- 2. UPLOAD DAS IMAGENS DE VARIAÇÕES ---
+        if (loadingText) loadingText.innerText = "Sincronizando variações...";
+        
+        for (let v of variationsMatrix) {
+            // Se a variação tem uma imagem nova (base64)
+            if (v.image && v.image.startsWith('data:image')) {
+                const varSku = v.sku || Math.random().toString(36).substring(7);
+                const varRef = ref(storage, `stores/${currentStoreId}/products/vars/${finalId}_${varSku}.jpg`);
+                await uploadString(varRef, v.image, 'data_url', { contentType: 'image/jpeg' });
+                v.image = await getDownloadURL(varRef);
+            }
+            // Se v.image já for um link (http), ele permanece como está
         }
 
         const data = {
@@ -2203,15 +2230,17 @@ if (!skuInput.value) {
             isFeatured: document.getElementById('prodFeatured').checked,
             variations: variationsMatrix || [],
             lastUpdate: Date.now(),
-            status: parseInt(document.getElementById('prodStock').value) > 0 ? 'active' : 'paused'
+            status: parseInt(document.getElementById('prodStock').value) > 0 ? 'active' : 'paused',
+            createdAt: isNew ? Date.now() : (p.createdAt || Date.now()) // Mantém data original
         };
 
         await setDoc(doc(db, `stores/${currentStoreId}/products`, finalId), data, { merge: true });
         await updateDoc(doc(db, `stores/${currentStoreId}/config/store`), { lastUpdate: Date.now() });
 
-        showToast("✅ Produto guardado!");
+        showToast("✅ Produto e Variações salvos!");
         document.getElementById('productModal').classList.add('hidden'); 
         currentProductImages = []; 
+        variationsMatrix = []; // Limpa matriz após salvar
     } catch (err) {
         console.error(err);
         showToast("❌ Erro ao guardar.");
@@ -2220,6 +2249,7 @@ if (!skuInput.value) {
         if(loader) loader.classList.add('hidden');
     }
 };
+
         
        window.deleteProduct = async (id, imageUrls = []) => {
     if(!confirm("Deseja apagar este produto permanentemente? Suas fotos também serão removidas do servidor.")) return;
@@ -4166,6 +4196,19 @@ window.expandImage = (url) => {
     img.src = url;
     modal.classList.remove('hidden');
     if (typeof lucide !== 'undefined') lucide.createIcons();
+};
+window.uploadVariationImage = async (idx, files) => {
+    if (!files[0]) return;
+    showToast("Processando imagem da variação...");
+    
+    const reader = new FileReader();
+    reader.onload = (e) => {
+        // Opcional: Aqui você pode chamar o seu CropModal ou apenas salvar direto
+        // Para ser rápido, vamos salvar o DataURL temporário
+        variationsMatrix[idx].image = e.target.result; 
+        renderMatrixUI();
+    };
+    reader.readAsDataURL(files[0]);
 };
 
 
