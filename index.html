@@ -2877,18 +2877,17 @@ window.handleBannerSubmit = async (e) => {
             reader.readAsDataURL(files[0]);
         };
 
-        window.changeTab = (tabName) => {
+        
+    window.changeTab = (tabName) => {
     // --- NOVO: VALIDAÇÃO DE RECURSO PREMIUM (FINANCEIRO) ---
     if (tabName === 'finance' && storeConfig.hasFinance !== true) {
         showToast("💎 Recurso Premium: A Gestão Financeira requer o plano PRO.");
-        return; // Interrompe a função aqui
+        return; 
     }
 
-    // 1. Lista de abas e referência ao FAB
     const tabs = ['orders', 'dashboard', 'banners', 'products', 'categories', 'config', 'finance'];
     const fab = document.getElementById('fabAddOrder');
 
-    // 2. Loop para esconder views e resetar botões
     tabs.forEach(tab => {
         const view = document.getElementById(`view-${tab}`);
         if (view) view.classList.add('hidden');
@@ -2900,9 +2899,17 @@ window.handleBannerSubmit = async (e) => {
         }
     });
 
-    // 3. Mostra a aba clicada e destaca o botão
     const activeView = document.getElementById(`view-${tabName}`);
     if (activeView) activeView.classList.remove('hidden');
+
+    // --- LOGICA ESPECÍFICA PARA O DASHBOARD (CORREÇÃO AQUI) ---
+    if (tabName === 'dashboard') {
+        setTimeout(() => {
+            if (typeof window.calculateSalesInsights === 'function') {
+                window.calculateSalesInsights();
+            }
+        }, 50);
+    }
 
     if (tabName === "config") {
         if (typeof window.renderDeliveryAreas === "function") {
@@ -2926,7 +2933,6 @@ window.handleBannerSubmit = async (e) => {
 
     lucide.createIcons();
         
-    // 4. Controle do Botão Flutuante (Exclusivo Pedidos)
     if (fab) {
         if (tabName === 'orders') {
             fab.classList.remove('hidden');
@@ -2935,20 +2941,11 @@ window.handleBannerSubmit = async (e) => {
         }
     }
 
-    // 5. Ajustes extras (Badges)
     if (tabName === 'orders') {
         document.getElementById('menuBadge')?.classList.add('hidden');
         document.getElementById('menuBadgeMobile')?.classList.add('hidden');
     }
 
-    if (tabName === 'dashboard') {
-        // Isso garante que os "Campeões de Vendas" sejam calculados ao abrir a aba
-        if (typeof window.calculateSalesInsights === 'function') {
-            window.calculateSalesInsights();
-        }
-    }
-                                                                  
-    // 6. Atualiza o título no Header
     const titles = { 
         orders: 'Pedidos', 
         dashboard: 'Dashboard', 
@@ -2960,12 +2957,11 @@ window.handleBannerSubmit = async (e) => {
     };
     document.getElementById('page-title').innerText = titles[tabName] || 'Painel';
 
-    // 8. Fecha sidebar mobile se estiver aberta
     if (typeof toggleMobileSidebar === 'function' && !document.getElementById('mobileSidebar').classList.contains('sidebar-hidden')) {
         toggleMobileSidebar();
-    } 
+    }
 };
-    
+
             
         window.toggleMobileSidebar = () => { 
             const sb = document.getElementById('mobileSidebar'); const ov = document.getElementById('mobileOverlay'); 
