@@ -1258,14 +1258,20 @@ window.generateVariationMatrix = () => {
     const container = document.getElementById('variationMatrixContainer');
     if (sizes.length === 0 && colors.length === 0) {
         container.classList.add('hidden');
-        variationsMatrix = [];
+        // Não limpamos a matriz aqui para evitar perda acidental, 
+        // apenas escondemos a interface.
         return;
     }
     
     container.classList.remove('hidden');
-    
-    const existingMap = new Map();
-    variationsMatrix.forEach(v => existingMap.set(`${v.color}|${v.size}`, v));
+
+    // --- LÓGICA DE PRESERVAÇÃO ---
+    // Criamos um mapa da matriz atual para busca rápida por "Chave" (Cor + Tamanho)
+    const oldMatrixMap = new Map();
+    variationsMatrix.forEach(v => {
+        const key = `${v.color.trim().toUpperCase()}|${v.size.trim().toUpperCase()}`;
+        oldMatrixMap.set(key, v);
+    });
     
     const newMatrix = [];
     const loopColors = colors.length > 0 ? colors : ['PADRAO'];
@@ -1273,13 +1279,13 @@ window.generateVariationMatrix = () => {
     
     loopColors.forEach(color => {
         loopSizes.forEach(size => {
-            const key = `${color}|${size}`;
-            const existing = existingMap.get(key);
+            const key = `${color.trim().toUpperCase()}|${size.trim().toUpperCase()}`;
             
-            if (existing) {
-                newMatrix.push(existing);
+            // Se já existia, reaproveitamos TUDO (inclusive a imagem e o SKU)
+            if (oldMatrixMap.has(key)) {
+                newMatrix.push(oldMatrixMap.get(key));
             } else {
-                // AUTOMAÇÃO DO SKU: Prefixo + 3 letras da cor + Tamanho
+                // Se é uma combinação nova, geramos o padrão
                 const cleanColor = color.substring(0, 3).toUpperCase().replace(/[^A-Z0-9]/g, '');
                 const cleanSize = size.replace(/[^A-Z0-9]/g, '');
                 const autoSku = `${skuPrincipal}-${cleanColor}-${cleanSize}`;
@@ -1288,16 +1294,19 @@ window.generateVariationMatrix = () => {
                     active: true,
                     color: color,
                     size: size,
-                    sku: autoSku, // SKU Filho gerado
-                    price: basePrice
+                    sku: autoSku,
+                    price: basePrice,
+                    image: null // Nova variação começa sem foto
                 });
             }
         });
     });
     
+    // Atualizamos a matriz global e a interface
     variationsMatrix = newMatrix;
     renderMatrixUI();
 };
+
 
 // --- RENDERIZAÇÃO DA TABELA COM COLUNA DE SKU EDITÁVEL ---
 function renderMatrixUI() {
