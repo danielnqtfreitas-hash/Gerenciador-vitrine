@@ -420,7 +420,7 @@
     </div>
 </div>
 
-   <div id="imageViewerModal" class="hidden fixed inset-0 z-[100] bg-black/90 flex items-center justify-center p-4" onclick="this.classList.add('hidden')">
+   <div id="imageViewerModal" class="hidden fixed inset-0 z-[300] bg-black/90 flex items-center justify-center p-4" onclick="this.classList.add('hidden')">
     <button class="absolute top-6 right-6 text-white bg-white/10 rounded-full p-2">
         <i data-lucide="x" class="w-8 h-8"></i>
     </button>
@@ -2173,48 +2173,53 @@ if (!skuInput.value) {
     const id = document.getElementById('prodId').value;
     const isNew = !id;
 
-    if (isNew && allProducts.length >= storeConfig.maxProducts) {
-        showToast(`❌ Limite de ${storeConfig.maxProducts} produtos atingido. Faça upgrade do seu plano.`);
+    if (isNew && allProducts.length >= (storeConfig.maxProducts || 999)) {
+        showToast(`❌ Limite de produtos atingido.`);
         return;
     }
 
     const btn = document.getElementById('btnSaveProd');
     const loader = document.getElementById('imageLoading');
-    const loadingText = document.getElementById('loadingText'); // Opcional: para feedback
-
     if(btn) btn.disabled = true;
     if(loader) loader.classList.remove('hidden');
 
     try {
         const finalId = id || 'prod_' + Date.now();
         
-        // --- 1. UPLOAD DAS IMAGENS PRINCIPAIS (LIMITE POR PLANO) ---
+        // --- 1. UPLOAD DAS IMAGENS PRINCIPAIS ---
         const imageUrls = [];
-        if (loadingText) loadingText.innerText = "Subindo fotos principais...";
-        
         for (let i = 0; i < currentProductImages.length; i++) {
             const img = currentProductImages[i];
             if (img.startsWith('http')) { 
                 imageUrls.push(img); 
             } else {
                 const fileRef = ref(storage, `stores/${currentStoreId}/products/${finalId}_main_${i}.jpg`);
-                await uploadString(fileRef, img, 'data_url', { contentType: 'image/jpeg' });
+                await uploadString(fileRef, img, 'data_url');
                 imageUrls.push(await getDownloadURL(fileRef));
             }
         }
 
-        // --- 2. UPLOAD DAS IMAGENS DE VARIAÇÕES ---
-        if (loadingText) loadingText.innerText = "Sincronizando variações...";
+        // --- 2. UPLOAD DAS IMAGENS DE VARIAÇÕES (CORREÇÃO AQUI) ---
+        // Criamos uma cópia para não bugar o estado da interface
+        const updatedVariations = [];
         
         for (let v of variationsMatrix) {
-            // Se a variação tem uma imagem nova (base64)
-            if (v.image && v.image.startsWith('data:image')) {
-                const varSku = v.sku || Math.random().toString(36).substring(7);
-                const varRef = ref(storage, `stores/${currentStoreId}/products/vars/${finalId}_${varSku}.jpg`);
-                await uploadString(varRef, v.image, 'data_url', { contentType: 'image/jpeg' });
-                v.image = await getDownloadURL(varRef);
+            let varImageUrl = v.image || null;
+
+            // Se for uma imagem nova (Base64)
+            if (varImageUrl && varImageUrl.startsWith('data:image')) {
+                const varSkuClean = (v.sku || Math.random().toString(36).substring(7)).replace(/[^a-z0-9]/gi, '_');
+                const varRef = ref(storage, `stores/${currentStoreId}/products/vars/${finalId}_${varSkuClean}.jpg`);
+                await uploadString(varRef, varImageUrl, 'data_url');
+                varImageUrl = await getDownloadURL(varRef);
             }
-            // Se v.image já for um link (http), ele permanece como está
+
+            updatedVariations.push({
+                ...v,
+                image: varImageUrl,
+                price: parseFloat(v.price) || 0,
+                active: v.active !== false
+            });
         }
 
         const data = {
@@ -2228,27 +2233,27 @@ if (!skuInput.value) {
             images: imageUrls,
             description: document.getElementById('prodDesc').value || '',
             isFeatured: document.getElementById('prodFeatured').checked,
-            variations: variationsMatrix || [],
+            variations: updatedVariations, // Matriz com as URLs do Firebase
             lastUpdate: Date.now(),
-            status: parseInt(document.getElementById('prodStock').value) > 0 ? 'active' : 'paused',
-            createdAt: isNew ? Date.now() : (p.createdAt || Date.now()) // Mantém data original
+            status: parseInt(document.getElementById('prodStock').value) > 0 ? 'active' : 'paused'
         };
 
         await setDoc(doc(db, `stores/${currentStoreId}/products`, finalId), data, { merge: true });
         await updateDoc(doc(db, `stores/${currentStoreId}/config/store`), { lastUpdate: Date.now() });
 
-        showToast("✅ Produto e Variações salvos!");
+        showToast("✅ Produto e variações salvos!");
         document.getElementById('productModal').classList.add('hidden'); 
         currentProductImages = []; 
-        variationsMatrix = []; // Limpa matriz após salvar
+        variationsMatrix = [];
     } catch (err) {
-        console.error(err);
-        showToast("❌ Erro ao guardar.");
+        console.error("Erro detalhado ao salvar:", err);
+        showToast("❌ Erro ao salvar: Verifique a conexão ou campos.");
     } finally {
         if(btn) btn.disabled = false;
         if(loader) loader.classList.add('hidden');
     }
 };
+
 
         
        window.deleteProduct = async (id, imageUrls = []) => {
