@@ -2942,6 +2942,13 @@ window.handleBannerSubmit = async (e) => {
         document.getElementById('menuBadgeMobile')?.classList.add('hidden');
     }
 
+    if (tabName === 'dashboard') {
+        // Isso garante que os "Campeões de Vendas" sejam calculados ao abrir a aba
+        if (typeof window.calculateSalesInsights === 'function') {
+            window.calculateSalesInsights();
+        }
+    }
+                                                                  
     // 6. Atualiza o título no Header
     const titles = { 
         orders: 'Pedidos', 
@@ -2957,7 +2964,7 @@ window.handleBannerSubmit = async (e) => {
     // 8. Fecha sidebar mobile se estiver aberta
     if (typeof toggleMobileSidebar === 'function' && !document.getElementById('mobileSidebar').classList.contains('sidebar-hidden')) {
         toggleMobileSidebar();
-    }
+    } 
 };
     
             
