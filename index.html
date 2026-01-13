@@ -625,6 +625,28 @@
             <p class="text-xs text-slate-400 italic">Aguardando dados da vitrine...</p>
         </div>
     </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mt-8">
+    <div class="bg-white p-6 rounded-[2.5rem] border border-slate-200 shadow-sm">
+        <h3 class="text-sm font-black text-slate-400 uppercase mb-6 tracking-widest flex items-center gap-2">
+            <i data-lucide="trophy" class="w-4 h-4 text-yellow-500"></i> Produtos Campeões
+        </h3>
+        <div id="topSoldProducts" class="space-y-4">
+            <p class="text-xs text-slate-400 italic">Processando vendas...</p>
+        </div>
+    </div>
+
+    <div class="bg-white p-6 rounded-[2.5rem] border border-slate-200 shadow-sm">
+        <h3 class="text-sm font-black text-slate-400 uppercase mb-6 tracking-widest flex items-center gap-2">
+            <i data-lucide="pie-chart" class="w-4 h-4 text-primary-500"></i> Categorias Lucrativas
+        </h3>
+        <div id="topSoldCategories" class="space-y-4">
+            <p class="text-xs text-slate-400 italic">Analisando departamentos...</p>
+        </div>
+    </div>
+</div>
+
+                    
                     <div class="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm">
         <h3 class="text-sm font-black text-slate-400 uppercase mb-4 flex items-center gap-2">
             <i data-lucide="search-x" class="w-4 h-4 text-amber-500"></i> Buscas Perdidas
@@ -4339,7 +4361,14 @@ window.initFinanceDashboard = () => {
     setTxt('fin-profit-potential', `R$ ${(stockValue - stockCost).toFixed(2).replace('.',',')}`);
     setTxt('fin-stock-count', `${totalItems} unidades disponíveis`);
 
+     if (typeof window.calculateSalesInsights === 'function') {
+        window.calculateSalesInsights();
+    }
+
     if (typeof initGrowthChart === 'function') initGrowthChart();
+
+    // Se houver ícones novos nos rankings, o Lucide precisa ser chamado por último
+    if (typeof lucide !== 'undefined') lucide.createIcons();
 };
 
         window.updatePremiumUI = () => {
@@ -4378,6 +4407,72 @@ window.uploadVariationImage = async (idx, files) => {
         renderMatrixUI();
     };
     reader.readAsDataURL(files[0]);
+};
+window.calculateSalesInsights = () => {
+    const productSales = {}; // { nome: { qty: 0, revenue: 0 } }
+    const categorySales = {}; // { categoria: { qty: 0, revenue: 0 } }
+
+    // Percorre todos os pedidos do cache
+    Object.values(ordersCache).forEach(order => {
+        // Apenas pedidos concluídos ou confirmados entram na estatística
+        if (order.status === 'completed' || order.status === 'confirmed') {
+            order.items.forEach(item => {
+                const qty = Number(item.qty) || 0;
+                const revenue = (Number(item.price) || 0) * qty;
+
+                // 1. Acumular por Produto
+                if (!productSales[item.name]) productSales[item.name] = { qty: 0, revenue: 0 };
+                productSales[item.name].qty += qty;
+                productSales[item.name].revenue += revenue;
+
+                // 2. Acumular por Categoria (buscando no allProducts para saber a categoria do item)
+                const prodOriginal = allProducts.find(p => p.id === item.id);
+                const catName = prodOriginal ? prodOriginal.category : "Outros";
+
+                if (!categorySales[catName]) categorySales[catName] = { qty: 0, revenue: 0 };
+                categorySales[catName].qty += qty;
+                categorySales[catName].revenue += revenue;
+            });
+        }
+    });
+
+    // Renderizar Top Produtos (Ordenado por Quantidade)
+    const topProds = Object.entries(productSales)
+        .sort((a, b) => b[1].qty - a[1].qty)
+        .slice(0, 5);
+
+    const prodContainer = document.getElementById('topSoldProducts');
+    prodContainer.innerHTML = topProds.length ? topProds.map(([name, data]) => `
+        <div class="flex items-center justify-between p-3 bg-slate-50 rounded-2xl border border-slate-100">
+            <div class="flex flex-col">
+                <span class="text-xs font-bold text-slate-800 truncate w-40">${name}</span>
+                <span class="text-[9px] text-slate-400 font-bold uppercase">${data.qty} unidades vendidas</span>
+            </div>
+            <span class="text-[10px] font-black text-green-600">R$ ${data.revenue.toFixed(2).replace('.',',')}</span>
+        </div>
+    `).join('') : '<p class="text-xs text-slate-400 italic">Nenhuma venda realizada ainda.</p>';
+
+    // Renderizar Top Categorias (Ordenado por Faturamento)
+    const topCats = Object.entries(categorySales)
+        .sort((a, b) => b[1].revenue - a[1].revenue)
+        .slice(0, 5);
+
+    const catContainer = document.getElementById('topSoldCategories');
+    catContainer.innerHTML = topCats.length ? topCats.map(([name, data]) => {
+        // Cálculo de % de participação (opcional)
+        return `
+        <div class="space-y-1">
+            <div class="flex justify-between text-[11px] font-bold px-1">
+                <span class="text-slate-700">${name}</span>
+                <span class="text-slate-900">R$ ${data.revenue.toFixed(2).replace('.',',')}</span>
+            </div>
+            <div class="w-full bg-slate-100 h-2 rounded-full overflow-hidden">
+                <div class="bg-primary h-full rounded-full" style="width: ${Math.min(100, (data.qty * 5))}%"></div>
+            </div>
+        </div>`;
+    }).join('') : '<p class="text-xs text-slate-400 italic">Aguardando faturamento.</p>';
+
+    if (window.lucide) lucide.createIcons();
 };
 
 
