@@ -2178,7 +2178,6 @@ if (!skuInput.value) {
        
         window.handleProductSubmit = async (e) => {
     e.preventDefault();
-    
     const id = document.getElementById('prodId').value;
     const isNew = !id;
 
@@ -2194,8 +2193,16 @@ if (!skuInput.value) {
 
     try {
         const finalId = id || 'prod_' + Date.now();
+        const docRef = doc(db, `stores/${currentStoreId}/products`, finalId);
         
-        // --- 1. UPLOAD DAS IMAGENS PRINCIPAIS ---
+        // --- 1. BUSCA DADOS ANTIGOS PARA GESTÃO DA LIXEIRA ---
+        const snap = await getDoc(docRef);
+        let trashFiles = [];
+        if (snap.exists()) {
+            trashFiles = snap.data().trashFiles || [];
+        }
+
+        // --- 2. UPLOAD DAS IMAGENS PRINCIPAIS ---
         const imageUrls = [];
         for (let i = 0; i < currentProductImages.length; i++) {
             const img = currentProductImages[i];
@@ -2208,21 +2215,16 @@ if (!skuInput.value) {
             }
         }
 
-        // --- 2. UPLOAD DAS IMAGENS DE VARIAÇÕES (CORREÇÃO AQUI) ---
-        // Criamos uma cópia para não bugar o estado da interface
+        // --- 3. UPLOAD DAS IMAGENS DE VARIAÇÕES ---
         const updatedVariations = [];
-        
         for (let v of variationsMatrix) {
             let varImageUrl = v.image || null;
-
-            // Se for uma imagem nova (Base64)
             if (varImageUrl && varImageUrl.startsWith('data:image')) {
                 const varSkuClean = (v.sku || Math.random().toString(36).substring(7)).replace(/[^a-z0-9]/gi, '_');
                 const varRef = ref(storage, `stores/${currentStoreId}/products/vars/${finalId}_${varSkuClean}.jpg`);
                 await uploadString(varRef, varImageUrl, 'data_url');
                 varImageUrl = await getDownloadURL(varRef);
             }
-
             updatedVariations.push({
                 ...v,
                 image: varImageUrl,
@@ -2231,6 +2233,37 @@ if (!skuInput.value) {
             });
         }
 
+        // --- 4. LÓGICA DA LIXEIRA (SOFT DELETE) ---
+        if (snap.exists()) {
+            const oldData = snap.data();
+            const currentVarImages = updatedVariations.map(v => v.image).filter(img => img);
+            
+            if (oldData.variations) {
+                oldData.variations.forEach(oldVar => {
+                    // Se a foto existia antes e não está na matriz nova nem nas fotos principais, vai para a lixeira
+                    if (oldVar.image && !currentVarImages.includes(oldVar.image) && !imageUrls.includes(oldVar.image)) {
+                        trashFiles.push({ url: oldVar.image, deletedAt: Date.now() });
+                    }
+                });
+            }
+        }
+
+        // --- 5. FAXINA AUTOMÁTICA (EXPIRA EM 15 DIAS) ---
+        const QUINZE_DIAS = 15 * 24 * 60 * 60 * 1000;
+        const now = Date.now();
+        const stillInTrash = [];
+
+        for (const file of trashFiles) {
+            if (now - file.deletedAt > QUINZE_DIAS) {
+                try {
+                    await deleteObject(ref(storage, file.url));
+                } catch (e) { console.warn("Arquivo já removido do Storage"); }
+            } else {
+                stillInTrash.push(file);
+            }
+        }
+
+        // --- 6. SALVAMENTO FINAL ---
         const data = {
             name: document.getElementById('prodName').value,
             sku: document.getElementById('prodSku').value || '',
@@ -2242,13 +2275,14 @@ if (!skuInput.value) {
             images: imageUrls,
             description: document.getElementById('prodDesc').value || '',
             isFeatured: document.getElementById('prodFeatured').checked,
-            variations: updatedVariations, // Matriz com as URLs do Firebase
-            lastUpdate: Date.now(),
+            variations: updatedVariations,
+            trashFiles: stillInTrash, // Salva a lixeira atualizada
+            lastUpdate: now,
             status: parseInt(document.getElementById('prodStock').value) > 0 ? 'active' : 'paused'
         };
 
-        await setDoc(doc(db, `stores/${currentStoreId}/products`, finalId), data, { merge: true });
-        await updateDoc(doc(db, `stores/${currentStoreId}/config/store`), { lastUpdate: Date.now() });
+        await setDoc(docRef, data, { merge: true });
+        await updateDoc(doc(db, `stores/${currentStoreId}/config/store`), { lastUpdate: now });
 
         showToast("✅ Produto e variações salvos!");
         document.getElementById('productModal').classList.add('hidden'); 
@@ -2256,13 +2290,12 @@ if (!skuInput.value) {
         variationsMatrix = [];
     } catch (err) {
         console.error("Erro detalhado ao salvar:", err);
-        showToast("❌ Erro ao salvar: Verifique a conexão ou campos.");
+        showToast("❌ Erro ao salvar o produto.");
     } finally {
         if(btn) btn.disabled = false;
         if(loader) loader.classList.add('hidden');
     }
 };
-
 
         
        window.deleteProduct = async (id, imageUrls = []) => {
