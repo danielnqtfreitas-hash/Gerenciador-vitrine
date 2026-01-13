@@ -2270,7 +2270,7 @@ function updateQuotas() {
             }
         }
 
-        // --- 6. SALVAMENTO FINAL ---
+                // --- 6. SALVAMENTO FINAL (CIRÚRGICO: ADICIONANDO CORES E TAMANHOS) ---
         const data = {
             name: document.getElementById('prodName').value,
             sku: document.getElementById('prodSku').value || '',
@@ -2283,10 +2283,14 @@ function updateQuotas() {
             description: document.getElementById('prodDesc').value || '',
             isFeatured: document.getElementById('prodFeatured').checked,
             variations: updatedVariations,
-            trashFiles: stillInTrash, // Salva a lixeira atualizada
+            // ESTAS DUAS LINHAS CONSERTAM O SEU PROBLEMA:
+            colors: [...new Set(updatedVariations.map(v => v.color))].filter(c => c && c !== 'PADRAO'),
+            sizes: [...new Set(updatedVariations.map(v => v.size))].filter(s => s && s !== 'UNICO'),
+            trashFiles: stillInTrash, 
             lastUpdate: now,
             status: parseInt(document.getElementById('prodStock').value) > 0 ? 'active' : 'paused'
         };
+
 
         await setDoc(docRef, data, { merge: true });
         await updateDoc(doc(db, `stores/${currentStoreId}/config/store`), { lastUpdate: now });
