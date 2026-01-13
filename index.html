@@ -619,14 +619,24 @@
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
     <div class="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm">
         <h3 class="text-sm font-black text-slate-400 uppercase mb-4 flex items-center gap-2">
-            <i data-lucide="trending-up" class="w-4 h-4 text-primary-500"></i> Mais Vistos
+            <i data-lucide="trending-up" class="w-4 h-4 text-primary-500"></i> Mais Vistos (Cliques)
         </h3>
         <div id="topProductsList" class="space-y-3">
             <p class="text-xs text-slate-400 italic">Aguardando dados da vitrine...</p>
         </div>
     </div>
 
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mt-8">
+    <div class="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm">
+        <h3 class="text-sm font-black text-slate-400 uppercase mb-4 flex items-center gap-2">
+            <i data-lucide="search-x" class="w-4 h-4 text-amber-500"></i> Buscas Perdidas
+        </h3>
+        <div id="failedSearchesList" class="space-y-3">
+            <p class="text-xs text-slate-400 italic">Nenhum termo perdido ainda.</p>
+        </div>
+    </div>
+</div>
+
+<div class="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
     <div class="bg-white p-6 rounded-[2.5rem] border border-slate-200 shadow-sm">
         <h3 class="text-sm font-black text-slate-400 uppercase mb-6 tracking-widest flex items-center gap-2">
             <i data-lucide="trophy" class="w-4 h-4 text-yellow-500"></i> Produtos Campeões
@@ -645,18 +655,6 @@
         </div>
     </div>
 </div>
-
-                    
-                    <div class="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm">
-        <h3 class="text-sm font-black text-slate-400 uppercase mb-4 flex items-center gap-2">
-            <i data-lucide="search-x" class="w-4 h-4 text-amber-500"></i> Buscas Perdidas
-        </h3>
-        <div id="failedSearchesList" class="space-y-3">
-            <p class="text-xs text-slate-400 italic">Nenhum termo perdido ainda.</p>
-        </div>
-    </div>
-                </div>
-             </div>
 
              <div id="view-finance" class="max-w-6xl mx-auto space-y-8 hidden animate-fade-in">
     <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
@@ -4110,7 +4108,7 @@ window.updateOrderStatus = async (id, status) => {
                 updatePayload.variations = novasVariacoes;
                 
                 // 2. RECALCULA O ESTOQUE GERAL (Soma as variações)
-                updatePayload.stock = novasVariacoes.reduce((sum, v) => sum + (v.active ? (Number(v.stock) || 0) : 0), 0);
+                updatePayload.stock = novasVariacoes.reduce((sum, v) => sum + (v.active !== false ? (Number(v.stock) || 0) : 0), 0);
             } else {
                 // 3. ESTORNO SIMPLES (Produto sem variações)
                 const estoqueGeralAntigo = Number(prodData.stock) || 0;
