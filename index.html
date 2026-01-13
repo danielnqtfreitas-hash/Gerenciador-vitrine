@@ -1168,7 +1168,7 @@ let currentPlan = null;   // 🔹 vem da collection plans
         let cropper = null;
         let growthChartInstance = null;
         let manualOrder = [];
-       
+       let variationsHistoryCache = new Map();
         let html5QrCode = null;
         let customStart = null;
 let customEnd = null;
@@ -1246,7 +1246,7 @@ function applyPhoneMask(elementId) {
 
         // --- SISTEMA DE MATRIZ DE VARIAÇÕES (FIXED: CIRÚRGICO) ---
         // --- GERAÇÃO AUTOMÁTICA DE MATRIZ COM SKU INTELIGENTE ---
-window.generateVariationMatrix = () => {
+      window.generateVariationMatrix = () => {
     const skuPrincipal = (document.getElementById('prodSku').value || 'PROD').toUpperCase();
     const sizesInput = document.getElementById('prodSizesInput').value;
     const colorsInput = document.getElementById('prodColorsInput').value;
@@ -1258,19 +1258,17 @@ window.generateVariationMatrix = () => {
     const container = document.getElementById('variationMatrixContainer');
     if (sizes.length === 0 && colors.length === 0) {
         container.classList.add('hidden');
-        // Não limpamos a matriz aqui para evitar perda acidental, 
-        // apenas escondemos a interface.
         return;
     }
     
     container.classList.remove('hidden');
 
-    // --- LÓGICA DE PRESERVAÇÃO ---
-    // Criamos um mapa da matriz atual para busca rápida por "Chave" (Cor + Tamanho)
-    const oldMatrixMap = new Map();
+    // --- LÓGICA DE PRESERVAÇÃO COM CACHE HISTÓRICO ---
+    
+    // Alimenta o cache com o que está atualmente na matriz (antes de gerar a nova)
     variationsMatrix.forEach(v => {
         const key = `${v.color.trim().toUpperCase()}|${v.size.trim().toUpperCase()}`;
-        oldMatrixMap.set(key, v);
+        variationsHistoryCache.set(key, v);
     });
     
     const newMatrix = [];
@@ -1281,11 +1279,11 @@ window.generateVariationMatrix = () => {
         loopSizes.forEach(size => {
             const key = `${color.trim().toUpperCase()}|${size.trim().toUpperCase()}`;
             
-            // Se já existia, reaproveitamos TUDO (inclusive a imagem e o SKU)
-            if (oldMatrixMap.has(key)) {
-                newMatrix.push(oldMatrixMap.get(key));
+            // BUSCA: Primeiro no cache histórico (que guarda tudo o que já passou por aqui)
+            if (variationsHistoryCache.has(key)) {
+                newMatrix.push(variationsHistoryCache.get(key));
             } else {
-                // Se é uma combinação nova, geramos o padrão
+                // Se for realmente novo, gera o padrão
                 const cleanColor = color.substring(0, 3).toUpperCase().replace(/[^A-Z0-9]/g, '');
                 const cleanSize = size.replace(/[^A-Z0-9]/g, '');
                 const autoSku = `${skuPrincipal}-${cleanColor}-${cleanSize}`;
@@ -1296,13 +1294,12 @@ window.generateVariationMatrix = () => {
                     size: size,
                     sku: autoSku,
                     price: basePrice,
-                    image: null // Nova variação começa sem foto
+                    image: null 
                 });
             }
         });
     });
-    
-    // Atualizamos a matriz global e a interface
+
     variationsMatrix = newMatrix;
     renderMatrixUI();
 };
@@ -2128,6 +2125,8 @@ function updateQuotas() {
 
         // --- GESTÃO DE PRODUTOS ---
         window.openProductModal = (p = null) => {
+
+            variationsHistoryCache = new Map();
     if(!p && allProducts.length >= storeConfig.maxProducts) { 
         showToast(`Limite do plano atingido.`); 
         return; 
