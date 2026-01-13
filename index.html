@@ -3708,25 +3708,37 @@ window.addManualItem = (id) => {
 
 
 // --- MOSTRA OS ITENS ADICIONADOS NO PEDIDO ---
+
 window.renderManualOrderItems = () => {
     const container = document.getElementById("manualOrderItems");
     container.innerHTML = "";
 
     manualOrder.forEach(item => {
         const subtotal = (item.qty * item.price).toFixed(2).replace('.', ',');
+        
+        // 1. Busca a foto do produto original para exibir no carrinho
+        const product = allProducts.find(p => p.id === item.id);
+        const fotoUrl = (product && product.images && product.images.length > 0) ? product.images[0] : null;
 
         container.innerHTML += `
-            <div class="p-3 border rounded-xl bg-white shadow-sm flex justify-between items-center">
+            <div class="p-2 border rounded-2xl bg-white shadow-sm flex items-center gap-3 mb-2">
                 
-                <div>
-                    <p class="font-bold text-slate-800">${item.name}</p>
-                    <p class="text-sm text-slate-500">R$ ${subtotal}</p>
+                <div class="w-12 h-12 rounded-xl overflow-hidden bg-slate-50 flex-shrink-0 border border-slate-100">
+                    ${fotoUrl 
+                        ? `<img src="${fotoUrl}" class="w-full h-full object-cover">` 
+                        : `<div class="w-full h-full flex items-center justify-center text-slate-300"><i data-lucide="image" class="w-5 h-5"></i></div>`
+                    }
                 </div>
 
-                <div class="flex items-center gap-2">
-                    <button onclick="window.changeManualQty('${item.id}', -1)" class="px-2 py-1 bg-slate-200 rounded-lg">-</button>
-                    <span class="font-bold">${item.qty}</span>
-                    <button onclick="window.changeManualQty('${item.id}', 1)" class="px-2 py-1 bg-slate-200 rounded-lg">+</button>
+                <div class="flex-1 min-w-0">
+                    <p class="font-bold text-slate-800 text-[11px] leading-tight truncate">${item.name}</p>
+                    <p class="text-[10px] text-primary-600 font-black mt-0.5">R$ ${subtotal}</p>
+                </div>
+
+                <div class="flex items-center gap-1 bg-slate-50 p-1 rounded-xl border border-slate-100">
+                    <button onclick="window.changeManualQty('${item.cartId || item.id}', -1)" class="w-7 h-7 flex items-center justify-center bg-white border border-slate-200 rounded-lg text-slate-600 active:bg-slate-100">-</button>
+                    <span class="font-bold text-xs min-w-[20px] text-center">${item.qty}</span>
+                    <button onclick="window.changeManualQty('${item.cartId || item.id}', 1)" class="w-7 h-7 flex items-center justify-center bg-white border border-slate-200 rounded-lg text-slate-600 active:bg-slate-100">+</button>
                 </div>
 
             </div>
@@ -3734,6 +3746,8 @@ window.renderManualOrderItems = () => {
     });
 
     window.updateManualTotal();
+    // Atualiza os ícones caso a foto falhe e caia no ícone padrão
+    if (typeof lucide !== 'undefined') lucide.createIcons();
 };
 
 // --- ALTERAR QUANTIDADE (+/-) ---
