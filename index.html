@@ -860,6 +860,18 @@
             </div>
         </div>
 
+        <div id="imageViewerModal" class="hidden fixed inset-0 z-[100] bg-black/90 flex items-center justify-center p-4" onclick="this.classList.add('hidden')">
+    <button class="absolute top-6 right-6 text-white bg-white/10 rounded-full p-2">
+        <i data-lucide="x" class="w-8 h-8"></i>
+    </button>
+    <img id="expandedImage" src="" class="max-w-full max-h-[90vh] rounded-lg shadow-2xl object-contain animate-zoom-in">
+</div>
+
+<style>
+.animate-zoom-in { animation: zoomIn 0.2s ease-out; }
+@keyframes zoomIn { from { transform: scale(0.8); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+</style>
+
     <!-- MODAL RECORTE -->
     <div id="cropModal" class="modal-overlay fixed inset-0 z-[200] flex items-center justify-center p-4 hidden">
         <div class="bg-white rounded-[2.5rem] shadow-2xl w-full max-w-xl overflow-hidden animate-fade-in">
@@ -932,18 +944,6 @@
             </div>
         </div>
         </div>
-
-    <div id="imageViewerModal" class="hidden fixed inset-0 z-[100] bg-black/90 flex items-center justify-center p-4" onclick="this.classList.add('hidden')">
-    <button class="absolute top-6 right-6 text-white bg-white/10 rounded-full p-2">
-        <i data-lucide="x" class="w-8 h-8"></i>
-    </button>
-    <img id="expandedImage" src="" class="max-w-full max-h-[90vh] rounded-lg shadow-2xl object-contain animate-zoom-in">
-</div>
-
-<style>
-.animate-zoom-in { animation: zoomIn 0.2s ease-out; }
-@keyframes zoomIn { from { transform: scale(0.8); opacity: 0; } to { transform: scale(1); opacity: 1; } }
-</style>
 
     <!-- MODAL PRODUTO -->
     <div id="productModal" class="modal-overlay fixed inset-0 z-[150] flex items-center justify-center p-4 hidden">
@@ -3127,6 +3127,10 @@ async function initAnalyticsInsights() {
        window.openOrderModal = (id) => {
     const p = ordersCache[id];
     if(!p) return;
+
+         // ATUALIZA O TÍTULO NO TOPO DO MODAL (O ID amigável de 5 dígitos)
+    const titleEl = document.getElementById('modalOrderId');
+    if(titleEl) titleEl.textContent = `#${p.id.slice(-5).toUpperCase()}`;
 
     const audio = document.getElementById('notifSound');
     if(audio) {
