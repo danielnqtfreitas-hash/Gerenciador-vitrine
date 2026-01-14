@@ -1467,14 +1467,18 @@ window.updateVariationPrice = (idx, value) => {
     }
     lucide.createIcons();
         }
-
-        window.closeCropModal = () => {
-            document.getElementById('cropModal').classList.add('hidden');
-            if (cropper) cropper.destroy();
-            document.getElementById('prodImageInput').value = '';
-            document.getElementById('cameraCaptureInput').value = '';
-        };
-
+window.closeCropModal = () => {
+    document.getElementById('cropModal').classList.add('hidden');
+    if (cropper) cropper.destroy();
+    
+    // Garante que o botão volte a apontar para a função da galeria principal
+    const btn = document.getElementById('confirmCropBtn');
+    if (btn) btn.onclick = () => window.confirmCrop();
+    
+    document.getElementById('prodImageInput').value = '';
+    document.getElementById('cameraCaptureInput').value = '';
+};
+          
         window.confirmCrop = () => {
     if (!cropper) return;
 
@@ -4477,31 +4481,35 @@ window.calculateSalesInsights = () => {
 
     if (window.lucide) lucide.createIcons();
 };
+
 window.confirmVariationCrop = () => {
     if (!cropper) return;
 
-    // Redimensiona para o padrão 1:1 em 800px (mesmo padrão da foto principal)
+    // Gera o canvas com proporção 1:1 e redimensiona para 800px (Padrão Vitrine)
     const canvas = cropper.getCroppedCanvas({ 
         width: 800, 
         height: 800,
         imageSmoothingQuality: 'high'
     });
 
-    // Comprime para JPEG 0.7 para economizar espaço no Firebase
+    // Comprime para JPEG com 70% de qualidade para o Firebase não pesar
     const optimizedDataUrl = canvas.toDataURL('image/jpeg', 0.7);
     
-    // Injeta na matriz
     if (currentVariationCropIdx !== null) {
+        // Alimenta a matriz de variações com a foto cortada
         variationsMatrix[currentVariationCropIdx].image = optimizedDataUrl;
-        currentVariationCropIdx = null; // Reseta o índice
+        currentVariationCropIdx = null; // Reseta o controle
     }
 
-    // Atualiza a tabela na tela e fecha o modal
+    // Atualiza a tabela visualmente e fecha o modal
     renderMatrixUI();
-    closeCropModal();
+    window.closeCropModal();
     
-    // Restaura o comportamento do botão para fotos principais
-    document.getElementById('confirmCropBtn').onclick = () => window.confirmCrop();
+    // RESTAURAÇÃO: Volta o botão de confirmação para o comportamento padrão (galeria principal)
+    const btn = document.getElementById('confirmCropBtn');
+    if (btn) {
+        btn.onclick = () => window.confirmCrop();
+    }
 };
 
     </script>
