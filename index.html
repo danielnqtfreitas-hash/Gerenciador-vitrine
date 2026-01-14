@@ -3418,49 +3418,66 @@ async function initAnalyticsInsights() {
         
 window.deleteOrder = async (id) => {
     // 1. Confirmação de segurança
-    if(!confirm("Tem a certeza que deseja excluir este pedido? O estoque das variações será devolvido automaticamente.")) return;
+    if(!confirm("Tem a certeza que deseja excluir este pedido? O estoque de todas as variações será devolvido automaticamente ao catálogo.")) return;
     
     try {
         const p = ordersCache[id];
         if(!p) return;
 
-        // 2. VERIFICAÇÃO E ESTORNO DE ESTOQUE
+        // 2. VERIFICAÇÃO E ESTORNO DE ESTOQUE AGRUPADO
         if (p.stockDeducted === true) {
-            console.log("Estornando estoque para as variações correspondentes...");
+            console.log("Iniciando estorno de estoque agrupado...");
             
-            const restorePromises = p.items.map(async (item) => {
-                const productRef = doc(db, `stores/${currentStoreId}/products`, item.id);
+            // Agrupa os itens por ID do Produto Pai para evitar conflitos de escrita
+            const itemsByProduct = p.items.reduce((acc, item) => {
+                if (!acc[item.id]) acc[item.id] = [];
+                acc[item.id].push(item);
+                return acc;
+            }, {});
+
+            const restorePromises = Object.keys(itemsByProduct).map(async (productId) => {
+                const productRef = doc(db, `stores/${currentStoreId}/products`, productId);
                 const snap = await getDoc(productRef);
                 
                 if (snap.exists()) {
                     const prodData = snap.data();
+                    const itemsToRestore = itemsByProduct[productId];
                     let updatePayload = {};
 
-                    // CASO A: O item deletado era uma VARIAÇÃO
-                    if (prodData.variations && item.variationDetails) {
-                        const novasVariacoes = prodData.variations.map(v => {
-                            // Localiza a variação exata pelo SKU ou Cor/Tamanho
-                            const isMatch = v.sku === item.variationDetails.sku || 
-                                           (v.color === item.variationDetails.color && v.size === item.variationDetails.size);
-                            
-                            if (isMatch) {
-                                const estoqueAtualVar = Number(v.stock) || 0;
-                                return { ...v, stock: estoqueAtualVar + Number(item.qty) };
-                            }
-                            return v;
+                    // Se o produto possuir variações (Cores/Tamanhos)
+                    if (prodData.variations && prodData.variations.length > 0) {
+                        let novasVariacoes = [...prodData.variations];
+
+                        // Devolve o estoque para cada variação presente no pedido
+                        itemsToRestore.forEach(itemNoPedido => {
+                            const { color, size, sku } = itemNoPedido.variationDetails || {};
+
+                            novasVariacoes = novasVariacoes.map(v => {
+                                // Match por SKU ou por combinação Cor/Tamanho
+                                const matchSKU = sku && v.sku === sku;
+                                const matchCombo = (v.color || "").trim().toLowerCase() === (color || "").trim().toLowerCase() &&
+                                                   (v.size || "").trim().toLowerCase() === (size || "").trim().toLowerCase();
+                                
+                                if (matchSKU || matchCombo) {
+                                    const estoqueAtualVar = Number(v.stock) || 0;
+                                    return { ...v, stock: estoqueAtualVar + Number(itemNoPedido.qty) };
+                                }
+                                return v;
+                            });
                         });
 
                         updatePayload.variations = novasVariacoes;
-                        // Recalcula o estoque geral do produto
+                        // Recalcula o estoque total somando todas as variações
                         updatePayload.stock = novasVariacoes.reduce((sum, v) => sum + (Number(v.stock) || 0), 0);
                     } 
-                    // CASO B: O item deletado era um PRODUTO SIMPLES
+                    // Se for um produto simples (sem variações)
                     else {
+                        const totalQtyToRestore = itemsToRestore.reduce((sum, i) => sum + Number(i.qty), 0);
                         const estoqueGeralAntigo = Number(prodData.stock) || 0;
-                        updatePayload.stock = estoqueGeralAntigo + Number(item.qty);
+                        updatePayload.stock = estoqueGeralAntigo + totalQtyToRestore;
                     }
 
-                    // Reativa o produto se ele estava pausado por falta de estoque
+                    // Se o estoque voltou a ser positivo, garante que o produto esteja ativo
                     if (updatePayload.stock > 0) {
                         updatePayload.status = 'active';
                     }
@@ -3472,7 +3489,7 @@ window.deleteOrder = async (id) => {
             await Promise.all(restorePromises);
         }
 
-        // 3. EXCLUSÃO DO DOCUMENTO
+        // 3. EXCLUSÃO DO DOCUMENTO DO PEDIDO
         await deleteDoc(doc(db, `stores/${currentStoreId}/orders`, id));
 
         // 4. ATUALIZAÇÃO DA VITRINE E CACHE
@@ -3481,7 +3498,7 @@ window.deleteOrder = async (id) => {
 
         showToast("Pedido removido e estoque devolvido com sucesso! 🔄");
         
-        // Fecha o modal de detalhes se ele estiver aberto
+        // Fecha o modal de detalhes se estiver aberto
         const modal = document.getElementById('orderDetailModal');
         if (modal) modal.classList.add('hidden');
 
@@ -4058,50 +4075,58 @@ window.finishManualOrder = async () => {
 
         await addDoc(collection(db, `stores/${currentStoreId}/orders`), newOrder);
 
-        // 2. BAIXA DE ESTOQUE CIRÚRGICA (Pai e Variações)
-        const stockPromises = manualOrder.map(async (item) => {
-            const productRef = doc(db, `stores/${currentStoreId}/products`, item.id);
+        // 2. LÓGICA DE AGRUPAMENTO PARA BAIXA DE ESTOQUE
+        const itemsByProduct = manualOrder.reduce((acc, item) => {
+            if (!acc[item.id]) acc[item.id] = [];
+            acc[item.id].push(item);
+            return acc;
+        }, {});
+
+        const stockPromises = Object.keys(itemsByProduct).map(async (productId) => {
+            const productRef = doc(db, `stores/${currentStoreId}/products`, productId);
             const snap = await getDoc(productRef);
             
             if (snap.exists()) {
                 const prodData = snap.data();
+                const itemsToUpdate = itemsByProduct[productId];
                 let updateData = {};
 
-                // CASO A: É uma variação (Cor/Tamanho)
-                if (prodData.variations && item.variationDetails) {
-                    const novasVariacoes = prodData.variations.map(v => {
-                        // Compara SKU ou combinação de Cor/Tamanho para achar a variação correta
-                        const isMatch = v.sku === item.variationDetails.sku || 
-                                       (v.color === item.variationDetails.color && v.size === item.variationDetails.size);
-                        
-                        if (isMatch) {
-                            const estoqueAtualVar = Number(v.stock) || 0;
-                            return { ...v, stock: Math.max(0, estoqueAtualVar - Number(item.qty)) };
-                        }
-                        return v;
+                if (prodData.variations && prodData.variations.length > 0) {
+                    // Atualiza múltiplas variações no mesmo array antes de salvar
+                    let novasVariacoes = [...prodData.variations];
+                    
+                    itemsToUpdate.forEach(itemCarrinho => {
+                        novasVariacoes = novasVariacoes.map(v => {
+                            const isMatch = v.sku === itemCarrinho.sku || 
+                                           (v.color === itemCarrinho.variationDetails?.color && 
+                                            v.size === itemCarrinho.variationDetails?.size);
+                            
+                            if (isMatch) {
+                                const estoqueAtualVar = Number(v.stock) || 0;
+                                return { ...v, stock: Math.max(0, estoqueAtualVar - Number(itemCarrinho.qty)) };
+                            }
+                            return v;
+                        });
                     });
 
                     updateData.variations = novasVariacoes;
-                    // Recalcula o estoque total do produto baseado na soma das variações
+                    // Recalcula o total do estoque do produto pai
                     updateData.stock = novasVariacoes.reduce((sum, v) => sum + (Number(v.stock) || 0), 0);
-                } 
-                // CASO B: É um produto simples
-                else {
+                } else {
+                    // Produto simples
+                    const totalQty = itemsToUpdate.reduce((sum, i) => sum + Number(i.qty), 0);
                     const estoqueGeralAntigo = Number(prodData.stock) || 0;
-                    updateData.stock = Math.max(0, estoqueGeralAntigo - Number(item.qty));
+                    updateData.stock = Math.max(0, estoqueGeralAntigo - totalQty);
                 }
 
-                // Se o estoque zerou, pausa o produto automaticamente
                 updateData.status = updateData.stock <= 0 ? 'paused' : 'active';
-                
                 return updateDoc(productRef, updateData);
             }
         });
 
         await Promise.all(stockPromises);
         
-        // 3. Limpeza e Feedback
-        showToast("✅ Venda finalizada e estoque atualizado!");
+        showToast("✅ Venda finalizada e estoque sincronizado!");
         manualOrder = [];
         document.getElementById("manualName").value = "";
         document.getElementById("manualPhone").value = "";
@@ -4122,6 +4147,7 @@ window.finishManualOrder = async () => {
 
 
 // FUNÇÃO PARA ATUALIZAR STATUS E BAIXAR ESTOQUE (COM RECIBO PIX)
+// FUNÇÃO PARA ATUALIZAR STATUS E BAIXAR/DEVOLVER ESTOQUE (VERSÃO CORRIGIDA PARA MÚLTIPLAS VARIAÇÕES)
 window.updateOrderStatus = async (id, status) => {
     try {
         const p = ordersCache[id];
@@ -4133,38 +4159,53 @@ window.updateOrderStatus = async (id, status) => {
 
         // --- CASO A: CONFIRMAR OU COMPLETAR (BAIXAR ESTOQUE) ---
         if ((status === 'confirmed' || status === 'completed') && !alreadyDeducted) {
-            console.log("Baixando estoque de variações...");
+            console.log("Baixando estoque de variações de forma agrupada...");
 
-            const stockPromises = p.items.map(async (item) => {
-                const productRef = doc(db, `stores/${currentStoreId}/products`, item.id);
+            // AGRUPAMENTO CIRÚRGICO: Agrupa itens pelo ID do Produto Pai
+            const itemsByProduct = p.items.reduce((acc, item) => {
+                if (!acc[item.id]) acc[item.id] = [];
+                acc[item.id].push(item);
+                return acc;
+            }, {});
+
+            const stockPromises = Object.keys(itemsByProduct).map(async (productId) => {
+                const productRef = doc(db, `stores/${currentStoreId}/products`, productId);
                 const snap = await getDoc(productRef);
 
                 if (snap.exists()) {
                     const prodData = snap.data();
+                    const itemsToUpdate = itemsByProduct[productId];
                     let updatePayload = {};
 
-                    if (prodData.variations && item.variationDetails) {
-                        const { color, size, sku } = item.variationDetails;
+                    if (prodData.variations && prodData.variations.length > 0) {
+                        let novasVariacoes = [...prodData.variations];
+                        
+                        // Processa cada item do pedido que pertence a este produto pai
+                        itemsToUpdate.forEach(itemPedido => {
+                            const { color, size, sku } = itemPedido.variationDetails || {};
 
-                        const novasVariacoes = prodData.variations.map(v => {
-                            // Match inteligente: SKU primeiro, depois Cor + Tamanho
-                            const matchSKU = sku && v.sku === sku;
-                            const matchCombo = (v.color || "").trim().toLowerCase() === (color || "").trim().toLowerCase() &&
-                                               (v.size || "").trim().toLowerCase() === (size || "").trim().toLowerCase();
+                            novasVariacoes = novasVariacoes.map(v => {
+                                // Match inteligente: SKU primeiro, depois Cor + Tamanho
+                                const matchSKU = sku && v.sku === sku;
+                                const matchCombo = (v.color || "").trim().toLowerCase() === (color || "").trim().toLowerCase() &&
+                                                   (v.size || "").trim().toLowerCase() === (size || "").trim().toLowerCase();
 
-                            if (matchSKU || matchCombo) {
-                                const estoqueVarAntigo = Number(v.stock) || 0;
-                                return { ...v, stock: Math.max(0, estoqueVarAntigo - Number(item.qty)) };
-                            }
-                            return v;
+                                if (matchSKU || matchCombo) {
+                                    const estoqueVarAntigo = Number(v.stock) || 0;
+                                    return { ...v, stock: Math.max(0, estoqueVarAntigo - Number(itemPedido.qty)) };
+                                }
+                                return v;
+                            });
                         });
 
                         updatePayload.variations = novasVariacoes;
-                        // Soma o estoque de todas as variações que NÃO estão explicitamente desativadas
+                        // Soma o estoque de todas as variações ativas
                         updatePayload.stock = novasVariacoes.reduce((sum, v) => sum + (v.active !== false ? (Number(v.stock) || 0) : 0), 0);
                     } else {
+                        // Produto Simples (sem variações)
+                        const totalQty = itemsToUpdate.reduce((sum, i) => sum + Number(i.qty), 0);
                         const estoqueGeralAntigo = Number(prodData.stock) || 0;
-                        updatePayload.stock = Math.max(0, estoqueGeralAntigo - Number(item.qty));
+                        updatePayload.stock = Math.max(0, estoqueGeralAntigo - totalQty);
                     }
 
                     // Pausa se zerar, ativa se tiver saldo
@@ -4179,34 +4220,46 @@ window.updateOrderStatus = async (id, status) => {
 
         // --- CASO B: CANCELAR (DEVOLVER ESTOQUE) ---
         if (status === 'canceled' && alreadyDeducted) {
-            console.log("Estornando estoque...");
+            console.log("Estornando estoque de forma agrupada...");
 
-            const stockPromises = p.items.map(async (item) => {
-                const productRef = doc(db, `stores/${currentStoreId}/products`, item.id);
+            const itemsByProduct = p.items.reduce((acc, item) => {
+                if (!acc[item.id]) acc[item.id] = [];
+                acc[item.id].push(item);
+                return acc;
+            }, {});
+
+            const stockPromises = Object.keys(itemsByProduct).map(async (productId) => {
+                const productRef = doc(db, `stores/${currentStoreId}/products`, productId);
                 const snap = await getDoc(productRef);
 
                 if (snap.exists()) {
                     const prodData = snap.data();
+                    const itemsToRestore = itemsByProduct[productId];
                     let updatePayload = {};
 
-                    if (prodData.variations && item.variationDetails) {
-                        const { color, size, sku } = item.variationDetails;
+                    if (prodData.variations && prodData.variations.length > 0) {
+                        let novasVariacoes = [...prodData.variations];
+                        
+                        itemsToRestore.forEach(itemPedido => {
+                            const { color, size, sku } = itemPedido.variationDetails || {};
 
-                        const novasVariacoes = prodData.variations.map(v => {
-                            const matchSKU = sku && v.sku === sku;
-                            const matchCombo = (v.color || "").trim().toLowerCase() === (color || "").trim().toLowerCase() &&
-                                               (v.size || "").trim().toLowerCase() === (size || "").trim().toLowerCase();
+                            novasVariacoes = novasVariacoes.map(v => {
+                                const matchSKU = sku && v.sku === sku;
+                                const matchCombo = (v.color || "").trim().toLowerCase() === (color || "").trim().toLowerCase() &&
+                                                   (v.size || "").trim().toLowerCase() === (size || "").trim().toLowerCase();
 
-                            if (matchSKU || matchCombo) {
-                                return { ...v, stock: (Number(v.stock) || 0) + Number(item.qty) };
-                            }
-                            return v;
+                                if (matchSKU || matchCombo) {
+                                    return { ...v, stock: (Number(v.stock) || 0) + Number(itemPedido.qty) };
+                                }
+                                return v;
+                            });
                         });
 
                         updatePayload.variations = novasVariacoes;
                         updatePayload.stock = novasVariacoes.reduce((sum, v) => sum + (v.active !== false ? (Number(v.stock) || 0) : 0), 0);
                     } else {
-                        updatePayload.stock = (Number(prodData.stock) || 0) + Number(item.qty);
+                        const totalQty = itemsToRestore.reduce((sum, i) => sum + Number(i.qty), 0);
+                        updatePayload.stock = (Number(prodData.stock) || 0) + totalQty;
                     }
 
                     // Sempre reativa ao devolver estoque
@@ -4219,9 +4272,10 @@ window.updateOrderStatus = async (id, status) => {
             orderUpdate.stockDeducted = false;
         }
 
-        // --- SALVAR PEDIDO E NOTIFICAR ---
+        // --- SALVAR ATUALIZAÇÃO DO PEDIDO ---
         await updateDoc(orderRef, orderUpdate);
 
+        // --- NOTIFICAÇÃO VIA WHATSAPP (Apenas na confirmação) ---
         if (status === 'confirmed') {
             const itemsText = p.items.map(i => {
                 const productRef = i.sku || i.id?.slice(-4).toUpperCase() || 'N/A';
@@ -4240,16 +4294,21 @@ window.updateOrderStatus = async (id, status) => {
             window.open(`https://wa.me/55${phone}?text=${encodeURIComponent(msg)}`, '_blank');
         }
 
+        // Limpa cache e sincroniza vitrine
         localStorage.removeItem('app_cache_v4_' + currentStoreId);
         await updateDoc(doc(db, `stores/${currentStoreId}/config/store`), { lastUpdate: Date.now() });
 
         showToast(`Pedido ${status} e estoque sincronizado! ✅`);
         document.getElementById('orderDetailModal').classList.add('hidden');
+
     } catch (e) {
-        console.error(e);
+        console.error("Erro no updateOrderStatus:", e);
         showToast("Erro ao processar alteração.");
     }
-};          
+};
+
+                       
+                              
 
 
 window.startBarcodeScanner = () => {
