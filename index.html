@@ -889,19 +889,22 @@
       
     <!-- MODAL RECORTE -->
     <div id="cropModal" class="modal-overlay fixed inset-0 z-[200] flex items-center justify-center p-4 hidden">
-        <div class="bg-white rounded-[2.5rem] shadow-2xl w-full max-w-xl overflow-hidden animate-fade-in">
-            <div class="bg-slate-900 p-6 flex items-center justify-between">
-                <div class="flex items-center gap-3"><div class="bg-primary-500/20 p-2 rounded-xl"><i data-lucide="crop" class="w-6 h-6 text-primary-400"></i></div><h3 class="text-xl font-bold text-white">Ajustar Imagem</h3></div>
-                <button onclick="closeCropModal()" class="p-2 text-slate-400 hover:text-white transition-colors"><i data-lucide="x" class="w-6 h-6"></i></button>
+    <div class="bg-white rounded-[2.5rem] shadow-2xl w-full max-w-xl overflow-hidden animate-fade-in">
+        <div class="bg-slate-900 p-6 flex items-center justify-between">
+            <div class="flex items-center gap-3">
+                <div class="bg-primary-500/20 p-2 rounded-xl"><i data-lucide="crop" class="w-6 h-6 text-primary-400"></i></div>
+                <h3 class="text-xl font-bold text-white">Ajustar Imagem</h3>
             </div>
-            <div class="p-6 space-y-6">
-                <div class="crop-container"><img id="imageToCrop" class="max-w-full"></div>
-                <div class="flex gap-4">
-                    <button onclick="closeCropModal()" class="flex-1 py-4 text-slate-400 font-bold hover:text-slate-600 text-sm uppercase">Cancelar</button>
-                    <button onclick="confirmCrop()" class="flex-[2] bg-primary-600 text-white py-4 rounded-2xl font-bold shadow-xl hover:bg-primary-700 uppercase tracking-widest text-xs transition-all">Confirmar Recorte</button>
-                </div>
+            <button onclick="closeCropModal()" class="p-2 text-slate-400 hover:text-white transition-colors"><i data-lucide="x" class="w-6 h-6"></i></button>
+        </div>
+        <div class="p-6 space-y-6">
+            <div class="crop-container"><img id="imageToCrop" class="max-w-full"></div>
+            <div class="flex gap-4">
+                <button onclick="closeCropModal()" class="flex-1 py-4 text-slate-400 font-bold hover:text-slate-600 text-sm uppercase">Cancelar</button>
+                <button id="confirmCropBtn" onclick="confirmCrop()" class="flex-[2] bg-primary-600 text-white py-4 rounded-2xl font-bold shadow-xl hover:bg-primary-700 uppercase tracking-widest text-xs transition-all">Confirmar Recorte</button>
             </div>
         </div>
+    </div>
     </div>
     </main>
 
@@ -1180,6 +1183,7 @@ let currentPlan = null;   // 🔹 vem da collection plans
         let analyticsUnsubscribe = null; // Variável para desligar a escuta anterior
         let cropper = null;
         let growthChartInstance = null;
+        let currentVariationCropIdx = null;
         let manualOrder = [];
        let variationsHistoryCache = new Map();
         let html5QrCode = null;
@@ -4375,16 +4379,18 @@ window.expandImage = (url) => {
     modal.classList.remove('hidden');
     if (typeof lucide !== 'undefined') lucide.createIcons();
 };
-window.uploadVariationImage = async (idx, files) => {
-    if (!files[0]) return;
-    showToast("Processando imagem da variação...");
+window.uploadVariationImage = (idx, files) => {
+    if (!files || !files[0]) return;
     
+    currentVariationCropIdx = idx; // Armazena qual variação estamos cortando
     const reader = new FileReader();
+    
     reader.onload = (e) => {
-        // Opcional: Aqui você pode chamar o seu CropModal ou apenas salvar direto
-        // Para ser rápido, vamos salvar o DataURL temporário
-        variationsMatrix[idx].image = e.target.result; 
-        renderMatrixUI();
+        // Abre o modal de recorte que você já tem no painel
+        window.openCropModal(e.target.result);
+        
+        // MUDANÇA: Vamos "avisar" ao sistema que o próximo corte é para uma variação
+        document.getElementById('confirmCropBtn').onclick = () => window.confirmVariationCrop();
     };
     reader.readAsDataURL(files[0]);
 };
@@ -4471,7 +4477,32 @@ window.calculateSalesInsights = () => {
 
     if (window.lucide) lucide.createIcons();
 };
+window.confirmVariationCrop = () => {
+    if (!cropper) return;
 
+    // Redimensiona para o padrão 1:1 em 800px (mesmo padrão da foto principal)
+    const canvas = cropper.getCroppedCanvas({ 
+        width: 800, 
+        height: 800,
+        imageSmoothingQuality: 'high'
+    });
+
+    // Comprime para JPEG 0.7 para economizar espaço no Firebase
+    const optimizedDataUrl = canvas.toDataURL('image/jpeg', 0.7);
+    
+    // Injeta na matriz
+    if (currentVariationCropIdx !== null) {
+        variationsMatrix[currentVariationCropIdx].image = optimizedDataUrl;
+        currentVariationCropIdx = null; // Reseta o índice
+    }
+
+    // Atualiza a tabela na tela e fecha o modal
+    renderMatrixUI();
+    closeCropModal();
+    
+    // Restaura o comportamento do botão para fotos principais
+    document.getElementById('confirmCropBtn').onclick = () => window.confirmCrop();
+};
 
     </script>
 </body>
