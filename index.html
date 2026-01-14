@@ -3418,51 +3418,78 @@ async function initAnalyticsInsights() {
         
 window.deleteOrder = async (id) => {
     // 1. Confirmação de segurança
-    if(!confirm("Tem a certeza que deseja excluir este pedido? Se houver estoque deduzido, ele será devolvido automaticamente antes da exclusão.")) return;
+    if(!confirm("Tem a certeza que deseja excluir este pedido? O estoque das variações será devolvido automaticamente.")) return;
     
     try {
         const p = ordersCache[id];
         if(!p) return;
 
-        // 2. VERIFICAÇÃO DE ESTOQUE: Se o estoque foi tirado, precisamos devolver antes de apagar
+        // 2. VERIFICAÇÃO E ESTORNO DE ESTOQUE
         if (p.stockDeducted === true) {
-            console.log("Devolvendo estoque antes de excluir o pedido...");
+            console.log("Estornando estoque para as variações correspondentes...");
             
             const restorePromises = p.items.map(async (item) => {
                 const productRef = doc(db, `stores/${currentStoreId}/products`, item.id);
                 const snap = await getDoc(productRef);
                 
                 if (snap.exists()) {
-                    const currentStock = Number(snap.data().stock) || 0;
-                    const newStock = currentStock + Number(item.qty);
-                    
-                    // Devolve o item e garante que o produto fique ativo se o estoque for > 0
-                    return updateDoc(productRef, { 
-                        stock: newStock,
-                        status: 'active' 
-                    });
+                    const prodData = snap.data();
+                    let updatePayload = {};
+
+                    // CASO A: O item deletado era uma VARIAÇÃO
+                    if (prodData.variations && item.variationDetails) {
+                        const novasVariacoes = prodData.variations.map(v => {
+                            // Localiza a variação exata pelo SKU ou Cor/Tamanho
+                            const isMatch = v.sku === item.variationDetails.sku || 
+                                           (v.color === item.variationDetails.color && v.size === item.variationDetails.size);
+                            
+                            if (isMatch) {
+                                const estoqueAtualVar = Number(v.stock) || 0;
+                                return { ...v, stock: estoqueAtualVar + Number(item.qty) };
+                            }
+                            return v;
+                        });
+
+                        updatePayload.variations = novasVariacoes;
+                        // Recalcula o estoque geral do produto
+                        updatePayload.stock = novasVariacoes.reduce((sum, v) => sum + (Number(v.stock) || 0), 0);
+                    } 
+                    // CASO B: O item deletado era um PRODUTO SIMPLES
+                    else {
+                        const estoqueGeralAntigo = Number(prodData.stock) || 0;
+                        updatePayload.stock = estoqueGeralAntigo + Number(item.qty);
+                    }
+
+                    // Reativa o produto se ele estava pausado por falta de estoque
+                    if (updatePayload.stock > 0) {
+                        updatePayload.status = 'active';
+                    }
+
+                    return updateDoc(productRef, updatePayload);
                 }
             });
             
             await Promise.all(restorePromises);
         }
 
-        // 3. AGORA SIM, EXCLUIMOS O PEDIDO
+        // 3. EXCLUSÃO DO DOCUMENTO
         await deleteDoc(doc(db, `stores/${currentStoreId}/orders`, id));
 
-        // 4. LIMPEZA DE CACHE E SINCRONIZAÇÃO
+        // 4. ATUALIZAÇÃO DA VITRINE E CACHE
         localStorage.removeItem('app_cache_v4_' + currentStoreId);
         await updateDoc(doc(db, `stores/${currentStoreId}/config/store`), { lastUpdate: Date.now() });
 
-        showToast("Pedido excluído e estoque restaurado! 🗑️");
-        document.getElementById('orderDetailModal').classList.add('hidden');
+        showToast("Pedido removido e estoque devolvido com sucesso! 🔄");
+        
+        // Fecha o modal de detalhes se ele estiver aberto
+        const modal = document.getElementById('orderDetailModal');
+        if (modal) modal.classList.add('hidden');
 
     } catch (e) {
         console.error("Erro ao excluir pedido:", e);
-        showToast("Erro ao excluir o pedido.");
+        showToast("❌ Erro ao processar a exclusão.");
     }
 };
-
 
 
     window.calculateProfit = () => {
@@ -3831,17 +3858,25 @@ window.renderManualProductSearch = () => {
         // Caso 1: O produto tem variações (Cores/Tamanhos)
         if (p.variations && p.variations.length > 0) {
             p.variations.forEach(v => {
-                // Pesquisa no nome do Pai ou SKU da Variação
+                // Filtra se a variação está ativa e se bate com o nome ou SKU
                 if (v.active && (p.name.toLowerCase().includes(query) || (v.sku && v.sku.toLowerCase().includes(query)))) {
                     const varPrice = v.price || p.promoValue || p.value;
-                    renderItemRow(container, p, `${p.name} (${v.color}/${v.size})`, v.sku, varPrice, v);
+                    
+                    // --- ALTERAÇÃO CIRÚRGICA: Define a imagem específica desta variação ---
+                    const fotoExibir = v.image ? v.image : (p.images && p.images.length > 0 ? p.images[0] : null);
+                    
+                    // Envia o 7º parâmetro (fotoExibir) para o renderItemRow
+                    renderItemRow(container, p, `${p.name} (${v.color}/${v.size})`, v.sku, varPrice, v, fotoExibir);
                 }
             });
         } 
         // Caso 2: Produto Simples
         else {
             if (p.name.toLowerCase().includes(query) || (p.sku && p.sku.toLowerCase().includes(query))) {
-                renderItemRow(container, p, p.name, p.sku, (p.promoValue || p.value));
+                const fotoExibir = (p.images && p.images.length > 0) ? p.images[0] : null;
+                
+                // Envia o 7º parâmetro (fotoExibir) para o renderItemRow
+                renderItemRow(container, p, p.name, p.sku, (p.promoValue || p.value), null, fotoExibir);
             }
         }
     });
@@ -3849,13 +3884,16 @@ window.renderManualProductSearch = () => {
     lucide.createIcons();
 };
 
+
 // Nova função auxiliar para criar o HTML de cada linha com foto
-function renderItemRow(container, product, displayName, sku, price, varData = null) {
+function renderItemRow(container, product, displayName, sku, price, varData = null, imgUrl = null) {
     const priceFormatted = price.toFixed(2).replace(".", ",");
-    const fotoUrl = (product.images && product.images.length > 0) ? product.images[0] : null;
     
-    // Escapa os dados da variação para o clique
+    // Escapa os dados da variação para serem passados corretamente no clique
     const varAttr = varData ? JSON.stringify(varData).replace(/"/g, '&quot;') : 'null';
+    
+    // ALTERAÇÃO CIRÚRGICA: Prioriza a imagem enviada (da variação), se não existir, usa a do produto
+    const fotoUrl = imgUrl || (product.images && product.images.length > 0 ? product.images[0] : null);
     
     container.innerHTML += `
         <div onclick='window.addManualItem("${product.id}", ${varAttr})' 
@@ -3881,35 +3919,44 @@ function renderItemRow(container, product, displayName, sku, price, varData = nu
             </div>
         </div>
     `;
-        }
+}
+
 
     // =========================
 // PASSO 5 — SISTEMA DE ITENS DO PEDIDO MANUAL
 // =========================
 
 // --- ADICIONAR ITEM AO PEDIDO MANUAL ---
-window.addManualItem = (id) => {
+
+window.addManualItem = (id, varData = null) => {
     const p = allProducts.find(prod => prod.id === id);
     if (!p) return;
 
-    const existing = manualOrder.find(item => item.id === id);
-    const currentQty = existing ? existing.qty : 0;
+    // Criamos um ID único para o carrinho (ID do produto + SKU da variação)
+    const cartId = varData ? `${id}-${varData.sku}` : id;
+    const existing = manualOrder.find(item => item.cartId === cartId);
 
-    // TRAVA DE SEGURANÇA:
-    if (currentQty + 1 > p.stock) {
-        showToast(`⚠️ Estoque insuficiente! Você só tem ${p.stock} unidades de ${p.name}.`);
-        return;
-    }
+    // Definição Cirúrgica da Foto: Prioridade para a variação, depois foto principal
+    const fotoItem = (varData && varData.image) ? varData.image : (p.images && p.images.length > 0 ? p.images[0] : null);
 
     if (existing) {
+        // Validação de estoque baseada na variação ou no pai
+        const estoqueMax = varData ? (Number(varData.stock) || 0) : (Number(p.stock) || 0);
+        if (existing.qty + 1 > estoqueMax) {
+            showToast(`⚠️ Estoque insuficiente (${estoqueMax} un.)`);
+            return;
+        }
         existing.qty++;
     } else {
         manualOrder.push({
-            id: id,
-            name: p.name,
-            sku: p.sku || '',
-            price: p.promoValue || p.value,
-            qty: 1
+            cartId: cartId, // ID único da linha
+            id: id,         // ID do produto no banco
+            name: varData ? `${p.name} (${varData.color}/${varData.size})` : p.name,
+            sku: varData ? varData.sku : (p.sku || ''),
+            price: varData ? varData.price : (p.promoValue || p.value),
+            qty: 1,
+            image: fotoItem, // <--- Aqui salvamos a foto correta
+            variationDetails: varData
         });
     }
 
@@ -3926,9 +3973,8 @@ window.renderManualOrderItems = () => {
     manualOrder.forEach(item => {
         const subtotal = (item.qty * item.price).toFixed(2).replace('.', ',');
         
-        // 1. Busca a foto do produto original para exibir no carrinho
-        const product = allProducts.find(p => p.id === item.id);
-        const fotoUrl = (product && product.images && product.images.length > 0) ? product.images[0] : null;
+        // ALTERAÇÃO CIRÚRGICA: Usa diretamente a imagem salva no objeto do item
+        const fotoUrl = item.image;
 
         container.innerHTML += `
             <div class="p-2 border rounded-2xl bg-white shadow-sm flex items-center gap-3 mb-2">
@@ -3942,13 +3988,14 @@ window.renderManualOrderItems = () => {
 
                 <div class="flex-1 min-w-0">
                     <p class="font-bold text-slate-800 text-[11px] leading-tight truncate">${item.name}</p>
+                    <p class="text-[8px] font-mono text-slate-400 uppercase">SKU: ${item.sku}</p>
                     <p class="text-[10px] text-primary-600 font-black mt-0.5">R$ ${subtotal}</p>
                 </div>
 
                 <div class="flex items-center gap-1 bg-slate-50 p-1 rounded-xl border border-slate-100">
-                    <button onclick="window.changeManualQty('${item.cartId || item.id}', -1)" class="w-7 h-7 flex items-center justify-center bg-white border border-slate-200 rounded-lg text-slate-600 active:bg-slate-100">-</button>
+                    <button onclick="window.changeManualQty('${item.cartId}', -1)" class="w-7 h-7 flex items-center justify-center bg-white border border-slate-200 rounded-lg text-slate-600 active:bg-slate-100">-</button>
                     <span class="font-bold text-xs min-w-[20px] text-center">${item.qty}</span>
-                    <button onclick="window.changeManualQty('${item.cartId || item.id}', 1)" class="w-7 h-7 flex items-center justify-center bg-white border border-slate-200 rounded-lg text-slate-600 active:bg-slate-100">+</button>
+                    <button onclick="window.changeManualQty('${item.cartId}', 1)" class="w-7 h-7 flex items-center justify-center bg-white border border-slate-200 rounded-lg text-slate-600 active:bg-slate-100">+</button>
                 </div>
 
             </div>
@@ -3956,9 +4003,8 @@ window.renderManualOrderItems = () => {
     });
 
     window.updateManualTotal();
-    // Atualiza os ícones caso a foto falhe e caia no ícone padrão
     if (typeof lucide !== 'undefined') lucide.createIcons();
-};
+};    
 
 // --- ALTERAR QUANTIDADE (+/-) ---
 window.changeManualQty = (id, diff) => {
@@ -3982,13 +4028,19 @@ window.updateManualTotal = () => {
 };
 
         // --- FINALIZAR E SALVAR O PEDIDO MANUAL ---
+
 window.finishManualOrder = async () => {
     if (manualOrder.length === 0) return showToast("⚠️ Carrinho vazio!");
     const payment = document.getElementById("manualPayment").value;
     if (!payment) return showToast("⚠️ Escolha o pagamento!");
 
+    const btn = document.querySelector('button[onclick="window.finishManualOrder()"]');
+    if (btn) btn.disabled = true;
+
     try {
         const total = manualOrder.reduce((sum, i) => sum + i.qty * i.price, 0);
+        
+        // 1. Cria o documento do pedido
         const newOrder = {
             customer: {
                 name: document.getElementById("manualName")?.value || "Cliente Local",
@@ -4006,30 +4058,65 @@ window.finishManualOrder = async () => {
 
         await addDoc(collection(db, `stores/${currentStoreId}/orders`), newOrder);
 
+        // 2. BAIXA DE ESTOQUE CIRÚRGICA (Pai e Variações)
         const stockPromises = manualOrder.map(async (item) => {
             const productRef = doc(db, `stores/${currentStoreId}/products`, item.id);
             const snap = await getDoc(productRef);
             
             if (snap.exists()) {
-                // Forçamos a conversão para Número para evitar que 10 - 1 vire 0
-                const currentStock = Number(snap.data().stock) || 0;
-                const qtyVendida = Number(item.qty) || 0;
-                const newStock = Math.max(0, currentStock - qtyVendida);
-                
-                const updateData = { stock: newStock };
-                if (newStock <= 0) updateData.status = 'paused';
+                const prodData = snap.data();
+                let updateData = {};
+
+                // CASO A: É uma variação (Cor/Tamanho)
+                if (prodData.variations && item.variationDetails) {
+                    const novasVariacoes = prodData.variations.map(v => {
+                        // Compara SKU ou combinação de Cor/Tamanho para achar a variação correta
+                        const isMatch = v.sku === item.variationDetails.sku || 
+                                       (v.color === item.variationDetails.color && v.size === item.variationDetails.size);
+                        
+                        if (isMatch) {
+                            const estoqueAtualVar = Number(v.stock) || 0;
+                            return { ...v, stock: Math.max(0, estoqueAtualVar - Number(item.qty)) };
+                        }
+                        return v;
+                    });
+
+                    updateData.variations = novasVariacoes;
+                    // Recalcula o estoque total do produto baseado na soma das variações
+                    updateData.stock = novasVariacoes.reduce((sum, v) => sum + (Number(v.stock) || 0), 0);
+                } 
+                // CASO B: É um produto simples
+                else {
+                    const estoqueGeralAntigo = Number(prodData.stock) || 0;
+                    updateData.stock = Math.max(0, estoqueGeralAntigo - Number(item.qty));
+                }
+
+                // Se o estoque zerou, pausa o produto automaticamente
+                updateData.status = updateData.stock <= 0 ? 'paused' : 'active';
                 
                 return updateDoc(productRef, updateData);
             }
         });
 
         await Promise.all(stockPromises);
-        showToast("✅ Venda e estoque processados!");
+        
+        // 3. Limpeza e Feedback
+        showToast("✅ Venda finalizada e estoque atualizado!");
         manualOrder = [];
+        document.getElementById("manualName").value = "";
+        document.getElementById("manualPhone").value = "";
+        document.getElementById("manualAddress").value = "";
+        document.getElementById("manualProductSearch").value = "";
+        document.getElementById("manualSearchResults").innerHTML = "";
+        
         window.renderManualOrderItems();
         window.closeManualOrderModal();
+
     } catch (e) {
-        showToast("❌ Erro na baixa de estoque manual.");
+        console.error("Erro ao finalizar venda:", e);
+        showToast("❌ Erro ao processar venda.");
+    } finally {
+        if (btn) btn.disabled = false;
     }
 };
 
@@ -4211,25 +4298,51 @@ window.startBarcodeScanner = () => {
     
     const config = { fps: 10, qrbox: { width: 250, height: 150 } };
 
-    // Inicia a câmera traseira
     html5QrCode.start({ facingMode: "environment" }, config, (decodedText) => {
-        // Quando ler o código:
-        document.getElementById('manualProductSearch').value = decodedText;
-        window.renderManualProductSearch(); // Filtra a lista
+        const query = decodedText.toUpperCase().trim();
+        document.getElementById('manualProductSearch').value = query;
+        window.renderManualProductSearch(); // Filtra a lista visualmente
         
-        // Tenta adicionar automaticamente se achar um match exato
-        const found = allProducts.find(p => p.sku === decodedText);
-        if(found) {
-            window.addManualItem(found.id);
-            showToast(`✅ ${found.name} adicionado!`);
+        let itemEncontrado = null;
+        let variacaoEncontrada = null;
+
+        // --- BUSCA AVANÇADA: Procura em todos os produtos e suas variações ---
+        allProducts.forEach(p => {
+            // Verifica se o SKU do produto pai coincide
+            if (p.sku && p.sku.toUpperCase() === query) {
+                itemEncontrado = p;
+            }
+            
+            // Verifica se algum SKU de variação coincide
+            if (p.variations) {
+                const vMatch = p.variations.find(v => v.sku && v.sku.toUpperCase() === query);
+                if (vMatch) {
+                    itemEncontrado = p;
+                    variacaoEncontrada = vMatch;
+                }
+            }
+        });
+
+        if (itemEncontrado) {
+            // Adiciona automaticamente o item (com variação se houver)
+            window.addManualItem(itemEncontrado.id, variacaoEncontrada);
+            
+            const nomeExibir = variacaoEncontrada 
+                ? `${itemEncontrado.name} (${variacaoEncontrada.color}/${variacaoEncontrada.size})` 
+                : itemEncontrado.name;
+                
+            showToast(`✅ ${nomeExibir} adicionado!`);
+        } else {
+            showToast("⚠️ Código não reconhecido no catálogo.");
         }
 
-        window.stopBarcodeScanner(); // Fecha a câmera após ler
+        window.stopBarcodeScanner(); // Fecha a câmera após a leitura
     }).catch((err) => {
         console.error("Erro na câmera:", err);
         showToast("❌ Erro ao abrir câmera.");
     });
 };
+
 
 window.stopBarcodeScanner = () => {
     if (html5QrCode) {
