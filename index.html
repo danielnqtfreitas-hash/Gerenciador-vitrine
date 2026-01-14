@@ -3277,6 +3277,12 @@ async function initAnalyticsInsights() {
     const p = ordersCache[id];
     if (!p) return;
 
+    // --- CORREÇÃO 1: Atualiza o Título do Modal com o Código do Pedido ---
+    const orderIdDisplay = document.getElementById('modalOrderId');
+    if (orderIdDisplay) {
+        orderIdDisplay.textContent = '#' + p.id.toUpperCase().slice(-5);
+    }
+
     const audio = document.getElementById('notifSound');
     if (audio) {
         audio.pause();
@@ -3319,6 +3325,9 @@ async function initAnalyticsInsights() {
                                                  : (prodRef && prodRef.images ? prodRef.images[0] : null);
 
                             const varDesc = i.variations ? Object.values(i.variations).filter(v => v && v !== "null").join(' / ') : '';
+                            
+                            // --- CORREÇÃO 2: Pega o código do produto (SKU) do item ou do cadastro original ---
+                            const codigoProduto = i.sku || (prodRef ? prodRef.sku : 'N/A');
 
                             return `
                             <tr>
@@ -3331,7 +3340,10 @@ async function initAnalyticsInsights() {
                                     </div>
                                     <div class="min-w-0">
                                         <p class="font-bold text-xs text-slate-800 truncate">${i.name}</p>
-                                        <p class="text-[9px] text-primary-600 font-bold italic">${varDesc}</p>
+                                        <div class="flex items-center gap-2">
+                                            <span class="text-[8px] font-mono bg-slate-100 text-slate-500 px-1 rounded uppercase">${codigoProduto}</span>
+                                            ${varDesc ? `<p class="text-[9px] text-primary-600 font-bold italic">${varDesc}</p>` : ''}
+                                        </div>
                                     </div>
                                 </td>
                                 <td class="px-4 py-3 text-center text-xs font-bold text-slate-500">x${i.qty}</td>
@@ -3359,7 +3371,6 @@ async function initAnalyticsInsights() {
             </div>
         `;
 
-        // Atribuição de eventos após injetar o HTML
         document.getElementById('btnActionMain').onclick = () => window.updateOrderStatus(p.id, p.status === 'pending_whatsapp' ? 'confirmed' : 'completed');
         
         document.getElementById('btnActionEdit').onclick = () => {
@@ -3380,7 +3391,7 @@ async function initAnalyticsInsights() {
     renderMainContent();
     document.getElementById('orderDetailModal').classList.remove('hidden');
 };
-                    
+
         
 window.deleteOrder = async (id) => {
     // 1. Confirmação de segurança
