@@ -4125,169 +4125,131 @@ window.finishManualOrder = async () => {
 window.updateOrderStatus = async (id, status) => {
     try {
         const p = ordersCache[id];
-        if(!p) return;
-        
+        if (!p) return;
+
         const orderRef = doc(db, `stores/${currentStoreId}/orders`, id);
         const orderUpdate = { status: status };
         const alreadyDeducted = p.stockDeducted || false;
 
         // --- CASO A: CONFIRMAR OU COMPLETAR (BAIXAR ESTOQUE) ---
         if ((status === 'confirmed' || status === 'completed') && !alreadyDeducted) {
-    console.log("Iniciando baixa de estoque detalhada...");
-    
-    const stockPromises = p.items.map(async (item) => {
-        const productRef = doc(db, `stores/${currentStoreId}/products`, item.id);
-        const snap = await getDoc(productRef);
-        
-        if (snap.exists()) {
-            const prodData = snap.data();
-            let updatePayload = {};
+            console.log("Baixando estoque de variações...");
 
-            // 1. BAIXA NA VARIAÇÃO ESPECÍFICA (Se houver detalhes da variação no item)
-            if (prodData.variations && item.variationDetails) {
-                const { color, size } = item.variationDetails;
-                
-                const novasVariacoes = prodData.variations.map(v => {
-                    // Compara cor e tamanho para achar a variação exata
-                    const matchColor = (v.color || "").trim().toLowerCase() === (color || "").trim().toLowerCase();
-                    const matchSize = (v.size || "").trim().toLowerCase() === (size || "").trim().toLowerCase();
-                    
-                    if (matchColor && matchSize) {
-                        const estoqueVarAntigo = Number(v.stock) || 0;
-                        return { ...v, stock: Math.max(0, estoqueVarAntigo - Number(item.qty)) };
+            const stockPromises = p.items.map(async (item) => {
+                const productRef = doc(db, `stores/${currentStoreId}/products`, item.id);
+                const snap = await getDoc(productRef);
+
+                if (snap.exists()) {
+                    const prodData = snap.data();
+                    let updatePayload = {};
+
+                    if (prodData.variations && item.variationDetails) {
+                        const { color, size, sku } = item.variationDetails;
+
+                        const novasVariacoes = prodData.variations.map(v => {
+                            // Match inteligente: SKU primeiro, depois Cor + Tamanho
+                            const matchSKU = sku && v.sku === sku;
+                            const matchCombo = (v.color || "").trim().toLowerCase() === (color || "").trim().toLowerCase() &&
+                                               (v.size || "").trim().toLowerCase() === (size || "").trim().toLowerCase();
+
+                            if (matchSKU || matchCombo) {
+                                const estoqueVarAntigo = Number(v.stock) || 0;
+                                return { ...v, stock: Math.max(0, estoqueVarAntigo - Number(item.qty)) };
+                            }
+                            return v;
+                        });
+
+                        updatePayload.variations = novasVariacoes;
+                        // Soma o estoque de todas as variações que NÃO estão explicitamente desativadas
+                        updatePayload.stock = novasVariacoes.reduce((sum, v) => sum + (v.active !== false ? (Number(v.stock) || 0) : 0), 0);
+                    } else {
+                        const estoqueGeralAntigo = Number(prodData.stock) || 0;
+                        updatePayload.stock = Math.max(0, estoqueGeralAntigo - Number(item.qty));
                     }
-                    return v;
-                });
-                
-                updatePayload.variations = novasVariacoes;
-                
-                // 2. RECALCULA O ESTOQUE GERAL (Soma de todas as variações ativas)
-                updatePayload.stock = novasVariacoes.reduce((sum, v) => sum + (v.active ? (Number(v.stock) || 0) : 0), 0);
-            } else {
-                // 3. BAIXA SIMPLES (Caso o produto não tenha variações)
-                const estoqueGeralAntigo = Number(prodData.stock) || 0;
-                updatePayload.stock = Math.max(0, estoqueGeralAntigo - Number(item.qty));
-            }
 
-            // 4. ATUALIZA STATUS (Pausa se o estoque geral zerar)
-            updatePayload.status = updatePayload.stock <= 0 ? 'paused' : prodData.status;
+                    // Pausa se zerar, ativa se tiver saldo
+                    updatePayload.status = updatePayload.stock <= 0 ? 'paused' : 'active';
+                    return updateDoc(productRef, updatePayload);
+                }
+            });
 
-            return updateDoc(productRef, updatePayload);
+            await Promise.all(stockPromises);
+            orderUpdate.stockDeducted = true;
         }
-    });
-    
-    await Promise.all(stockPromises);
-    orderUpdate.stockDeducted = true;
-}
 
         // --- CASO B: CANCELAR (DEVOLVER ESTOQUE) ---
         if (status === 'canceled' && alreadyDeducted) {
-    console.log("Iniciando estorno de estoque detalhado (Cancelamento)...");
-    
-    const stockPromises = p.items.map(async (item) => {
-        const productRef = doc(db, `stores/${currentStoreId}/products`, item.id);
-        const snap = await getDoc(productRef);
-        
-        if (snap.exists()) {
-            const prodData = snap.data();
-            let updatePayload = {};
+            console.log("Estornando estoque...");
 
-            // 1. ESTORNO NA VARIAÇÃO ESPECÍFICA
-            if (prodData.variations && item.variationDetails) {
-                const { color, size } = item.variationDetails;
-                
-                const novasVariacoes = prodData.variations.map(v => {
-                    const matchColor = (v.color || "").trim().toLowerCase() === (color || "").trim().toLowerCase();
-                    const matchSize = (v.size || "").trim().toLowerCase() === (size || "").trim().toLowerCase();
-                    
-                    if (matchColor && matchSize) {
-                        const estoqueVarAntigo = Number(v.stock) || 0;
-                        // Soma de volta a quantidade cancelada
-                        return { ...v, stock: estoqueVarAntigo + Number(item.qty) };
+            const stockPromises = p.items.map(async (item) => {
+                const productRef = doc(db, `stores/${currentStoreId}/products`, item.id);
+                const snap = await getDoc(productRef);
+
+                if (snap.exists()) {
+                    const prodData = snap.data();
+                    let updatePayload = {};
+
+                    if (prodData.variations && item.variationDetails) {
+                        const { color, size, sku } = item.variationDetails;
+
+                        const novasVariacoes = prodData.variations.map(v => {
+                            const matchSKU = sku && v.sku === sku;
+                            const matchCombo = (v.color || "").trim().toLowerCase() === (color || "").trim().toLowerCase() &&
+                                               (v.size || "").trim().toLowerCase() === (size || "").trim().toLowerCase();
+
+                            if (matchSKU || matchCombo) {
+                                return { ...v, stock: (Number(v.stock) || 0) + Number(item.qty) };
+                            }
+                            return v;
+                        });
+
+                        updatePayload.variations = novasVariacoes;
+                        updatePayload.stock = novasVariacoes.reduce((sum, v) => sum + (v.active !== false ? (Number(v.stock) || 0) : 0), 0);
+                    } else {
+                        updatePayload.stock = (Number(prodData.stock) || 0) + Number(item.qty);
                     }
-                    return v;
-                });
-                
-                updatePayload.variations = novasVariacoes;
-                
-                // 2. RECALCULA O ESTOQUE GERAL (Soma as variações)
-                updatePayload.stock = novasVariacoes.reduce((sum, v) => sum + (v.active !== false ? (Number(v.stock) || 0) : 0), 0);
-            } else {
-                // 3. ESTORNO SIMPLES (Produto sem variações)
-                const estoqueGeralAntigo = Number(prodData.stock) || 0;
-                updatePayload.stock = estoqueGeralAntigo + Number(item.qty);
-            }
 
-            // 4. REATIVAR PRODUTO (Se o estoque voltou a ser maior que zero, garante que ele saia do 'paused')
-            if (updatePayload.stock > 0 && prodData.status === 'paused') {
-                updatePayload.status = 'active';
-            }
+                    // Sempre reativa ao devolver estoque
+                    if (updatePayload.stock > 0) updatePayload.status = 'active';
+                    return updateDoc(productRef, updatePayload);
+                }
+            });
 
-            return updateDoc(productRef, updatePayload);
+            await Promise.all(stockPromises);
+            orderUpdate.stockDeducted = false;
         }
-    });
-    
-    await Promise.all(stockPromises);
-    orderUpdate.stockDeducted = false; // Marca que o estoque não está mais "deduzido"
-}
 
-        // --- SALVAR NO FIREBASE ---
+        // --- SALVAR PEDIDO E NOTIFICAR ---
         await updateDoc(orderRef, orderUpdate);
 
-        // --- LOGICA DE NOTIFICAÇÃO E RECIBO DIGITAL ---
         if (status === 'confirmed') {
-            // 1. Formatação da lista de itens com Código de Referência
             const itemsText = p.items.map(i => {
                 const productRef = i.sku || i.id?.slice(-4).toUpperCase() || 'N/A';
-                const vars = i.variations ? ` (${Object.values(i.variations).filter(Boolean).join('/')})` : '';
-                return `• ${i.qty}x ${i.name}${vars} - *[REF: ${productRef}]* - R$ ${(i.price * i.qty).toFixed(2).replace('.', ',')}`;
+                const vars = i.variationDetails ? ` (${i.variationDetails.color}/${i.variationDetails.size})` : '';
+                return `• ${i.qty}x ${i.name}${vars} - *[REF: ${productRef}]*`;
             }).join('\n');
 
-            // 2. Lógica da Chave PIX (Busca do storeConfig)
             const pixInfo = storeConfig.pix || {};
             let pixBlock = "";
-
-            // Só adiciona o bloco se o método for PIX e houver chave cadastrada
             if (p.paymentMethod.toLowerCase().includes('pix') && pixInfo.key) {
-                pixBlock = `\n\n🔹 *DADOS PARA PAGAMENTO (PIX)*\n` +
-                           `Chave: \`${pixInfo.key}\`\n` +
-                           `Titular: ${pixInfo.name || 'Não informado'}\n` +
-                           `Banco: ${pixInfo.bank || 'Não informado'}\n` +
-                           `_Toque na chave acima para copiar_ 👆`;
+                pixBlock = `\n\n🔹 *PAGAMENTO PIX*\nChave: \`${pixInfo.key}\`\nTitular: ${pixInfo.name}`;
             }
 
-            // 3. Montagem do Recibo Digital Estruturado
-            const msg = `🛍️ *PEDIDO CONFIRMADO!*\n` +
-                        `---------------------------\n` +
-                        `Olá, *${p.customer.name}*! Seu pedido foi recebido e já está em processamento.\n\n` +
-                        `🆔 *Pedido:* #${p.id.slice(-5).toUpperCase()}\n` +
-                        `📅 *Data:* ${new Date().toLocaleDateString('pt-BR')}\n\n` +
-                        `📋 *ITENS DO PEDIDO:*\n${itemsText}\n\n` +
-                        `💰 *RESUMO:*\n` +
-                        `Total: R$ ${p.total.toFixed(2).replace('.', ',')}\n` +
-                        `Pagamento: ${p.paymentMethod.toUpperCase()}` +
-                        `${pixBlock}\n\n` +
-                        `📍 *ENDEREÇO:*\n${p.customer.addressString || 'Retirada na Loja'}\n\n` +
-                        `💡 _Dica: Guarde os códigos [REF] acima para facilitar sua próxima compra!_ \n\n` +
-                        `⏳ *Já estamos preparando tudo por aqui!*`;
-
+            const msg = `🛍️ *PEDIDO CONFIRMADO!*\nOlá, *${p.customer.name}*!\n\n🆔 *Pedido:* #${p.id.slice(-5).toUpperCase()}\n\n📋 *ITENS:*\n${itemsText}\n\n💰 *TOTAL:* R$ ${p.total.toFixed(2).replace('.', ',')}${pixBlock}\n\n⏳ Já estamos preparando tudo!`;
             const phone = p.customer.phone.replace(/\D/g, '');
             window.open(`https://wa.me/55${phone}?text=${encodeURIComponent(msg)}`, '_blank');
         }
 
-        // Limpa cache e atualiza vitrine
         localStorage.removeItem('app_cache_v4_' + currentStoreId);
         await updateDoc(doc(db, `stores/${currentStoreId}/config/store`), { lastUpdate: Date.now() });
 
-        showToast(`Pedido ${status} e estoque atualizado! ✅`);
-        if (document.getElementById('orderDetailModal')) {
-            document.getElementById('orderDetailModal').classList.add('hidden');
-        }
+        showToast(`Pedido ${status} e estoque sincronizado! ✅`);
+        document.getElementById('orderDetailModal').classList.add('hidden');
     } catch (e) {
-        console.error("Erro ao atualizar status:", e);
+        console.error(e);
         showToast("Erro ao processar alteração.");
     }
-};
+};          
 
 
 window.startBarcodeScanner = () => {
