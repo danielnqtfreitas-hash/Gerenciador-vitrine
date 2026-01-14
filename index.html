@@ -1180,6 +1180,7 @@ let currentPlan = null;   // 🔹 vem da collection plans
         let analyticsUnsubscribe = null; // Variável para desligar a escuta anterior
         let cropper = null;
         let growthChartInstance = null;
+        let currentVariationCropIndex = null;
         let manualOrder = [];
        let variationsHistoryCache = new Map();
         let html5QrCode = null;
@@ -1465,39 +1466,61 @@ window.updateVariationPrice = (idx, value) => {
         }
 
         window.closeCropModal = () => {
-            document.getElementById('cropModal').classList.add('hidden');
-            if (cropper) cropper.destroy();
-            document.getElementById('prodImageInput').value = '';
-            document.getElementById('cameraCaptureInput').value = '';
-        };
+    document.getElementById('cropModal').classList.add('hidden');
+    if (cropper) cropper.destroy();
+    document.getElementById('prodImageInput').value = '';
+    document.getElementById('cameraCaptureInput').value = '';
+    
+    // ADICIONE ESTA LINHA: Garante que o índice da variação seja resetado ao cancelar
+    currentVariationCropIndex = null;
+};
 
-        window.confirmCrop = () => {
+      window.confirmCrop = () => {
     if (!cropper) return;
 
-    // 1. Redimensiona para 800x800 (tamanho ideal para não pesar)
+    // 1. Gera a imagem recortada (Quadrada 800x800, JPEG 70%)
     const canvas = cropper.getCroppedCanvas({ 
         width: 800, 
         height: 800, 
         imageSmoothingQuality: 'high' 
     });
-
-    // 2. COMPRESSÃO: Transforma em JPEG com 70% de qualidade (0.7)
     const optimizedDataUrl = canvas.toDataURL('image/jpeg', 0.7);
-    
-    currentProductImages.push(optimizedDataUrl);
-    renderImagePreviews();
 
-    // 3. Gerencia a Fila: Remove a foto atual e vê se tem mais
-    imageQueue.shift(); 
+    // --- LÓGICA DE DECISÃO: É VARIAÇÃO OU FOTO PRINCIPAL? ---
 
-    if (imageQueue.length > 0) {
-        // Se ainda tem fotos na fila, carrega a próxima
-        loadNextImageInQueue();
-    } else {
-        // Se era a última, fecha o modal
+    if (currentVariationCropIndex !== null) {
+        // CENÁRIO A: Estamos recortando uma FOTO DE VARIAÇÃO
+        
+        // Salva na matriz na posição correta
+        variationsMatrix[currentVariationCropIndex].image = optimizedDataUrl;
+        
+        // Atualiza a tabela visualmente
+        renderMatrixUI();
+        
+        // Reseta o índice e fecha o modal
+        currentVariationCropIndex = null;
         closeCropModal();
+        
+        showToast("✅ Foto da variação atualizada!");
+
+    } else {
+        // CENÁRIO B: Estamos recortando FOTOS PRINCIPAIS (Lógica original)
+        
+        currentProductImages.push(optimizedDataUrl);
+        renderImagePreviews();
+
+        // Gerencia a fila de múltiplas imagens
+        imageQueue.shift(); 
+
+        if (imageQueue.length > 0) {
+            loadNextImageInQueue();
+        } else {
+            closeCropModal();
+        }
     }
 };
+
+        
         function loadNextImageInQueue() {
     if (imageQueue.length === 0) {
         // Limpa os inputs de arquivo para permitir nova seleção depois
@@ -4386,19 +4409,24 @@ window.expandImage = (url) => {
     modal.classList.remove('hidden');
     if (typeof lucide !== 'undefined') lucide.createIcons();
 };
-window.uploadVariationImage = async (idx, files) => {
+
+        window.uploadVariationImage = async (idx, files) => {
     if (!files[0]) return;
-    showToast("Processando imagem da variação...");
+    
+    // 1. Marca qual índice da variação estamos editando
+    currentVariationCropIndex = idx;
     
     const reader = new FileReader();
     reader.onload = (e) => {
-        // Opcional: Aqui você pode chamar o seu CropModal ou apenas salvar direto
-        // Para ser rápido, vamos salvar o DataURL temporário
-        variationsMatrix[idx].image = e.target.result; 
-        renderMatrixUI();
+        // 2. Em vez de salvar direto, abre o modal de recorte existente
+        openCropModal(e.target.result);
+        
+        // Limpa o input para permitir selecionar o mesmo arquivo se errar
+        document.getElementById(`fileVar-${idx}`).value = '';
     };
     reader.readAsDataURL(files[0]);
 };
+
 
 window.calculateSalesInsights = () => {
     const productSales = {}; 
