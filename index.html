@@ -49,6 +49,12 @@
             }
         }
     </script>
+
+    .aspect-square {
+    aspect-ratio: 1 / 1;
+    object-fit: cover;
+}
+
     <style>
         body { font-family: 'Inter', sans-serif; background-color: #f8fafc; }
         ::-webkit-scrollbar { width: 6px; height: 6px; }
@@ -4384,20 +4390,27 @@ window.expandImage = (url) => {
     if (typeof lucide !== 'undefined') lucide.createIcons();
 };
 window.uploadVariationImage = (idx, files) => {
-    if (!files || !files[0]) return;
-    
-    currentVariationCropIdx = idx; // Armazena qual variação estamos cortando
+    // Se a função foi chamada pelo clique (files é null), abrimos o seletor
+    if (!files) {
+        const tempInput = document.createElement('input');
+        tempInput.type = 'file';
+        tempInput.accept = 'image/*';
+        tempInput.onchange = (e) => window.uploadVariationImage(idx, e.target.files);
+        tempInput.click();
+        return;
+    }
+
+    // Se já temos o arquivo (veio do onchange acima), seguimos para o Crop
+    currentVariationCropIdx = idx;
     const reader = new FileReader();
-    
     reader.onload = (e) => {
-        // Abre o modal de recorte que você já tem no painel
         window.openCropModal(e.target.result);
-        
-        // MUDANÇA: Vamos "avisar" ao sistema que o próximo corte é para uma variação
-        document.getElementById('confirmCropBtn').onclick = () => window.confirmVariationCrop();
+        const btn = document.getElementById('confirmCropBtn');
+        if (btn) btn.onclick = () => window.confirmVariationCrop();
     };
     reader.readAsDataURL(files[0]);
 };
+
 
 window.calculateSalesInsights = () => {
     const productSales = {}; 
