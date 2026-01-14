@@ -49,9 +49,6 @@
             }
         }
     </script>
-
-  
-
     <style>
         body { font-family: 'Inter', sans-serif; background-color: #f8fafc; }
         ::-webkit-scrollbar { width: 6px; height: 6px; }
@@ -135,8 +132,7 @@
         .variation-matrix-table { width: 100%; border-collapse: separate; border-spacing: 0 8px; }
         .variation-matrix-table th { @apply text-[10px] uppercase font-black text-slate-400 px-4 py-2 text-left; }
         .variation-matrix-table td { @apply bg-white border-y border-slate-100 px-4 py-3 text-sm first:rounded-l-xl first:border-l last:rounded-r-xl last:border-r; }
-
-        
+   
     /* Tooltip com estilo cinza (Apple-like) */
 .tooltip {
   position: relative;
@@ -186,8 +182,6 @@
 .tooltip:hover .tooltip-box {
   opacity: 1;
 }
-
-        
     </style>
 </head>
 <body class="text-slate-800 antialiased h-screen overflow-y-auto flex bg-slate-50">
@@ -895,22 +889,19 @@
       
     <!-- MODAL RECORTE -->
     <div id="cropModal" class="modal-overlay fixed inset-0 z-[200] flex items-center justify-center p-4 hidden">
-    <div class="bg-white rounded-[2.5rem] shadow-2xl w-full max-w-xl overflow-hidden animate-fade-in">
-        <div class="bg-slate-900 p-6 flex items-center justify-between">
-            <div class="flex items-center gap-3">
-                <div class="bg-primary-500/20 p-2 rounded-xl"><i data-lucide="crop" class="w-6 h-6 text-primary-400"></i></div>
-                <h3 class="text-xl font-bold text-white">Ajustar Imagem</h3>
+        <div class="bg-white rounded-[2.5rem] shadow-2xl w-full max-w-xl overflow-hidden animate-fade-in">
+            <div class="bg-slate-900 p-6 flex items-center justify-between">
+                <div class="flex items-center gap-3"><div class="bg-primary-500/20 p-2 rounded-xl"><i data-lucide="crop" class="w-6 h-6 text-primary-400"></i></div><h3 class="text-xl font-bold text-white">Ajustar Imagem</h3></div>
+                <button onclick="closeCropModal()" class="p-2 text-slate-400 hover:text-white transition-colors"><i data-lucide="x" class="w-6 h-6"></i></button>
             </div>
-            <button onclick="closeCropModal()" class="p-2 text-slate-400 hover:text-white transition-colors"><i data-lucide="x" class="w-6 h-6"></i></button>
-        </div>
-        <div class="p-6 space-y-6">
-            <div class="crop-container"><img id="imageToCrop" class="max-w-full"></div>
-            <div class="flex gap-4">
-                <button onclick="closeCropModal()" class="flex-1 py-4 text-slate-400 font-bold hover:text-slate-600 text-sm uppercase">Cancelar</button>
-                <button id="confirmCropBtn" onclick="confirmCrop()" class="flex-[2] bg-primary-600 text-white py-4 rounded-2xl font-bold shadow-xl hover:bg-primary-700 uppercase tracking-widest text-xs transition-all">Confirmar Recorte</button>
+            <div class="p-6 space-y-6">
+                <div class="crop-container"><img id="imageToCrop" class="max-w-full"></div>
+                <div class="flex gap-4">
+                    <button onclick="closeCropModal()" class="flex-1 py-4 text-slate-400 font-bold hover:text-slate-600 text-sm uppercase">Cancelar</button>
+                    <button onclick="confirmCrop()" class="flex-[2] bg-primary-600 text-white py-4 rounded-2xl font-bold shadow-xl hover:bg-primary-700 uppercase tracking-widest text-xs transition-all">Confirmar Recorte</button>
+                </div>
             </div>
         </div>
-    </div>
     </div>
     </main>
 
@@ -1189,7 +1180,6 @@ let currentPlan = null;   // 🔹 vem da collection plans
         let analyticsUnsubscribe = null; // Variável para desligar a escuta anterior
         let cropper = null;
         let growthChartInstance = null;
-        let currentVariationCropIdx = null;
         let manualOrder = [];
        let variationsHistoryCache = new Map();
         let html5QrCode = null;
@@ -1329,17 +1319,16 @@ function applyPhoneMask(elementId) {
 
 
 // --- RENDERIZAÇÃO DA TABELA COM COLUNA DE SKU EDITÁVEL ---
-
 function renderMatrixUI() {
     const container = document.getElementById('variationMatrixContainer');
-    // Estrutura da tabela com cabeçalho
+    // Adicionamos uma estrutura de tabela com cabeçalho para os títulos
     container.innerHTML = `
         <div class="overflow-x-auto">
             <table class="w-full text-left border-collapse">
                 <thead>
                     <tr class="text-[10px] uppercase text-slate-400 border-b border-slate-100">
                         <th class="p-2 font-bold">Ativo</th>
-                        <th class="p-2 font-bold">Foto (1:1)</th>
+                        <th class="p-2 font-bold">Foto</th>
                         <th class="p-2 font-bold">Ref / SKU</th>
                         <th class="p-2 font-bold text-center">Qtd Estoque</th>
                         <th class="p-2 font-bold">Preço de Venda</th>
@@ -1354,9 +1343,7 @@ function renderMatrixUI() {
     
     variationsMatrix.forEach((v, idx) => {
         const tr = document.createElement('tr');
-        // Aplica opacidade se a variação estiver desativada
         tr.className = v.active ? 'border-b border-slate-50' : 'opacity-40 bg-slate-50 border-b border-slate-50';
-        
         tr.innerHTML = `
             <td class="p-2">
                 <label class="toggle-switch">
@@ -1365,29 +1352,30 @@ function renderMatrixUI() {
                 </label>
             </td>
             <td class="p-2">
-                <div onclick="window.uploadVariationImage(${idx}, null)" 
-                     class="w-12 h-12 rounded-xl border-2 border-dashed border-slate-200 flex items-center justify-center cursor-pointer overflow-hidden bg-white hover:border-primary-400 transition-all group">
+                <div onclick="document.getElementById('fileVar-${idx}').click()" 
+                     class="w-10 h-10 rounded-lg border-2 border-dashed border-slate-200 flex items-center justify-center cursor-pointer overflow-hidden bg-white hover:border-primary-400 transition-all">
                     ${v.image 
                         ? `<img src="${v.image}" class="w-full h-full object-cover">` 
-                        : `<i data-lucide="camera" class="w-5 h-5 text-slate-300 group-hover:text-primary-500"></i>`}
+                        : `<i data-lucide="camera" class="w-4 h-4 text-slate-300"></i>`}
+                    <input type="file" id="fileVar-${idx}" class="hidden" accept="image/*" onchange="uploadVariationImage(${idx}, this.files)">
                 </div>
             </td>
             <td class="p-2">
-                <div class="flex flex-col min-w-[120px]">
+                <div class="flex flex-col min-w-[100px]">
                     <span class="font-bold text-slate-800 text-[10px] uppercase">${v.color} / ${v.size}</span>
                     <input type="text" value="${v.sku || ''}" placeholder="SKU" 
                            oninput="updateVariationSku(${idx}, this.value)"
                            class="mt-1 text-[9px] font-mono border-none p-0 focus:ring-0 bg-transparent text-slate-400 uppercase">
                 </div>
             </td>
-            <td class="p-2 text-center">
+            <td class="p-2">
                 <input type="number" value="${v.stock || 0}" oninput="updateVariationStock(${idx}, this.value)" 
                        placeholder="0"
-                       class="w-16 border border-slate-200 rounded-lg p-2 outline-none focus:ring-1 focus:ring-primary-500 bg-white text-xs font-bold text-center">
+                       class="w-20 mx-auto border border-slate-200 rounded-lg p-2 outline-none focus:ring-1 focus:ring-primary-500 bg-white text-xs font-bold text-center">
             </td>
             <td class="p-2">
                 <div class="relative min-w-[110px]">
-                    <span class="absolute left-2 top-2.5 text-[9px] text-slate-400 font-bold">R$</span>
+                    <span class="absolute left-2 top-2.5 text-[10px] text-slate-400 font-bold">R$</span>
                     <input type="number" step="0.01" value="${v.price}" oninput="updateVariationPrice(${idx}, this.value)" 
                            class="w-full border border-slate-200 rounded-lg p-2 pl-7 outline-none focus:ring-1 focus:ring-primary-500 bg-white text-xs font-bold">
                 </div>
@@ -1395,8 +1383,6 @@ function renderMatrixUI() {
         `;
         tbody.appendChild(tr);
     });
-
-    // Reinicializa os ícones do Lucide após injetar o HTML
     if (typeof lucide !== 'undefined') lucide.createIcons();
 }
 
@@ -1477,18 +1463,14 @@ window.updateVariationPrice = (idx, value) => {
     }
     lucide.createIcons();
         }
-window.closeCropModal = () => {
-    document.getElementById('cropModal').classList.add('hidden');
-    if (cropper) cropper.destroy();
-    
-    // Garante que o botão volte a apontar para a função da galeria principal
-    const btn = document.getElementById('confirmCropBtn');
-    if (btn) btn.onclick = () => window.confirmCrop();
-    
-    document.getElementById('prodImageInput').value = '';
-    document.getElementById('cameraCaptureInput').value = '';
-};
-          
+
+        window.closeCropModal = () => {
+            document.getElementById('cropModal').classList.add('hidden');
+            if (cropper) cropper.destroy();
+            document.getElementById('prodImageInput').value = '';
+            document.getElementById('cameraCaptureInput').value = '';
+        };
+
         window.confirmCrop = () => {
     if (!cropper) return;
 
@@ -4393,31 +4375,19 @@ window.expandImage = (url) => {
     modal.classList.remove('hidden');
     if (typeof lucide !== 'undefined') lucide.createIcons();
 };
-window.uploadVariationImage = (idx, files) => {
-    // Se a função foi chamada pelo clique no ícone (files é null), abrimos o seletor
-    if (!files) {
-        const tempInput = document.createElement('input');
-        tempInput.type = 'file';
-        tempInput.accept = 'image/*';
-        tempInput.onchange = (e) => window.uploadVariationImage(idx, e.target.files);
-        tempInput.click();
-        return;
-    }
-
-    // Se já selecionou o arquivo, preparamos o modal de recorte
-    currentVariationCropIdx = idx;
+window.uploadVariationImage = async (idx, files) => {
+    if (!files[0]) return;
+    showToast("Processando imagem da variação...");
+    
     const reader = new FileReader();
     reader.onload = (e) => {
-        window.openCropModal(e.target.result);
-        
-        // MUDANÇA DE COMPORTAMENTO: Altera o botão do modal para salvar na variação
-        const btn = document.getElementById('confirmCropBtn');
-        if (btn) btn.onclick = () => window.confirmVariationCrop();
+        // Opcional: Aqui você pode chamar o seu CropModal ou apenas salvar direto
+        // Para ser rápido, vamos salvar o DataURL temporário
+        variationsMatrix[idx].image = e.target.result; 
+        renderMatrixUI();
     };
     reader.readAsDataURL(files[0]);
 };
-
-
 
 window.calculateSalesInsights = () => {
     const productSales = {}; 
@@ -4500,34 +4470,6 @@ window.calculateSalesInsights = () => {
     }
 
     if (window.lucide) lucide.createIcons();
-};
-
-window.confirmVariationCrop = () => {
-    if (!cropper) return;
-
-    // Gera o canvas 1:1 com 800px (ideal para vitrine)
-    const canvas = cropper.getCroppedCanvas({ 
-        width: 800, 
-        height: 800,
-        imageSmoothingQuality: 'high'
-    });
-
-    // Comprime para JPEG 0.7 para economizar espaço no Firebase
-    const optimizedDataUrl = canvas.toDataURL('image/jpeg', 0.7);
-    
-    if (currentVariationCropIdx !== null) {
-        // Salva a imagem na matriz de variações
-        variationsMatrix[currentVariationCropIdx].image = optimizedDataUrl;
-        currentVariationCropIdx = null;
-    }
-
-    // Atualiza a interface e fecha
-    renderMatrixUI();
-    window.closeCropModal();
-    
-    // IMPORTANTE: Restaura o botão para o modo de foto principal
-    const btn = document.getElementById('confirmCropBtn');
-    if (btn) btn.onclick = () => window.confirmCrop();
 };
 
 
