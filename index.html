@@ -2088,6 +2088,9 @@ window.initOrderListener = (storeId) => {
         if (typeof window.updatePremiumUI === 'function') window.updatePremiumUI();
     });
 
+        window.loadMagicCategoriesFeedback(data); 
+    });
+
     // --- LISTENER B: CATEGORIAS ---
     onSnapshot(collection(db, `stores/${currentStoreId}/categories`), (s) => {
         allCategories = s.docs.map(doc => ({ id: doc.id, ...doc.data() }));
@@ -3235,14 +3238,14 @@ async function initAnalyticsInsights() {
     if (storeConfig.hasMagicCategories !== true) {
         showToast("💎 Recurso bloqueado: Upgrade seu plano para usar Categorias Mágicas.");
         const input = document.getElementById(type === 'showNew' ? 'magicNew' : 'magicTop');
-        if (input) input.checked = !isVisible; 
+        if (input) input.checked = !isVisible; // Reverte o botão visualmente
         return;
     }
 
     try {
         const storeRef = doc(db, `stores/${currentStoreId}/config/store`);
 
-        // 2. ATUALIZAÇÃO: Usamos merge para não apagar outros dados
+        // 2. ATUALIZAÇÃO: Gravamos apenas a mudança necessária
         await setDoc(storeRef, {
             magicCategories: {
                 [type]: isVisible
@@ -3250,21 +3253,17 @@ async function initAnalyticsInsights() {
             lastUpdate: Date.now()
         }, { merge: true });
 
-        // 3. FEEDBACK ÚNICO: Remova qualquer outra chamada de toast que possa estar em funções auxiliares
+        // 3. FEEDBACK ÚNICO
         showToast(isVisible ? "Setor automático ativado! ✨" : "Setor removido da vitrine.");
-        
-        // 4. ATUALIZAÇÃO LOCAL: Atualiza o objeto em memória para evitar re-disparos desnecessários
-        if(!window.storeConfig.magicCategories) window.storeConfig.magicCategories = {};
-        window.storeConfig.magicCategories[type] = isVisible;
 
     } catch (error) {
-        // Só mostra erro se realmente falhar no Firebase
         console.error("Erro ao salvar:", error);
         if (error.code !== 'permission-denied') {
             showToast("Erro ao salvar preferência.");
         }
     }
 };
+
 
 
     window.bulkToggleStatus = async (categoryName, newStatus) => {
@@ -3692,51 +3691,45 @@ window.deleteOrder = async (id) => {
     });
 };
 
-async function loadMagicCategoriesFeedback() {
-    if (!currentStoreId) return;
+window.loadMagicCategoriesFeedback = (data) => {
+    if (!data) return;
 
-    try {
-        const storeRef = doc(db, `stores/${currentStoreId}/config/store`);
-        const snap = await getDoc(storeRef);
-        if (!snap.exists()) return;
+    // Em vez de ler do banco, usamos o 'data' que a função recebeu
+    const magics = data.magicCategories || {};
+    
+    // Verificação de permissão (Plano Pro/Gold)
+    const hasMagicAccess = data.hasMagicCategories === true;
 
-        const data = snap.data();
-        const magics = data.magicCategories || {};
+    const inputNew = document.getElementById('magicNew');
+    const inputTop = document.getElementById('magicTop');
+
+    if (inputNew && inputTop) {
+        // Se não tiver acesso, desativa os botões e aplica visual de bloqueado
+        inputNew.disabled = !hasMagicAccess;
+        inputTop.disabled = !hasMagicAccess;
         
-        // --- NOVO: VERIFICAÇÃO DE PERMISSÃO PREMIUM ---
-        const hasMagicAccess = data.hasMagicCategories === true;
+        inputNew.closest('.flex').style.opacity = hasMagicAccess ? "1" : "0.5";
+        inputTop.closest('.flex').style.opacity = hasMagicAccess ? "1" : "0.5";
 
-        const inputNew = document.getElementById('magicNew');
-        const inputTop = document.getElementById('magicTop');
-
-        if (inputNew && inputTop) {
-            // Se não tiver acesso, desativa os botões e aplica visual de bloqueado
-            inputNew.disabled = !hasMagicAccess;
-            inputTop.disabled = !hasMagicAccess;
-            
-            inputNew.closest('.flex').style.opacity = hasMagicAccess ? "1" : "0.5";
-            inputTop.closest('.flex').style.opacity = hasMagicAccess ? "1" : "0.5";
-
-            // Se tiver acesso, carrega os valores salvos
-            if (hasMagicAccess) {
-                inputNew.checked = !!magics.showNew;
-                inputTop.checked = !!magics.showTop;
-            } else {
-                // Se não tiver acesso, força os botões para desativado visualmente
-                inputNew.checked = false;
-                inputTop.checked = false;
-            }
+        // Sincroniza os botões com o que está no banco de dados
+        if (hasMagicAccess) {
+            inputNew.checked = !!magics.showNew;
+            inputTop.checked = !!magics.showTop;
+        } else {
+            inputNew.checked = false;
+            inputTop.checked = false;
         }
-
-        if (typeof updateMagicFeedback === 'function') {
-            updateMagicFeedback(hasMagicAccess ? magics : {});
-        }
-
-    } catch (err) {
-        console.error("Erro ao carregar categorias mágicas:", err);
     }
-}
 
+    if (typeof updateMagicFeedback === 'function') {
+        updateMagicFeedback(hasMagicAccess ? magics : {});
+    }
+    
+    // Atualiza os contadores visuais (Ex: "Ativo: 5 produtos")
+    if (typeof updateMagicFeedback === 'function') {
+        updateMagicFeedback(hasMagicAccess ? magics : {});
+    }
+};
         window.renderFilteredOrders = () => {
     const container = document.getElementById("ordersCardsContainer");
     if (!container) return;
