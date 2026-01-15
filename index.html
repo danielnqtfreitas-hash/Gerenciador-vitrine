@@ -2086,10 +2086,12 @@ window.initOrderListener = (storeId) => {
         // Atualiza botões cinzas se bater o limite
         updateUIByPlan();
         if (typeof window.updatePremiumUI === 'function') window.updatePremiumUI();
-    });
 
+        // NOVIDADE: Chama o feedback das categorias mágicas DENTRO do listener
+        // para que 'data' seja reconhecido e o visual atualize em tempo real.
         window.loadMagicCategoriesFeedback(data); 
-    });
+
+    }); 
 
     // --- LISTENER B: CATEGORIAS ---
     onSnapshot(collection(db, `stores/${currentStoreId}/categories`), (s) => {
