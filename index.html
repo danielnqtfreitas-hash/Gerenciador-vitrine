@@ -1227,6 +1227,15 @@ let customEnd = null;
 let isFirstLoad = true;
         let variationsMatrix = [];
 
+
+        // Destrava o áudio no primeiro clique do lojista (necessário p/ navegadores)
+document.addEventListener('click', () => {
+    const audio = document.getElementById('notifSound');
+    if (audio) {
+        audio.play().then(() => { audio.pause(); audio.currentTime = 0; }).catch(() => {});
+    }
+}, { once: true });
+
   
 // 1. Forçamos o login a ser LOCAL (não apaga quando fecha a aba)
 setPersistence(auth, browserLocalPersistence)
@@ -2011,38 +2020,38 @@ window.initOrderListener = (storeId) => {
     );
 
     const container = document.getElementById("ordersCardsContainer");
+    const audio = document.getElementById('notifSound'); // Usando o elemento do seu HTML
 
     onSnapshot(q, (snapshot) => {
         if (!container) return;
 
-        // Conta pedidos atuais
-        const currentCount = snapshot.size;
-
-        // --- TOCA O SOM SE CHEGOU PEDIDO NOVO ---
-        if (!isFirstLoad && currentCount > lastOrderCount) {
-            try {
-                const audio = new Audio('assets/sound/notification.mp3');
-                audio.play();
-            } catch (e) {
-                console.warn("Falha ao tocar o som:", e);
+        // --- ALTERAÇÃO CIRÚRGICA: DETECÇÃO POR MUDANÇA DE DOCUMENTO ---
+        snapshot.docChanges().forEach((change) => {
+            // Se o documento foi ADICIONADO e não é uma gravação local (manual)
+            if (change.type === "added" && !snapshot.metadata.hasPendingWrites) {
+                if (!isFirstLoad) {
+                    if (audio) {
+                        audio.currentTime = 0;
+                        audio.play().catch(e => console.warn("Clique na página para ativar o som."));
+                    }
+                }
             }
-        }
+        });
 
-        // Atualiza controle
-        lastOrderCount = currentCount;
+        // --- MANTÉM SUA LÓGICA ORIGINAL DE CACHE E CONTROLE ---
+        lastOrderCount = snapshot.size;
         isFirstLoad = false;
 
-        // Atualiza cache
         ordersCache = {};
         snapshot.forEach(doc => {
             const p = { id: doc.id, ...doc.data() };
             ordersCache[p.id] = p;
         });
 
-        // Re-renderiza lista
         window.renderFilteredOrders();
     });
 };
+
 
 
       function initStoreData() {
