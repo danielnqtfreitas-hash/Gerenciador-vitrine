@@ -818,24 +818,60 @@
                     </form>
                 </div>
 
-                 <div class="bg-slate-800/50 p-6 rounded-3xl border border-slate-700 space-y-4">
-    <h3 class="text-sm font-bold text-indigo-400 uppercase tracking-widest">Dados para Pagamento (PIX)</h3>
+                 <div class="bg-white rounded-3xl border border-slate-200 p-8 shadow-sm overflow-hidden relative">
+    <div class="absolute top-0 left-0 w-full h-1.5 bg-gradient-to-r from-emerald-400 to-teal-500"></div>
     
-    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div class="space-y-1">
-            <label class="text-[10px] font-bold text-slate-500 ml-2">CHAVE PIX</label>
-            <input type="text" id="cfgPixKey" placeholder="E-mail, CPF ou Aleatória" class="input-premium">
+    <div class="flex items-center justify-between mb-8">
+        <div>
+            <h3 class="text-xl font-bold text-slate-800 flex items-center gap-3">
+                <i data-lucide="qr-code" class="text-emerald-600 w-6 h-6"></i> 
+                Configurações de Recebimento
+            </h3>
+            <p class="text-xs text-slate-500 mt-1 font-medium">Estes dados serão exibidos para o cliente no fechamento do pedido.</p>
         </div>
-        <div class="space-y-1">
-            <label class="text-[10px] font-bold text-slate-500 ml-2">NOME DO TITULAR</label>
-            <input type="text" id="cfgPixName" placeholder="Nome Completo" class="input-premium">
+        <div class="hidden md:block">
+            <span class="px-3 py-1 bg-emerald-50 text-emerald-700 text-[10px] font-black uppercase rounded-full border border-emerald-100">
+                Pagamento Instantâneo
+            </span>
         </div>
-        <div class="space-y-1">
-            <label class="text-[10px] font-bold text-slate-500 ml-2">BANCO</label>
-            <input type="text" id="cfgPixBank" placeholder="Ex: Nubank, Inter..." class="input-premium">
+    </div>
+    
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div class="space-y-2">
+            <label class="flex items-center gap-2 text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">
+                <i data-lucide="key" class="w-3 h-3"></i> Chave PIX
+            </label>
+            <div class="relative group">
+                <input type="text" id="cfgPixKey" placeholder="E-mail, CPF ou Aleatória" 
+                       class="w-full bg-slate-50 border border-slate-200 rounded-2xl p-4 text-sm outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 focus:bg-white transition-all">
+            </div>
         </div>
-      </div>
-    </div>    
+
+        <div class="space-y-2">
+            <label class="flex items-center gap-2 text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">
+                <i data-lucide="user" class="w-3 h-3"></i> Nome do Titular
+            </label>
+            <input type="text" id="cfgPixName" placeholder="Nome completo" 
+                   class="w-full bg-slate-50 border border-slate-200 rounded-2xl p-4 text-sm outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 focus:bg-white transition-all">
+        </div>
+
+        <div class="space-y-2">
+            <label class="flex items-center gap-2 text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">
+                <i data-lucide="landmark" class="w-3 h-3"></i> Instituição Bancária
+            </label>
+            <input type="text" id="cfgPixBank" placeholder="Ex: Nubank, Inter..." 
+                   class="w-full bg-slate-50 border border-slate-200 rounded-2xl p-4 text-sm outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 focus:bg-white transition-all">
+        </div>
+    </div>
+
+    <div class="mt-8 p-4 bg-amber-50 rounded-2xl border border-amber-100 flex items-start gap-3">
+        <i data-lucide="info" class="w-5 h-5 text-amber-500 shrink-0 mt-0.5"></i>
+        <p class="text-[11px] text-amber-800 leading-relaxed">
+            <b>Dica:</b> Certifique-se de que a chave está correta. O sistema enviará estes dados automaticamente via WhatsApp assim que você confirmar o pedido na tela de pedidos.
+        </p>
+    </div>
+</div>
+
                                 <form id="storeConfigForm" onsubmit="saveStoreConfig(event)" class="space-y-8 pb-12">
                     <div class="bg-white rounded-3xl border border-slate-200 p-8 shadow-sm">
                         <h3 class="text-xl font-bold text-slate-800 mb-6 flex items-center gap-3"><i data-lucide="info" class="text-blue-600"></i> Identidade</h3>
@@ -2063,16 +2099,21 @@ window.initOrderListener = (storeId) => {
         }
 
         // Preenchimento dos campos de Configuração
-        const fields = {
-            'confStoreName': data.storeName || '',
-            'confWhatsapp': data.whatsappNumber || '',
-            'confFooter': data.footerText || '',
-            'confColorPrimary': data.primaryColor || '#8b5cf6'
-        };
-        Object.keys(fields).forEach(id => {
-            const el = document.getElementById(id);
-            if(el) el.value = fields[id];
-        });
+const fields = {
+    'confStoreName': data.storeName || '',
+    'confWhatsapp': data.whatsappNumber || '',
+    'confFooter': data.footerText || '',
+    'confColorPrimary': data.primaryColor || '#8b5cf6', // Vírgula adicionada aqui
+    'cfgPixKey': data.pix?.key || '',
+    'cfgPixName': data.pix?.name || '',
+    'cfgPixBank': data.pix?.bank || ''
+};
+
+Object.keys(fields).forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.value = fields[id];
+});
+
 
         // Dashboard: Status Aberto/Fechado e Badge do Plano
         const dashToggle = document.getElementById('dashboardStoreToggle');
