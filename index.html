@@ -1,4 +1,4 @@
- <!DOCTYPE html>
+  <!DOCTYPE html>
 <html lang="pt-PT">
 <head>
     <meta charset="UTF-8">
@@ -2099,13 +2099,22 @@ function initStoreData() {
             if (suspendedScreen) suspendedScreen.classList.add('hidden');
         }
 
-        // 3. Sincronização de Limites
-        storeConfig = {
-            ...data,
-            maxProducts: parseInt(data.maxProducts || 0),
-            maxBanners: parseInt(data.maxBanners || 0),
-            hasCarousel: data.hasCarousel === true || data.hasCarousel === "true"
-        };
+        
+// 3. Sincronização de Limites (AQUI ESTAVA O ERRO)
+storeConfig = {
+    ...data,
+    maxProducts: parseInt(data.maxProducts || 0),
+    maxBanners: parseInt(data.maxBanners || 0),
+    hasCarousel: data.hasCarousel === true || data.hasCarousel === "true",
+    // GARANTA que estas chaves abaixo sejam mapeadas explicitamente:
+    hasFinance: data.hasFinance === true,
+    hasMagicCategories: data.hasMagicCategories === true
+};
+
+updatePremiumUI(); 
+if (typeof window.loadMagicCategoriesFeedback === "function") {
+    window.loadMagicCategoriesFeedback(data);
+}
 
         // 4. Bairros e Identidade (Nome/Logo)
         deliveryAreas = (data.deliveryAreas && Array.isArray(data.deliveryAreas)) ? data.deliveryAreas : [];
