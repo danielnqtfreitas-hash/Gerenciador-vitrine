@@ -1234,52 +1234,124 @@ let isFirstLoad = true;
         let variationsMatrix = [];
 
 
-        // Destrava o áudio no primeiro clique do lojista (necessário p/ navegadores)
+// --- 1. CONFIGURAÇÃO DE ÁUDIO (DESTRAVAMENTO) ---
+// Isso garante que o navegador permita o som de notificação
 document.addEventListener('click', () => {
     const audio = document.getElementById('notifSound');
     if (audio) {
-        audio.play().then(() => { audio.pause(); audio.currentTime = 0; }).catch(() => {});
+        audio.play().then(() => { 
+            audio.pause(); 
+            audio.currentTime = 0; 
+        }).catch(() => {});
     }
 }, { once: true });
 
-  
-// 1. Forçamos o login a ser LOCAL (não apaga quando fecha a aba)
-setPersistence(auth, browserLocalPersistence)
-    .then(() => {
-        // O observador agora roda "dentro" da garantia de persistência
-        return onAuthStateChanged(auth, (user) => {
-            const authScreen = document.getElementById('auth-screen');
-            const mainContent = document.getElementById('main-content');
+// --- 2. MONITOR DE ESTADO (O PORTEIRO) ---
+// Roda automaticamente ao abrir o site
+onAuthStateChanged(auth, async (user) => {
+    const authScreen = document.getElementById('auth-screen');
+    // Ajuste o ID abaixo para o ID real do seu container principal (ex: 'app' ou 'main-content')
+    const mainContent = document.getElementById('content-area')?.parentElement; 
 
-            if (user) {
-                console.log("Sessão recuperada com sucesso:", user.uid);
-                currentStoreId = user.uid;
-                
-                // Garante a troca de telas
-                if (authScreen) authScreen.classList.add('hidden');
-                if (mainContent) mainContent.classList.remove('hidden');
-                
-                CarregarDadosPainel();
-            } else {
-                console.log("Nenhum usuário logado.");
-                if (authScreen) authScreen.classList.remove('hidden');
-                if (mainContent) mainContent.classList.add('hidden');
-            }
-        });
-    })
-    .catch((error) => {
-        console.error("Erro ao configurar persistência:", error);
-    });
+    if (user) {
+        console.log("Sessão ativa recuperada:", user.email);
+        document.getElementById('userEmailDisplay').textContent = user.email;
+        
+        // Esconde login e mostra o painel
+        if (authScreen) authScreen.classList.add('hidden');
+        if (mainContent) mainContent.classList.remove('hidden');
 
-// 2. Escuta de mensagens (mantido igual)
-onMessage(messaging, (payload) => {
-    console.log('Mensagem recebida com app aberto:', payload);
-    const audio = document.getElementById('notifSound');
-    if(audio) audio.play().catch(e => console.log("Áudio bloqueado"));
-    if (typeof showToast === 'function') {
-        showToast(`🔔 ${payload.notification.title}: ${payload.notification.body}`);
+        try {
+            await buscarIdentidadeLoja(user);
+            initStoreData(); 
+            initAnalyticsChart();
+            initOrderListener(currentStoreId); // Inicia radar de pedidos
+            await CarregarDadosPainel(); // Carrega o restante
+        } catch (e) {
+            console.error("Erro ao vincular loja:", e);
+        }
+    } else {
+        // Sem usuário: mostra login e esconde o painel
+        if (authScreen) authScreen.classList.remove('hidden');
+        if (mainContent) mainContent.classList.add('hidden');
+        lucide.createIcons();
     }
 });
+
+// --- 3. FUNÇÃO DE LOGIN (COM ESCOLHA DE PERSISTÊNCIA) ---
+window.handleLogin = async (e) => {
+    e.preventDefault();
+    const email = document.getElementById('loginEmail').value;
+    const pass = document.getElementById('loginPass').value;
+    const rememberMe = document.getElementById('rememberMe').checked;
+    const btn = document.getElementById('btnLogin');
+    const errorEl = document.getElementById('loginError');
+
+    btn.disabled = true; 
+    btn.innerHTML = `<span class="animate-spin inline-block w-4 h-4 border-2 border-white/20 border-t-white rounded-full mr-2"></span> Autenticando...`;
+
+    try {
+        // Define se salva no disco (Local) ou só na aba (Session) baseado no checkbox
+        const persistence = rememberMe ? browserLocalPersistence : browserSessionPersistence;
+        
+        await setPersistence(auth, persistence);
+        await signInWithEmailAndPassword(auth, email, pass);
+        // O onAuthStateChanged acima cuidará do redirecionamento
+        
+    } catch(error) { 
+        btn.disabled = false; 
+        btn.innerHTML = `Aceder ao Painel <i data-lucide="arrow-right" class="w-4 h-4"></i>`;
+        errorEl.textContent = "E-mail ou senha inválidos.";
+        errorEl.classList.remove('hidden');
+        lucide.createIcons();
+    }
+};
+
+// --- 4. FUNÇÃO DE LOGOUT ---
+window.handleLogout = async () => {
+    if(confirm("Deseja encerrar a sessão? Os dados serão limpos deste dispositivo.")) {
+        await signOut(auth);
+        window.location.reload(); 
+    }
+};
+
+// --- 5. FUNÇÕES AUXILIARES ---
+async function buscarIdentidadeLoja(user) {
+    let dirDoc = await getDoc(doc(db, "admin_directory", user.uid));
+    if(!dirDoc.exists()){
+        const snap = await getDocs(query(collection(db, "stores_registry"), where("ownerEmail", "==", user.email)));
+        if(snap.empty) {
+            await signOut(auth);
+            return;
+        }
+        currentStoreId = snap.docs[0].data().slug;
+    } else { 
+        currentStoreId = dirDoc.data().storeId; 
+    }
+}
+
+async function CarregarDadosPainel() {
+    try {
+        await loadMagicCategoriesFeedback();
+        console.log("Feedbacks mágicos carregados.");
+    } catch (error) {
+        console.error("Erro ao carregar dados extras:", error);
+    }
+}
+
+function applyPhoneMask(elementId) {
+    const element = document.getElementById(elementId);
+    if (!element) return;
+    IMask(element, { mask: '+{55} (00) 00000-0000' });
+}
+
+// Escuta mensagens de notificações (FCM)
+onMessage(messaging, (payload) => {
+    const audio = document.getElementById('notifSound');
+    if(audio) audio.play().catch(() => {});
+    showToast(`🔔 ${payload.notification.title}`);
+});
+
 
 // 3. Função de carregar dados (mantida igual)
 async function CarregarDadosPainel() {
@@ -1627,24 +1699,46 @@ function renderImagePreviews() {
 
         // --- AUTH ---
         window.handleLogin = async (e) => {
-            e.preventDefault();
-            const email = document.getElementById('loginEmail').value;
-            const pass = document.getElementById('loginPass').value;
-            const rememberMe = document.getElementById('rememberMe').checked;
-            const btn = document.getElementById('btnLogin');
-            btn.disabled = true; btn.textContent = "Validando...";
-            try {
-                const persistence = rememberMe ? browserLocalPersistence : browserSessionPersistence;
-                await setPersistence(auth, persistence);
-                await signInWithEmailAndPassword(auth, email, pass);
-            } catch(e) { 
-                btn.disabled = false; btn.textContent = "Aceder ao Painel";
-                document.getElementById('loginError').textContent = "Credenciais inválidas.";
-                document.getElementById('loginError').classList.remove('hidden');
-            }
-        };
+    e.preventDefault();
+    const email = document.getElementById('loginEmail').value;
+    const pass = document.getElementById('loginPass').value;
+    const rememberMe = document.getElementById('rememberMe').checked;
+    const btn = document.getElementById('btnLogin');
+    const errorMsg = document.getElementById('loginError');
 
-        window.handleLogout = async () => { await signOut(auth); window.location.reload(); };
+    btn.disabled = true; 
+    btn.innerHTML = `Validando...`;
+    errorMsg.classList.add('hidden');
+
+    try {
+        // Se 'rememberMe' for true, o Firebase guarda os dados no disco (não apaga ao fechar a aba)
+        // Se for false, ele guarda apenas na sessão (apaga quando fechar)
+        const persistence = rememberMe ? browserLocalPersistence : browserSessionPersistence;
+        
+        await setPersistence(auth, persistence);
+        await signInWithEmailAndPassword(auth, email, pass);
+        
+    } catch(error) { 
+        btn.disabled = false; 
+        btn.textContent = "Aceder ao Painel";
+        errorMsg.textContent = "E-mail ou senha incorretos.";
+        errorMsg.classList.remove('hidden');
+    }
+};
+
+
+        window.handleLogout = async () => {
+    if (confirm("Deseja realmente encerrar a sessão?")) {
+        try {
+            await signOut(auth);
+            // O Firebase limpa o cache automaticamente no signOut
+            window.location.reload(); 
+        } catch (e) {
+            showToast("Erro ao sair.");
+        }
+    }
+};
+     
         window.toggleAuthView = (view) => { 
     document.getElementById('login-card').classList.toggle('hidden', view === 'register'); 
     document.getElementById('register-card').classList.toggle('hidden', view === 'login'); 
