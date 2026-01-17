@@ -4721,6 +4721,7 @@ window.calculateSalesInsights = () => {
 
     const driverObj = driver({
         showProgress: true,
+        allowClose: false, // <--- ESTA LINHA impede que o tutorial feche ao clicar fora
         nextBtnText: 'Próximo',
         prevBtnText: 'Anterior',
         doneBtnText: 'Finalizar Guia',
@@ -4728,48 +4729,48 @@ window.calculateSalesInsights = () => {
             { 
                 element: '#nav-orders', 
                 popover: { 
-                    title: '📦 Gestão de Pedidos', 
-                    description: 'Esta é a sua central de controle. Todos os pedidos que chegarem pelo WhatsApp aparecerão aqui para você confirmar.', 
+                    title: '📦 Pedidos em Tempo Real', 
+                    description: 'O seu radar! Novos pedidos do WhatsApp aparecem aqui. Clique para ver detalhes e confirmar.', 
                     side: "right", align: 'start' 
                 } 
             },
             { 
                 element: '#nav-dashboard', 
                 popover: { 
-                    title: '📊 Desempenho (Analytics)', 
-                    description: 'Acompanhe as estatísticas de visitas, produtos mais vistos e termos que os clientes estão a pesquisar na sua loja.', 
+                    title: '📊 Dashboard', 
+                    description: 'Veja quem anda a visitar a sua loja e quais são os produtos que mais despertam interesse.', 
                     side: "right", align: 'start' 
                 } 
             },
             { 
                 element: '#nav-banners', 
                 popover: { 
-                    title: '🖼️ Banners de Destaque', 
-                    description: 'Crie um visual profissional! Aqui você configura os banners rotativos do topo da sua vitrine.', 
+                    title: '🖼️ Vitrine Visual', 
+                    description: 'Configure os banners rotativos aqui para dar aquele aspeto profissional à sua loja.', 
                     side: "right", align: 'start' 
                 } 
             },
             { 
                 element: '#nav-products', 
                 popover: { 
-                    title: '🏷️ Catálogo de Produtos', 
-                    description: 'Adicione fotos, preços e controle o estoque das suas variações (cores e tamanhos).', 
+                    title: '🏷️ Gestão de Stock', 
+                    description: 'Cadastre os seus produtos e variações. O sistema avisa quando o stock estiver a acabar!', 
                     side: "right", align: 'start' 
                 } 
             },
             { 
                 element: '#nav-categories', 
                 popover: { 
-                    title: '📂 Departamentos e Categorias', 
-                    description: 'Organize a sua loja. Aqui você também ativa as "Categorias Mágicas" que se organizam sozinhas por novidades ou mais vistos.', 
+                    title: '📂 Categorias Inteligentes', 
+                    description: 'Organize os seus setores. Ative as categorias mágicas para mostrar novidades automaticamente.', 
                     side: "right", align: 'start' 
                 } 
             },
             { 
                 element: '#nav-finance', 
                 popover: { 
-                    title: '💰 Financeiro Pro', 
-                    description: 'Veja o seu faturamento real, lucro por unidade e o valor total que você tem investido em stock.', 
+                    title: '💰 Financeiro', 
+                    description: 'Controle o seu faturamento e veja quanto dinheiro tem parado em stock hoje.', 
                     side: "right", align: 'start' 
                 } 
             },
@@ -4777,23 +4778,23 @@ window.calculateSalesInsights = () => {
                 element: '#nav-config', 
                 popover: { 
                     title: '⚙️ Configurações e PIX', 
-                    description: 'Defina a identidade visual da loja, taxas de entrega e, o mais importante: cadastre o seu PIX para receber pagamentos.', 
+                    description: 'Importante: Defina o seu PIX aqui para que os clientes saibam como lhe pagar!', 
                     side: "right", align: 'start' 
                 } 
             },
             { 
                 element: '#fabAddOrder', 
                 popover: { 
-                    title: '➕ Venda de Balcão', 
-                    description: 'Vendeu fisicamente na sua loja? Use este botão para registrar a venda manualmente e dar baixa automática no stock.', 
+                    title: '➕ Venda Manual', 
+                    description: 'Vendeu na loja física? Registe aqui para manter o stock sincronizado com o site.', 
                     side: "left", align: 'start' 
                 } 
             },
             { 
                 element: '#storeMenuBtn', 
                 popover: { 
-                    title: '🚀 Sua Vitrine Online', 
-                    description: 'Este é o seu link! Copie e coloque na sua Bio do Instagram ou envie para os seus clientes agora mesmo.', 
+                    title: '🚀 Seu Link de Vendas', 
+                    description: 'Este é o seu tesouro! Copie este link e coloque na Bio do seu Instagram agora mesmo.', 
                     side: "bottom", align: 'end' 
                 } 
             }
