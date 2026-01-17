@@ -584,10 +584,6 @@
                 </div>
             </div>
         </div>
-        <div class="flex items-center gap-4 bg-slate-50 px-6 py-3 rounded-2xl border">
-            <span class="text-sm font-bold text-slate-600" id="statusLabel">Aberto</span>
-            <label class="toggle-switch"><input type="checkbox" id="dashboardStoreToggle" onchange="toggleStoreStatusQuick(this)"><span class="slider"></span></label>
-        </div>
     </div> 
 
     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 w-full">
@@ -2125,12 +2121,8 @@ Object.keys(fields).forEach(id => {
 
 
         // Dashboard: Status Aberto/Fechado e Badge do Plano
-        const dashToggle = document.getElementById('dashboardStoreToggle');
-        const statusLbl = document.getElementById('statusLabel');
         const planBadge = document.getElementById('currentPlanBadge');
 
-        if (dashToggle) dashToggle.checked = data.isStoreOpen !== false;
-        if (statusLbl) statusLbl.textContent = data.isStoreOpen !== false ? 'Aberto' : 'Fechado';
         if (planBadge) planBadge.textContent = (data.planId || "Plano Ativo").toUpperCase();
 
         // Atualiza botões cinzas se bater o limite
@@ -3059,10 +3051,6 @@ window.handleBannerSubmit = async (e) => {
             container.appendChild(el);
             setTimeout(() => el.remove(), 4000);
             lucide.createIcons();
-        };
-
-        window.toggleStoreStatusQuick = async (el) => { 
-            await updateDoc(doc(db, `stores/${currentStoreId}/config/store`), { isStoreOpen: el.checked, lastUpdate: Date.now() }); 
         };
 
         window.addDeliveryArea = async () => { 
