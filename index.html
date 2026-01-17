@@ -17,7 +17,10 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 
     <script src="https://unpkg.com/html5-qrcode"></script>
-    
+ 
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/driver.js@1.0.1/dist/driver.css"/>
+<script src="https://cdn.jsdelivr.net/npm/driver.js@1.0.1/dist/driver.js.iife.js"></script>
+
     <script>
   if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => {
@@ -1192,6 +1195,7 @@
         import { getStorage, ref, uploadString, getDownloadURL, deleteObject } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-storage.js";
         // Procure onde começam os imports e adicione este:
         import { getMessaging, getToken, onMessage } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-messaging.js";
+     
         
         const CONFIG = { 
             apiKey: "AIzaSyAdwsGBTApwOwqr37qCv72gdPRbipsZG0Q", 
@@ -1964,16 +1968,12 @@ async function requestNotificationPermission() {
 
         // --- INIT DATA & AUTH PERSISTENCE ---
 
-// Força o Firebase a salvar a sessão no "disco" do telemóvel
 setPersistence(auth, browserLocalPersistence)
     .then(() => {
-        // Agora o onAuthStateChanged fica protegido pela persistência
         return onAuthStateChanged(auth, async (user) => {
-            
             const authScreen = document.getElementById('auth-screen');
             
             if(user) {
-                // Se estiver logado, garante que a tela de login suma imediatamente
                 if(authScreen) authScreen.classList.add('hidden');
                 document.getElementById('userEmailDisplay').textContent = user.email;
                 
@@ -1994,16 +1994,34 @@ setPersistence(auth, browserLocalPersistence)
                         initAnalyticsInsights();
                         initOrderListener(currentStoreId);
                         loadMagicCategoriesFeedback();
-                        // Abre nos pedidos por padrão
-                        changeTab('orders');       
+                        changeTab('orders');   
+
+                        // --- Lógica do Tutorial ---
+                        const tutorialFeito = localStorage.getItem('tutorial_concluido_' + user.uid);
+
+                        if (!tutorialFeito) {
+                            setTimeout(() => {
+                                if (window.innerWidth < 768) {
+                                    const sidebar = document.getElementById('mobileSidebar');
+                                    if (sidebar && sidebar.classList.contains('sidebar-hidden')) {
+                                        window.toggleMobileSidebar();
+                                    }
+                                }
+                                
+                                if (typeof window.startTutorial === 'function') {
+                                    window.startTutorial();
+                                    localStorage.setItem('tutorial_concluido_' + user.uid, 'true');
+                                }
+                            }, 3000);
+                        }
+
                         setTimeout(requestNotificationPermission, 5000);
-                    }
-                } catch (e) {
+                    } // <-- FECHA o if (currentStoreId)
+                } catch (e) { // <-- Agora o catch funciona porque o try foi fechado corretamente
                     console.error("Erro ao carregar loja:", e);
                 }
 
             } else { 
-                // Se não houver rastro de login, mostra a tela de acesso
                 if(authScreen) authScreen.classList.remove('hidden'); 
                 lucide.createIcons(); 
             }
@@ -2012,6 +2030,7 @@ setPersistence(auth, browserLocalPersistence)
     .catch((error) => {
         console.error("Erro ao configurar persistência:", error);
     });
+
 
 // --- LISTENER DE PEDIDOS (VERSÃO 5 CARACTERES) ---
 
@@ -4695,6 +4714,93 @@ window.calculateSalesInsights = () => {
     }
 
     if (window.lucide) lucide.createIcons();
+};
+
+     window.startTutorial = () => {
+    const driver = window.driver.js.driver;
+
+    const driverObj = driver({
+        showProgress: true,
+        nextBtnText: 'Próximo',
+        prevBtnText: 'Anterior',
+        doneBtnText: 'Finalizar Guia',
+        steps: [
+            { 
+                element: '#nav-orders', 
+                popover: { 
+                    title: '📦 Gestão de Pedidos', 
+                    description: 'Esta é a sua central de controle. Todos os pedidos que chegarem pelo WhatsApp aparecerão aqui para você confirmar.', 
+                    side: "right", align: 'start' 
+                } 
+            },
+            { 
+                element: '#nav-dashboard', 
+                popover: { 
+                    title: '📊 Desempenho (Analytics)', 
+                    description: 'Acompanhe as estatísticas de visitas, produtos mais vistos e termos que os clientes estão a pesquisar na sua loja.', 
+                    side: "right", align: 'start' 
+                } 
+            },
+            { 
+                element: '#nav-banners', 
+                popover: { 
+                    title: '🖼️ Banners de Destaque', 
+                    description: 'Crie um visual profissional! Aqui você configura os banners rotativos do topo da sua vitrine.', 
+                    side: "right", align: 'start' 
+                } 
+            },
+            { 
+                element: '#nav-products', 
+                popover: { 
+                    title: '🏷️ Catálogo de Produtos', 
+                    description: 'Adicione fotos, preços e controle o estoque das suas variações (cores e tamanhos).', 
+                    side: "right", align: 'start' 
+                } 
+            },
+            { 
+                element: '#nav-categories', 
+                popover: { 
+                    title: '📂 Departamentos e Categorias', 
+                    description: 'Organize a sua loja. Aqui você também ativa as "Categorias Mágicas" que se organizam sozinhas por novidades ou mais vistos.', 
+                    side: "right", align: 'start' 
+                } 
+            },
+            { 
+                element: '#nav-finance', 
+                popover: { 
+                    title: '💰 Financeiro Pro', 
+                    description: 'Veja o seu faturamento real, lucro por unidade e o valor total que você tem investido em stock.', 
+                    side: "right", align: 'start' 
+                } 
+            },
+            { 
+                element: '#nav-config', 
+                popover: { 
+                    title: '⚙️ Configurações e PIX', 
+                    description: 'Defina a identidade visual da loja, taxas de entrega e, o mais importante: cadastre o seu PIX para receber pagamentos.', 
+                    side: "right", align: 'start' 
+                } 
+            },
+            { 
+                element: '#fabAddOrder', 
+                popover: { 
+                    title: '➕ Venda de Balcão', 
+                    description: 'Vendeu fisicamente na sua loja? Use este botão para registrar a venda manualmente e dar baixa automática no stock.', 
+                    side: "left", align: 'start' 
+                } 
+            },
+            { 
+                element: '#storeMenuBtn', 
+                popover: { 
+                    title: '🚀 Sua Vitrine Online', 
+                    description: 'Este é o seu link! Copie e coloque na sua Bio do Instagram ou envie para os seus clientes agora mesmo.', 
+                    side: "bottom", align: 'end' 
+                } 
+            }
+        ]
+    });
+
+    driverObj.drive();
 };
 
 
