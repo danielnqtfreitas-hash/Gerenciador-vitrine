@@ -1234,86 +1234,93 @@ let isFirstLoad = true;
         let variationsMatrix = [];
 
 
-// --- 1. CONFIGURAÇÃO DE ÁUDIO (DESTRAVAMENTO) ---
-// Isso garante que o navegador permita o som de notificação
-document.addEventListener('click', () => {
-    const audio = document.getElementById('notifSound');
-    if (audio) {
-        audio.play().then(() => { 
-            audio.pause(); 
-            audio.currentTime = 0; 
-        }).catch(() => {});
-    }
-}, { once: true });
+// --- 1. CONFIGURAÇÃO DE ÁUDIO E NOTIFICAÇÕES ---
+    document.addEventListener('click', () => {
+        const audio = document.getElementById('notifSound');
+        if (audio) {
+            audio.play().then(() => { audio.pause(); audio.currentTime = 0; }).catch(() => {});
+        }
+    }, { once: true });
 
-// --- 2. MONITOR DE ESTADO (O PORTEIRO) ---
-// Roda automaticamente ao abrir o site
-onAuthStateChanged(auth, async (user) => {
-    const authScreen = document.getElementById('auth-screen');
-    // Ajuste o ID abaixo para o ID real do seu container principal (ex: 'app' ou 'main-content')
-    const mainContent = document.getElementById('content-area')?.parentElement; 
+    onMessage(messaging, (payload) => {
+        const audio = document.getElementById('notifSound');
+        if(audio) audio.play().catch(() => {});
+        showToast(`🔔 ${payload.notification.title}`);
+    });
 
-    if (user) {
-        console.log("Sessão ativa recuperada:", user.email);
-        document.getElementById('userEmailDisplay').textContent = user.email;
-        
-        // Esconde login e mostra o painel
-        if (authScreen) authScreen.classList.add('hidden');
-        if (mainContent) mainContent.classList.remove('hidden');
+    // --- 2. PORTEIRO DE LOGIN (SISTEMA DE PERSISTÊNCIA CORRIGIDO) ---
+    onAuthStateChanged(auth, async (user) => {
+        const authScreen = document.getElementById('auth-screen');
+        const mainContent = document.querySelector('main'); 
+
+        if (user) {
+            if (authScreen) authScreen.classList.add('hidden');
+            if (mainContent) mainContent.classList.remove('hidden');
+            document.getElementById('userEmailDisplay').textContent = user.email;
+            
+            try {
+                await buscarIdentidadeLoja(user);
+                if (currentStoreId) {
+                    initStoreData(); 
+                    initAnalyticsChart();
+                    initAnalyticsInsights();
+                    initOrderListener(currentStoreId);
+                    changeTab('orders');   
+                    
+                    // Verificação de Tutorial
+                    const tutorialFeito = localStorage.getItem('tutorial_concluido_' + user.uid);
+                    if (!tutorialFeito) {
+                        setTimeout(() => { if (typeof window.startTutorial === 'function') window.startTutorial(); localStorage.setItem('tutorial_concluido_' + user.uid, 'true'); }, 3000);
+                    }
+                }
+            } catch (e) { console.error("Erro ao inicializar loja:", e); }
+        } else {
+            if (authScreen) authScreen.classList.remove('hidden');
+            if (mainContent) mainContent.classList.add('hidden');
+            lucide.createIcons();
+        }
+    });
+
+    // --- 3. FUNÇÕES DE LOGIN / LOGOUT ---
+    window.handleLogin = async (e) => {
+        e.preventDefault();
+        const email = document.getElementById('loginEmail').value;
+        const pass = document.getElementById('loginPass').value;
+        const rememberMe = document.getElementById('rememberMe').checked;
+        const btn = document.getElementById('btnLogin');
+        const errorEl = document.getElementById('loginError');
+
+        btn.disabled = true; btn.innerHTML = `Validando...`;
+        errorEl.classList.add('hidden');
 
         try {
-            await buscarIdentidadeLoja(user);
-            initStoreData(); 
-            initAnalyticsChart();
-            initOrderListener(currentStoreId); // Inicia radar de pedidos
-            await CarregarDadosPainel(); // Carrega o restante
-        } catch (e) {
-            console.error("Erro ao vincular loja:", e);
+            const persistence = rememberMe ? browserLocalPersistence : browserSessionPersistence;
+            await setPersistence(auth, persistence);
+            await signInWithEmailAndPassword(auth, email, pass);
+        } catch(error) { 
+            btn.disabled = false; btn.innerHTML = `Aceder ao Painel <i data-lucide="arrow-right" class="w-4 h-4"></i>`;
+            errorEl.textContent = "E-mail ou senha inválidos.";
+            errorEl.classList.remove('hidden');
+            lucide.createIcons();
         }
-    } else {
-        // Sem usuário: mostra login e esconde o painel
-        if (authScreen) authScreen.classList.remove('hidden');
-        if (mainContent) mainContent.classList.add('hidden');
-        lucide.createIcons();
+    };
+
+    window.handleLogout = async () => {
+        if(confirm("Deseja sair da sua conta?")) {
+            await signOut(auth);
+            window.location.reload(); 
+        }
+    };
+
+    // --- 4. GESTÃO DE DADOS DA LOJA ---
+    async function buscarIdentidadeLoja(user) {
+        let dirDoc = await getDoc(doc(db, "admin_directory", user.uid));
+        if(!dirDoc.exists()){
+            const snap = await getDocs(query(collection(db, "stores_registry"), where("ownerEmail", "==", user.email)));
+            if(snap.empty) return;
+            currentStoreId = snap.docs[0].data().slug;
+        } else { currentStoreId = dirDoc.data().storeId; }
     }
-});
-
-// --- 3. FUNÇÃO DE LOGIN (COM ESCOLHA DE PERSISTÊNCIA) ---
-window.handleLogin = async (e) => {
-    e.preventDefault();
-    const email = document.getElementById('loginEmail').value;
-    const pass = document.getElementById('loginPass').value;
-    const rememberMe = document.getElementById('rememberMe').checked;
-    const btn = document.getElementById('btnLogin');
-    const errorEl = document.getElementById('loginError');
-
-    btn.disabled = true; 
-    btn.innerHTML = `<span class="animate-spin inline-block w-4 h-4 border-2 border-white/20 border-t-white rounded-full mr-2"></span> Autenticando...`;
-
-    try {
-        // Define se salva no disco (Local) ou só na aba (Session) baseado no checkbox
-        const persistence = rememberMe ? browserLocalPersistence : browserSessionPersistence;
-        
-        await setPersistence(auth, persistence);
-        await signInWithEmailAndPassword(auth, email, pass);
-        // O onAuthStateChanged acima cuidará do redirecionamento
-        
-    } catch(error) { 
-        btn.disabled = false; 
-        btn.innerHTML = `Aceder ao Painel <i data-lucide="arrow-right" class="w-4 h-4"></i>`;
-        errorEl.textContent = "E-mail ou senha inválidos.";
-        errorEl.classList.remove('hidden');
-        lucide.createIcons();
-    }
-};
-
-// --- 4. FUNÇÃO DE LOGOUT ---
-window.handleLogout = async () => {
-    if(confirm("Deseja encerrar a sessão? Os dados serão limpos deste dispositivo.")) {
-        await signOut(auth);
-        window.location.reload(); 
-    }
-};
 
 // --- 5. FUNÇÕES AUXILIARES ---
 async function buscarIdentidadeLoja(user) {
