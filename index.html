@@ -2054,9 +2054,9 @@ window.initOrderListener = (storeId) => {
     });
 };
 
+      
 
-
-      function initStoreData() {
+function initStoreData() {
     // 1. Configuração da URL da Vitrine e Menu
     const url = `https://danielnqtfreitas-hash.github.io/Vitrine/?id=${currentStoreId}`;
     const urlDisplay = document.getElementById('urlDisplay');
@@ -2102,39 +2102,29 @@ window.initOrderListener = (storeId) => {
             if (lP) { lP.src = data.logoUrl; lP.classList.remove('hidden'); }
         }
 
-        // ============================================================
-        // >>> INÍCIO DO NOVO BLOCO: STATUS DO PLANO (BETA VS PAGO) <<<
-        // ============================================================
+        // --- STATUS DO PLANO (BETA VS PAGO) ---
         const planBadge = document.getElementById('currentPlanBadge');
         const infoContainer = document.getElementById('planInfoContainer');
         const statusText = document.getElementById('planStatusText');
 
         if (planBadge && statusText) {
-            // Verifica se o lojista é um dos seus 20 convidados
             const isBetaConvidado = data.planId === 'beta_tester' || data.planId === 'founder';
-
             if (isBetaConvidado) {
-                // Visual Azul para os Parceiros Beta
                 planBadge.textContent = "PARCEIRO BETA";
                 planBadge.className = "text-[10px] font-bold bg-blue-50 text-blue-600 px-2 py-0.5 rounded border border-blue-100 uppercase";
                 statusText.innerHTML = `<i data-lucide="award" class="inline w-3 h-3 mr-1"></i> Acesso Vitalício (Beta)`;
                 if(infoContainer) infoContainer.className = "mt-1.5 flex items-center gap-2 px-3 py-1 bg-blue-50/50 rounded-lg border border-blue-100 text-blue-700";
             } else {
-                // Visual para os Novos Pagantes
                 planBadge.textContent = (data.planId || "PRO").toUpperCase();
                 planBadge.className = "text-[10px] font-bold bg-green-50 text-green-600 px-2 py-0.5 rounded border border-green-100 uppercase";
-
                 if (data.expiryDate) {
                     const hoje = new Date();
                     const dataVenc = data.expiryDate.toDate ? data.expiryDate.toDate() : new Date(data.expiryDate);
                     const diffDays = Math.ceil((dataVenc - hoje) / (1000 * 60 * 60 * 24));
-
                     if (diffDays > 0) {
                         statusText.innerHTML = `Faltam <span class="font-black">${diffDays} dias</span> para a renovação`;
                         if(infoContainer) infoContainer.className = "mt-1.5 flex items-center gap-2 px-3 py-1 bg-slate-100 rounded-lg border border-slate-200 text-slate-600";
-                        if (diffDays <= 5) {
-                            if(infoContainer) infoContainer.className = "mt-1.5 flex items-center gap-2 px-3 py-1 bg-amber-50 rounded-lg border border-amber-200 text-amber-700 animate-pulse";
-                        }
+                        if (diffDays <= 5) if(infoContainer) infoContainer.className = "mt-1.5 flex items-center gap-2 px-3 py-1 bg-amber-50 rounded-lg border border-amber-200 text-amber-700 animate-pulse";
                     } else {
                         statusText.innerHTML = `Assinatura expirada`;
                         if(infoContainer) infoContainer.className = "mt-1.5 flex items-center gap-2 px-3 py-1 bg-red-50 rounded-lg border border-red-200 text-red-600";
@@ -2144,7 +2134,7 @@ window.initOrderListener = (storeId) => {
             if (typeof lucide !== 'undefined') lucide.createIcons();
         }
 
-        // 5. Preenchimento dos campos de Configuração (Inputs)
+        // 5. Preenchimento dos campos de Configuração
         const fields = {
             'confStoreName': data.storeName || '',
             'confWhatsapp': data.whatsappNumber || '',
@@ -2160,15 +2150,11 @@ window.initOrderListener = (storeId) => {
             if (el) el.value = fields[id];
         });
 
-        // 6. Atualização de UI de Limites e Categorias
         updateUIByPlan();
         window.loadMagicCategoriesFeedback(data); 
-
     });
-}
 
-
-    // --- LISTENER B: CATEGORIAS ---
+    // --- LISTENER B: CATEGORIAS (AGORA DENTRO DA FUNÇÃO) ---
     onSnapshot(collection(db, `stores/${currentStoreId}/categories`), (s) => {
         allCategories = s.docs.map(doc => ({ id: doc.id, ...doc.data() }));
         const dashCats = document.getElementById('dash-total-cats');
@@ -2201,7 +2187,7 @@ window.initOrderListener = (storeId) => {
             if (dashVisits) dashVisits.textContent = d.data().totalVisits || 0;
         }
     });
-      }   
+}
 
         function updateUIByPlan() {
     // Define os limites com base no que veio do Super Admin
