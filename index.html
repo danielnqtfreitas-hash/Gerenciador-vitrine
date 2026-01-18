@@ -2078,20 +2078,26 @@ window.initOrderListener = (storeId) => {
 function initStoreData() {
     // --- LISTENER A: IDENTIDADE, LIMITES E STATUS ---
     onSnapshot(doc(db, `stores/${currentStoreId}/config/store`), async (d) => {
-        if (!d.exists()) return;
+    if (!d.exists()) return;
 
-        const data = d.data();
-        
-        // 1. Configuração do Link Amigável (vitrineonline.app.br)
-        window.currentStoreSlug = data.slug || currentStoreId;
-        
-const urlDaVitrine = `https://loja.vitrineonline.app.br/${storeSlug}`;
-const urlDisplay = document.getElementById('urlDisplay');
-if (urlDisplay) urlDisplay.textContent = urlProfissional;
+    const data = d.data();
+    
+    // 1. Definição correta do Slug e da URL Profissional
+    const storeSlug = data.slug || currentStoreId; // Garante que temos um identificador
+    window.currentStoreSlug = storeSlug;
+    
+    // Monta a URL sem o "loja." extra após a barra
+    const urlProfissional = `https://loja.vitrineonline.app.br/${storeSlug}`;
+    
+    const urlDisplay = document.getElementById('urlDisplay');
+    if (urlDisplay) urlDisplay.textContent = urlProfissional;
 
-        
-        const storeBtn = document.getElementById('storeMenuBtn');
-        if (storeBtn) storeBtn.classList.remove('opacity-50', 'pointer-events-none');
+    // AQUI ESTÁ O SEGREDO: Remove o bloqueio do botão
+    const storeBtn = document.getElementById('storeMenuBtn');
+    if (storeBtn) {
+        storeBtn.classList.remove('opacity-50', 'pointer-events-none');
+        storeBtn.classList.add('opacity-100', 'pointer-events-auto');
+    }
 
         // 2. Trava de Suspensão
         const suspendedScreen = document.getElementById('suspended-screen');
