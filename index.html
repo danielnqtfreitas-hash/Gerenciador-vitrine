@@ -3088,8 +3088,8 @@ window.handleBannerSubmit = async (e) => {
         };
 
         window.toggleStoreMenu = (e) => { e.stopPropagation(); document.getElementById('storeDropdown').classList.toggle('hidden'); };
-        window.openStoreLink = () => {
-    // Busca da variável global ou do texto que já aparece no visor do dropdown
+      window.openStoreLink = () => {
+    // Busca o slug (nome da loja) que aparece no visor do dropdown
     const slugDaTela = document.getElementById('urlDisplay')?.textContent.replace('vitrineonline.app.br/', '').trim();
     const storeSlug = (slugDaTela && slugDaTela !== '...') ? slugDaTela : (window.currentStoreSlug || currentStoreId);
     
@@ -3098,11 +3098,12 @@ window.handleBannerSubmit = async (e) => {
         return;
     }
 
-    const novaUrl = `https://vitrineonline.app.br/${storeSlug}`;
+    // AQUI ESTÁ A MUDANÇA: Adicionamos o "loja." antes do domínio
+    const novaUrl = `https://loja.vitrineonline.app.br/${storeSlug}`;
     window.open(novaUrl, '_blank');
 };
 
-window.copyStoreLink = () => {
+      window.copyStoreLink = () => {
     const slugDaTela = document.getElementById('urlDisplay')?.textContent.replace('vitrineonline.app.br/', '').trim();
     const storeSlug = (slugDaTela && slugDaTela !== '...') ? slugDaTela : (window.currentStoreSlug || currentStoreId);
     
@@ -3111,18 +3112,24 @@ window.copyStoreLink = () => {
         return;
     }
 
-    const linkParaCopiar = `https://vitrineonline.app.br/${storeSlug}`;
+    // AQUI ESTÁ A MUDANÇA: Adicionamos o "loja." no link copiado
+    const linkParaCopiar = `https://loja.vitrineonline.app.br/${storeSlug}`;
     
-    // Método compatível com Redmi e outros celulares
+    // Método de cópia compatível com Redmi/Android
     if (navigator.clipboard && window.isSecureContext) {
         navigator.clipboard.writeText(linkParaCopiar).then(() => {
-            showToast("✅ Link profissional copiado!");
+            showToast("✅ Link da Vitrine copiado!");
         }).catch(() => {
             executaPlanoBCopia(linkParaCopiar);
         });
     } else {
         executaPlanoBCopia(linkParaCopiar);
     }
+};
+
+
+    const novaUrl = `https://vitrineonline.app.br/${storeSlug}`;
+    window.open(novaUrl, '_blank');
 };
 
 // Função auxiliar infalível para copiar no Android/Redmi
