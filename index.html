@@ -2085,7 +2085,7 @@ function initStoreData() {
         // 1. Configuração do Link Amigável (vitrineonline.app.br)
         window.currentStoreSlug = data.slug || currentStoreId;
         
-const urlProfissional = `loja.vitrineonline.app.br/${window.currentStoreSlug}`;
+const urlDaVitrine = `https://loja.vitrineonline.app.br/${storeSlug}`;
 const urlDisplay = document.getElementById('urlDisplay');
 if (urlDisplay) urlDisplay.textContent = urlProfissional;
 
@@ -3091,43 +3091,38 @@ window.handleBannerSubmit = async (e) => {
 
         window.toggleStoreMenu = (e) => { e.stopPropagation(); document.getElementById('storeDropdown').classList.toggle('hidden'); };
       window.openStoreLink = () => {
-    // Busca o slug (nome da loja) que aparece no visor do dropdown
-    const slugDaTela = document.getElementById('urlDisplay')?.textContent.replace('vitrineonline.app.br/', '').trim();
+    // Pega o slug puro (ex: sua-loja-teste)
+    const slugDaTela = document.getElementById('urlDisplay')?.textContent.split('/').pop().trim();
     const storeSlug = (slugDaTela && slugDaTela !== '...') ? slugDaTela : (window.currentStoreSlug || currentStoreId);
     
     if (!storeSlug) {
-        showToast("⚠️ Aguarde a sincronização da loja...");
+        showToast("⚠️ Aguarde a sincronização...");
         return;
     }
 
-    // AQUI ESTÁ A MUDANÇA: Adicionamos o "loja." antes do domínio
+    // Link limpo, sem o "loja." depois da barra
     const novaUrl = `https://loja.vitrineonline.app.br/${storeSlug}`;
     window.open(novaUrl, '_blank');
 };
 
-      window.copyStoreLink = () => {
-    const slugDaTela = document.getElementById('urlDisplay')?.textContent.replace('vitrineonline.app.br/', '').trim();
+window.copyStoreLink = () => {
+    const slugDaTela = document.getElementById('urlDisplay')?.textContent.split('/').pop().trim();
     const storeSlug = (slugDaTela && slugDaTela !== '...') ? slugDaTela : (window.currentStoreSlug || currentStoreId);
     
     if (!storeSlug) {
-        showToast("Erro: Identificador da loja não encontrado.");
+        showToast("Erro: Identificador não encontrado.");
         return;
     }
 
-    // AQUI ESTÁ A MUDANÇA: Adicionamos o "loja." no link copiado
+    // Link limpo para o lojista colar no Instagram
     const linkParaCopiar = `https://loja.vitrineonline.app.br/${storeSlug}`;
     
-    // Método de cópia compatível com Redmi/Android
-    if (navigator.clipboard && window.isSecureContext) {
-        navigator.clipboard.writeText(linkParaCopiar).then(() => {
-            showToast("✅ Link da Vitrine copiado!");
-        }).catch(() => {
-            executaPlanoBCopia(linkParaCopiar);
-        });
-    } else {
-        executaPlanoBCopia(linkParaCopiar);
-    }
+    // Lógica de cópia...
+    navigator.clipboard.writeText(linkParaCopiar).then(() => {
+        showToast("✅ Link da Vitrine copiado!");
+    });
 };
+
 
 // Função auxiliar infalível para copiar no Android/Redmi
 function executaPlanoBCopia(texto) {
