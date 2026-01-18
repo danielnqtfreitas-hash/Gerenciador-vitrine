@@ -2084,9 +2084,11 @@ function initStoreData() {
         
         // 1. Configuração do Link Amigável (vitrineonline.app.br)
         window.currentStoreSlug = data.slug || currentStoreId;
-        const urlProfissional = `vitrineonline.app.br/${window.currentStoreSlug}`;
-        const urlDisplay = document.getElementById('urlDisplay');
-        if (urlDisplay) urlDisplay.textContent = urlProfissional;
+        
+const urlProfissional = `loja.vitrineonline.app.br/${window.currentStoreSlug}`;
+const urlDisplay = document.getElementById('urlDisplay');
+if (urlDisplay) urlDisplay.textContent = urlProfissional;
+
         
         const storeBtn = document.getElementById('storeMenuBtn');
         if (storeBtn) storeBtn.classList.remove('opacity-50', 'pointer-events-none');
