@@ -2076,21 +2076,24 @@ window.initOrderListener = (storeId) => {
       
 
 function initStoreData() {
-    // 1. Configuração da URL da Vitrine e Menu
-    const url = `https://danielnqtfreitas-hash.github.io/Vitrine/?id=${currentStoreId}`;
-    const urlDisplay = document.getElementById('urlDisplay');
-    if (urlDisplay) urlDisplay.textContent = url;
-    
-    const storeBtn = document.getElementById('storeMenuBtn');
-    if (storeBtn) storeBtn.classList.remove('opacity-50', 'pointer-events-none');
-
     // --- LISTENER A: IDENTIDADE, LIMITES E STATUS ---
     onSnapshot(doc(db, `stores/${currentStoreId}/config/store`), async (d) => {
         if (!d.exists()) return;
 
         const data = d.data();
+        
+        // NOVIDADE: Captura o slug (nome da loja) ou usa o ID como reserva
+        window.currentStoreSlug = data.slug || currentStoreId;
 
-        // 2. Trava de Suspensão
+        // 1. Configuração da URL Profissional (vitrineonline.app.br)
+        const urlProfissional = `vitrineonline.app.br/${window.currentStoreSlug}`;
+        const urlDisplay = document.getElementById('urlDisplay');
+        if (urlDisplay) urlDisplay.textContent = urlProfissional;
+        
+        const storeBtn = document.getElementById('storeMenuBtn');
+        if (storeBtn) storeBtn.classList.remove('opacity-50', 'pointer-events-none');
+
+        // 2. Trava de Suspensão (Mantém sua lógica original)
         const suspendedScreen = document.getElementById('suspended-screen');
         if (data.subscriptionStatus === 'suspended') {
             if (suspendedScreen) suspendedScreen.classList.remove('hidden');
@@ -2098,6 +2101,10 @@ function initStoreData() {
         } else {
             if (suspendedScreen) suspendedScreen.classList.add('hidden');
         }
+        
+        // ... restante do seu código (limites, cores, etc)
+    });
+}
 
         
 // 3. Sincronização de Limites (AQUI ESTAVA O ERRO)
