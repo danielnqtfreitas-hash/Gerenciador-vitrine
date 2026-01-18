@@ -2100,7 +2100,7 @@ function initStoreData() {
             if (suspendedScreen) suspendedScreen.classList.add('hidden');
         }
 
-        // 3. Sincronização de Limites (Movido para dentro do Listener)
+        // 3. Sincronização de Limites
         storeConfig = {
             ...data,
             maxProducts: parseInt(data.maxProducts || 0),
@@ -2110,9 +2110,8 @@ function initStoreData() {
             hasMagicCategories: data.hasMagicCategories === true
         };
 
-        // Atualiza a interface baseada nos novos limites
         updatePremiumUI(); 
-        updateQuotas(); // Garante que o botão "Novo Produto" bloqueie/libere na hora
+        updateQuotas(); // Libera/Bloqueia botões de novo produto
         
         if (typeof window.loadMagicCategoriesFeedback === "function") {
             window.loadMagicCategoriesFeedback(data);
@@ -2131,8 +2130,6 @@ function initStoreData() {
             if (lD) { lD.src = data.logoUrl; lD.classList.remove('hidden'); }
             if (lP) { lP.src = data.logoUrl; lP.classList.remove('hidden'); }
         }
-    }); // <--- O FECHAMENTO DO ONSNAPSHOT DEVE SER AQUI
-}
 
         // --- STATUS DO PLANO (BETA VS PAGO) ---
         const planBadge = document.getElementById('currentPlanBadge');
@@ -2156,7 +2153,6 @@ function initStoreData() {
                     if (diffDays > 0) {
                         statusText.innerHTML = `Faltam <span class="font-black">${diffDays} dias</span> para a renovação`;
                         if(infoContainer) infoContainer.className = "mt-1.5 flex items-center gap-2 px-3 py-1 bg-slate-100 rounded-lg border border-slate-200 text-slate-600";
-                        if (diffDays <= 5) if(infoContainer) infoContainer.className = "mt-1.5 flex items-center gap-2 px-3 py-1 bg-amber-50 rounded-lg border border-amber-200 text-amber-700 animate-pulse";
                     } else {
                         statusText.innerHTML = `Assinatura expirada`;
                         if(infoContainer) infoContainer.className = "mt-1.5 flex items-center gap-2 px-3 py-1 bg-red-50 rounded-lg border border-red-200 text-red-600";
@@ -2166,7 +2162,7 @@ function initStoreData() {
             if (typeof lucide !== 'undefined') lucide.createIcons();
         }
 
-        // 5. Preenchimento dos campos de Configuração
+        // 5. Preenchimento dos campos de Configuração (PIX e Dados Gerais)
         const fields = {
             'confStoreName': data.storeName || '',
             'confWhatsapp': data.whatsappNumber || '',
@@ -2182,10 +2178,11 @@ function initStoreData() {
             if (el) el.value = fields[id];
         });
 
-        updateUIByPlan();
-        window.loadMagicCategoriesFeedback(data); 
+        updateUIByPlan(); // Atualiza badges do dashboard
+        window.loadMagicCategoriesFeedback(data)
     });
 
+        
     // --- LISTENER B: CATEGORIAS (AGORA DENTRO DA FUNÇÃO) ---
     onSnapshot(collection(db, `stores/${currentStoreId}/categories`), (s) => {
         allCategories = s.docs.map(doc => ({ id: doc.id, ...doc.data() }));
