@@ -1,7 +1,17 @@
 {
   "hosting": {
-    "site": "vitrine-pro-balcao",
+    "target": "painel-site",
     "public": ".",
-    "rewrites": [ { "source": "**", "destination": "/index.html" } ]
+    "ignore": [
+      "firebase.json",
+      "**/.*",
+      "**/node_modules/**"
+    ],
+    "rewrites": [
+      {
+        "source": "**",
+        "destination": "/index.html"
+      }
+    ]
   }
 }
