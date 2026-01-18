@@ -2082,10 +2082,8 @@ function initStoreData() {
 
         const data = d.data();
         
-        // NOVIDADE: Captura o slug (nome da loja) ou usa o ID como reserva
+        // 1. Configuração do Link Amigável (vitrineonline.app.br)
         window.currentStoreSlug = data.slug || currentStoreId;
-
-        // 1. Configuração da URL Profissional (vitrineonline.app.br)
         const urlProfissional = `vitrineonline.app.br/${window.currentStoreSlug}`;
         const urlDisplay = document.getElementById('urlDisplay');
         if (urlDisplay) urlDisplay.textContent = urlProfissional;
@@ -2093,7 +2091,7 @@ function initStoreData() {
         const storeBtn = document.getElementById('storeMenuBtn');
         if (storeBtn) storeBtn.classList.remove('opacity-50', 'pointer-events-none');
 
-        // 2. Trava de Suspensão (Mantém sua lógica original)
+        // 2. Trava de Suspensão
         const suspendedScreen = document.getElementById('suspended-screen');
         if (data.subscriptionStatus === 'suspended') {
             if (suspendedScreen) suspendedScreen.classList.remove('hidden');
@@ -2101,27 +2099,24 @@ function initStoreData() {
         } else {
             if (suspendedScreen) suspendedScreen.classList.add('hidden');
         }
-        
-        // ... restante do seu código (limites, cores, etc)
-    });
-}
 
-        
-// 3. Sincronização de Limites (AQUI ESTAVA O ERRO)
-storeConfig = {
-    ...data,
-    maxProducts: parseInt(data.maxProducts || 0),
-    maxBanners: parseInt(data.maxBanners || 0),
-    hasCarousel: data.hasCarousel === true || data.hasCarousel === "true",
-    // GARANTA que estas chaves abaixo sejam mapeadas explicitamente:
-    hasFinance: data.hasFinance === true,
-    hasMagicCategories: data.hasMagicCategories === true
-};
+        // 3. Sincronização de Limites (Movido para dentro do Listener)
+        storeConfig = {
+            ...data,
+            maxProducts: parseInt(data.maxProducts || 0),
+            maxBanners: parseInt(data.maxBanners || 0),
+            hasCarousel: data.hasCarousel === true || data.hasCarousel === "true",
+            hasFinance: data.hasFinance === true,
+            hasMagicCategories: data.hasMagicCategories === true
+        };
 
-updatePremiumUI(); 
-if (typeof window.loadMagicCategoriesFeedback === "function") {
-    window.loadMagicCategoriesFeedback(data);
-}
+        // Atualiza a interface baseada nos novos limites
+        updatePremiumUI(); 
+        updateQuotas(); // Garante que o botão "Novo Produto" bloqueie/libere na hora
+        
+        if (typeof window.loadMagicCategoriesFeedback === "function") {
+            window.loadMagicCategoriesFeedback(data);
+        }
 
         // 4. Bairros e Identidade (Nome/Logo)
         deliveryAreas = (data.deliveryAreas && Array.isArray(data.deliveryAreas)) ? data.deliveryAreas : [];
@@ -2136,6 +2131,8 @@ if (typeof window.loadMagicCategoriesFeedback === "function") {
             if (lD) { lD.src = data.logoUrl; lD.classList.remove('hidden'); }
             if (lP) { lP.src = data.logoUrl; lP.classList.remove('hidden'); }
         }
+    }); // <--- O FECHAMENTO DO ONSNAPSHOT DEVE SER AQUI
+}
 
         // --- STATUS DO PLANO (BETA VS PAGO) ---
         const planBadge = document.getElementById('currentPlanBadge');
