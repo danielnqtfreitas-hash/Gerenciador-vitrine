@@ -14,5 +14,5 @@ jobs:
           firebaseServiceAccount: '${{ secrets.FIREBASE_SERVICE_ACCOUNT_MEUESTOQUE_1BADC }}'
           channelId: live
           projectId: meuestoque-1badc
-          target: painel-site
+       
 
