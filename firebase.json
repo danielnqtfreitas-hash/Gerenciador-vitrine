@@ -1,0 +1,7 @@
+{
+  "hosting": {
+    "site": "vitrine-pro-balcao",
+    "public": ".",
+    "rewrites": [ { "source": "**", "destination": "/index.html" } ]
+  }
+}
