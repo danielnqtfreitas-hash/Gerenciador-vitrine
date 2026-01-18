@@ -24,20 +24,32 @@
     <script>
   if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => {
-      // Registra o sw.js
-      navigator.serviceWorker.register('sw.js')
+      // Usamos /sw.js (com a barra) para garantir que ele busque na raiz do domínio
+      // O scope: '/' reforça que o PWA vale para todo o painel
+      navigator.serviceWorker.register('/sw.js', { scope: '/' })
         .then(reg => {
-          console.log('SW e PWA ativos!', reg);
+          console.log('SW e PWA ativos no escopo:', reg.scope);
           
-          // Conecta o Firebase Messaging ao Service Worker registrado
-          // Isso é o que garante que as notificações cheguem
-          const messaging = firebase.messaging(); 
+          // Inicializa o Messaging do Firebase
+          const messaging = firebase.messaging();
+          
+          // Vincula o Firebase ao Service Worker que acabamos de registrar
           messaging.useServiceWorker(reg);
+
+          // Opcional: Solicita permissão para notificações assim que o SW registra
+          Notification.requestPermission().then(permission => {
+            if (permission === 'granted') {
+              console.log('Permissão de notificação concedida!');
+            }
+          });
         })
-        .catch(err => console.log('Erro ao registrar SW:', err));
+        .catch(err => {
+          console.error('Erro crítico ao registrar SW:', err);
+        });
     });
   }
-    </script>
+</script>
+
     
     <script>
         tailwind.config = {
