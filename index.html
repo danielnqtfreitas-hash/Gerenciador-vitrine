@@ -3088,41 +3088,61 @@ window.handleBannerSubmit = async (e) => {
         };
 
         window.toggleStoreMenu = (e) => { e.stopPropagation(); document.getElementById('storeDropdown').classList.toggle('hidden'); };
-        window.openStoreLink = (slug) => {
-    // Busca o slug (id da loja) passado ou do campo de edição
-    const storeSlug = slug || document.getElementById('editSlug')?.value || '';
+        window.openStoreLink = () => {
+    // Busca da variável global ou do texto que já aparece no visor do dropdown
+    const slugDaTela = document.getElementById('urlDisplay')?.textContent.replace('vitrineonline.app.br/', '').trim();
+    const storeSlug = (slugDaTela && slugDaTela !== '...') ? slugDaTela : (window.currentStoreSlug || currentStoreId);
     
     if (!storeSlug) {
-        alert("Identificador da loja não encontrado.");
+        showToast("⚠️ Aguarde a sincronização da loja...");
         return;
     }
 
-    // Link limpo e profissional com o seu domínio .app.br
     const novaUrl = `https://vitrineonline.app.br/${storeSlug}`;
-    
-    // Abre a vitrine em uma nova aba no seu Redmi
     window.open(novaUrl, '_blank');
 };
 
-// Função para copiar o link profissional para a área de transferência
-window.copyStoreLink = (slug) => {
-    const storeSlug = slug || document.getElementById('editSlug')?.value || '';
+window.copyStoreLink = () => {
+    const slugDaTela = document.getElementById('urlDisplay')?.textContent.replace('vitrineonline.app.br/', '').trim();
+    const storeSlug = (slugDaTela && slugDaTela !== '...') ? slugDaTela : (window.currentStoreSlug || currentStoreId);
     
     if (!storeSlug) {
-        showToast("Erro: ID da loja não encontrado.");
+        showToast("Erro: Identificador da loja não encontrado.");
         return;
     }
 
     const linkParaCopiar = `https://vitrineonline.app.br/${storeSlug}`;
     
-    // Comando para copiar no navegador do celular
-    navigator.clipboard.writeText(linkParaCopiar).then(() => {
-        showToast("✅ Link profissional copiado!");
-    }).catch(err => {
-        console.error('Erro ao copiar: ', err);
-    });
+    // Método compatível com Redmi e outros celulares
+    if (navigator.clipboard && window.isSecureContext) {
+        navigator.clipboard.writeText(linkParaCopiar).then(() => {
+            showToast("✅ Link profissional copiado!");
+        }).catch(() => {
+            executaPlanoBCopia(linkParaCopiar);
+        });
+    } else {
+        executaPlanoBCopia(linkParaCopiar);
+    }
 };
 
+// Função auxiliar infalível para copiar no Android/Redmi
+function executaPlanoBCopia(texto) {
+    const input = document.createElement('textarea');
+    input.value = texto;
+    input.style.position = 'fixed';
+    input.style.opacity = '0';
+    document.body.appendChild(input);
+    input.focus();
+    input.select();
+    try {
+        document.execCommand('copy');
+        showToast("✅ Link copiado!");
+    } catch (err) {
+        showToast("❌ Erro ao copiar.");
+    }
+    document.body.removeChild(input);
+}
+    
         
         window.showToast = (msg) => {
             const container = document.getElementById('toast-container');
