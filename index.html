@@ -3087,8 +3087,41 @@ window.handleBannerSubmit = async (e) => {
         };
 
         window.toggleStoreMenu = (e) => { e.stopPropagation(); document.getElementById('storeDropdown').classList.toggle('hidden'); };
-        window.copyStoreLink = () => { navigator.clipboard.writeText(document.getElementById('urlDisplay').textContent); showToast("Link copiado."); };
-        window.openStoreLink = () => { window.open(document.getElementById('urlDisplay').textContent, '_blank'); };
+        window.openStoreLink = (slug) => {
+    // Busca o slug (id da loja) passado ou do campo de edição
+    const storeSlug = slug || document.getElementById('editSlug')?.value || '';
+    
+    if (!storeSlug) {
+        alert("Identificador da loja não encontrado.");
+        return;
+    }
+
+    // Link limpo e profissional com o seu domínio .app.br
+    const novaUrl = `https://vitrineonline.app.br/${storeSlug}`;
+    
+    // Abre a vitrine em uma nova aba no seu Redmi
+    window.open(novaUrl, '_blank');
+};
+
+// Função para copiar o link profissional para a área de transferência
+window.copyStoreLink = (slug) => {
+    const storeSlug = slug || document.getElementById('editSlug')?.value || '';
+    
+    if (!storeSlug) {
+        showToast("Erro: ID da loja não encontrado.");
+        return;
+    }
+
+    const linkParaCopiar = `https://vitrineonline.app.br/${storeSlug}`;
+    
+    // Comando para copiar no navegador do celular
+    navigator.clipboard.writeText(linkParaCopiar).then(() => {
+        showToast("✅ Link profissional copiado!");
+    }).catch(err => {
+        console.error('Erro ao copiar: ', err);
+    });
+};
+
         
         window.showToast = (msg) => {
             const container = document.getElementById('toast-container');
