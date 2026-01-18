@@ -1244,7 +1244,13 @@ let customEnd = null;
         let ordersCache = {}; // Guarda os pedidos para o modal de detalhes
 let isFirstLoad = true;
         let variationsMatrix = [];
-
+let cachedPublicPlans = null; 
+const PLAN_DISPLAY_NAMES = {
+    'beta_tester': 'Parceiro Beta',
+    'founder': 'Plano Fundador',
+    'pro_mensal': 'Plano Pro',
+    'gold_mensal': 'Plano Gold'
+};
 
         // Destrava o áudio no primeiro clique do lojista (necessário p/ navegadores)
 document.addEventListener('click', () => {
