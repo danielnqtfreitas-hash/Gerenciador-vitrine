@@ -4913,40 +4913,34 @@ window.calculateSalesInsights = () => {
       
 window.publicarAlteracoes = async () => {
     const btn = document.getElementById('btnPublicar');
-    if (!btn) return;
-
-    // 1. Verificar se temos o ID da loja (ajuste 'currentStoreId' para o nome da sua variável)
-    const storeId = window.currentStoreId || STORE_ID; 
     
-    if (!storeId) {
-        console.error("ID da loja não encontrado");
+    // Verificamos se o painel já carregou o ID da loja
+    if (!btn || !currentStoreId) {
+        showToast("⚠️ Aguarde o carregamento da loja...");
         return;
     }
 
     const originalContent = btn.innerHTML;
     btn.disabled = true;
+    
+    // Mostra o ícone girando (feedback visual)
     btn.innerHTML = `<i data-lucide="refresh-cw" class="w-4 h-4 animate-spin"></i>`;
+    if (window.lucide) lucide.createIcons();
 
     try {
-        // 2. Referência correta ao documento de configuração
-        const { doc, updateDoc } = await import("https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js");
-        // Importante: use a variável 'db' que você já inicializou no painel
-        const storeRef = doc(db, `stores/${storeId}/config/store`);
+        // Usamos as variáveis 'doc', 'updateDoc' e 'db' que já existem no seu script
+        const storeRef = doc(db, `stores/${currentStoreId}/config/store`);
         
         await updateDoc(storeRef, { 
             lastUpdate: Date.now() 
         });
 
-        // 3. Notificação (Certifique-se que a função showToast existe no Painel)
-        if (typeof showToast === 'function') {
-            showToast("🚀 Vitrine atualizada com sucesso!");
-        } else {
-            alert("🚀 Vitrine atualizada com sucesso!");
-        }
+        // Agora a notificação vai aparecer!
+        showToast("🚀 Vitrine atualizada com sucesso!");
 
     } catch (error) {
         console.error("Erro ao publicar:", error);
-        alert("❌ Erro ao publicar. Verifique o console.");
+        showToast("❌ Erro ao publicar alterações.");
     } finally {
         btn.disabled = false;
         btn.innerHTML = originalContent;
