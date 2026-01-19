@@ -1667,22 +1667,45 @@ function renderImagePreviews() {
 
         // --- AUTH ---
         window.handleLogin = async (e) => {
-            e.preventDefault();
-            const email = document.getElementById('loginEmail').value;
-            const pass = document.getElementById('loginPass').value;
-            const rememberMe = document.getElementById('rememberMe').checked;
-            const btn = document.getElementById('btnLogin');
-            btn.disabled = true; btn.textContent = "Validando...";
-            try {
-                const persistence = rememberMe ? browserLocalPersistence : browserSessionPersistence;
-                await setPersistence(auth, persistence);
-                await signInWithEmailAndPassword(auth, email, pass);
-            } catch(e) { 
-                btn.disabled = false; btn.textContent = "Aceder ao Painel";
-                document.getElementById('loginError').textContent = "Credenciais inválidas.";
-                document.getElementById('loginError').classList.remove('hidden');
+    e.preventDefault();
+    const email = document.getElementById('loginEmail').value;
+    const pass = document.getElementById('loginPass').value;
+    const rememberMe = document.getElementById('rememberMe').checked;
+    const btn = document.getElementById('btnLogin');
+    
+    btn.disabled = true; 
+    btn.textContent = "Validando...";
+    
+    try {
+        const persistence = rememberMe ? browserLocalPersistence : browserSessionPersistence;
+        await setPersistence(auth, persistence);
+        
+        // 1. Faz o login
+        await signInWithEmailAndPassword(auth, email, pass);
+
+        // 2. 🚀 CIRURGIA: Limpa caches de outras sessões antes de carregar a nova
+        const keys = Object.keys(localStorage);
+        keys.forEach(key => {
+            if (key.includes('cache_')) {
+                localStorage.removeItem(key);
             }
-        };
+        });
+        
+        // Reseta as variáveis de controle de carga para forçar nova leitura
+        productsLoaded = false;
+        categoriesLoaded = false;
+        bannersLoaded = false;
+
+        console.log("Login efetuado e caches antigos limpos.");
+
+    } catch(e) { 
+        btn.disabled = false; 
+        btn.textContent = "Aceder ao Painel";
+        document.getElementById('loginError').textContent = "Credenciais inválidas.";
+        document.getElementById('loginError').classList.remove('hidden');
+    }
+};
+
 
         window.handleLogout = async () => { await signOut(auth); window.location.reload(); };
         window.toggleAuthView = (view) => { 
@@ -2251,49 +2274,102 @@ window.renderPublishButton();
       // --- FUNÇÕES DE CACHE CIRÚRGICO ---
 
 async function loadProductsCache(force = false) {
-    if (productsLoaded && !force) return; // Se já carregou e não for força bruta, não gasta leitura
+    // 1. Identificadores únicos para o cache no disco
+    const cacheKey = `cache_products_${currentStoreId}`;
+    const timeKey = `cache_time_${currentStoreId}`;
+    
+    // 2. Pega o que está no disco e o horário da última alteração no servidor
+    const localData = localStorage.getItem(cacheKey);
+    const localTime = localStorage.getItem(timeKey);
+    const serverTime = storeConfig.lastUpdate?.toString(); // Vem do seu onSnapshot de config
 
-    console.log("📦 Carregando Produtos do Firebase (Cobrando Leituras)...");
+    // 3. REGRA DE OURO: Só busca se for forçado OU se o tempo no servidor for diferente do disco
+    if (!force && localData && localTime === serverTime) {
+        console.log("⚡ Cache de Disco Validado: Usando localStorage (Custo Zero)");
+        allProducts = JSON.parse(localData);
+        productsLoaded = true;
+        renderProductList();
+        updateQuotas();
+        return;
+    }
+
+    // 4. Se chegou aqui, é porque houve alteração ou é a primeira vez
+    console.log("🌐 Cache Expirado ou Vazio: Buscando do Firebase...");
     const q = query(collection(db, `stores/${currentStoreId}/products`));
     const snap = await getDocs(q);
     
     allProducts = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+    
+    // 5. Salva no disco para o próximo F5
+    localStorage.setItem(cacheKey, JSON.stringify(allProducts));
+    localStorage.setItem(timeKey, serverTime || Date.now().toString());
+    
     productsLoaded = true;
-    
-    const dashProds = document.getElementById('dash-total-products');
-    if (dashProds) dashProds.textContent = allProducts.length;
-    
     renderProductList();
     updateQuotas();
 }
 
-async function loadCategoriesCache(force = false) {
-    if (categoriesLoaded && !force) return;
 
-    console.log("📂 Carregando Categorias do Firebase...");
+async function loadCategoriesCache(force = false) {
+    const cacheKey = `cache_categories_${currentStoreId}`;
+    const timeKey = `cache_time_categories_${currentStoreId}`;
+    
+    const localData = localStorage.getItem(cacheKey);
+    const localTime = localStorage.getItem(timeKey);
+    const serverTime = storeConfig.lastUpdate?.toString();
+
+    // Regra: Usa o disco se não for forçado e o tempo coincidir
+    if (!force && localData && localTime === serverTime) {
+        console.log("📂 Categorias: Usando cache de disco.");
+        allCategories = JSON.parse(localData);
+        categoriesLoaded = true;
+        renderCategoryList();
+        return;
+    }
+
+    console.log("🌐 Categorias: Sincronizando com Firebase...");
     const snap = await getDocs(collection(db, `stores/${currentStoreId}/categories`));
     allCategories = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+
+    // Salva no disco
+    localStorage.setItem(cacheKey, JSON.stringify(allCategories));
+    localStorage.setItem(timeKey, serverTime || Date.now().toString());
+
     categoriesLoaded = true;
-    
     const dashCats = document.getElementById('dash-total-cats');
     if (dashCats) dashCats.textContent = allCategories.length;
-    
     renderCategoryList();
 }
 
 async function loadBannersCache(force = false) {
-    if (bannersLoaded && !force) return;
+    const cacheKey = `cache_banners_${currentStoreId}`;
+    const timeKey = `cache_time_banners_${currentStoreId}`;
+    
+    const localData = localStorage.getItem(cacheKey);
+    const localTime = localStorage.getItem(timeKey);
+    const serverTime = storeConfig.lastUpdate?.toString();
 
-    console.log("🖼️ Carregando Banners do Firebase...");
+    if (!force && localData && localTime === serverTime) {
+        console.log("🖼️ Banners: Usando cache de disco.");
+        allBanners = JSON.parse(localData);
+        bannersLoaded = true;
+        renderBannerList();
+        return;
+    }
+
+    console.log("🌐 Banners: Sincronizando com Firebase...");
     const snap = await getDocs(collection(db, `stores/${currentStoreId}/hero_cards`));
     allBanners = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+
+    localStorage.setItem(cacheKey, JSON.stringify(allBanners));
+    localStorage.setItem(timeKey, serverTime || Date.now().toString());
+
     bannersLoaded = true;
-    
     const dashBanners = document.getElementById('dash-total-banners');
     if (dashBanners) dashBanners.textContent = allBanners.length;
-    
     renderBannerList();
 }
+
 
         function updateUIByPlan() {
     // Define os limites com base no que veio do Super Admin
@@ -5029,12 +5105,18 @@ window.publicarAlteracoes = async () => {
 };
 
 // Função para avisar que algo mudou
-window.markAsDirty = () => {
+window.markAsDirty = async () => {
     needsPublish = true;
-    // Salva no navegador que esta loja específica tem pendências
     localStorage.setItem(`pending_publish_${currentStoreId}`, 'true');
+    
+    // Atualiza o timestamp no servidor. 
+    // Isso vai disparar o onSnapshot de config e "avisar" o cache que ele está velho.
+    const storeRef = doc(db, `stores/${currentStoreId}/config/store`);
+    await updateDoc(storeRef, { lastUpdate: Date.now() });
+    
     window.renderPublishButton();
 };
+
 
 window.loadMoreOrders = async () => {
     if (!lastVisibleOrder || isLoadingMore) return;
