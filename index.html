@@ -1218,7 +1218,7 @@
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
         import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged, updatePassword, setPersistence, browserLocalPersistence, browserSessionPersistence } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        import { getFirestore, doc, getDoc, setDoc, updateDoc, deleteDoc, onSnapshot, collection, addDoc, query, where, getDocs, orderBy, limit, Timestamp, incremento, startAfter} from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        import { getFirestore, doc, getDoc, setDoc, updateDoc, deleteDoc, onSnapshot, collection, addDoc, query, where, getDocs, orderBy, limit, Timestamp, increment, startAfter} from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
         import { getStorage, ref, uploadString, getDownloadURL, deleteObject } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-storage.js";
         // Procure onde começam os imports e adicione este:
         import { getMessaging, getToken, onMessage } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-messaging.js";
@@ -2076,7 +2076,6 @@ window.renderPublishButton();
 
 // --- LISTENER DE PEDIDOS (VERSÃO 5 CARACTERES) ---
 window.initOrderListener = (storeId) => {
-    // Query limitada para economizar leituras
     const q = query(
         collection(db, `stores/${storeId}/orders`),
         orderBy("createdAt", "desc"),
@@ -2096,21 +2095,23 @@ window.initOrderListener = (storeId) => {
                         audio.currentTime = 0;
                         audio.play().catch(e => console.warn("Clique na página para ativar o som."));
                     }
+                    // Adicionei um aviso visual para o novo pedido
+                    showToast("🔔 Novo pedido recebido!");
                 }
             }
         });
 
-        // MANTÉM SUA LÓGICA ORIGINAL
         lastOrderCount = snapshot.size;
         isFirstLoad = false;
         
-        // Guarda o ponto de parada para a paginação
-        lastVisibleOrder = snapshot.docs[snapshot.docs.length - 1];
+        // Pega o último documento apenas se houver resultados
+        if (snapshot.docs.length > 0) {
+            lastVisibleOrder = snapshot.docs[snapshot.docs.length - 1];
+        }
 
-        ordersCache = {};
+        // --- CIRURGIA AQUI: Removi 'ordersCache = {}' para não apagar o histórico carregado ---
         snapshot.forEach(doc => {
-            const p = { id: doc.id, ...doc.data() };
-            ordersCache[doc.id] = p; // Adiciona ou atualiza no cache sem apagar o resto
+            ordersCache[doc.id] = { id: doc.id, ...doc.data() };
         });
 
         window.renderFilteredOrders();
