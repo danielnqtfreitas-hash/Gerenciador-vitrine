@@ -1218,7 +1218,7 @@
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
         import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged, updatePassword, setPersistence, browserLocalPersistence, browserSessionPersistence } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        import { getFirestore, doc, getDoc, setDoc, updateDoc, deleteDoc, onSnapshot, collection, addDoc, query, where, getDocs, orderBy, limit, Timestamp, increment } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        import { getFirestore, doc, getDoc, setDoc, updateDoc, deleteDoc, onSnapshot, collection, addDoc, query, where, getDocs, orderBy, limit, Timestamp, incremento, startAfter} from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
         import { getStorage, ref, uploadString, getDownloadURL, deleteObject } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-storage.js";
         // Procure onde começam os imports e adicione este:
         import { getMessaging, getToken, onMessage } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-messaging.js";
@@ -2110,7 +2110,7 @@ window.initOrderListener = (storeId) => {
         ordersCache = {};
         snapshot.forEach(doc => {
             const p = { id: doc.id, ...doc.data() };
-            ordersCache[p.id] = p;
+            ordersCache[doc.id] = p; // Adiciona ou atualiza no cache sem apagar o resto
         });
 
         window.renderFilteredOrders();
@@ -3934,7 +3934,12 @@ window.loadMagicCategoriesFeedback = (data) => {
 
     // Converte cache em array
     let list = Object.values(ordersCache);
-
+          
+list.sort((a, b) => {
+        const dateA = a.createdAt?.toMillis ? a.createdAt.toMillis() : 0;
+        const dateB = b.createdAt?.toMillis ? b.createdAt.toMillis() : 0;
+        return dateB - dateA;
+    });
     // FILTRO DE BUSCA
     list = list.filter(p =>
         p.customer?.name?.toLowerCase().includes(search) ||
