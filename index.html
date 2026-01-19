@@ -2020,8 +2020,7 @@ async function requestNotificationPermission() {
 }
         
 
-        // --- INIT DATA & AUTH PERSISTENCE ---
-
+        // --- INIT DATA & AUTH PERSISTENCE (VERSÃO FINAL ÚNICA) ---
 setPersistence(auth, browserLocalPersistence)
     .then(() => {
         return onAuthStateChanged(auth, async (user) => {
@@ -2029,9 +2028,11 @@ setPersistence(auth, browserLocalPersistence)
             
             if(user) {
                 if(authScreen) authScreen.classList.add('hidden');
-                document.getElementById('userEmailDisplay').textContent = user.email;
+                const emailDisplay = document.getElementById('userEmailDisplay');
+                if (emailDisplay) emailDisplay.textContent = user.email;
                 
                 try {
+                    // 1. Identificação da Loja
                     let dirDoc = await getDoc(doc(db, "admin_directory", user.uid));
                     if(!dirDoc.exists()){
                         const snap = await getDocs(query(collection(db, "stores_registry"), where("ownerEmail", "==", user.email)));
@@ -2042,23 +2043,23 @@ setPersistence(auth, browserLocalPersistence)
                     }
 
                     if (currentStoreId) {
-                      loadProductsFromCache(currentStoreId); 
+                        // 2. Inicialização dos Módulos
+                        loadProductsFromCache(currentStoreId); 
                         fetchPublicPlansEagerly();
                         initStoreData(); 
                         initAnalyticsChart();
                         initAnalyticsInsights();
                         initOrderListener(currentStoreId);
-                        loadMagicCategoriesFeedback();
+                        if (typeof loadMagicCategoriesFeedback === 'function') loadMagicCategoriesFeedback();
                         changeTab('orders');   
-                      const pending = localStorage.getItem(`pending_publish_${currentStoreId}`);
-if (pending === 'true') {
-    needsPublish = true;
-}
-window.renderPublishButton();
+                        
+                        // 3. Status de Publicação
+                        const pending = localStorage.getItem(`pending_publish_${currentStoreId}`);
+                        needsPublish = (pending === 'true');
+                        window.renderPublishButton();
 
-                        // --- Lógica do Tutorial ---
+                        // 4. Lógica do Tutorial (Integrada)
                         const tutorialFeito = localStorage.getItem('tutorial_concluido_' + user.uid);
-
                         if (!tutorialFeito) {
                             setTimeout(() => {
                                 if (window.innerWidth < 768) {
@@ -2067,7 +2068,6 @@ window.renderPublishButton();
                                         window.toggleMobileSidebar();
                                     }
                                 }
-                                
                                 if (typeof window.startTutorial === 'function') {
                                     window.startTutorial();
                                     localStorage.setItem('tutorial_concluido_' + user.uid, 'true');
@@ -2075,21 +2075,22 @@ window.renderPublishButton();
                             }, 3000);
                         }
 
+                        // 5. Permissão de Notificações
                         setTimeout(requestNotificationPermission, 5000);
-                    } // <-- FECHA o if (currentStoreId)
-                } catch (e) { // <-- Agora o catch funciona porque o try foi fechado corretamente
-                    console.error("Erro ao carregar loja:", e);
+                    }
+                } catch (e) {
+                    console.error("Erro crítico ao carregar loja:", e);
                 }
-
             } else { 
                 if(authScreen) authScreen.classList.remove('hidden'); 
-                lucide.createIcons(); 
+                if (typeof lucide !== 'undefined') lucide.createIcons(); 
             }
         });
     })
     .catch((error) => {
-        console.error("Erro ao configurar persistência:", error);
+        console.error("Erro na persistência do Firebase:", error);
     });
+
 
 
 // --- LISTENER DE PEDIDOS (VERSÃO 5 CARACTERES) ---
