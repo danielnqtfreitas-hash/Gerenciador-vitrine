@@ -1253,6 +1253,9 @@ let currentPlan = null;   // 🔹 vem da collection plans
         let manualOrder = [];
        let variationsHistoryCache = new Map();
         let html5QrCode = null;
+      let productsLoaded = false;
+let categoriesLoaded = false;
+let bannersLoaded = false;
         let customStart = null;
       let ordersLimit = 20; // Limite inicial
 let lastVisibleOrder = null; // Guarda o último pedido carregado para saber de onde continuar
@@ -2236,32 +2239,6 @@ window.renderPublishButton();
         window.loadMagicCategoriesFeedback(data)
     });
 
-        
-    // --- LISTENER B: CATEGORIAS (AGORA DENTRO DA FUNÇÃO) ---
-    onSnapshot(collection(db, `stores/${currentStoreId}/categories`), (s) => {
-        allCategories = s.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-        const dashCats = document.getElementById('dash-total-cats');
-        if (dashCats) dashCats.textContent = allCategories.length;
-        renderCategoryList();
-    });
-
-    // --- LISTENER C: PRODUTOS ---
-    onSnapshot(collection(db, `stores/${currentStoreId}/products`), (s) => {
-        allProducts = s.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-        const dashProds = document.getElementById('dash-total-products');
-        if (dashProds) dashProds.textContent = allProducts.length;
-        renderProductList();
-        updateQuotas(); 
-    });
-
-    // --- LISTENER D: BANNERS ---
-    onSnapshot(collection(db, `stores/${currentStoreId}/hero_cards`), (s) => {
-        allBanners = s.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-        const dashBanners = document.getElementById('dash-total-banners');
-        if (dashBanners) dashBanners.textContent = allBanners.length;
-        renderBannerList();
-        updateQuotas();
-    });
 
     // --- LISTENER E: VISITAS GLOBAIS ---
     onSnapshot(doc(db, `stores/${currentStoreId}/analytics/global`), (d) => {
@@ -2270,6 +2247,52 @@ window.renderPublishButton();
             if (dashVisits) dashVisits.textContent = d.data().totalVisits || 0;
         }
     });
+}
+      // --- FUNÇÕES DE CACHE CIRÚRGICO ---
+
+async function loadProductsCache(force = false) {
+    if (productsLoaded && !force) return; // Se já carregou e não for força bruta, não gasta leitura
+
+    console.log("📦 Carregando Produtos do Firebase (Cobrando Leituras)...");
+    const q = query(collection(db, `stores/${currentStoreId}/products`));
+    const snap = await getDocs(q);
+    
+    allProducts = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+    productsLoaded = true;
+    
+    const dashProds = document.getElementById('dash-total-products');
+    if (dashProds) dashProds.textContent = allProducts.length;
+    
+    renderProductList();
+    updateQuotas();
+}
+
+async function loadCategoriesCache(force = false) {
+    if (categoriesLoaded && !force) return;
+
+    console.log("📂 Carregando Categorias do Firebase...");
+    const snap = await getDocs(collection(db, `stores/${currentStoreId}/categories`));
+    allCategories = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+    categoriesLoaded = true;
+    
+    const dashCats = document.getElementById('dash-total-cats');
+    if (dashCats) dashCats.textContent = allCategories.length;
+    
+    renderCategoryList();
+}
+
+async function loadBannersCache(force = false) {
+    if (bannersLoaded && !force) return;
+
+    console.log("🖼️ Carregando Banners do Firebase...");
+    const snap = await getDocs(collection(db, `stores/${currentStoreId}/hero_cards`));
+    allBanners = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+    bannersLoaded = true;
+    
+    const dashBanners = document.getElementById('dash-total-banners');
+    if (dashBanners) dashBanners.textContent = allBanners.length;
+    
+    renderBannerList();
 }
 
         function updateUIByPlan() {
@@ -2511,6 +2534,7 @@ function updateQuotas() {
         };
 
         await setDoc(docRef, data, { merge: true });
+      await loadProductsCache(true);
         window.markAsDirty(); 
 
         showToast("✅ Produto e variações salvos!");
@@ -2564,6 +2588,7 @@ function updateQuotas() {
 
         // 4. Sincroniza vitrine
         await deleteDoc(docRef); 
+      await loadProductsCache(true);
 // Avisa o botão para ficar colorido
 window.markAsDirty(); 
 showToast("🗑️ Produto e todos os arquivos removidos!");
@@ -2735,7 +2760,7 @@ showToast("🗑️ Produto e todos os arquivos removidos!");
                 }
             );
         }
-
+await loadCategoriesCache(true)
         // Marca atualização geral da loja
         window.markAsDirty(); 
 cancelCategoryEdit();
@@ -2959,7 +2984,8 @@ window.handleBannerSubmit = async (e) => {
         };
 
         await setDoc(doc(db, `stores/${currentStoreId}/hero_cards`, finalId), data, { merge: true });
-        window.markAsDirty();
+       await loadBannersCache(true);
+      window.markAsDirty();
         
         document.getElementById('bannerModal').classList.add('hidden');
         showToast("✅ Banner publicado!");
@@ -3054,13 +3080,25 @@ window.handleBannerSubmit = async (e) => {
         };
 
         
-    window.changeTab = (tabName) => {
+    window.changeTab = async (tabName) => { 
     // --- NOVO: VALIDAÇÃO DE RECURSO PREMIUM (FINANCEIRO) ---
     if (tabName === 'finance' && storeConfig.hasFinance !== true) {
         showToast("💎 Recurso Premium: A Gestão Financeira requer o plano PRO.");
         return; 
     }
-
+// Só faz a leitura se for a primeira vez que o lojista entra na aba
+    if (tabName === 'products') await loadProductsCache();
+    if (tabName === 'categories') await loadCategoriesCache();
+    if (tabName === 'banners') await loadBannersCache();
+    
+    // Dashboard e Financeiro dependem de tudo carregado para fazer contas
+    if (tabName === 'dashboard' || tabName === 'finance') {
+        await Promise.all([
+            loadProductsCache(), 
+            loadCategoriesCache(),
+            loadBannersCache() 
+        ]);
+      }
     const tabs = ['orders', 'dashboard', 'banners', 'products', 'categories', 'config', 'finance'];
     const fab = document.getElementById('fabAddOrder');
 
@@ -4331,6 +4369,7 @@ window.finishManualOrder = async () => {
         });
 
         await Promise.all(stockPromises);
+      await loadProductsCache(true);
         
         showToast("✅ Venda finalizada e estoque sincronizado!");
         manualOrder = [];
