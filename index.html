@@ -1298,63 +1298,42 @@ document.addEventListener('click', () => {
 
   
 // 1. Forçamos o login a ser LOCAL (não apaga quando fecha a aba)
-// 1. Persistência de Sessão
 setPersistence(auth, browserLocalPersistence)
     .then(() => {
-        return onAuthStateChanged(auth, async (user) => {
+        // O observador agora roda "dentro" da garantia de persistência
+        return onAuthStateChanged(auth, (user) => {
             const authScreen = document.getElementById('auth-screen');
             const mainContent = document.getElementById('main-content');
 
             if (user) {
-                console.log("Sessão ativa:", user.email);
+                console.log("Sessão recuperada com sucesso:", user.uid);
+                currentStoreId = user.uid;
                 
-                // Primeiro mostramos o painel e escondemos o login
+                // Garante a troca de telas
                 if (authScreen) authScreen.classList.add('hidden');
                 if (mainContent) mainContent.classList.remove('hidden');
-
-                try {
-                    // Descobrir o StoreId (Slug) antes de carregar o painel
-                    let dirDoc = await getDoc(doc(db, "admin_directory", user.uid));
-                    if(dirDoc.exists()) {
-                        currentStoreId = dirDoc.data().storeId;
-                    } else {
-                        // Busca alternativa pelo email se o diretório falhar
-                        const q = query(collection(db, "stores_registry"), where("ownerEmail", "==", user.email));
-                        const snap = await getDocs(q);
-                        if(!snap.empty) currentStoreId = snap.docs[0].data().slug;
-                    }
-
-                    if (currentStoreId) {
-                        // Só chama a carga de dados se tiver o ID
-                        await CarregarDadosPainel();
-                    }
-                } catch (e) {
-                    console.error("Erro ao identificar loja:", e);
-                }
-
+                
+                CarregarDadosPainel();
             } else {
-                // Se não estiver logado, garante que a tela de login apareça
+                console.log("Nenhum usuário logado.");
                 if (authScreen) authScreen.classList.remove('hidden');
                 if (mainContent) mainContent.classList.add('hidden');
             }
         });
     })
-    .catch((error) => console.error("Erro de persistência:", error));
+    .catch((error) => {
+        console.error("Erro ao configurar persistência:", error);
+    });
 
-// 2. Notificações Push (Corrigido)
+// 2. Escuta de mensagens (mantido igual)
 onMessage(messaging, (payload) => {
+    console.log('Mensagem recebida com app aberto:', payload);
     const audio = document.getElementById('notifSound');
-    if(audio) {
-        audio.currentTime = 0;
-        audio.play().catch(() => console.log("Interação necessária para som"));
-    }
-    
-    // Mostra o alerta visual
-    if (window.showToast) {
-        window.showToast(`🔔 ${payload.notification.title}`);
+    if(audio) audio.play().catch(e => console.log("Áudio bloqueado"));
+    if (typeof showToast === 'function') {
+        showToast(`🔔 ${payload.notification.title}: ${payload.notification.body}`);
     }
 });
-
 
 // 3. Função de carregar dados (mantida igual)
 async function CarregarDadosPainel() {
@@ -2041,20 +2020,18 @@ async function requestNotificationPermission() {
 }
         
 
-// --- INIT DATA & AUTH PERSISTENCE (VERSÃO FINAL ÚNICA E CORRIGIDA) ---
+        // --- INIT DATA & AUTH PERSISTENCE ---
+
 setPersistence(auth, browserLocalPersistence)
     .then(() => {
         return onAuthStateChanged(auth, async (user) => {
             const authScreen = document.getElementById('auth-screen');
             
             if(user) {
-                // 1. Prepara a tela
                 if(authScreen) authScreen.classList.add('hidden');
-                const emailDisplay = document.getElementById('userEmailDisplay');
-                if (emailDisplay) emailDisplay.textContent = user.email;
+                document.getElementById('userEmailDisplay').textContent = user.email;
                 
                 try {
-                    // 2. Identificação da Loja
                     let dirDoc = await getDoc(doc(db, "admin_directory", user.uid));
                     if(!dirDoc.exists()){
                         const snap = await getDocs(query(collection(db, "stores_registry"), where("ownerEmail", "==", user.email)));
@@ -2065,23 +2042,23 @@ setPersistence(auth, browserLocalPersistence)
                     }
 
                     if (currentStoreId) {
-                        // 3. Inicialização dos Módulos
-                        loadProductsFromCache(currentStoreId); 
+                      loadProductsFromCache(currentStoreId); 
                         fetchPublicPlansEagerly();
                         initStoreData(); 
                         initAnalyticsChart();
                         initAnalyticsInsights();
                         initOrderListener(currentStoreId);
-                        if (typeof loadMagicCategoriesFeedback === 'function') loadMagicCategoriesFeedback();
+                        loadMagicCategoriesFeedback();
                         changeTab('orders');   
-                        
-                        // 4. Status de Publicação
-                        const pending = localStorage.getItem(`pending_publish_${currentStoreId}`);
-                        needsPublish = (pending === 'true');
-                        window.renderPublishButton();
+                      const pending = localStorage.getItem(`pending_publish_${currentStoreId}`);
+if (pending === 'true') {
+    needsPublish = true;
+}
+window.renderPublishButton();
 
-                        // 5. Lógica do Tutorial
+                        // --- Lógica do Tutorial ---
                         const tutorialFeito = localStorage.getItem('tutorial_concluido_' + user.uid);
+
                         if (!tutorialFeito) {
                             setTimeout(() => {
                                 if (window.innerWidth < 768) {
@@ -2090,6 +2067,7 @@ setPersistence(auth, browserLocalPersistence)
                                         window.toggleMobileSidebar();
                                     }
                                 }
+                                
                                 if (typeof window.startTutorial === 'function') {
                                     window.startTutorial();
                                     localStorage.setItem('tutorial_concluido_' + user.uid, 'true');
@@ -2097,21 +2075,20 @@ setPersistence(auth, browserLocalPersistence)
                             }, 3000);
                         }
 
-                        // 6. Permissão de Notificações
                         setTimeout(requestNotificationPermission, 5000);
-                    }
-                } catch (e) {
-                    console.error("Erro crítico ao carregar dados:", e);
+                    } // <-- FECHA o if (currentStoreId)
+                } catch (e) { // <-- Agora o catch funciona porque o try foi fechado corretamente
+                    console.error("Erro ao carregar loja:", e);
                 }
+
             } else { 
-                // 7. Se não houver usuário, mostra tela de login
                 if(authScreen) authScreen.classList.remove('hidden'); 
-                if (typeof lucide !== 'undefined') lucide.createIcons(); 
+                lucide.createIcons(); 
             }
         });
     })
     .catch((error) => {
-        console.error("Erro na persistência do Firebase:", error);
+        console.error("Erro ao configurar persistência:", error);
     });
 
 
@@ -4422,11 +4399,6 @@ window.finishManualOrder = async () => {
         });
 
         await Promise.all(stockPromises);
-
-      const storeRef = doc(db, `stores/${currentStoreId}/config/store`);
-await updateDoc(storeRef, { lastUpdate: Date.now() }); // Avisa que o estoque mudou
-localStorage.removeItem(`last_update_${currentStoreId}`); // Limpa para forçar o download novo
-window.markAsDirty(); // Ativa o botão Publicar
         
         showToast("✅ Venda finalizada e estoque sincronizado!");
         manualOrder = [];
