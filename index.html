@@ -1324,13 +1324,59 @@ onMessage(messaging, (payload) => {
 // 3. Função de carregar dados (mantida igual)
 async function CarregarDadosPainel() {
     try {
-        await loadMagicCategoriesFeedback();
-        console.log("Dados do painel carregados.");
+        // 1. A ÚNICA LEITURA OBRIGATÓRIA: Pega a configuração e o "Sinalizador de Mudança" (lastUpdate)
+        const configRef = doc(db, `stores/${currentStoreId}/config/store`);
+        const configSnap = await getDoc(configRef); // getDoc puro = 1 leitura única
+        
+        if (!configSnap.exists()) return;
+        storeConfig = configSnap.data();
+        const serverLastUpdate = storeConfig.lastUpdate?.toString() || "0";
+
+        // 2. CARREGAMENTO INTELIGENTE (Custo zero se nada mudou no banco)
+        // Só baixa do Firebase se o lastUpdate do servidor for diferente do que temos no navegador
+        allProducts = await loadCollectionSmart('products', `prods_${currentStoreId}`, serverLastUpdate);
+        allCategories = await loadCollectionSmart('categories', `cats_${currentStoreId}`, serverLastUpdate);
+        allBanners = await loadCollectionSmart('hero_cards', `banners_${currentStoreId}`, serverLastUpdate);
+
+        // 3. ATUALIZA A INTERFACE (Sem precisar baixar nada novo)
+        renderProductList();
+        renderCategoryList();
+        renderBannerList();
+        updateQuotas();
+        updatePremiumUI();
+
+        // 4. MANTÉM O QUE VOCÊ JÁ TINHA (Sua regra de Categorias Mágicas)
+        await loadMagicCategoriesFeedback(storeConfig);
+
+        console.log("🚀 Painel sincronizado com economia de dados!");
+
     } catch (error) {
-        console.error("Erro no carregamento:", error);
-        if (typeof showToast === 'function') showToast("Erro ao carregar dados", "error");
+        console.error("Erro crítico no carregamento:", error);
+        if (typeof showToast === 'function') showToast("Erro ao sincronizar dados", "error");
     }
 }
+
+// --- FUNÇÃO AUXILIAR PARA ECONOMIA (Blaze Optimization) ---
+async function loadCollectionSmart(collectionName, cacheKey, serverTime) {
+    const localTime = localStorage.getItem(`${cacheKey}_time`);
+    const cachedData = localStorage.getItem(cacheKey);
+
+    // Se o tempo no servidor é o mesmo que temos gravado, usamos o cache (CUSTO ZERO)
+    if (cachedData && localTime === serverTime) {
+        return JSON.parse(cachedData);
+    }
+
+    // Se mudou ou não temos nada, aí sim fazemos a leitura (CUSTO: N Leituras)
+    const snap = await getDocs(collection(db, `stores/${currentStoreId}/${collectionName}`));
+    const data = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+
+    // Grava no cache para a próxima vez
+    localStorage.setItem(cacheKey, JSON.stringify(data));
+    localStorage.setItem(`${cacheKey}_time`, serverTime);
+
+    return data;
+}
+
 
         // Função para aplicar máscara nos campos de WhatsApp
 function applyPhoneMask(elementId) {
@@ -5053,26 +5099,38 @@ window.calculateSalesInsights = () => {
     driverObj.drive();
 };
 
-      
-window.publicarAlteracoes = async () => {
+      window.publicarAlteracoes = async () => {
     const btn = document.getElementById('btnPublicar');
-    try {
-        const storeRef = doc(db, `stores/${currentStoreId}/config/store`);
-        await updateDoc(storeRef, { lastUpdate: Date.now() });
+    if (btn) btn.disabled = true; // Proteção contra múltiplos cliques (evita cobrança dupla)
 
-        // SUCESSO!
+    try {
+        const agora = Date.now();
+        const storeRef = doc(db, `stores/${currentStoreId}/config/store`);
+        
+        // 1. Atualiza o servidor (Custo: 1 escrita)
+        await updateDoc(storeRef, { lastUpdate: agora });
+
+        // 2. ESTRATÉGIA BLAZE: Atualiza os carimbos de tempo locais 
+        // Isso evita que o seu próprio Painel peça os dados ao servidor no próximo F5
+        const timestampStr = agora.toString();
+        localStorage.setItem(`prods_${currentStoreId}_time`, timestampStr);
+        localStorage.setItem(`cats_${currentStoreId}_time`, timestampStr);
+        localStorage.setItem(`banners_${currentStoreId}_time`, timestampStr);
+
+        // 3. Limpa o sinalizador de "pendente"
         needsPublish = false; 
-        // Remove o aviso do "disco" do navegador
         localStorage.removeItem(`pending_publish_${currentStoreId}`);
         
         window.renderPublishButton(); 
-        showToast("🚀 Vitrine atualizada para os clientes!");
+        showToast("🚀 Vitrine e Cache sincronizados!");
+
     } catch (error) {
+        console.error("Erro na publicação:", error);
         showToast("❌ Erro ao publicar.");
+    } finally {
+        if (btn) btn.disabled = false;
     }
 };
-
-
 
       window.renderPublishButton = () => {
     const container = document.getElementById('publishStatusContainer');
@@ -5150,7 +5208,28 @@ window.loadMoreOrders = async () => {
         if(btn) btn.innerHTML = "Ver pedidos antigos";
     }
 };
+async function loadSmart(collectionName, storageKey) {
+    const serverTime = storeConfig.lastUpdate?.toString();
+    const localTime = localStorage.getItem(`${storageKey}_time`);
+    const cachedData = localStorage.getItem(storageKey);
 
+    // 1. Se o tempo for igual e tivermos cache, usamos o cache (CUSTO ZERO)
+    if (cachedData && localTime === serverTime) {
+        console.log(`⚡ [${collectionName}] Carregado do Cache Local`);
+        return JSON.parse(cachedData);
+    }
+
+    // 2. Se mudou ou não tem cache, busca no servidor (CUSTO: N leituras)
+    console.log(`🌐 [${collectionName}] Sincronizando com o Servidor...`);
+    const snap = await getDocs(collection(db, `stores/${currentStoreId}/${collectionName}`));
+    const data = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+
+    // 3. Salva no cache para a próxima vez
+    localStorage.setItem(storageKey, JSON.stringify(data));
+    localStorage.setItem(`${storageKey}_time`, serverTime);
+
+    return data;
+}
 
     </script>
 </body>
