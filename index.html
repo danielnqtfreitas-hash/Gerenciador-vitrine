@@ -5105,15 +5105,12 @@ window.publicarAlteracoes = async () => {
 };
 
 // Função para avisar que algo mudou
-window.markAsDirty = async () => {
+window.markAsDirty = () => {
     needsPublish = true;
+
+    // Marca no navegador que existem alterações pendentes
     localStorage.setItem(`pending_publish_${currentStoreId}`, 'true');
-    
-    // Atualiza o timestamp no servidor. 
-    // Isso vai disparar o onSnapshot de config e "avisar" o cache que ele está velho.
-    const storeRef = doc(db, `stores/${currentStoreId}/config/store`);
-    await updateDoc(storeRef, { lastUpdate: Date.now() });
-    
+
     window.renderPublishButton();
 };
 
