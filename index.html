@@ -564,13 +564,8 @@
 
     <div class="flex items-center gap-2 md:gap-4">
         
-        <button id="btnPublicar" onclick="publicarAlteracoes()" 
-            class="flex items-center justify-center gap-2 h-9 px-3 md:px-5 bg-amber-500 hover:bg-amber-600 text-white rounded-full shadow-sm transition-all active:scale-95 shrink-0">
-            <i data-lucide="send" class="w-4 h-4"></i>
-            <span class="hidden md:inline text-[10px] md:text-xs font-black uppercase tracking-widest">
-                Publicar
-            </span>
-        </button>
+        <div id="publishStatusContainer" class="flex items-center gap-2">
+        </div>
 
         <div class="relative">
             <button id="storeMenuBtn" onclick="toggleStoreMenu(event)" class="text-[10px] md:text-xs font-bold text-blue-600 bg-blue-50 h-9 px-4 rounded-full border border-blue-100 flex items-center gap-2 transition-all">
@@ -1264,6 +1259,7 @@ let customEnd = null;
         let ordersCache = {}; // Guarda os pedidos para o modal de detalhes
 let isFirstLoad = true;
         let variationsMatrix = [];
+      let needsPublish = false;
 let cachedPublicPlans = null; 
 const PLAN_DISPLAY_NAMES = {
     'beta_tester': 'Parceiro Beta',
@@ -2114,6 +2110,8 @@ window.initOrderListener = (storeId) => {
       
 
 function initStoreData() {
+window.renderPublishButton();
+
     // --- LISTENER A: IDENTIDADE, LIMITES E STATUS ---
     onSnapshot(doc(db, `stores/${currentStoreId}/config/store`), async (d) => {
     if (!d.exists()) return;
@@ -2503,7 +2501,7 @@ function updateQuotas() {
         };
 
         await setDoc(docRef, data, { merge: true });
-        await updateDoc(doc(db, `stores/${currentStoreId}/config/store`), { lastUpdate: now });
+        window.markAsDirty(); 
 
         showToast("✅ Produto e variações salvos!");
         document.getElementById('productModal').classList.add('hidden'); 
@@ -2555,9 +2553,11 @@ function updateQuotas() {
         await Promise.all(deletePromises);
 
         // 4. Sincroniza vitrine
-        await updateDoc(doc(db, `stores/${currentStoreId}/config/store`), { lastUpdate: Date.now() });
-        
-        showToast("🗑️ Produto e todos os arquivos removidos!");
+        await deleteDoc(docRef); 
+// Avisa o botão para ficar colorido
+window.markAsDirty(); 
+showToast("🗑️ Produto e todos os arquivos removidos!");
+
     } catch (err) {
         console.error("Erro na exclusão:", err);
         showToast("❌ Erro ao excluir.");
@@ -2570,7 +2570,7 @@ function updateQuotas() {
             try {
                 await updateDoc(doc(db, `stores/${currentStoreId}/products`, id), { status: newStatus });
                 const storeRef = doc(db, `stores/${currentStoreId}/config/store`);
-                await setDoc(storeRef, { lastUpdate: Date.now() }, { merge: true });
+                window.markAsDirty();
                 showToast(newStatus === 'paused' ? "Pausado." : "Ativado.");
             } catch (e) {
                 showToast("Erro ao mudar status.");
@@ -2727,13 +2727,9 @@ function updateQuotas() {
         }
 
         // Marca atualização geral da loja
-        await updateDoc(
-            doc(db, `stores/${currentStoreId}/config/store`),
-            { lastUpdate: Date.now() }
-        );
-
-        cancelCategoryEdit();
-        showToast("Categoria salva com sucesso.");
+        window.markAsDirty(); 
+cancelCategoryEdit();
+showToast("Categoria salva com sucesso.");
     } catch (err) {
         console.error(err);
         showToast("Erro ao salvar categoria.");
@@ -2771,8 +2767,9 @@ window.deleteCategory = async (id) => {
                 await Promise.all(updates);
             }
 
-            await updateDoc(doc(db, `stores/${currentStoreId}/config/store`), { lastUpdate: Date.now() });
-            showToast("Categoria removida.");
+            window.markAsDirty(); // Troque pela nossa função
+showToast("Categoria removida.");
+
         } catch (err) {
             console.error(err);
             showToast("Erro ao excluir.");
@@ -2952,7 +2949,7 @@ window.handleBannerSubmit = async (e) => {
         };
 
         await setDoc(doc(db, `stores/${currentStoreId}/hero_cards`, finalId), data, { merge: true });
-        await updateDoc(doc(db, `stores/${currentStoreId}/config/store`), { lastUpdate: Date.now() });
+        window.markAsDirty();
         
         document.getElementById('bannerModal').classList.add('hidden');
         showToast("✅ Banner publicado!");
@@ -2972,20 +2969,25 @@ window.handleBannerSubmit = async (e) => {
         const bannerDoc = allBanners.find(b => b.id === id);
         const imageUrl = bannerDoc ? bannerDoc.imageUrl : null;
 
-        // Apaga do Firestore
+        // 1. Apaga do Firestore
         await deleteDoc(doc(db, `stores/${currentStoreId}/hero_cards`, id));
 
-        // Apaga do Storage
+        // 2. Apaga do Storage (Limpeza física)
         if (imageUrl && imageUrl.includes('firebasestorage.googleapis.com')) {
             const bannerImgRef = ref(storage, imageUrl);
-            await deleteObject(bannerImgRef).catch(e => console.warn("Imagem do banner não encontrada."));
+            await deleteObject(bannerImgRef).catch(e => console.warn("Imagem do banner não encontrada no servidor."));
         }
 
-        showToast("Banner removido!");
+        // 3. ATIVA O BOTÃO DE PUBLICAÇÃO (O "pulo do gato")
+        window.markAsDirty(); 
+
+        showToast("Banner removido com sucesso!");
     } catch (e) {
-        showToast("Erro ao excluir banner.");
+        console.error("Erro ao excluir banner:", e);
+        showToast("❌ Erro ao excluir banner.");
     }
 };
+
         function renderBannerList() {
     const listContainer = document.getElementById('bannersList');
     document.getElementById('emptyBannersMsg').classList.toggle('hidden', allBanners.length > 0);
@@ -3331,6 +3333,7 @@ window.saveStoreConfig = async function (event) {
 
         // 4. Gravação no Firestore (COM merge: true para preservar permissões de plano e abas)
         await setDoc(storeRef, dataToSave, { merge: true });
+window.markAsDirty(); 
 
         showToast("✅ Configurações e Dados PIX atualizados!");
         
@@ -3470,7 +3473,7 @@ async function initAnalyticsInsights() {
 
         // Notifica a vitrine para atualizar o cache
         const storeRef = doc(db, `stores/${currentStoreId}/config`);
-        await updateDoc(storeRef, { lastUpdate: Date.now() });
+        window.markAsDirty();
 
         showToast(`✅ Categoria "${categoryName}" ${newStatus === 'paused' ? 'pausada' : 'ativada'}!`);
     } catch (err) {
@@ -4473,9 +4476,9 @@ window.updateOrderStatus = async (id, status) => {
 
         // Limpa cache e sincroniza vitrine
         localStorage.removeItem('app_cache_v4_' + currentStoreId);
-        await updateDoc(doc(db, `stores/${currentStoreId}/config/store`), { lastUpdate: Date.now() });
+        window.markAsDirty(); // Troque para economizar dados
+showToast(`Pedido ${status} e estoque sincronizado! ✅`);
 
-        showToast(`Pedido ${status} e estoque sincronizado! ✅`);
         document.getElementById('orderDetailModal').classList.add('hidden');
 
     } catch (e) {
@@ -4914,37 +4917,55 @@ window.calculateSalesInsights = () => {
 window.publicarAlteracoes = async () => {
     const btn = document.getElementById('btnPublicar');
     
-    // Verificamos se o painel já carregou o ID da loja
-    if (!btn || !currentStoreId) {
-        showToast("⚠️ Aguarde o carregamento da loja...");
-        return;
-    }
-
-    const originalContent = btn.innerHTML;
-    btn.disabled = true;
-    
-    // Mostra o ícone girando (feedback visual)
-    btn.innerHTML = `<i data-lucide="refresh-cw" class="w-4 h-4 animate-spin"></i>`;
-    if (window.lucide) lucide.createIcons();
-
     try {
-        // Usamos as variáveis 'doc', 'updateDoc' e 'db' que já existem no seu script
         const storeRef = doc(db, `stores/${currentStoreId}/config/store`);
-        
-        await updateDoc(storeRef, { 
-            lastUpdate: Date.now() 
-        });
+        await updateDoc(storeRef, { lastUpdate: Date.now() });
 
-        // Agora a notificação vai aparecer!
-        showToast("🚀 Vitrine atualizada com sucesso!");
+        // SUCESSO!
+        needsPublish = false; // Volta o estado para falso
+        window.renderPublishButton(); // Redesenha o botão como "Sincronizado"
+        showToast("🚀 Vitrine atualizada para os clientes!");
 
     } catch (error) {
-        console.error("Erro ao publicar:", error);
-        showToast("❌ Erro ao publicar alterações.");
-    } finally {
-        btn.disabled = false;
-        btn.innerHTML = originalContent;
-        if (window.lucide) lucide.createIcons();
+        showToast("❌ Erro ao publicar.");
+    }
+};
+
+
+      window.renderPublishButton = () => {
+    const container = document.getElementById('publishStatusContainer');
+    if (!container) return;
+
+    // Pega a cor primária da loja (ou roxo padrão se não houver)
+    const brandColor = storeConfig.primaryColor || '#8b5cf6';
+
+    if (!needsPublish) {
+        // ESTADO: TUDO SINCRONIZADO (Discreto)
+        container.innerHTML = `
+            <div class="flex items-center gap-2 px-3 py-1.5 rounded-full bg-slate-100 border border-slate-200 text-slate-400 cursor-default">
+                <i data-lucide="check-circle-2" class="w-3.5 h-3.5"></i>
+                <span class="text-[10px] font-bold uppercase tracking-widest">Loja Atualizada</span>
+            </div>
+        `;
+    } else {
+        // ESTADO: HÁ ALTERAÇÕES (Chamativo com a cor da marca)
+        container.innerHTML = `
+            <button onclick="publicarAlteracoes()" 
+                style="background-color: ${brandColor}"
+                class="flex items-center gap-2 px-3 py-1.5 md:px-5 md:py-2 text-white rounded-full shadow-lg transition-all active:scale-95 animate-pulse">
+                <i data-lucide="cloud-upload" class="w-4 h-4"></i>
+                <span class="text-[10px] md:text-xs font-black uppercase tracking-widest">Publicar Alterações</span>
+            </button>
+        `;
+    }
+    if (window.lucide) lucide.createIcons();
+};
+
+// Função para avisar que algo mudou
+window.markAsDirty = () => {
+    if (!needsPublish) {
+        needsPublish = true;
+        window.renderPublishButton();
     }
 };
 
