@@ -2029,6 +2029,11 @@ setPersistence(auth, browserLocalPersistence)
                         initOrderListener(currentStoreId);
                         loadMagicCategoriesFeedback();
                         changeTab('orders');   
+                      const pending = localStorage.getItem(`pending_publish_${currentStoreId}`);
+if (pending === 'true') {
+    needsPublish = true;
+}
+window.renderPublishButton();
 
                         // --- Lógica do Tutorial ---
                         const tutorialFeito = localStorage.getItem('tutorial_concluido_' + user.uid);
@@ -4916,20 +4921,22 @@ window.calculateSalesInsights = () => {
       
 window.publicarAlteracoes = async () => {
     const btn = document.getElementById('btnPublicar');
-    
     try {
         const storeRef = doc(db, `stores/${currentStoreId}/config/store`);
         await updateDoc(storeRef, { lastUpdate: Date.now() });
 
         // SUCESSO!
-        needsPublish = false; // Volta o estado para falso
-        window.renderPublishButton(); // Redesenha o botão como "Sincronizado"
+        needsPublish = false; 
+        // Remove o aviso do "disco" do navegador
+        localStorage.removeItem(`pending_publish_${currentStoreId}`);
+        
+        window.renderPublishButton(); 
         showToast("🚀 Vitrine atualizada para os clientes!");
-
     } catch (error) {
         showToast("❌ Erro ao publicar.");
     }
 };
+
 
 
       window.renderPublishButton = () => {
@@ -4963,11 +4970,12 @@ window.publicarAlteracoes = async () => {
 
 // Função para avisar que algo mudou
 window.markAsDirty = () => {
-    if (!needsPublish) {
-        needsPublish = true;
-        window.renderPublishButton();
-    }
+    needsPublish = true;
+    // Salva no navegador que esta loja específica tem pendências
+    localStorage.setItem(`pending_publish_${currentStoreId}`, 'true');
+    window.renderPublishButton();
 };
+
 
 
     </script>
