@@ -2604,8 +2604,7 @@ function updateQuotas() {
             variations: updatedVariations,
             colors: [...new Set(updatedVariations.map(v => v.color))].filter(c => c && c !== 'PADRAO'),
             sizes: [...new Set(updatedVariations.map(v => v.size))].filter(s => s && s !== 'UNICO'),
-            trashFiles: stillInTrash, 
-          
+            trashFiles: stillInTrash,
             status: totalStock > 0 ? 'active' : 'paused'
         };
 
@@ -3055,7 +3054,7 @@ window.handleBannerSubmit = async (e) => {
             color1: document.getElementById('bannerColor1').value, 
             color2: document.getElementById('bannerColor2').value, 
             target: document.getElementById('bannerTarget').value,
-            imageUrl: imageUrls,
+            imageUrl: imageUrl, 
         };
 
         await setDoc(doc(db, `stores/${currentStoreId}/hero_cards`, finalId), data, { merge: true });
@@ -3348,8 +3347,9 @@ function executaPlanoBCopia(texto) {
         
         await updateDoc(storeRef, { 
             deliveryAreas: updatedAreas,
-          window.markAsDirty();
-        });
+           });
+
+      window.markAsDirty();
         
         // Limpa campos
         nameInput.value = ''; 
@@ -3371,8 +3371,8 @@ function executaPlanoBCopia(texto) {
         const storeRef = doc(db, `stores/${currentStoreId}/config/store`);
         await updateDoc(storeRef, { 
             deliveryAreas: deliveryAreas, 
-             window.markAsDirty();
-        });
+              });
+      window.markAsDirty();
         showToast("Bairro removido!");
         // O renderDeliveryAreas() será chamado automaticamente pelo onSnapshot acima
     } catch (e) { 
@@ -3451,7 +3451,6 @@ window.saveStoreConfig = async function (event) {
                 name: document.getElementById('cfgPixName').value,
                 bank: document.getElementById('cfgPixBank').value
             },
-            lastUpdate: Date.now()
         };
 
         // 4. Gravação no Firestore (COM merge: true para preservar permissões de plano e abas)
@@ -3560,8 +3559,9 @@ async function initAnalyticsInsights() {
             magicCategories: {
                 [type]: isVisible
             },
-          window.markAsDirty();
+          
         }, { merge: true });
+   window.markAsDirty();
 
         // 3. FEEDBACK ÚNICO
         showToast(isVisible ? "Setor automático ativado! ✨" : "Setor removido da vitrine.");
