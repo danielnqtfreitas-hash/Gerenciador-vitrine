@@ -1239,7 +1239,24 @@
         const messaging = getMessaging(app);
 
         let currentStoreId = null;
-        let allProducts = [], allCategories = [], allBanners = [], deliveryAreas = [];
+        let allProducts = [];
+// Tenta carregar os produtos do cache local IMEDIATAMENTE
+// Note que usamos uma função para tentar ler o cache assim que o currentStoreId for definido
+const loadProductsFromCache = (storeId) => {
+    const saved = localStorage.getItem(`cache_products_${storeId}`);
+    if (saved) {
+        try {
+            allProducts = JSON.parse(saved);
+            console.log("📦 Cache carregado com sucesso: " + allProducts.length + " produtos.");
+        } catch (e) {
+            console.error("Erro ao ler cache:", e);
+            allProducts = [];
+        }
+    }
+};
+
+let allCategories = [], allBanners = [], deliveryAreas = [];
+
         let currentProductImages = []; 
         let imageQueue = [];
         let storeConfig = {};      // 🔹 vem do Firestore
@@ -2025,6 +2042,7 @@ setPersistence(auth, browserLocalPersistence)
                     }
 
                     if (currentStoreId) {
+                      loadProductsFromCache(currentStoreId); 
                         fetchPublicPlansEagerly();
                         initStoreData(); 
                         initAnalyticsChart();
@@ -2216,6 +2234,34 @@ window.renderPublishButton();
             if (typeof lucide !== 'undefined') lucide.createIcons();
         }
 
+                  // --- ECONOMIA CIRÚRGICA DE PRODUTOS ---
+            const serverUpdate = data.lastUpdate || 0;
+            const localUpdate = Number(localStorage.getItem(`last_update_${currentStoreId}`)) || 0;
+
+            // Se o servidor for mais novo ou o celular não tiver nada salvo
+            if (serverUpdate > localUpdate || allProducts.length === 0) {
+                console.log("🔄 Sincronizando produtos com o servidor...");
+                
+                const q = query(collection(db, `stores/${currentStoreId}/products`), orderBy("name", "asc"));
+                const prodSnap = await getDocs(q); // Busca única (mais barata)
+                
+                allProducts = prodSnap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+
+                // Salva no "disco" do seu Redmi Note 14
+                localStorage.setItem(`cache_products_${currentStoreId}`, JSON.stringify(allProducts));
+                localStorage.setItem(`last_update_${currentStoreId}`, serverUpdate);
+            } else {
+                console.log("🚀 Usando cache local. 0 leituras gastas nos produtos.");
+            }
+
+            // Atualiza o contador do Dashboard e a Lista na tela
+            const dashProds = document.getElementById('dash-total-products');
+            if (dashProds) dashProds.textContent = allProducts.length;
+            
+            renderProductList();
+            updateQuotas();
+
+
         // 5. Preenchimento dos campos de Configuração (PIX e Dados Gerais)
         const fields = {
             'confStoreName': data.storeName || '',
@@ -2246,13 +2292,7 @@ window.renderPublishButton();
     });
 
     // --- LISTENER C: PRODUTOS ---
-    onSnapshot(collection(db, `stores/${currentStoreId}/products`), (s) => {
-        allProducts = s.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-        const dashProds = document.getElementById('dash-total-products');
-        if (dashProds) dashProds.textContent = allProducts.length;
-        renderProductList();
-        updateQuotas(); 
-    });
+    
 
     // --- LISTENER D: BANNERS ---
     onSnapshot(collection(db, `stores/${currentStoreId}/hero_cards`), (s) => {
@@ -2529,8 +2569,7 @@ function updateQuotas() {
     }
 };
             
-       
-               window.deleteProduct = async (id, imageUrls = []) => {
+       window.deleteProduct = async (id, imageUrls = []) => {
     if(!confirm("Deseja apagar este produto permanentemente? Suas fotos também serão removidas do servidor.")) return;
 
     try {
@@ -2538,9 +2577,8 @@ function updateQuotas() {
         const snap = await getDoc(docRef);
         const data = snap.exists() ? snap.data() : null;
 
-        // 1. Coleta TODAS as URLs de imagens para deletar (Principais + Variações + Lixeira)
+        // 1. Coleta URLs para limpeza no Storage
         let allImagesToDelete = [...imageUrls];
-        
         if (data) {
             if (data.variations) {
                 data.variations.forEach(v => { if (v.image) allImagesToDelete.push(v.image); });
@@ -2550,20 +2588,40 @@ function updateQuotas() {
             }
         }
 
-        // 2. Apaga o documento no Firestore
+        // 2. Apaga do Banco de Dados
         await deleteDoc(docRef); 
 
-        // 3. Limpeza Física no Storage (Evita desperdício de espaço)
+        // 3. Limpeza das fotos no Storage
         const deletePromises = allImagesToDelete.map(url => {
             if (url && url.includes('firebasestorage')) {
                 const imageRef = ref(storage, url);
-                return deleteObject(imageRef).catch(e => console.warn("Imagem ignorada ou já removida."));
+                return deleteObject(imageRef).catch(e => console.warn("Imagem já não existia."));
             }
         });
         await Promise.all(deletePromises);
 
-        // 4. Sincroniza vitrine
-        await deleteDoc(docRef); 
+        // --- 4. SINCRONIA LOCAL (CIRÚRGICO) ---
+        // Remove do array que está na memória
+        allProducts = allProducts.filter(p => p.id !== id);
+        
+        // Atualiza o "disco" do celular
+        localStorage.setItem(`cache_products_${currentStoreId}`, JSON.stringify(allProducts));
+        
+        // Redesenha a tela na hora para o lojista ver sumindo
+        renderProductList();
+        
+        // Ativa o botão de Publicar (atualiza a vitrine do cliente)
+        window.markAsDirty(); 
+
+        showToast("🗑️ Produto e imagens removidos com sucesso!");
+
+    } catch (err) {
+        console.error("Erro na exclusão:", err);
+        showToast("❌ Erro ao excluir o produto.");
+    }
+};
+
+               
 // Avisa o botão para ficar colorido
 window.markAsDirty(); 
 showToast("🗑️ Produto e todos os arquivos removidos!");
@@ -3688,15 +3746,25 @@ window.deleteOrder = async (id) => {
         // 3. EXCLUSÃO DO DOCUMENTO DO PEDIDO
         await deleteDoc(doc(db, `stores/${currentStoreId}/orders`, id));
 
-        // 4. ATUALIZAÇÃO DA VITRINE E CACHE
-        localStorage.removeItem('app_cache_v4_' + currentStoreId);
-        await updateDoc(doc(db, `stores/${currentStoreId}/config/store`), { lastUpdate: Date.now() });
+                // --- 4. ATUALIZAÇÃO DA VITRINE E CACHE (Sincronizado) ---
+        const storeRef = doc(db, `stores/${currentStoreId}/config/store`);
+        
+        // 1. Avisa ao servidor que houve mudança (para atualizar os clientes e o painel)
+        await updateDoc(storeRef, { lastUpdate: Date.now() });
+
+        // 2. Limpa o carimbo de data local (Obrigatório para o Listener A baixar o estoque novo)
+        localStorage.removeItem(`last_update_${currentStoreId}`);
+        
+        // 3. Garante que o botão de "Publicar" não fique pendente se você já atualizou o lastUpdate
+        needsPublish = false;
+        localStorage.removeItem(`pending_publish_${currentStoreId}`);
+        window.renderPublishButton();
 
         showToast("Pedido removido e estoque devolvido com sucesso! 🔄");
         
-        // Fecha o modal de detalhes se estiver aberto
         const modal = document.getElementById('orderDetailModal');
         if (modal) modal.classList.add('hidden');
+
 
     } catch (e) {
         console.error("Erro ao excluir pedido:", e);
@@ -4331,6 +4399,11 @@ window.finishManualOrder = async () => {
         });
 
         await Promise.all(stockPromises);
+
+      const storeRef = doc(db, `stores/${currentStoreId}/config/store`);
+await updateDoc(storeRef, { lastUpdate: Date.now() }); // Avisa que o estoque mudou
+localStorage.removeItem(`last_update_${currentStoreId}`); // Limpa para forçar o download novo
+window.markAsDirty(); // Ativa o botão Publicar
         
         showToast("✅ Venda finalizada e estoque sincronizado!");
         manualOrder = [];
@@ -4501,10 +4574,21 @@ window.updateOrderStatus = async (id, status) => {
         }
 
         // Limpa cache e sincroniza vitrine
-        localStorage.removeItem('app_cache_v4_' + currentStoreId);
-        window.markAsDirty(); // Troque para economizar dados
-showToast(`Pedido ${status} e estoque sincronizado! ✅`);
+                // --- GATILHO CIRÚRGICO DE ATUALIZAÇÃO ---
+        const storeRef = doc(db, `stores/${currentStoreId}/config/store`);
+        
+        // 1. Atualiza a "data da capa" no servidor (Isso avisa a Vitrine e o seu Painel)
+        await updateDoc(storeRef, { lastUpdate: Date.now() });
 
+        // 2. Limpa o marcador de data local (Força o Listener A a baixar o estoque novo)
+        localStorage.removeItem(`last_update_${currentStoreId}`);
+        
+        // 3. Opcional: Avisa que a vitrine foi sincronizada
+        needsPublish = false;
+        localStorage.removeItem(`pending_publish_${currentStoreId}`);
+        window.renderPublishButton();
+
+        showToast(`Pedido ${status} e estoque sincronizado! ✅`);
         document.getElementById('orderDetailModal').classList.add('hidden');
 
     } catch (e) {
@@ -4512,10 +4596,6 @@ showToast(`Pedido ${status} e estoque sincronizado! ✅`);
         showToast("Erro ao processar alteração.");
     }
 };
-
-                       
-                              
-
 
 window.startBarcodeScanner = () => {
     const container = document.getElementById('scanner-container');
