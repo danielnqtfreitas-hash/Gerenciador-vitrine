@@ -1218,7 +1218,7 @@
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
         import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged, updatePassword, setPersistence, browserLocalPersistence, browserSessionPersistence } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        import { getFirestore, doc, getDoc, setDoc, updateDoc, deleteDoc, onSnapshot, collection, addDoc, query, where, getDocs, orderBy, limit, Timestamp, increment, startAfter} from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        import { getFirestore, doc, getDoc, setDoc, updateDoc, deleteDoc, onSnapshot, collection, addDoc, query, where, getDocs, orderBy, limit, Timestamp, increment } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
         import { getStorage, ref, uploadString, getDownloadURL, deleteObject } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-storage.js";
         // Procure onde começam os imports e adicione este:
         import { getMessaging, getToken, onMessage } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-messaging.js";
@@ -1239,24 +1239,7 @@
         const messaging = getMessaging(app);
 
         let currentStoreId = null;
-        let allProducts = [];
-// Tenta carregar os produtos do cache local IMEDIATAMENTE
-// Note que usamos uma função para tentar ler o cache assim que o currentStoreId for definido
-const loadProductsFromCache = (storeId) => {
-    const saved = localStorage.getItem(`cache_products_${storeId}`);
-    if (saved) {
-        try {
-            allProducts = JSON.parse(saved);
-            console.log("📦 Cache carregado com sucesso: " + allProducts.length + " produtos.");
-        } catch (e) {
-            console.error("Erro ao ler cache:", e);
-            allProducts = [];
-        }
-    }
-};
-
-let allCategories = [], allBanners = [], deliveryAreas = [];
-
+        let allProducts = [], allCategories = [], allBanners = [], deliveryAreas = [];
         let currentProductImages = []; 
         let imageQueue = [];
         let storeConfig = {};      // 🔹 vem do Firestore
@@ -2042,7 +2025,6 @@ setPersistence(auth, browserLocalPersistence)
                     }
 
                     if (currentStoreId) {
-                      loadProductsFromCache(currentStoreId); 
                         fetchPublicPlansEagerly();
                         initStoreData(); 
                         initAnalyticsChart();
@@ -2094,6 +2076,7 @@ window.renderPublishButton();
 
 // --- LISTENER DE PEDIDOS (VERSÃO 5 CARACTERES) ---
 window.initOrderListener = (storeId) => {
+    // Query limitada para economizar leituras
     const q = query(
         collection(db, `stores/${storeId}/orders`),
         orderBy("createdAt", "desc"),
@@ -2113,23 +2096,21 @@ window.initOrderListener = (storeId) => {
                         audio.currentTime = 0;
                         audio.play().catch(e => console.warn("Clique na página para ativar o som."));
                     }
-                    // Adicionei um aviso visual para o novo pedido
-                    showToast("🔔 Novo pedido recebido!");
                 }
             }
         });
 
+        // MANTÉM SUA LÓGICA ORIGINAL
         lastOrderCount = snapshot.size;
         isFirstLoad = false;
         
-        // Pega o último documento apenas se houver resultados
-        if (snapshot.docs.length > 0) {
-            lastVisibleOrder = snapshot.docs[snapshot.docs.length - 1];
-        }
+        // Guarda o ponto de parada para a paginação
+        lastVisibleOrder = snapshot.docs[snapshot.docs.length - 1];
 
-        // --- CIRURGIA AQUI: Removi 'ordersCache = {}' para não apagar o histórico carregado ---
+        ordersCache = {};
         snapshot.forEach(doc => {
-            ordersCache[doc.id] = { id: doc.id, ...doc.data() };
+            const p = { id: doc.id, ...doc.data() };
+            ordersCache[p.id] = p;
         });
 
         window.renderFilteredOrders();
@@ -2234,34 +2215,6 @@ window.renderPublishButton();
             if (typeof lucide !== 'undefined') lucide.createIcons();
         }
 
-                  // --- ECONOMIA CIRÚRGICA DE PRODUTOS ---
-            const serverUpdate = data.lastUpdate || 0;
-            const localUpdate = Number(localStorage.getItem(`last_update_${currentStoreId}`)) || 0;
-
-            // Se o servidor for mais novo ou o celular não tiver nada salvo
-            if (serverUpdate > localUpdate || allProducts.length === 0) {
-                console.log("🔄 Sincronizando produtos com o servidor...");
-                
-                const q = query(collection(db, `stores/${currentStoreId}/products`), orderBy("name", "asc"));
-                const prodSnap = await getDocs(q); // Busca única (mais barata)
-                
-                allProducts = prodSnap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-
-                // Salva no "disco" do seu Redmi Note 14
-                localStorage.setItem(`cache_products_${currentStoreId}`, JSON.stringify(allProducts));
-                localStorage.setItem(`last_update_${currentStoreId}`, serverUpdate);
-            } else {
-                console.log("🚀 Usando cache local. 0 leituras gastas nos produtos.");
-            }
-
-            // Atualiza o contador do Dashboard e a Lista na tela
-            const dashProds = document.getElementById('dash-total-products');
-            if (dashProds) dashProds.textContent = allProducts.length;
-            
-            renderProductList();
-            updateQuotas();
-
-
         // 5. Preenchimento dos campos de Configuração (PIX e Dados Gerais)
         const fields = {
             'confStoreName': data.storeName || '',
@@ -2292,7 +2245,13 @@ window.renderPublishButton();
     });
 
     // --- LISTENER C: PRODUTOS ---
-    
+    onSnapshot(collection(db, `stores/${currentStoreId}/products`), (s) => {
+        allProducts = s.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        const dashProds = document.getElementById('dash-total-products');
+        if (dashProds) dashProds.textContent = allProducts.length;
+        renderProductList();
+        updateQuotas(); 
+    });
 
     // --- LISTENER D: BANNERS ---
     onSnapshot(collection(db, `stores/${currentStoreId}/hero_cards`), (s) => {
@@ -2569,7 +2528,8 @@ function updateQuotas() {
     }
 };
             
-       window.deleteProduct = async (id, imageUrls = []) => {
+       
+               window.deleteProduct = async (id, imageUrls = []) => {
     if(!confirm("Deseja apagar este produto permanentemente? Suas fotos também serão removidas do servidor.")) return;
 
     try {
@@ -2577,8 +2537,9 @@ function updateQuotas() {
         const snap = await getDoc(docRef);
         const data = snap.exists() ? snap.data() : null;
 
-        // 1. Coleta URLs para limpeza no Storage
+        // 1. Coleta TODAS as URLs de imagens para deletar (Principais + Variações + Lixeira)
         let allImagesToDelete = [...imageUrls];
+        
         if (data) {
             if (data.variations) {
                 data.variations.forEach(v => { if (v.image) allImagesToDelete.push(v.image); });
@@ -2588,40 +2549,20 @@ function updateQuotas() {
             }
         }
 
-        // 2. Apaga do Banco de Dados
+        // 2. Apaga o documento no Firestore
         await deleteDoc(docRef); 
 
-        // 3. Limpeza das fotos no Storage
+        // 3. Limpeza Física no Storage (Evita desperdício de espaço)
         const deletePromises = allImagesToDelete.map(url => {
             if (url && url.includes('firebasestorage')) {
                 const imageRef = ref(storage, url);
-                return deleteObject(imageRef).catch(e => console.warn("Imagem já não existia."));
+                return deleteObject(imageRef).catch(e => console.warn("Imagem ignorada ou já removida."));
             }
         });
         await Promise.all(deletePromises);
 
-        // --- 4. SINCRONIA LOCAL (CIRÚRGICO) ---
-        // Remove do array que está na memória
-        allProducts = allProducts.filter(p => p.id !== id);
-        
-        // Atualiza o "disco" do celular
-        localStorage.setItem(`cache_products_${currentStoreId}`, JSON.stringify(allProducts));
-        
-        // Redesenha a tela na hora para o lojista ver sumindo
-        renderProductList();
-        
-        // Ativa o botão de Publicar (atualiza a vitrine do cliente)
-        window.markAsDirty(); 
-
-        showToast("🗑️ Produto e imagens removidos com sucesso!");
-
-    } catch (err) {
-        console.error("Erro na exclusão:", err);
-        showToast("❌ Erro ao excluir o produto.");
-    }
-};
-
-               
+        // 4. Sincroniza vitrine
+        await deleteDoc(docRef); 
 // Avisa o botão para ficar colorido
 window.markAsDirty(); 
 showToast("🗑️ Produto e todos os arquivos removidos!");
@@ -3746,25 +3687,15 @@ window.deleteOrder = async (id) => {
         // 3. EXCLUSÃO DO DOCUMENTO DO PEDIDO
         await deleteDoc(doc(db, `stores/${currentStoreId}/orders`, id));
 
-                // --- 4. ATUALIZAÇÃO DA VITRINE E CACHE (Sincronizado) ---
-        const storeRef = doc(db, `stores/${currentStoreId}/config/store`);
-        
-        // 1. Avisa ao servidor que houve mudança (para atualizar os clientes e o painel)
-        await updateDoc(storeRef, { lastUpdate: Date.now() });
-
-        // 2. Limpa o carimbo de data local (Obrigatório para o Listener A baixar o estoque novo)
-        localStorage.removeItem(`last_update_${currentStoreId}`);
-        
-        // 3. Garante que o botão de "Publicar" não fique pendente se você já atualizou o lastUpdate
-        needsPublish = false;
-        localStorage.removeItem(`pending_publish_${currentStoreId}`);
-        window.renderPublishButton();
+        // 4. ATUALIZAÇÃO DA VITRINE E CACHE
+        localStorage.removeItem('app_cache_v4_' + currentStoreId);
+        await updateDoc(doc(db, `stores/${currentStoreId}/config/store`), { lastUpdate: Date.now() });
 
         showToast("Pedido removido e estoque devolvido com sucesso! 🔄");
         
+        // Fecha o modal de detalhes se estiver aberto
         const modal = document.getElementById('orderDetailModal');
         if (modal) modal.classList.add('hidden');
-
 
     } catch (e) {
         console.error("Erro ao excluir pedido:", e);
@@ -4003,12 +3934,7 @@ window.loadMagicCategoriesFeedback = (data) => {
 
     // Converte cache em array
     let list = Object.values(ordersCache);
-          
-list.sort((a, b) => {
-        const dateA = a.createdAt?.toMillis ? a.createdAt.toMillis() : 0;
-        const dateB = b.createdAt?.toMillis ? b.createdAt.toMillis() : 0;
-        return dateB - dateA;
-    });
+
     // FILTRO DE BUSCA
     list = list.filter(p =>
         p.customer?.name?.toLowerCase().includes(search) ||
@@ -4569,21 +4495,10 @@ window.updateOrderStatus = async (id, status) => {
         }
 
         // Limpa cache e sincroniza vitrine
-                // --- GATILHO CIRÚRGICO DE ATUALIZAÇÃO ---
-        const storeRef = doc(db, `stores/${currentStoreId}/config/store`);
-        
-        // 1. Atualiza a "data da capa" no servidor (Isso avisa a Vitrine e o seu Painel)
-        await updateDoc(storeRef, { lastUpdate: Date.now() });
+        localStorage.removeItem('app_cache_v4_' + currentStoreId);
+        window.markAsDirty(); // Troque para economizar dados
+showToast(`Pedido ${status} e estoque sincronizado! ✅`);
 
-        // 2. Limpa o marcador de data local (Força o Listener A a baixar o estoque novo)
-        localStorage.removeItem(`last_update_${currentStoreId}`);
-        
-        // 3. Opcional: Avisa que a vitrine foi sincronizada
-        needsPublish = false;
-        localStorage.removeItem(`pending_publish_${currentStoreId}`);
-        window.renderPublishButton();
-
-        showToast(`Pedido ${status} e estoque sincronizado! ✅`);
         document.getElementById('orderDetailModal').classList.add('hidden');
 
     } catch (e) {
@@ -4591,6 +4506,10 @@ window.updateOrderStatus = async (id, status) => {
         showToast("Erro ao processar alteração.");
     }
 };
+
+                       
+                              
+
 
 window.startBarcodeScanner = () => {
     const container = document.getElementById('scanner-container');
