@@ -2605,7 +2605,7 @@ function updateQuotas() {
             colors: [...new Set(updatedVariations.map(v => v.color))].filter(c => c && c !== 'PADRAO'),
             sizes: [...new Set(updatedVariations.map(v => v.size))].filter(s => s && s !== 'UNICO'),
             trashFiles: stillInTrash, 
-            lastUpdate: now,
+          
             status: totalStock > 0 ? 'active' : 'paused'
         };
 
@@ -3055,8 +3055,7 @@ window.handleBannerSubmit = async (e) => {
             color1: document.getElementById('bannerColor1').value, 
             color2: document.getElementById('bannerColor2').value, 
             target: document.getElementById('bannerTarget').value,
-            imageUrl: imageUrl,
-            lastUpdate: Date.now()
+            imageUrl: imageUrls,
         };
 
         await setDoc(doc(db, `stores/${currentStoreId}/hero_cards`, finalId), data, { merge: true });
@@ -3349,7 +3348,7 @@ function executaPlanoBCopia(texto) {
         
         await updateDoc(storeRef, { 
             deliveryAreas: updatedAreas,
-            lastUpdate: Date.now() 
+          window.markAsDirty();
         });
         
         // Limpa campos
@@ -3372,7 +3371,7 @@ function executaPlanoBCopia(texto) {
         const storeRef = doc(db, `stores/${currentStoreId}/config/store`);
         await updateDoc(storeRef, { 
             deliveryAreas: deliveryAreas, 
-            lastUpdate: Date.now() 
+             window.markAsDirty();
         });
         showToast("Bairro removido!");
         // O renderDeliveryAreas() será chamado automaticamente pelo onSnapshot acima
@@ -3561,7 +3560,7 @@ async function initAnalyticsInsights() {
             magicCategories: {
                 [type]: isVisible
             },
-            lastUpdate: Date.now()
+          window.markAsDirty();
         }, { merge: true });
 
         // 3. FEEDBACK ÚNICO
