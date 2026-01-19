@@ -2020,19 +2020,20 @@ async function requestNotificationPermission() {
 }
         
 
-        // --- INIT DATA & AUTH PERSISTENCE (VERSÃO FINAL ÚNICA) ---
+// --- INIT DATA & AUTH PERSISTENCE (VERSÃO FINAL ÚNICA E CORRIGIDA) ---
 setPersistence(auth, browserLocalPersistence)
     .then(() => {
         return onAuthStateChanged(auth, async (user) => {
             const authScreen = document.getElementById('auth-screen');
             
             if(user) {
+                // 1. Prepara a tela
                 if(authScreen) authScreen.classList.add('hidden');
                 const emailDisplay = document.getElementById('userEmailDisplay');
                 if (emailDisplay) emailDisplay.textContent = user.email;
                 
                 try {
-                    // 1. Identificação da Loja
+                    // 2. Identificação da Loja
                     let dirDoc = await getDoc(doc(db, "admin_directory", user.uid));
                     if(!dirDoc.exists()){
                         const snap = await getDocs(query(collection(db, "stores_registry"), where("ownerEmail", "==", user.email)));
@@ -2043,7 +2044,7 @@ setPersistence(auth, browserLocalPersistence)
                     }
 
                     if (currentStoreId) {
-                        // 2. Inicialização dos Módulos
+                        // 3. Inicialização dos Módulos
                         loadProductsFromCache(currentStoreId); 
                         fetchPublicPlansEagerly();
                         initStoreData(); 
@@ -2053,12 +2054,12 @@ setPersistence(auth, browserLocalPersistence)
                         if (typeof loadMagicCategoriesFeedback === 'function') loadMagicCategoriesFeedback();
                         changeTab('orders');   
                         
-                        // 3. Status de Publicação
+                        // 4. Status de Publicação
                         const pending = localStorage.getItem(`pending_publish_${currentStoreId}`);
                         needsPublish = (pending === 'true');
                         window.renderPublishButton();
 
-                        // 4. Lógica do Tutorial (Integrada)
+                        // 5. Lógica do Tutorial
                         const tutorialFeito = localStorage.getItem('tutorial_concluido_' + user.uid);
                         if (!tutorialFeito) {
                             setTimeout(() => {
@@ -2075,13 +2076,14 @@ setPersistence(auth, browserLocalPersistence)
                             }, 3000);
                         }
 
-                        // 5. Permissão de Notificações
+                        // 6. Permissão de Notificações
                         setTimeout(requestNotificationPermission, 5000);
                     }
                 } catch (e) {
-                    console.error("Erro crítico ao carregar loja:", e);
+                    console.error("Erro crítico ao carregar dados:", e);
                 }
             } else { 
+                // 7. Se não houver usuário, mostra tela de login
                 if(authScreen) authScreen.classList.remove('hidden'); 
                 if (typeof lucide !== 'undefined') lucide.createIcons(); 
             }
@@ -2090,7 +2092,6 @@ setPersistence(auth, browserLocalPersistence)
     .catch((error) => {
         console.error("Erro na persistência do Firebase:", error);
     });
-
 
 
 // --- LISTENER DE PEDIDOS (VERSÃO 5 CARACTERES) ---
