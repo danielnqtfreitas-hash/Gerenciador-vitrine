@@ -1254,6 +1254,9 @@ let currentPlan = null;   // 🔹 vem da collection plans
        let variationsHistoryCache = new Map();
         let html5QrCode = null;
         let customStart = null;
+      let ordersLimit = 20; // Limite inicial
+let lastVisibleOrder = null; // Guarda o último pedido carregado para saber de onde continuar
+let isLoadingMore = false; // Evita cliques duplos
 let customEnd = null;
         let lastOrderCount = 0; // Variável global para controle de som
         let ordersCache = {}; // Guarda os pedidos para o modal de detalhes
@@ -2072,22 +2075,21 @@ window.renderPublishButton();
 
 
 // --- LISTENER DE PEDIDOS (VERSÃO 5 CARACTERES) ---
-
 window.initOrderListener = (storeId) => {
+    // Query limitada para economizar leituras
     const q = query(
         collection(db, `stores/${storeId}/orders`),
-        orderBy("createdAt", "desc")
+        orderBy("createdAt", "desc"),
+        limit(ordersLimit)
     );
 
     const container = document.getElementById("ordersCardsContainer");
-    const audio = document.getElementById('notifSound'); // Usando o elemento do seu HTML
+    const audio = document.getElementById('notifSound');
 
     onSnapshot(q, (snapshot) => {
         if (!container) return;
 
-        // --- ALTERAÇÃO CIRÚRGICA: DETECÇÃO POR MUDANÇA DE DOCUMENTO ---
         snapshot.docChanges().forEach((change) => {
-            // Se o documento foi ADICIONADO e não é uma gravação local (manual)
             if (change.type === "added" && !snapshot.metadata.hasPendingWrites) {
                 if (!isFirstLoad) {
                     if (audio) {
@@ -2098,9 +2100,12 @@ window.initOrderListener = (storeId) => {
             }
         });
 
-        // --- MANTÉM SUA LÓGICA ORIGINAL DE CACHE E CONTROLE ---
+        // MANTÉM SUA LÓGICA ORIGINAL
         lastOrderCount = snapshot.size;
         isFirstLoad = false;
+        
+        // Guarda o ponto de parada para a paginação
+        lastVisibleOrder = snapshot.docs[snapshot.docs.length - 1];
 
         ordersCache = {};
         snapshot.forEach(doc => {
@@ -2111,8 +2116,7 @@ window.initOrderListener = (storeId) => {
         window.renderFilteredOrders();
     });
 };
-
-      
+     
 
 function initStoreData() {
 window.renderPublishButton();
@@ -4008,14 +4012,25 @@ window.loadMagicCategoriesFeedback = (data) => {
                             R$ ${p.total.toFixed(2).replace(".", ",")}
                         </p>
                     </div>
-
                 </div>
             `;
         });
     });
+          if (lastVisibleOrder) {
+    html += `
+        <div class="py-6 flex justify-center">
+            <button id="btnLoadMore" onclick="window.loadMoreOrders()" 
+                class="px-8 py-3 bg-white border border-slate-200 rounded-2xl text-[10px] font-black text-slate-500 uppercase tracking-widest">
+                Ver pedidos antigos
+            </button>
+        </div>
+    `;
+          }
 
-    container.innerHTML = html;
+        container.innerHTML = html;
+    if (window.lucide) lucide.createIcons(); // <--- Adicione isso aqui
 };
+
 
         // --- FUNÇÕES DO MODAL DE PEDIDO MANUAL ---
 
@@ -4976,6 +4991,42 @@ window.markAsDirty = () => {
     window.renderPublishButton();
 };
 
+window.loadMoreOrders = async () => {
+    if (!lastVisibleOrder || isLoadingMore) return;
+    
+    isLoadingMore = true;
+    const btn = document.getElementById('btnLoadMore');
+    if(btn) btn.innerHTML = "Carregando...";
+
+    try {
+        const nextQ = query(
+            collection(db, `stores/${currentStoreId}/orders`),
+            orderBy("createdAt", "desc"),
+            startAfter(lastVisibleOrder),
+            limit(20)
+        );
+
+        const snapshot = await getDocs(nextQ);
+        if (snapshot.empty) {
+            showToast("Fim do histórico.");
+            if(btn) btn.classList.add('hidden');
+            return;
+        }
+
+        lastVisibleOrder = snapshot.docs[snapshot.docs.length - 1];
+
+        snapshot.forEach(doc => {
+            ordersCache[doc.id] = { id: doc.id, ...doc.data() };
+        });
+
+        window.renderFilteredOrders();
+    } catch (e) {
+        showToast("Erro ao carregar mais pedidos.");
+    } finally {
+        isLoadingMore = false;
+        if(btn) btn.innerHTML = "Ver pedidos antigos";
+    }
+};
 
 
     </script>
