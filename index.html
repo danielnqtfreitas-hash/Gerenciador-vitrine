@@ -5307,18 +5307,29 @@ window.processarBaixaSilenciosa = async (orderId, orderData) => {
 
         await Promise.all(stockPromises);
 
-        // 🚩 Marca como processado e atualiza a vitrine para outros clientes
+        // 1. Marca como processado no banco de dados
         await updateDoc(doc(db, `stores/${currentStoreId}/orders`, orderId), { stockDeducted: true });
+        
+        // 2. Avisa a vitrine dos clientes para atualizar
         await updateDoc(doc(db, `stores/${currentStoreId}/config/store`), { lastUpdate: Date.now() });
         
         console.log("✅ Estoque reservado automaticamente.");
-        // Atualiza seus próprios dados locais para o faturamento ficar certo
-        await loadProductsCache(true); 
+
+        // 3. 🚀 ATUALIZAÇÃO EM TEMPO REAL NO SEU PAINEL:
+        await loadProductsCache(true); // Puxa os novos números do banco para a memória 'allProducts'
+        
+        // 4. MANDA DESENHAR NA TELA:
+        renderProductList();           // Redesenha a lista na aba de produtos
+        window.initFinanceDashboard(); // Atualiza os valores no financeiro/dashboard
+        
+        // Opcional: Mostra um aviso discreto que o estoque foi atualizado
+        console.log("📱 Interface do lojista atualizada sem F5.");
 
     } catch (e) {
         console.error("Erro na reserva de estoque:", e);
     }
 };
+
 
     </script>
 </body>
