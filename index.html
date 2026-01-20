@@ -2909,29 +2909,44 @@ window.cancelCategoryEdit = () => {
 };
 
 window.deleteCategory = async (id) => {
-    if (confirm("Apagar categoria? Os produtos desta categoria ficarão sem departamento.")) {
-        try {
-            const oldDoc = await getDoc(doc(db, `stores/${currentStoreId}/categories`, id));
-            const oldName = oldDoc.exists() ? oldDoc.data().name : null;
+    if(!confirm("Tem certeza? Produtos nesta categoria ficarão 'Sem Categoria' até que você os edite.")) return;
 
-            await deleteDoc(doc(db, `stores/${currentStoreId}/categories`, id));
+    try {
+        // 1. APAGA NO FIREBASE (Obrigatório para segurança)
+        await deleteDoc(doc(db, `stores/${currentStoreId}/categories`, id));
 
-            if (oldName) {
-                const q = query(collection(db, `stores/${currentStoreId}/products`), where("category", "==", oldName));
-                const snap = await getDocs(q);
-                const updates = snap.docs.map(d => updateDoc(doc(db, `stores/${currentStoreId}/products`, d.id), { category: "Sem Categoria" }));
-                await Promise.all(updates);
+        // 2. ATUALIZA A MEMÓRIA RAM (Faz sumir da tela na hora)
+        // Filtramos o array global de categorias
+        allCategories = allCategories.filter(cat => cat.id !== id);
+
+        // 3. SINCRONIZA O CACHE LOCAL (Para o F5 não trazer de volta)
+        localStorage.setItem(`cache_categories_${currentStoreId}`, JSON.stringify(allCategories));
+
+        // 4. (OPCIONAL) ATUALIZA OS PRODUTOS NA MEMÓRIA
+        // Se um produto tinha essa categoria, mudamos localmente para "Sem Categoria"
+        // Assim você não precisa recarregar os produtos do Firebase!
+        allProducts = allProducts.map(prod => {
+            if (prod.category === id) {
+                return { ...prod, category: "Sem Categoria" };
             }
+            return prod;
+        });
+        // Salva o cache de produtos atualizado
+        localStorage.setItem(`cache_products_${currentStoreId}`, JSON.stringify(allProducts));
 
-            window.markAsDirty(); // Troque pela nossa função
-showToast("Categoria removida.");
+        // 5. ATUALIZA O VISUAL E O BOTÃO DE PUBLICAR
+        renderCategoryList(); // Função que desenha as categorias
+        renderProductList();  // Atualiza os produtos para refletir a falta da categoria
+        window.markAsDirty(); // Ativa o botão de "Publicar"
 
-        } catch (err) {
-            console.error(err);
-            showToast("Erro ao excluir.");
-        }
+        showToast("Categoria removida com sucesso!");
+
+    } catch (error) {
+        console.error("Erro ao excluir categoria:", error);
+        showToast("❌ Erro ao excluir categoria.");
     }
 };
+
 
 function renderCategoryList() {
     document.getElementById('categoryList').innerHTML = allCategories.map(c => `
@@ -3125,16 +3140,23 @@ window.handleBannerSubmit = async (e) => {
         const bannerDoc = allBanners.find(b => b.id === id);
         const imageUrl = bannerDoc ? bannerDoc.imageUrl : null;
 
-        // 1. Apaga do Firestore
+        // 1. APAGA NO FIREBASE (O que você já faz)
         await deleteDoc(doc(db, `stores/${currentStoreId}/hero_cards`, id));
 
-        // 2. Apaga do Storage (Limpeza física)
+        // 2. ATUALIZA A MEMÓRIA RAM (O que faz sumir da tela AGORA)
+        allBanners = allBanners.filter(b => b.id !== id);
+
+        // 3. ATUALIZA O CACHE DO DISCO (O que evita o "fantasma" no F5)
+        localStorage.setItem(`cache_banners_${currentStoreId}`, JSON.stringify(allBanners));
+
+        // 4. LIMPEZA FÍSICA NO STORAGE
         if (imageUrl && imageUrl.includes('firebasestorage.googleapis.com')) {
             const bannerImgRef = ref(storage, imageUrl);
-            await deleteObject(bannerImgRef).catch(e => console.warn("Imagem do banner não encontrada no servidor."));
+            await deleteObject(bannerImgRef).catch(e => console.warn("Imagem já removida."));
         }
 
-        // 3. ATIVA O BOTÃO DE PUBLICAÇÃO (O "pulo do gato")
+        // 5. ATUALIZA A INTERFACE E O BOTÃO DE PUBLICAR
+        renderBannerList(); 
         window.markAsDirty(); 
 
         showToast("Banner removido com sucesso!");
@@ -3143,6 +3165,7 @@ window.handleBannerSubmit = async (e) => {
         showToast("❌ Erro ao excluir banner.");
     }
 };
+
 
         function renderBannerList() {
     const listContainer = document.getElementById('bannersList');
