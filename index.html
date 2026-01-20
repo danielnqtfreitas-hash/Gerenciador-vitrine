@@ -4593,22 +4593,18 @@ window.updateOrderStatus = async (id, status) => {
 
         const orderRef = doc(db, `stores/${currentStoreId}/orders`, id);
         const orderUpdate = { status: status };
-        const alreadyDeducted = p.stockDeducted || false;
+        
+        const estavaCancelado = p.status === 'canceled' || p.status === 'Cancelado';
+        const alreadyDeducted = p.stockDeducted === true;
 
-        // --- CASO A: CONFIRMAR OU COMPLETAR (APENAS FINANCEIRO E STATUS) ---
-if ((status === 'confirmed' || status === 'completed') && !alreadyDeducted) {
-    // 🚀 AQUI ESTÁ A MUDANÇA: 
-    // Não criamos stockPromises nem fazemos updateDoc nos produtos aqui.
-    // A reserva de estoque já foi feita automaticamente pelo Listener.
-    
-    console.log("Pedido confirmado. O estoque já foi reservado pelo sistema na chegada.");
-    
-    // Apenas marcamos como deduzido (caso ainda não esteja) para segurança do banco
-    orderUpdate.stockDeducted = true;
-    
-    // Atualiza o seu próprio cache local apenas para o Financeiro ler o valor na tela
-    await loadProductsCache(true); 
-}
+        if ((status === 'confirmed' || status === 'completed') && (!alreadyDeducted || estavaCancelado)) {
+            await window.processarBaixaSilenciosa(id, p);
+            orderUpdate.stockDeducted = true;
+            
+            await loadProductsCache(true); 
+            renderProductList();
+            window.initFinanceDashboard();
+        }
 
 
         // --- CASO B: CANCELAR (DEVOLVER ESTOQUE) ---
