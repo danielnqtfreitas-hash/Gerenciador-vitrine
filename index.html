@@ -1112,82 +1112,68 @@
                             </div>
                         </div>
                     </div>
-
-                    <div class="space-y-8">
+ <div class="space-y-8">
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                            
                             <div class="space-y-5">
                                 <h4 class="text-[11px] font-black uppercase text-slate-400 tracking-widest border-b border-slate-100 pb-2">Precificação Base</h4>
+                                
                                 <div class="grid grid-cols-2 gap-4">
                                     <div class="space-y-1">
                                         <label class="text-[10px] font-bold text-slate-500 uppercase ml-1">Preço Normal (R$)</label>
-                                        <input type="number" step="0.01" id="prodValue" required
-  oninput="calculateProfit()"
-  placeholder="0.00" class="input-pro bg-white">
-                                    <div class="space-y-8">
-    <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
-        <div class="space-y-5">
-            <h4 class="text-[11px] font-black uppercase text-slate-400 tracking-widest border-b border-slate-100 pb-2">Precificação Base</h4>
-            <div class="grid grid-cols-2 gap-4">
-                
-                <div class="space-y-1">
-                    <label class="text-[10px] font-bold text-slate-500 uppercase ml-1">Preço Normal (R$)</label>
-                    <input type="number" step="0.01" id="prodValue" required oninput="calculateProfit()" placeholder="0.00" class="input-pro bg-white">
-                </div> <div class="space-y-1">
-                    <label class="text-[10px] font-bold text-green-600 uppercase ml-1">Preço Promo (R$)</label>
-                    <input type="number" step="0.01" id="prodPromo" placeholder="Opcional" class="input-pro bg-white">
-                </div> <div class="space-y-1">
-                    <label class="text-[10px] font-bold text-amber-600 uppercase ml-1">Validade da Oferta (Dias)</label>
-                    <div class="relative">
-                        <input type="number" id="prodPromoDays" placeholder="Ex: 7" min="1" class="input-pro bg-white pr-10">
-                        <span class="absolute right-3 top-3.5 text-[10px] font-bold text-slate-400 uppercase">dias</span>
-                    </div>
-                </div> </div> </div>
-                            <div class="space-y-5">
-  <h4 class="text-[11px] font-black uppercase text-slate-400 tracking-widest border-b border-slate-100 pb-2">
-    Controle de Estoque & Lucro
-  </h4>
-
-  <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-    <div>
-      <label class="text-[10px] font-bold text-slate-500 uppercase ml-1">Estoque</label>
-      <input type="number" id="prodStock" min="0" placeholder="0"
-        class="input-pro bg-white">
-    </div>
-
-    <div>
-      <label class="text-[10px] font-bold text-slate-500 uppercase ml-1">
-        Valor de Compra (R$)
-      </label>
-      <input type="number" step="0.01" id="prodCost"
-        oninput="calculateProfit()"
-        class="input-pro bg-white">
-    </div>
-
-    <div>
-      <label class="text-[10px] font-bold text-green-600 uppercase ml-1">
-        Lucro por Unidade
-      </label>
-      <input type="text" id="prodProfit"
-        class="input-pro bg-green-50 border-green-200 font-bold text-green-700"
-        disabled>
-    </div>
-  </div>
-                            </div>
-                            <div class="space-y-5">
-                                <h4 class="text-[11px] font-black uppercase text-slate-400 tracking-widest border-b border-slate-100 pb-2">Gerador de Combinações</h4>
-                                <div class="grid grid-cols-1 gap-4">
-                                    <div class="space-y-1">
-                                        <label class="text-[10px] font-bold text-slate-500 uppercase ml-1">Tamanhos (Vírgula)</label>
-                                        <input type="text" id="prodSizesInput" oninput="generateVariationMatrix()" placeholder="P, M, G" class="input-pro bg-white">
+                                        <input type="number" step="0.01" id="prodValue" required oninput="calculateProfit()" placeholder="0.00" class="input-pro bg-white">
                                     </div>
+
                                     <div class="space-y-1">
-                                        <label class="text-[10px] font-bold text-slate-500 uppercase ml-1">Cores (Vírgula)</label>
-                                        <input type="text" id="prodColorsInput" oninput="generateVariationMatrix()" placeholder="Azul, Branco, Preto" class="input-pro bg-white">
+                                        <label class="text-[10px] font-bold text-green-600 uppercase ml-1">Preço Promo (R$)</label>
+                                        <input type="number" step="0.01" id="prodPromo" placeholder="Opcional" class="input-pro bg-white">
+                                    </div>
+                                </div>
+
+                                <div class="space-y-1">
+                                    <label class="text-[10px] font-bold text-amber-600 uppercase ml-1">Duração da Oferta Especial</label>
+                                    <div class="relative">
+                                        <input type="number" id="prodPromoDays" placeholder="Quantidade de dias (Ex: 7)" min="1" class="input-pro bg-white pr-16">
+                                        <div class="absolute right-3 top-3.5 flex items-center gap-1 pointer-events-none">
+                                            <span class="text-[10px] font-black text-slate-400 uppercase">Dias</span>
+                                            <i data-lucide="clock" class="w-3.5 h-3.5 text-amber-500"></i>
+                                        </div>
+                                    </div>
+                                    <p class="text-[9px] text-slate-400 mt-1 italic">* A oferta expirará automaticamente após este período.</p>
+                                </div>
+                            </div>
+
+                                                        <div class="space-y-5">
+                                <h4 class="text-[11px] font-black uppercase text-slate-400 tracking-widest border-b border-slate-100 pb-2">Controle de Estoque & Lucro</h4>
+                                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                    <div>
+                                        <label class="text-[10px] font-bold text-slate-500 uppercase ml-1">Estoque</label>
+                                        <input type="number" id="prodStock" min="0" placeholder="0" class="input-pro bg-white">
+                                    </div>
+                                    <div>
+                                        <label class="text-[10px] font-bold text-slate-500 uppercase ml-1">Custo (R$)</label>
+                                        <input type="number" step="0.01" id="prodCost" oninput="calculateProfit()" class="input-pro bg-white">
+                                    </div>
+                                    <div>
+                                        <label class="text-[10px] font-bold text-green-600 uppercase ml-1">Lucro</label>
+                                        <input type="text" id="prodProfit" class="input-pro bg-green-50 border-green-200 font-bold text-green-700" disabled>
                                     </div>
                                 </div>
                             </div>
+                        </div> <div class="space-y-5 mt-8">
+                            <h4 class="text-[11px] font-black uppercase text-slate-400 tracking-widest border-b border-slate-100 pb-2">Gerador de Combinações</h4>
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div class="space-y-1">
+                                    <label class="text-[10px] font-bold text-slate-500 uppercase ml-1">Tamanhos (Vírgula)</label>
+                                    <input type="text" id="prodSizesInput" oninput="generateVariationMatrix()" placeholder="P, M, G" class="input-pro bg-white">
+                                </div>
+                                <div class="space-y-1">
+                                    <label class="text-[10px] font-bold text-slate-500 uppercase ml-1">Cores (Vírgula)</label>
+                                    <input type="text" id="prodColorsInput" oninput="generateVariationMatrix()" placeholder="Azul, Branco, Preto" class="input-pro bg-white">
+                                </div>
+                            </div>
                         </div>
-
+                    </div> 
                         <div id="variationMatrixContainer" class="hidden animate-fade-in">
     <h4 class="text-[11px] font-black uppercase text-slate-400 tracking-widest border-b border-slate-100 pb-2 mb-4">
         Matriz de Variações Inteligente
@@ -3280,7 +3266,11 @@ window.handleBannerSubmit = async (e) => {
         return; 
     }
 // Só faz a leitura se for a primeira vez que o lojista entra na aba
-    if (tabName === 'products') await loadProductsCache();
+    if (tabName === 'products') {
+    await loadProductsCache();
+    window.limparOfertasExpiradas(allProducts);
+}
+
     if (tabName === 'categories') await loadCategoriesCache();
     if (tabName === 'banners') await loadBannersCache();
     
@@ -5351,6 +5341,36 @@ window.processarBaixaSilenciosa = async (orderId, orderData) => {
         console.error("Erro na reserva de estoque:", e);
     }
 };
+
+     window.limparOfertasExpiradas = async (produtos) => {
+    const agora = Date.now();
+    const expirados = produtos.filter(p => p.promoUntil && p.promoUntil < agora && p.promoUntil !== null);
+
+    if (expirados.length === 0) return;
+
+    try {
+        const promises = expirados.map(async (p) => {
+            const docRef = doc(db, `stores/${currentStoreId}/products`, p.id);
+            return updateDoc(docRef, {
+                promoValue: null,
+                promoDays: null,
+                promoUntil: null
+            });
+        });
+
+        await Promise.all(promises);
+        
+        // Sincroniza a vitrine e o painel após a limpeza
+        await updateDoc(doc(db, `stores/${currentStoreId}/config/store`), { lastUpdate: Date.now() });
+        await loadProductsCache(true);
+        renderProductList();
+        
+        console.log("🧹 Faxina Automática: Ofertas expiradas foram removidas do banco.");
+    } catch (e) {
+        console.error("Erro na faxina de ofertas:", e);
+    }
+};
+
 
 
     </script>
