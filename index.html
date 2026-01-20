@@ -2183,12 +2183,26 @@ window.initOrderListener = (storeId) => {
             lastVisibleOrder = snapshot.docs[snapshot.docs.length - 1];
         }
 
-        // --- CIRURGIA AQUI: Removi 'ordersCache = {}' para não apagar o histórico carregado ---
+             // 1. Pegamos os IDs que o Firebase diz que existem atualmente
+        const idsAtuais = snapshot.docs.map(doc => doc.id);
+
+        // 2. LIMPEZA CIRÚRGICA: 
+        // Se o pedido está no nosso cache local, mas não veio no snapshot do Firebase, 
+        // significa que ele foi excluído. Removemos do cache para não somar errado.
+        Object.keys(ordersCache).forEach(id => {
+            if (!idsAtuais.includes(id)) {
+                delete ordersCache[id];
+            }
+        });
+
+        // 3. Atualizamos o cache com os dados novos
         snapshot.forEach(doc => {
             ordersCache[doc.id] = { id: doc.id, ...doc.data() };
         });
 
-        window.renderFilteredOrders();
+        // 4. Atualizamos a tela e as finanças imediatamente
+        window.renderFilteredOrders(); 
+        window.initFinanceDashboard(); // 🚩 ISSO garante a subtração no faturamento
     });
 };
      
@@ -3884,19 +3898,24 @@ window.deleteOrder = async (id) => {
             await Promise.all(restorePromises);
         }
 
-        // 3. EXCLUSÃO DO DOCUMENTO NO FIREBASE
-await deleteDoc(doc(db, `stores/${currentStoreId}/orders`, id));
+                // 3. EXCLUSÃO DO DOCUMENTO NO FIREBASE
+        await deleteDoc(doc(db, `stores/${currentStoreId}/orders`, id));
 
-// 🚀 NOVIDADE: REMOÇÃO LOCAL IMEDIATA (O segredo para não precisar de F5)
-delete ordersCache[id]; // Remove o pedido da memória do seu celular
+        // 🚀 O PULO DO GATO:
+        delete ordersCache[id]; // Apaga do "let" local imediatamente
 
-// 4. RECALCULAR TUDO NA HORA (Sem ler o banco de novo)
-window.renderFilteredOrders(); // Re-desenha a lista de pedidos sem o excluído
-window.initFinanceDashboard(); // Atualiza os números do financeiro subtraindo o valor automaticamente
+        // 4. ATUALIZAÇÃO DA INTERFACE (Sem pedir dados ao Firebase)
+        window.renderFilteredOrders(); // Remove o card da tela
+        window.initFinanceDashboard(); // Refaz a conta (que agora começará do zero)
+
+        // Sinaliza para a vitrine pública que houve mudança
         await updateDoc(doc(db, `stores/${currentStoreId}/config/store`), { lastUpdate: Date.now() });
 
-        showToast("Pedido removido e estoque devolvido com sucesso! 🔄");
-        
+        showToast("🗑️ Pedido removido!");
+        if (document.getElementById('orderDetailModal')) {
+            document.getElementById('orderDetailModal').classList.add('hidden');
+        }
+
         // Fecha o modal de detalhes se estiver aberto
         const modal = document.getElementById('orderDetailModal');
         if (modal) modal.classList.add('hidden');
