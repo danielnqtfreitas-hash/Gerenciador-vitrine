@@ -2628,8 +2628,9 @@ const promoDays = parseInt(promoDaysInput);
 
 if (promoDays > 0) {
     const dataFinal = new Date();
-    dataFinal.setDate(dataFinal.getDate() + promoDays);
-    dataFinal.setHours(23, 59, 59, 999); 
+    // Adiciona exatamente a quantidade de dias (24h por dia) a partir de AGORA
+    dataFinal.setTime(dataFinal.getTime() + (promoDays * 24 * 60 * 60 * 1000));
+    
     promoUntil = dataFinal.getTime(); 
 }
 
