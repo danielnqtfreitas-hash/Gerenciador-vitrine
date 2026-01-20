@@ -1123,12 +1123,25 @@
                                         <input type="number" step="0.01" id="prodValue" required
   oninput="calculateProfit()"
   placeholder="0.00" class="input-pro bg-white">
-                                    <div class="space-y-1">
-                                        <label class="text-[10px] font-bold text-green-600 uppercase ml-1">Preço Promo (R$)</label>
-                                        <input type="number" step="0.01" id="prodPromo" placeholder="Opcional" class="input-pro bg-white">
-                                    </div>
-                                </div>
-                            </div>
+                                    <div class="space-y-8">
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+        <div class="space-y-5">
+            <h4 class="text-[11px] font-black uppercase text-slate-400 tracking-widest border-b border-slate-100 pb-2">Precificação Base</h4>
+            <div class="grid grid-cols-2 gap-4">
+                
+                <div class="space-y-1">
+                    <label class="text-[10px] font-bold text-slate-500 uppercase ml-1">Preço Normal (R$)</label>
+                    <input type="number" step="0.01" id="prodValue" required oninput="calculateProfit()" placeholder="0.00" class="input-pro bg-white">
+                </div> <div class="space-y-1">
+                    <label class="text-[10px] font-bold text-green-600 uppercase ml-1">Preço Promo (R$)</label>
+                    <input type="number" step="0.01" id="prodPromo" placeholder="Opcional" class="input-pro bg-white">
+                </div> <div class="space-y-1">
+                    <label class="text-[10px] font-bold text-amber-600 uppercase ml-1">Validade da Oferta (Dias)</label>
+                    <div class="relative">
+                        <input type="number" id="prodPromoDays" placeholder="Ex: 7" min="1" class="input-pro bg-white pr-10">
+                        <span class="absolute right-3 top-3.5 text-[10px] font-bold text-slate-400 uppercase">dias</span>
+                    </div>
+                </div> </div> </div>
                             <div class="space-y-5">
   <h4 class="text-[11px] font-black uppercase text-slate-400 tracking-widest border-b border-slate-100 pb-2">
     Controle de Estoque & Lucro
@@ -2522,6 +2535,8 @@ function updateQuotas() {
         document.getElementById('prodCategory').value = p.category; 
         document.getElementById('prodValue').value = p.value;
         document.getElementById('prodPromo').value = p.promoValue || ''; 
+        document.getElementById('prodPromoDays').value = p.promoDays || ''; 
+      
         document.getElementById('prodStock').value = p.stock || 0;
         document.getElementById('prodCost').value = p.cost || 0; // Carrega o custo
         document.getElementById('prodDesc').value = p.description || '';
@@ -2548,6 +2563,7 @@ function updateQuotas() {
         document.getElementById('prodModalTitle').textContent = "Adicionar Novo Produto";
         document.getElementById('productForm').reset(); 
         document.getElementById('prodId').value = ''; 
+        document.getElementById('prodPromoDays').value = ''; 
         document.getElementById('prodSku').value = generateSKU();
         document.getElementById('prodProfit').value = '';
         currentProductImages = []; 
@@ -2620,6 +2636,18 @@ function updateQuotas() {
             });
         }
 
+       let promoUntil = null;
+const promoDaysInput = document.getElementById('prodPromoDays').value;
+const promoDays = parseInt(promoDaysInput);
+
+if (promoDays > 0) {
+    const dataFinal = new Date();
+    dataFinal.setDate(dataFinal.getDate() + promoDays);
+    dataFinal.setHours(23, 59, 59, 999); 
+    promoUntil = dataFinal.getTime(); 
+}
+
+     
         // --- 4. LÓGICA DA LIXEIRA (SOFT DELETE) ---
         if (snap.exists()) {
             const oldData = snap.data();
@@ -2661,7 +2689,9 @@ function updateQuotas() {
             sku: document.getElementById('prodSku').value || '',
             category: document.getElementById('prodCategory').value,
             value: parseFloat(document.getElementById('prodValue').value) || 0,
-            promoValue: parseFloat(document.getElementById('prodPromo').value) || null,            
+            promoValue: parseFloat(document.getElementById('prodPromo').value) || null,   
+            promoDays: promoDays || null,
+            promoUntil: promoUntil,
             stock: totalStock, 
             cost: parseFloat(document.getElementById('prodCost').value) || 0,
             images: imageUrls,
