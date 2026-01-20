@@ -1,4 +1,4 @@
-  <!DOCTYPE html>
+ <!DOCTYPE html>
 <html lang="pt-PT">
 <head>
     <meta charset="UTF-8">
@@ -3884,11 +3884,15 @@ window.deleteOrder = async (id) => {
             await Promise.all(restorePromises);
         }
 
-        // 3. EXCLUSÃO DO DOCUMENTO DO PEDIDO
-        await deleteDoc(doc(db, `stores/${currentStoreId}/orders`, id));
+        // 3. EXCLUSÃO DO DOCUMENTO NO FIREBASE
+await deleteDoc(doc(db, `stores/${currentStoreId}/orders`, id));
 
-        // 4. ATUALIZAÇÃO DA VITRINE E CACHE
-        localStorage.removeItem('app_cache_v4_' + currentStoreId);
+// 🚀 NOVIDADE: REMOÇÃO LOCAL IMEDIATA (O segredo para não precisar de F5)
+delete ordersCache[id]; // Remove o pedido da memória do seu celular
+
+// 4. RECALCULAR TUDO NA HORA (Sem ler o banco de novo)
+window.renderFilteredOrders(); // Re-desenha a lista de pedidos sem o excluído
+window.initFinanceDashboard(); // Atualiza os números do financeiro subtraindo o valor automaticamente
         await updateDoc(doc(db, `stores/${currentStoreId}/config/store`), { lastUpdate: Date.now() });
 
         showToast("Pedido removido e estoque devolvido com sucesso! 🔄");
