@@ -2193,11 +2193,9 @@ window.initOrderListener = (storeId) => {
 };
      
 
-function initStoreData() {
-window.renderPublishButton();
-
     // --- LISTENER A: IDENTIDADE, LIMITES E STATUS ---
     async function initStoreData() {
+      window.renderPublishButton();
     if (isConfigLoaded) return; // Se já carregou, para aqui. Economia total!
 
     const storeRef = doc(db, `stores/${currentStoreId}/config/store`);
@@ -2205,7 +2203,6 @@ window.renderPublishButton();
     
     if (d.exists()) {
         const data = d.data();
-    
     // 1. Definição correta do Slug e da URL Profissional
     const storeSlug = data.slug || currentStoreId; // Garante que temos um identificador
     window.currentStoreSlug = storeSlug;
@@ -2310,10 +2307,13 @@ window.renderPublishButton();
             if (el) el.value = fields[id];
         });
 
-        updateUIByPlan(); // Atualiza badges do dashboard
-        window.loadMagicCategoriesFeedback(data)
-    });
-}
+                updateUIByPlan(); 
+        window.loadMagicCategoriesFeedback(data);
+        
+        isConfigLoaded = true; // Ativa a economia Blaze
+    } // Aqui fecha o if (d.exists())
+} // Aqui fecha a função async function initStoreData()
+
       // --- FUNÇÕES DE CACHE CIRÚRGICO ---
 
 async function loadProductsCache(force = false) {
