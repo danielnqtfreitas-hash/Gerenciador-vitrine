@@ -4652,7 +4652,16 @@ window.updateOrderStatus = async (id, status) => {
             });
 
             await Promise.all(stockPromises);
-            orderUpdate.stockDeducted = true;
+
+// 🚀 ATUALIZAÇÃO IMEDIATA NO FIREBASE
+// Isso faz com que a vitrine perceba que o estoque mudou sem você clicar em publicar
+await updateDoc(doc(db, `stores/${currentStoreId}/config/store`), { 
+    lastUpdate: Date.now() 
+});
+
+// Atualiza o seu próprio cache local para o faturamento bater
+await loadProductsCache(true); 
+         orderUpdate.stockDeducted = true;
         }
 
         // --- CASO B: CANCELAR (DEVOLVER ESTOQUE) ---
@@ -4706,6 +4715,15 @@ window.updateOrderStatus = async (id, status) => {
             });
 
             await Promise.all(stockPromises);
+
+// 🚀 ATUALIZAÇÃO IMEDIATA NO FIREBASE
+// Isso faz com que a vitrine perceba que o estoque mudou sem você clicar em publicar
+await updateDoc(doc(db, `stores/${currentStoreId}/config/store`), { 
+    lastUpdate: Date.now() 
+});
+
+// Atualiza o seu próprio cache local para o faturamento bater
+await loadProductsCache(true); ;
             orderUpdate.stockDeducted = false;
         }
 
@@ -4743,11 +4761,7 @@ showToast(`Pedido ${status} e estoque sincronizado! ✅`);
         showToast("Erro ao processar alteração.");
     }
 };
-
-                       
-                              
-
-
+                                                
 window.startBarcodeScanner = () => {
     const container = document.getElementById('scanner-container');
     container.classList.remove('hidden');
