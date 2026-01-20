@@ -2161,28 +2161,31 @@ window.initOrderListener = (storeId) => {
     onSnapshot(q, (snapshot) => {
         if (!container) return;
 
-        // 🚀 MUDANÇA CRÍTICA: Só processa notificações se NÃO for o primeiro carregamento
-        // e se a mudança vier do servidor (não local)
-                if (!isFirstLoad) {
+        // 1. PROCESSAMENTO DE ESTOQUE (Sempre roda, mesmo no primeiro carregamento)
+        snapshot.docs.forEach((doc) => {
+            const orderData = doc.data();
+            const orderId = doc.id;
+
+            // 🚀 SE O PEDIDO NÃO TEVE BAIXA, PROCESSA AGORA (Independente de ser novo ou antigo)
+            if (orderData.stockDeducted !== true && orderData.status !== 'canceled') {
+                console.log(`🤖 Baixa Automática: Sincronizando estoque do pedido ${orderId}`);
+                window.processarBaixaSilenciosa(orderId, orderData);
+            }
+        });
+
+        // 2. NOTIFICAÇÕES SONORAS (Apenas para o que é realmente NOVO após a página carregar)
+        if (!isFirstLoad) {
             snapshot.docChanges().forEach((change) => {
-                if (change.type === "added" && !snapshot.metadata.hasPendingWrites) {
+                if (change.type === "added") {
                     const orderData = change.doc.data();
-                    const orderId = change.doc.id;
-
-                    // 🚀 GATILHO DE ESTOQUE AUTOMÁTICO
-                    // Se o pedido acabou de chegar e ainda não foi processado pelo painel
-                    if (!orderData.stockDeducted) {
-                        console.log(`🤖 Baixa Automática: Processando pedido ${orderId}`);
-                        window.processarBaixaSilenciosa(orderId, orderData);
-                    }
-
                     const now = Date.now();
                     const orderTime = orderData.createdAt?.toMillis ? orderData.createdAt.toMillis() : now;
 
-                    if (now - orderTime < 120000) { 
+                    // Somente apita se o pedido tiver menos de 2 minutos
+                    if (now - orderTime < 120000) {
                         if (audio) {
                             audio.currentTime = 0;
-                            audio.play().catch(e => console.warn("Som bloqueado."));
+                            audio.play().catch(e => console.warn("Áudio bloqueado."));
                         }
                         showToast("🔔 Novo pedido recebido!");
                     }
@@ -2190,35 +2193,28 @@ window.initOrderListener = (storeId) => {
             });
         }
 
-
-        // --- ATUALIZAÇÃO DE ESTADO ---
+        // --- ATUALIZAÇÃO DE ESTADO E INTERFACE ---
         isFirstLoad = false; 
-        
+
         if (snapshot.docs.length > 0) {
             lastVisibleOrder = snapshot.docs[snapshot.docs.length - 1];
         }
 
-        // 1. Sincronização de IDs (Limpeza do Cache)
+        // Sincronização do Cache Local
         const idsAtuais = snapshot.docs.map(doc => doc.id);
         Object.keys(ordersCache).forEach(id => {
-            if (!idsAtuais.includes(id)) {
-                delete ordersCache[id];
-            }
+            if (!idsAtuais.includes(id)) delete ordersCache[id];
         });
 
-        // 2. Atualização do Cache
         snapshot.forEach(doc => {
             ordersCache[doc.id] = { id: doc.id, ...doc.data() };
         });
 
-        // 3. Renderização e Financeiro (Agora com cache limpo, ele vai SUBTRAIR)
+        // Atualiza a tela e o financeiro
         window.renderFilteredOrders(); 
         window.initFinanceDashboard(); 
     });
 };
-
-
-     
 
     // --- LISTENER A: IDENTIDADE, LIMITES E STATUS ---
     async function initStoreData() {
