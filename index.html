@@ -2147,8 +2147,7 @@ window.renderPublishButton();
         console.error("Erro ao configurar persistência:", error);
     });
 
-
-// --- LISTENER DE PEDIDOS (VERSÃO 5 CARACTERES) ---
+// --- LISTENER DE PEDIDOS (VERSÃO BLINDADA CONTRA NOTIFICAÇÃO FANTASMA) ---
 window.initOrderListener = (storeId) => {
     const q = query(
         collection(db, `stores/${storeId}/orders`),
@@ -2162,49 +2161,58 @@ window.initOrderListener = (storeId) => {
     onSnapshot(q, (snapshot) => {
         if (!container) return;
 
-        snapshot.docChanges().forEach((change) => {
-            if (change.type === "added" && !snapshot.metadata.hasPendingWrites) {
-                if (!isFirstLoad) {
-                    if (audio) {
-                        audio.currentTime = 0;
-                        audio.play().catch(e => console.warn("Clique na página para ativar o som."));
-                    }
-                    // Adicionei um aviso visual para o novo pedido
-                    showToast("🔔 Novo pedido recebido!");
-                }
-            }
-        });
+        // 🚀 MUDANÇA CRÍTICA: Só processa notificações se NÃO for o primeiro carregamento
+        // e se a mudança vier do servidor (não local)
+        if (!isFirstLoad) {
+            snapshot.docChanges().forEach((change) => {
+                // A trava 'added' agora é acompanhada de uma verificação de data
+                if (change.type === "added" && !snapshot.metadata.hasPendingWrites) {
+                    
+                    const orderData = change.doc.data();
+                    const now = Date.now();
+                    // Converte o createdAt do Firebase para milisegundos
+                    const orderTime = orderData.createdAt?.toMillis ? orderData.createdAt.toMillis() : now;
 
-        lastOrderCount = snapshot.size;
-        isFirstLoad = false;
+                    // 🛡️ TRAVA DE TEMPO: Só toca o som se o pedido foi criado nos últimos 2 minutos
+                    // Isso mata qualquer notificação de pedidos antigos que o cache "re-descobriu"
+                    if (now - orderTime < 120000) { 
+                        if (audio) {
+                            audio.currentTime = 0;
+                            audio.play().catch(e => console.warn("Som bloqueado pelo navegador."));
+                        }
+                        showToast("🔔 Novo pedido recebido!");
+                    }
+                }
+            });
+        }
+
+        // --- ATUALIZAÇÃO DE ESTADO ---
+        isFirstLoad = false; 
         
-        // Pega o último documento apenas se houver resultados
         if (snapshot.docs.length > 0) {
             lastVisibleOrder = snapshot.docs[snapshot.docs.length - 1];
         }
 
-             // 1. Pegamos os IDs que o Firebase diz que existem atualmente
+        // 1. Sincronização de IDs (Limpeza do Cache)
         const idsAtuais = snapshot.docs.map(doc => doc.id);
-
-        // 2. LIMPEZA CIRÚRGICA: 
-        // Se o pedido está no nosso cache local, mas não veio no snapshot do Firebase, 
-        // significa que ele foi excluído. Removemos do cache para não somar errado.
         Object.keys(ordersCache).forEach(id => {
             if (!idsAtuais.includes(id)) {
                 delete ordersCache[id];
             }
         });
 
-        // 3. Atualizamos o cache com os dados novos
+        // 2. Atualização do Cache
         snapshot.forEach(doc => {
             ordersCache[doc.id] = { id: doc.id, ...doc.data() };
         });
 
-        // 4. Atualizamos a tela e as finanças imediatamente
+        // 3. Renderização e Financeiro (Agora com cache limpo, ele vai SUBTRAIR)
         window.renderFilteredOrders(); 
-        window.initFinanceDashboard(); // 🚩 ISSO garante a subtração no faturamento
+        window.initFinanceDashboard(); 
     });
 };
+
+
      
 
     // --- LISTENER A: IDENTIDADE, LIMITES E STATUS ---
