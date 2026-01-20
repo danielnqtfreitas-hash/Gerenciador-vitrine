@@ -2163,28 +2163,33 @@ window.initOrderListener = (storeId) => {
 
         // 🚀 MUDANÇA CRÍTICA: Só processa notificações se NÃO for o primeiro carregamento
         // e se a mudança vier do servidor (não local)
-        if (!isFirstLoad) {
+                if (!isFirstLoad) {
             snapshot.docChanges().forEach((change) => {
-                // A trava 'added' agora é acompanhada de uma verificação de data
                 if (change.type === "added" && !snapshot.metadata.hasPendingWrites) {
-                    
                     const orderData = change.doc.data();
+                    const orderId = change.doc.id;
+
+                    // 🚀 GATILHO DE ESTOQUE AUTOMÁTICO
+                    // Se o pedido acabou de chegar e ainda não foi processado pelo painel
+                    if (!orderData.stockDeducted) {
+                        console.log(`🤖 Baixa Automática: Processando pedido ${orderId}`);
+                        window.processarBaixaSilenciosa(orderId, orderData);
+                    }
+
                     const now = Date.now();
-                    // Converte o createdAt do Firebase para milisegundos
                     const orderTime = orderData.createdAt?.toMillis ? orderData.createdAt.toMillis() : now;
 
-                    // 🛡️ TRAVA DE TEMPO: Só toca o som se o pedido foi criado nos últimos 2 minutos
-                    // Isso mata qualquer notificação de pedidos antigos que o cache "re-descobriu"
                     if (now - orderTime < 120000) { 
                         if (audio) {
                             audio.currentTime = 0;
-                            audio.play().catch(e => console.warn("Som bloqueado pelo navegador."));
+                            audio.play().catch(e => console.warn("Som bloqueado."));
                         }
                         showToast("🔔 Novo pedido recebido!");
                     }
                 }
             });
         }
+
 
         // --- ATUALIZAÇÃO DE ESTADO ---
         isFirstLoad = false; 
@@ -4594,75 +4599,21 @@ window.updateOrderStatus = async (id, status) => {
         const orderUpdate = { status: status };
         const alreadyDeducted = p.stockDeducted || false;
 
-        // --- CASO A: CONFIRMAR OU COMPLETAR (BAIXAR ESTOQUE) ---
-        if ((status === 'confirmed' || status === 'completed') && !alreadyDeducted) {
-            console.log("Baixando estoque de variações de forma agrupada...");
+        // --- CASO A: CONFIRMAR OU COMPLETAR (APENAS FINANCEIRO E STATUS) ---
+if ((status === 'confirmed' || status === 'completed') && !alreadyDeducted) {
+    // 🚀 AQUI ESTÁ A MUDANÇA: 
+    // Não criamos stockPromises nem fazemos updateDoc nos produtos aqui.
+    // A reserva de estoque já foi feita automaticamente pelo Listener.
+    
+    console.log("Pedido confirmado. O estoque já foi reservado pelo sistema na chegada.");
+    
+    // Apenas marcamos como deduzido (caso ainda não esteja) para segurança do banco
+    orderUpdate.stockDeducted = true;
+    
+    // Atualiza o seu próprio cache local apenas para o Financeiro ler o valor na tela
+    await loadProductsCache(true); 
+}
 
-            // AGRUPAMENTO CIRÚRGICO: Agrupa itens pelo ID do Produto Pai
-            const itemsByProduct = p.items.reduce((acc, item) => {
-                if (!acc[item.id]) acc[item.id] = [];
-                acc[item.id].push(item);
-                return acc;
-            }, {});
-
-            const stockPromises = Object.keys(itemsByProduct).map(async (productId) => {
-                const productRef = doc(db, `stores/${currentStoreId}/products`, productId);
-                const snap = await getDoc(productRef);
-
-                if (snap.exists()) {
-                    const prodData = snap.data();
-                    const itemsToUpdate = itemsByProduct[productId];
-                    let updatePayload = {};
-
-                    if (prodData.variations && prodData.variations.length > 0) {
-                        let novasVariacoes = [...prodData.variations];
-                        
-                        // Processa cada item do pedido que pertence a este produto pai
-                        itemsToUpdate.forEach(itemPedido => {
-                            const { color, size, sku } = itemPedido.variationDetails || {};
-
-                            novasVariacoes = novasVariacoes.map(v => {
-                                // Match inteligente: SKU primeiro, depois Cor + Tamanho
-                                const matchSKU = sku && v.sku === sku;
-                                const matchCombo = (v.color || "").trim().toLowerCase() === (color || "").trim().toLowerCase() &&
-                                                   (v.size || "").trim().toLowerCase() === (size || "").trim().toLowerCase();
-
-                                if (matchSKU || matchCombo) {
-                                    const estoqueVarAntigo = Number(v.stock) || 0;
-                                    return { ...v, stock: Math.max(0, estoqueVarAntigo - Number(itemPedido.qty)) };
-                                }
-                                return v;
-                            });
-                        });
-
-                        updatePayload.variations = novasVariacoes;
-                        // Soma o estoque de todas as variações ativas
-                        updatePayload.stock = novasVariacoes.reduce((sum, v) => sum + (v.active !== false ? (Number(v.stock) || 0) : 0), 0);
-                    } else {
-                        // Produto Simples (sem variações)
-                        const totalQty = itemsToUpdate.reduce((sum, i) => sum + Number(i.qty), 0);
-                        const estoqueGeralAntigo = Number(prodData.stock) || 0;
-                        updatePayload.stock = Math.max(0, estoqueGeralAntigo - totalQty);
-                    }
-
-                    // Pausa se zerar, ativa se tiver saldo
-                    updatePayload.status = updatePayload.stock <= 0 ? 'paused' : 'active';
-                    return updateDoc(productRef, updatePayload);
-                }
-            });
-
-            await Promise.all(stockPromises);
-
-// 🚀 ATUALIZAÇÃO IMEDIATA NO FIREBASE
-// Isso faz com que a vitrine perceba que o estoque mudou sem você clicar em publicar
-await updateDoc(doc(db, `stores/${currentStoreId}/config/store`), { 
-    lastUpdate: Date.now() 
-});
-
-// Atualiza o seu próprio cache local para o faturamento bater
-await loadProductsCache(true); 
-         orderUpdate.stockDeducted = true;
-        }
 
         // --- CASO B: CANCELAR (DEVOLVER ESTOQUE) ---
         if (status === 'canceled' && alreadyDeducted) {
@@ -5315,6 +5266,59 @@ async function loadSmart(collectionName, storageKey) {
 
     return data;
 }
+window.processarBaixaSilenciosa = async (orderId, orderData) => {
+    try {
+        const itemsByProduct = orderData.items.reduce((acc, item) => {
+            if (!acc[item.id]) acc[item.id] = [];
+            acc[item.id].push(item);
+            return acc;
+        }, {});
+
+        const stockPromises = Object.keys(itemsByProduct).map(async (productId) => {
+            const productRef = doc(db, `stores/${currentStoreId}/products`, productId);
+            const snap = await getDoc(productRef);
+
+            if (snap.exists()) {
+                const prodData = snap.data();
+                const itemsToUpdate = itemsByProduct[productId];
+                let updatePayload = {};
+
+                if (prodData.variations && prodData.variations.length > 0) {
+                    let novasVariacoes = [...prodData.variations];
+                    itemsToUpdate.forEach(itemPedido => {
+                        const { sku } = itemPedido.variationDetails || {};
+                        novasVariacoes = novasVariacoes.map(v => {
+                            if (v.sku === sku) {
+                                return { ...v, stock: Math.max(0, (Number(v.stock) || 0) - Number(itemPedido.qty)) };
+                            }
+                            return v;
+                        });
+                    });
+                    updatePayload.variations = novasVariacoes;
+                    updatePayload.stock = novasVariacoes.reduce((sum, v) => sum + (Number(v.stock) || 0), 0);
+                } else {
+                    const totalQty = itemsToUpdate.reduce((sum, i) => sum + Number(i.qty), 0);
+                    updatePayload.stock = Math.max(0, (Number(prodData.stock) || 0) - totalQty);
+                }
+                updatePayload.status = updatePayload.stock <= 0 ? 'paused' : 'active';
+                return updateDoc(productRef, updatePayload);
+            }
+        });
+
+        await Promise.all(stockPromises);
+
+        // 🚩 Marca como processado e atualiza a vitrine para outros clientes
+        await updateDoc(doc(db, `stores/${currentStoreId}/orders`, orderId), { stockDeducted: true });
+        await updateDoc(doc(db, `stores/${currentStoreId}/config/store`), { lastUpdate: Date.now() });
+        
+        console.log("✅ Estoque reservado automaticamente.");
+        // Atualiza seus próprios dados locais para o faturamento ficar certo
+        await loadProductsCache(true); 
+
+    } catch (e) {
+        console.error("Erro na reserva de estoque:", e);
+    }
+};
 
     </script>
 </body>
