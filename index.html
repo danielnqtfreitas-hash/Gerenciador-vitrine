@@ -5716,29 +5716,40 @@ window.loadSavedCustomers = async () => {
      window.applyDynamicColors = (hexColor) => {
     if (!hexColor) return;
 
-    // Função auxiliar para escurecer ou clarear a cor
+    const root = document.documentElement;
+    
+    // 1. Cores do Painel (CSS)
+    root.style.setProperty('--brand-color', hexColor);
+    root.style.setProperty('--brand-color-soft', hexColor + '1a'); 
+    
     const adjustColor = (hex, amt) => {
         return '#' + hex.replace(/^#/, '').replace(/../g, hex => 
             ('0' + Math.min(255, Math.max(0, parseInt(hex, 16) + amt)).toString(16)).slice(-2));
     };
-
-    const root = document.documentElement;
-    
-    // Define a cor principal
-    root.style.setProperty('--brand-color', hexColor);
-    
-    // Cria uma versão bem clarinha para fundos (soft)
-    // Dica: Adicionando '1a' ao final do hex, criamos 10% de opacidade
-    root.style.setProperty('--brand-color-soft', hexColor + '1a'); 
-    
-    // Versões mais escuras para hover e estados ativos
     root.style.setProperty('--brand-color-dark', adjustColor(hexColor, -20));
     root.style.setProperty('--brand-color-darker', adjustColor(hexColor, -40));
-    
-    // Atualiza a cor da barra de status do mobile também!
-    document.querySelector('meta[name="theme-color"]')?.setAttribute('content', hexColor);
-};
 
+    // 2. COR DO PWA (Barra de Status do Celular)
+    // Isso aqui é o que faz o "aplicativo" mudar de cor no Android e iOS
+    let metaThemeColor = document.querySelector('meta[name="theme-color"]');
+    if (metaThemeColor) {
+        metaThemeColor.setAttribute('content', hexColor);
+    } else {
+        // Caso a tag não exista por algum motivo, ele cria uma na hora
+        const meta = document.createElement('meta');
+        meta.name = "theme-color";
+        meta.content = hexColor;
+        document.getElementsByTagName('head')[0].appendChild(meta);
+    }
+
+    // 3. Atualiza o fundo do Safari (iOS)
+    let metaApple = document.querySelector('meta[name="apple-mobile-web-app-status-bar-style"]');
+    if (metaApple) {
+        // No iOS, se você mudar a cor, é melhor deixar em 'default' para o sistema 
+        // decidir a cor dos ícones (preto ou branco) baseado no fundo.
+        metaApple.setAttribute('content', 'default');
+    }
+};
 
     </script>
 </body>
