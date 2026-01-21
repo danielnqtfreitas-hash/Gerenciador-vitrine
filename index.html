@@ -894,7 +894,7 @@ tailwind.config = {
             </div>
             <div class="min-w-0">
                 <h3 class="text-base md:text-lg font-bold text-slate-800 leading-tight">Meus Clientes</h3>
-                <p class="text-[9px] md:text-[10px] text-slate-400 uppercase font-black tracking-widest mt-1">Lista de cima para baixo</p>
+                <p class="text-[9px] md:text-[10px] text-slate-400 uppercase font-black tracking-widest mt-1">Ranking Geral</p>
             </div>
         </div>
         
@@ -5651,18 +5651,38 @@ window.closeCustomerModal = () => {
 // Salvar Cliente no Firestore
 // Função para carregar dados no modal para edição
 window.editCustomer = (phone) => {
-    const c = savedCustomers[phone];
-    if (!c) return;
+    // 1. Tenta buscar no cadastro oficial
+    let c = savedCustomers[phone];
 
-    // Abre o mesmo modal de cadastro, mas preenchido
-    document.getElementById('custName').value = c.name;
-    document.getElementById('custPhone').value = c.phone;
+    // 2. Se não achou (é um convidado), tenta buscar nos pedidos para não deixar o modal em branco
+    if (!c) {
+        const orderMatch = Object.values(ordersCache).find(o => o.customer.phone.replace(/\D/g, '') === phone);
+        if (orderMatch) {
+            c = {
+                name: orderMatch.customer.name,
+                phone: orderMatch.customer.phone,
+                address: orderMatch.customer.addressString || ''
+            };
+        }
+    }
+
+    // 3. Se ainda assim não houver dados, avisa o erro
+    if (!c) {
+        showToast("⚠️ Dados do cliente não encontrados.");
+        return;
+    }
+
+    // 4. Preenche o modal
+    document.getElementById('custName').value = c.name || '';
+    document.getElementById('custPhone').value = c.phone || '';
     document.getElementById('custCpf').value = c.cpf || '';
     document.getElementById('custAddress').value = c.address || '';
     
+    // 5. Abre o modal e aplica a máscara
     document.getElementById('customerModal').classList.remove('hidden');
-    // Desabilita o campo de telefone na edição se desejar (pois ele é o ID no banco)
-    // document.getElementById('custPhone').readOnly = true; 
+    
+    if (window.lucide) lucide.createIcons();
+    setTimeout(() => applyPhoneMask('custPhone'), 100);
 };
 
 // ATUALIZADO: handleCustomerSubmit para mostrar o cliente na hora
