@@ -2508,9 +2508,8 @@ function updateQuotas() {
 
         // --- GESTÃO DE PRODUTOS ---
         window.openProductModal = (p = null) => {
-
-            variationsHistoryCache = new Map();
-    if(!p && allProducts.length >= storeConfig.maxProducts) { 
+    variationsHistoryCache = new Map();
+    if(!p && allProducts.length >= (storeConfig.maxProducts || 999)) { 
         showToast(`Limite do plano atingido.`); 
         return; 
     }
@@ -2525,17 +2524,14 @@ function updateQuotas() {
         document.getElementById('prodCategory').value = p.category; 
         document.getElementById('prodValue').value = p.value;
         document.getElementById('prodPromo').value = p.promoValue || ''; 
-        document.getElementById('prodPromoDays').value = p.promoDays || ''; 
-        document.getElementById('prodPromoValue').value = '';
-        document.getElementById('prodPromoUnit').value = 'days';
+        document.getElementById('prodPromoValue').value = p.promoValueInput || '';
+        document.getElementById('prodPromoUnit').value = p.promoUnitInput || 'days';
 
-      
         document.getElementById('prodStock').value = p.stock || 0;
-        document.getElementById('prodCost').value = p.cost || 0; // Carrega o custo
+        document.getElementById('prodCost').value = p.cost || 0;
         document.getElementById('prodDesc').value = p.description || '';
         document.getElementById('prodFeatured').checked = p.isFeatured; 
         
-        // Carrega os textos nos campos de input
         document.getElementById('prodSizesInput').value = p.sizes ? p.sizes.join(', ') : '';
         document.getElementById('prodColorsInput').value = p.colors ? p.colors.join(', ') : '';
         
@@ -2549,14 +2545,15 @@ function updateQuotas() {
             document.getElementById('variationMatrixContainer').classList.add('hidden');
         }
         
-        // Calcula o lucro ao abrir
         if(window.calculateProfit) window.calculateProfit();
 
     } else {
+        // ✅ LIMPEZA PARA NOVO PRODUTO
         document.getElementById('prodModalTitle').textContent = "Adicionar Novo Produto";
         document.getElementById('productForm').reset(); 
         document.getElementById('prodId').value = ''; 
-        document.getElementById('prodPromoDays').value = ''; 
+        document.getElementById('prodPromoValue').value = ''; // Novo ID
+        document.getElementById('prodPromoUnit').value = 'days'; // Novo ID
         document.getElementById('prodSku').value = generateSKU();
         document.getElementById('prodProfit').value = '';
         currentProductImages = []; 
@@ -2569,8 +2566,7 @@ function updateQuotas() {
     lucide.createIcons();
 };
 
-
-       
+      
         window.handleProductSubmit = async (e) => {
     e.preventDefault();
     const id = document.getElementById('prodId').value;
