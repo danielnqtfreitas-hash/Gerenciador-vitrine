@@ -2642,6 +2642,15 @@ function updateQuotas() {
     }
 }
 
+     window.updateDashboardCounters = () => {
+    const pCount = document.getElementById('dash-total-products');
+    const bCount = document.getElementById('dash-total-banners');
+    const cCount = document.getElementById('dash-total-cats');
+
+    if (pCount) pCount.textContent = allProducts.length;
+    if (bCount) bCount.textContent = allBanners.length;
+    if (cCount) cCount.textContent = allCategories.length;
+};
 
 
         // --- GESTÃO DE PRODUTOS ---
@@ -3448,7 +3457,15 @@ window.handleBannerSubmit = async (e) => {
             isDashboardLoaded = true; 
         }
     }
-
+window.updateDashboardCounters(); 
+    
+    setTimeout(() => {
+        if (typeof window.calculateSalesInsights === 'function') {
+            window.calculateSalesInsights();
+        }
+    }, 50);
+}
+     
     if (tabName === 'config' && !isConfigLoaded) {
         // Se você clicar na engrenagem, ele busca os dados da loja (PIX, Taxas, etc)
         if (typeof initStoreData === 'function') {
