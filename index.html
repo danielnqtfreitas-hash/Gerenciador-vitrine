@@ -2514,6 +2514,8 @@ async function loadProductsCache(force = false) {
     productsLoaded = true;
     renderProductList();
     updateQuotas();
+ window.updateDashboardCounters(); // ADICIONE ESTA LINHA AQUI TAMBÉM
+    return;
 }
 
 
@@ -2910,16 +2912,32 @@ showToast("🗑️ Produto e todos os arquivos removidos!");
 
 
         window.toggleProductStatus = async (id, currentStatus) => {
-            const newStatus = currentStatus === 'paused' ? 'active' : 'paused';
-            try {
-                await updateDoc(doc(db, `stores/${currentStoreId}/products`, id), { status: newStatus });
-                const storeRef = doc(db, `stores/${currentStoreId}/config/store`);
-                window.markAsDirty();
-                showToast(newStatus === 'paused' ? "Pausado." : "Ativado.");
-            } catch (e) {
-                showToast("Erro ao mudar status.");
-            }
-        };
+    const newStatus = currentStatus === 'paused' ? 'active' : 'paused';
+    try {
+        // 1. Atualiza no Firebase
+        const docRef = doc(db, `stores/${currentStoreId}/products`, id);
+        await updateDoc(docRef, { status: newStatus });
+
+        // 2. ATUALIZA NA MEMÓRIA (O segredo para ser instantâneo)
+        const index = allProducts.findIndex(p => p.id === id);
+        if (index !== -1) {
+            allProducts[index].status = newStatus;
+        }
+
+        // 3. ATUALIZA O CACHE (Para o F5 não desfazer a mudança)
+        localStorage.setItem(`cache_products_${currentStoreId}`, JSON.stringify(allProducts));
+
+        // 4. RE-RENDERIZA A TELA
+        renderProductList(); 
+        window.updateDashboardCounters(); // Atualiza os números do dash também
+        window.markAsDirty(); // Ativa o botão Publicar
+
+        showToast(newStatus === 'paused' ? "👁️ Produto ocultado." : "👁️ Produto visível.");
+    } catch (e) {
+        console.error("Erro ao alternar status:", e);
+        showToast("❌ Erro ao mudar status.");
+    }
+};
 
         window.toggleCategoryAccordion = (catName) => {
             const safeId = catName.replace(/\s+/g, '-');
@@ -3434,6 +3452,17 @@ window.handleBannerSubmit = async (e) => {
             loadBannersCache() 
         ]);
       }
+
+     window.updateDashboardCounters(); 
+        
+        // Atualiza os gráficos e insights
+        setTimeout(() => {
+            if (typeof window.calculateSalesInsights === 'function') {
+                window.calculateSalesInsights();
+            }
+        }, 100);
+    }
+     
      const tabs = ['orders', 'dashboard', 'banners', 'products', 'categories', 'config', 'finance', 'customers'];
         const fab = document.getElementById('fabAddOrder');
 
@@ -3457,14 +3486,6 @@ window.handleBannerSubmit = async (e) => {
             isDashboardLoaded = true; 
         }
     }
-window.updateDashboardCounters(); 
-    
-    setTimeout(() => {
-        if (typeof window.calculateSalesInsights === 'function') {
-            window.calculateSalesInsights();
-        }
-    }, 50);
-}
      
     if (tabName === 'config' && !isConfigLoaded) {
         // Se você clicar na engrenagem, ele busca os dados da loja (PIX, Taxas, etc)
