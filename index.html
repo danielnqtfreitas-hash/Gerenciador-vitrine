@@ -898,6 +898,81 @@
     </div>
      </div>
 
+          <div id="customerModal" class="modal-overlay fixed inset-0 z-[150] flex items-center justify-center p-4 hidden">
+    <div class="bg-white rounded-[2.5rem] shadow-2xl w-full max-w-lg auth-card-container overflow-hidden">
+        <div class="bg-slate-900 p-6 flex items-center justify-between">
+            <div class="flex items-center gap-3">
+                <div class="bg-primary-500/20 p-2 rounded-xl"><i data-lucide="user-plus" class="w-6 h-6 text-primary-400"></i></div>
+                <h3 class="text-xl font-bold text-white">Cadastrar Cliente</h3>
+            </div>
+            <button onclick="window.closeCustomerModal()" class="p-2 text-slate-400 hover:text-white transition-colors"><i data-lucide="x" class="w-6 h-6"></i></button>
+        </div>
+
+        <div class="auth-card-content p-8">
+            <form id="customerForm" onsubmit="window.handleCustomerSubmit(event)" class="space-y-4">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div class="md:col-span-2">
+                        <label class="text-[10px] font-bold text-slate-500 uppercase ml-1">Nome Completo</label>
+                        <input type="text" id="custName" required class="input-pro" placeholder="Ex: Maria Oliveira">
+                    </div>
+                    <div>
+                        <label class="text-[10px] font-bold text-slate-500 uppercase ml-1">WhatsApp</label>
+                        <input type="text" id="custPhone" required class="input-pro" placeholder="(00) 00000-0000">
+                    </div>
+                    <div>
+                        <label class="text-[10px] font-bold text-slate-500 uppercase ml-1">CPF (Opcional)</label>
+                        <input type="text" id="custCpf" class="input-pro" placeholder="000.000.000-00">
+                    </div>
+                    <div class="md:col-span-2">
+                        <label class="text-[10px] font-bold text-slate-500 uppercase ml-1">Endereço de Entrega</label>
+                        <textarea id="custAddress" class="input-pro" rows="2" placeholder="Rua, número, bairro..."></textarea>
+                    </div>
+                </div>
+                <button type="submit" class="w-full bg-primary-600 text-white py-4 rounded-2xl font-bold shadow-xl hover:bg-primary-700 uppercase tracking-widest text-xs mt-4">
+                    Salvar Cliente
+                </button>
+            </form>
+        </div>
+    </div>
+</div>
+
+ <div id="customerDetailsModal" class="modal-overlay fixed inset-0 z-[150] flex items-center justify-center p-4 hidden">
+    <div class="bg-white rounded-[2.5rem] shadow-2xl w-full max-w-lg auth-card-container overflow-hidden">
+        <div class="bg-slate-900 p-6 flex items-center justify-between">
+            <h3 class="text-xl font-bold text-white">Ficha do Cliente</h3>
+            <button onclick="document.getElementById('customerDetailsModal').classList.add('hidden')" class="text-slate-400 hover:text-white"><i data-lucide="x" class="w-6 h-6"></i></button>
+        </div>
+        <div class="auth-card-content p-8 space-y-6">
+            <div class="flex items-center gap-4 border-b border-slate-100 pb-6">
+                <div id="detCustInitial" class="w-16 h-16 bg-primary-100 text-primary-600 rounded-2xl flex items-center justify-center text-2xl font-black">?</div>
+                <div>
+                    <h4 id="detCustName" class="text-xl font-bold text-slate-800">Nome do Cliente</h4>
+                    <p id="detCustPhone" class="text-sm text-green-600 font-bold font-mono"></p>
+                </div>
+            </div>
+            <div class="grid grid-cols-2 gap-4 text-xs">
+                <div class="bg-slate-50 p-4 rounded-2xl border border-slate-100">
+                    <p class="text-[9px] font-black text-slate-400 uppercase mb-1">CPF</p>
+                    <p id="detCustCpf" class="font-bold text-slate-700">---</p>
+                </div>
+                <div class="bg-slate-50 p-4 rounded-2xl border border-slate-100">
+                    <p class="text-[9px] font-black text-slate-400 uppercase mb-1">Pedidos</p>
+                    <p id="detCustOrders" class="font-bold text-slate-700">0</p>
+                </div>
+                <div class="col-span-2 bg-slate-50 p-4 rounded-2xl border border-slate-100">
+                    <p class="text-[9px] font-black text-slate-400 uppercase mb-1">Endereço Principal</p>
+                    <p id="detCustAddress" class="font-bold text-slate-700 leading-tight">Não informado</p>
+                </div>
+            </div>
+            <div class="flex justify-between items-center p-4 bg-primary-50 rounded-2xl border border-primary-100">
+                <span class="text-primary-700 font-bold text-[10px] uppercase">Volume de Compras</span>
+                <span id="detCustTotal" class="text-lg font-black text-primary-800">R$ 0,00</span>
+            </div>
+        </div>
+    </div>
+</div>
+
+
             <div id="view-config" class="max-w-4xl mx-auto space-y-8 hidden animate-fade-in">
                 <div class="bg-white rounded-3xl border border-slate-200 p-8 shadow-sm">
                     <h3 class="text-xl font-bold text-slate-800 mb-6 flex items-center gap-3"><i data-lucide="shield-check" class="text-yellow-600"></i> Segurança</h3>
@@ -1084,81 +1159,6 @@
             </div>
         </div>
         </div>
-
- <div id="customerModal" class="modal-overlay fixed inset-0 z-[150] flex items-center justify-center p-4 hidden">
-    <div class="bg-white rounded-[2.5rem] shadow-2xl w-full max-w-lg auth-card-container overflow-hidden">
-        <div class="bg-slate-900 p-6 flex items-center justify-between">
-            <div class="flex items-center gap-3">
-                <div class="bg-primary-500/20 p-2 rounded-xl"><i data-lucide="user-plus" class="w-6 h-6 text-primary-400"></i></div>
-                <h3 class="text-xl font-bold text-white">Cadastrar Cliente</h3>
-            </div>
-            <button onclick="window.closeCustomerModal()" class="p-2 text-slate-400 hover:text-white transition-colors"><i data-lucide="x" class="w-6 h-6"></i></button>
-        </div>
-
-        <div class="auth-card-content p-8">
-            <form id="customerForm" onsubmit="window.handleCustomerSubmit(event)" class="space-y-4">
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div class="md:col-span-2">
-                        <label class="text-[10px] font-bold text-slate-500 uppercase ml-1">Nome Completo</label>
-                        <input type="text" id="custName" required class="input-pro" placeholder="Ex: Maria Oliveira">
-                    </div>
-                    <div>
-                        <label class="text-[10px] font-bold text-slate-500 uppercase ml-1">WhatsApp</label>
-                        <input type="text" id="custPhone" required class="input-pro" placeholder="(00) 00000-0000">
-                    </div>
-                    <div>
-                        <label class="text-[10px] font-bold text-slate-500 uppercase ml-1">CPF (Opcional)</label>
-                        <input type="text" id="custCpf" class="input-pro" placeholder="000.000.000-00">
-                    </div>
-                    <div class="md:col-span-2">
-                        <label class="text-[10px] font-bold text-slate-500 uppercase ml-1">Endereço de Entrega</label>
-                        <textarea id="custAddress" class="input-pro" rows="2" placeholder="Rua, número, bairro..."></textarea>
-                    </div>
-                </div>
-                <button type="submit" class="w-full bg-primary-600 text-white py-4 rounded-2xl font-bold shadow-xl hover:bg-primary-700 uppercase tracking-widest text-xs mt-4">
-                    Salvar Cliente
-                </button>
-            </form>
-        </div>
-    </div>
-</div>
-
- <div id="customerDetailsModal" class="modal-overlay fixed inset-0 z-[150] flex items-center justify-center p-4 hidden">
-    <div class="bg-white rounded-[2.5rem] shadow-2xl w-full max-w-lg auth-card-container overflow-hidden">
-        <div class="bg-slate-900 p-6 flex items-center justify-between">
-            <h3 class="text-xl font-bold text-white">Ficha do Cliente</h3>
-            <button onclick="document.getElementById('customerDetailsModal').classList.add('hidden')" class="text-slate-400 hover:text-white"><i data-lucide="x" class="w-6 h-6"></i></button>
-        </div>
-        <div class="auth-card-content p-8 space-y-6">
-            <div class="flex items-center gap-4 border-b border-slate-100 pb-6">
-                <div id="detCustInitial" class="w-16 h-16 bg-primary-100 text-primary-600 rounded-2xl flex items-center justify-center text-2xl font-black">?</div>
-                <div>
-                    <h4 id="detCustName" class="text-xl font-bold text-slate-800">Nome do Cliente</h4>
-                    <p id="detCustPhone" class="text-sm text-green-600 font-bold font-mono"></p>
-                </div>
-            </div>
-            <div class="grid grid-cols-2 gap-4 text-xs">
-                <div class="bg-slate-50 p-4 rounded-2xl border border-slate-100">
-                    <p class="text-[9px] font-black text-slate-400 uppercase mb-1">CPF</p>
-                    <p id="detCustCpf" class="font-bold text-slate-700">---</p>
-                </div>
-                <div class="bg-slate-50 p-4 rounded-2xl border border-slate-100">
-                    <p class="text-[9px] font-black text-slate-400 uppercase mb-1">Pedidos</p>
-                    <p id="detCustOrders" class="font-bold text-slate-700">0</p>
-                </div>
-                <div class="col-span-2 bg-slate-50 p-4 rounded-2xl border border-slate-100">
-                    <p class="text-[9px] font-black text-slate-400 uppercase mb-1">Endereço Principal</p>
-                    <p id="detCustAddress" class="font-bold text-slate-700 leading-tight">Não informado</p>
-                </div>
-            </div>
-            <div class="flex justify-between items-center p-4 bg-primary-50 rounded-2xl border border-primary-100">
-                <span class="text-primary-700 font-bold text-[10px] uppercase">Volume de Compras</span>
-                <span id="detCustTotal" class="text-lg font-black text-primary-800">R$ 0,00</span>
-            </div>
-        </div>
-    </div>
-</div>
-
 
     <!-- MODAL PRODUTO -->
     <div id="productModal" class="modal-overlay fixed inset-0 z-[150] flex items-center justify-center p-4 hidden">
