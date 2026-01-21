@@ -5591,15 +5591,19 @@ window.renderCustomerRanking = async () => {
                     <span class="font-black text-slate-900 text-xs">R$ ${c.totalSpent.toFixed(2).replace('.',',')}</span>
                 </td>
                 <td class="px-4 py-4">
-                    <div class="flex items-center justify-center gap-1">
-                        <button onclick="window.openCustomerDetails('${phoneRaw}')" class="p-2 text-slate-400 hover:text-primary-600 hover:bg-primary-50 rounded-lg transition-all" title="Ver Detalhes">
-                            <i data-lucide="eye" class="w-4 h-4"></i>
-                        </button>
-                        <button onclick="window.editCustomer('${phoneRaw}')" class="p-2 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all" title="Editar Dados">
-                            <i data-lucide="pencil" class="w-4 h-4"></i>
-                        </button>
-                    </div>
-                </td>
+    <div class="flex items-center justify-center gap-1">
+        <button onclick="window.openCustomerDetails('${phoneRaw}')" class="p-2 text-slate-400 hover:text-primary-600 hover:bg-primary-50 rounded-lg transition-all" title="Ver Detalhes">
+            <i data-lucide="eye" class="w-4 h-4"></i>
+        </button>
+        <button onclick="window.editCustomer('${phoneRaw}')" class="p-2 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all" title="Editar Dados">
+            <i data-lucide="pencil" class="w-4 h-4"></i>
+        </button>
+        
+        <button onclick="window.deleteCustomerPermanent('${phoneRaw}')" class="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all" title="Excluir Cliente">
+            <i data-lucide="trash-2" class="w-4 h-4"></i>
+        </button>
+    </div>
+</td>
             </tr>
         `;
         tbody.insertAdjacentHTML('beforeend', row);
@@ -5685,6 +5689,32 @@ window.editCustomer = (phone) => {
     setTimeout(() => applyPhoneMask('custPhone'), 100);
 };
 
+window.deleteCustomerPermanent = async (phone) => {
+    // 1. Confirmação de segurança
+    if(!confirm("Tem certeza que deseja excluir este cliente do seu cadastro fixo? Isso não apagará o histórico de pedidos dele.")) return;
+
+    try {
+        const phoneRaw = phone.replace(/\D/g, '');
+        const custRef = doc(db, `stores/${currentStoreId}/customers`, phoneRaw);
+
+        // 2. Remove do Firestore
+        await deleteDoc(custRef);
+
+        // 3. Remove do cache local (Memória RAM)
+        if (savedCustomers[phoneRaw]) {
+            delete savedCustomers[phoneRaw];
+        }
+
+        // 4. Atualiza a interface na hora
+        window.renderCustomerRanking();
+        showToast("🗑️ Cliente removido com sucesso!");
+
+    } catch (e) {
+        console.error("Erro ao excluir cliente:", e);
+        showToast("❌ Erro ao excluir do banco de dados.");
+    }
+};
+     
 // ATUALIZADO: handleCustomerSubmit para mostrar o cliente na hora
 window.handleCustomerSubmit = async (e) => {
     e.preventDefault();
