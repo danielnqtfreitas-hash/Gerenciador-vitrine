@@ -862,6 +862,42 @@
            </div>
             </div>
 
+          <div id="view-customers" class="max-w-6xl mx-auto space-y-4 hidden animate-fade-in">
+    <div class="flex items-center justify-between bg-white p-4 md:p-6 rounded-[2rem] border border-slate-200 shadow-sm">
+        <div class="flex items-center gap-3">
+            <div class="w-10 h-10 md:w-12 md:h-12 bg-slate-900 text-white rounded-2xl flex items-center justify-center shadow-lg shrink-0">
+                <i data-lucide="users" class="w-5 h-5 md:w-6 md:h-6"></i>
+            </div>
+            <div class="min-w-0">
+                <h3 class="text-base md:text-lg font-bold text-slate-800 leading-tight">Meus Clientes</h3>
+                <p class="text-[9px] md:text-[10px] text-slate-400 uppercase font-black tracking-widest mt-1">Lista de cima para baixo</p>
+            </div>
+        </div>
+        
+        <button onclick="window.openCustomerModal()" class="bg-primary-600 text-white px-4 py-2 md:px-5 md:py-2.5 rounded-xl font-bold flex items-center gap-2 shadow-lg active:scale-95 text-[9px] md:text-[10px] uppercase tracking-widest">
+            <i data-lucide="user-plus" class="w-3.5 h-3.5 md:w-4 md:h-4"></i> <span>Novo</span>
+        </button>
+    </div>
+
+    <div class="bg-white rounded-[2rem] border border-slate-200 shadow-sm overflow-hidden">
+        <div class="overflow-x-auto">
+            <table class="w-full text-left border-collapse table-fixed min-w-[600px]">
+                <thead>
+                    <tr class="bg-slate-50/50 text-[9px] md:text-[10px] uppercase text-slate-400 border-b border-slate-100">
+                        <th class="w-16 px-4 py-4 font-black text-center">Rank</th>
+                        <th class="w-auto px-4 py-4 font-black">Cliente</th>
+                        <th class="w-24 px-4 py-4 font-black text-center">Pedidos</th>
+                        <th class="w-32 px-4 py-4 font-black text-right">Total Gasto</th>
+                        <th class="w-28 px-4 py-4 font-black text-center">Ações</th>
+                    </tr>
+                </thead>
+                <tbody id="customerTableBody">
+                    </tbody>
+            </table>
+        </div>
+    </div>
+     </div>
+
             <div id="view-config" class="max-w-4xl mx-auto space-y-8 hidden animate-fade-in">
                 <div class="bg-white rounded-3xl border border-slate-200 p-8 shadow-sm">
                     <h3 class="text-xl font-bold text-slate-800 mb-6 flex items-center gap-3"><i data-lucide="shield-check" class="text-yellow-600"></i> Segurança</h3>
@@ -974,43 +1010,7 @@
                     </button>
             </form>       
             </div>
-        </div>
-
-     <div id="view-customers" class="max-w-6xl mx-auto space-y-4 hidden animate-fade-in">
-    <div class="flex items-center justify-between bg-white p-4 md:p-6 rounded-[2rem] border border-slate-200 shadow-sm">
-        <div class="flex items-center gap-3">
-            <div class="w-10 h-10 md:w-12 md:h-12 bg-slate-900 text-white rounded-2xl flex items-center justify-center shadow-lg shrink-0">
-                <i data-lucide="users" class="w-5 h-5 md:w-6 md:h-6"></i>
-            </div>
-            <div class="min-w-0">
-                <h3 class="text-base md:text-lg font-bold text-slate-800 leading-tight">Meus Clientes</h3>
-                <p class="text-[9px] md:text-[10px] text-slate-400 uppercase font-black tracking-widest mt-1">Lista de cima para baixo</p>
-            </div>
-        </div>
-        
-        <button onclick="window.openCustomerModal()" class="bg-primary-600 text-white px-4 py-2 md:px-5 md:py-2.5 rounded-xl font-bold flex items-center gap-2 shadow-lg active:scale-95 text-[9px] md:text-[10px] uppercase tracking-widest">
-            <i data-lucide="user-plus" class="w-3.5 h-3.5 md:w-4 md:h-4"></i> <span>Novo</span>
-        </button>
-    </div>
-
-    <div class="bg-white rounded-[2rem] border border-slate-200 shadow-sm overflow-hidden">
-        <div class="overflow-x-auto">
-            <table class="w-full text-left border-collapse table-fixed min-w-[600px]">
-                <thead>
-                    <tr class="bg-slate-50/50 text-[9px] md:text-[10px] uppercase text-slate-400 border-b border-slate-100">
-                        <th class="w-16 px-4 py-4 font-black text-center">Rank</th>
-                        <th class="w-auto px-4 py-4 font-black">Cliente</th>
-                        <th class="w-24 px-4 py-4 font-black text-center">Pedidos</th>
-                        <th class="w-32 px-4 py-4 font-black text-right">Total Gasto</th>
-                        <th class="w-28 px-4 py-4 font-black text-center">Ações</th>
-                    </tr>
-                </thead>
-                <tbody id="customerTableBody">
-                    </tbody>
-            </table>
-        </div>
-    </div>
-     </div>
+         </div>
       
     <!-- MODAL RECORTE -->
     <div id="cropModal" class="modal-overlay fixed inset-0 z-[200] flex items-center justify-center p-4 hidden">
