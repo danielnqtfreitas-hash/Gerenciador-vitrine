@@ -3410,13 +3410,17 @@ window.handleBannerSubmit = async (e) => {
     }
 // Só faz a leitura se for a primeira vez que o lojista entra na aba
     if (tabName === 'products') {
-    await loadProductsCache();
-    window.limparOfertasExpiradas(allProducts);
-}
+        // O Promise.all faz os dois carregarem ao mesmo tempo (mais rápido)
+        await Promise.all([
+            loadProductsCache(), 
+            loadCategoriesCache()
+        ]);
+        window.limparOfertasExpiradas(allProducts);
+    }
 
     if (tabName === 'categories') await loadCategoriesCache();
     if (tabName === 'banners') await loadBannersCache();
-    
+     
     // Dashboard e Financeiro dependem de tudo carregado para fazer contas
     if (tabName === 'dashboard' || tabName === 'finance') {
         await Promise.all([
