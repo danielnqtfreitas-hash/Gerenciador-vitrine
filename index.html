@@ -5756,13 +5756,33 @@ window.handleCustomerSubmit = async (e) => {
 
 
 // Carregar clientes cadastrados do Banco
-window.loadSavedCustomers = async () => {
+window.loadSavedCustomers = async (force = false) => {
+    const cacheKey = `cache_customers_${currentStoreId}`;
+    const timeKey = `cache_time_customers_${currentStoreId}`;
+    
+    const localData = localStorage.getItem(cacheKey);
+    const localTime = localStorage.getItem(timeKey);
+    const serverTime = storeConfig.lastUpdate?.toString();
+
+    // REGRA BLAZE: Se o tempo no servidor é igual ao do navegador, custo ZERO.
+    if (!force && localData && localTime === serverTime) {
+        console.log("👥 Clientes: Usando cache de disco (Custo Zero)");
+        savedCustomers = JSON.parse(localData);
+        return;
+    }
+
+    console.log("🌐 Clientes: Sincronizando com Firebase...");
     const snap = await getDocs(collection(db, `stores/${currentStoreId}/customers`));
     savedCustomers = {};
     snap.forEach(doc => {
         savedCustomers[doc.id] = doc.data();
     });
+
+    // Salva no disco para a próxima vez
+    localStorage.setItem(cacheKey, JSON.stringify(savedCustomers));
+    localStorage.setItem(timeKey, serverTime || Date.now().toString());
 };
+
 
      window.applyDynamicColors = (hexColor) => {
     if (!hexColor) return;
