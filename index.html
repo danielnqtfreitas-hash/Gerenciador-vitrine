@@ -2514,8 +2514,6 @@ async function loadProductsCache(force = false) {
     productsLoaded = true;
     renderProductList();
     updateQuotas();
- window.updateDashboardCounters(); // ADICIONE ESTA LINHA AQUI TAMBÉM
-    return;
 }
 
 
@@ -2644,15 +2642,6 @@ function updateQuotas() {
     }
 }
 
-     window.updateDashboardCounters = () => {
-    const pCount = document.getElementById('dash-total-products');
-    const bCount = document.getElementById('dash-total-banners');
-    const cCount = document.getElementById('dash-total-cats');
-
-    if (pCount) pCount.textContent = allProducts.length;
-    if (bCount) bCount.textContent = allBanners.length;
-    if (cCount) cCount.textContent = allCategories.length;
-};
 
 
         // --- GESTÃO DE PRODUTOS ---
@@ -2909,37 +2898,20 @@ showToast("🗑️ Produto e todos os arquivos removidos!");
         showToast("❌ Erro ao excluir.");
     }
 };
-window.toggleProductStatus = async (id, currentStatus) => {
-    // 1. Define o novo status
-    const newStatus = currentStatus === 'paused' ? 'active' : 'paused';
-    
-    try {
-        // 2. Referência no Firestore
-        const docRef = doc(db, `stores/${currentStoreId}/products`, id);
-        
-        // 3. Atualiza o Firestore
-        await updateDoc(docRef, { status: newStatus });
 
-        // 4. Atualiza a memória local (Importante para a interface mudar na hora)
-        const index = allProducts.findIndex(p => p.id === id);
-        if (index !== -1) {
-            allProducts[index].status = newStatus;
-        }
 
-        // 5. Atualiza o cache do disco
-        localStorage.setItem(`cache_products_${currentStoreId}`, JSON.stringify(allProducts));
+        window.toggleProductStatus = async (id, currentStatus) => {
+            const newStatus = currentStatus === 'paused' ? 'active' : 'paused';
+            try {
+                await updateDoc(doc(db, `stores/${currentStoreId}/products`, id), { status: newStatus });
+                const storeRef = doc(db, `stores/${currentStoreId}/config/store`);
+                window.markAsDirty();
+                showToast(newStatus === 'paused' ? "Pausado." : "Ativado.");
+            } catch (e) {
+                showToast("Erro ao mudar status.");
+            }
+        };
 
-        // 6. Redesenha a lista e ativa o botão de publicar
-        renderProductList(); 
-        window.markAsDirty(); 
-
-        showToast(newStatus === 'paused' ? "👁️ Produto ocultado." : "👁️ Produto visível.");
-    } catch (e) {
-        console.error("Erro ao alternar status:", e);
-        showToast("❌ Erro ao mudar status.");
-    }
-};
-        
         window.toggleCategoryAccordion = (catName) => {
             const safeId = catName.replace(/\s+/g, '-');
             const group = document.getElementById(`cat-group-${safeId}`);
@@ -3453,17 +3425,6 @@ window.handleBannerSubmit = async (e) => {
             loadBannersCache() 
         ]);
       }
-
-     window.updateDashboardCounters(); 
-        
-        // Atualiza os gráficos e insights
-        setTimeout(() => {
-            if (typeof window.calculateSalesInsights === 'function') {
-                window.calculateSalesInsights();
-            }
-        }, 100);
-    }
-     
      const tabs = ['orders', 'dashboard', 'banners', 'products', 'categories', 'config', 'finance', 'customers'];
         const fab = document.getElementById('fabAddOrder');
 
@@ -3487,7 +3448,7 @@ window.handleBannerSubmit = async (e) => {
             isDashboardLoaded = true; 
         }
     }
-     
+
     if (tabName === 'config' && !isConfigLoaded) {
         // Se você clicar na engrenagem, ele busca os dados da loja (PIX, Taxas, etc)
         if (typeof initStoreData === 'function') {
@@ -4772,7 +4733,6 @@ window.finishManualOrder = async () => {
         });
 
         await Promise.all(stockPromises);
-     await updateDoc(doc(db, `stores/${currentStoreId}/config/store`), { lastUpdate: Date.now() });
       await loadProductsCache(true);
         
         showToast("✅ Venda finalizada e estoque sincronizado!");
