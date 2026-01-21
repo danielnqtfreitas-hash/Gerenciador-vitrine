@@ -3617,6 +3617,10 @@ async function initAnalyticsInsights() {
 
     // Referência ao documento único que a Vitrine agora preenche (product_views)
     const docRef = doc(db, `stores/${currentStoreId}/analytics`, "product_views");
+  const snapCheck = await getDoc(docRef);
+    if (!snapCheck.exists()) {
+        await setDoc(docRef, { stats: {}, searches: {}, lastUpdate: Timestamp.now() });
+    }
     
     onSnapshot(docRef, (snap) => {
         // Se o documento não existir, mantemos as mensagens de "Aguardando..." que você já tem
