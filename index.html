@@ -1079,6 +1079,45 @@
         </div>
         </div>
 
+ <div id="customerModal" class="modal-overlay fixed inset-0 z-[150] flex items-center justify-center p-4 hidden">
+    <div class="bg-white rounded-[2.5rem] shadow-2xl w-full max-w-lg auth-card-container overflow-hidden">
+        <div class="bg-slate-900 p-6 flex items-center justify-between">
+            <div class="flex items-center gap-3">
+                <div class="bg-primary-500/20 p-2 rounded-xl"><i data-lucide="user-plus" class="w-6 h-6 text-primary-400"></i></div>
+                <h3 class="text-xl font-bold text-white">Cadastrar Cliente</h3>
+            </div>
+            <button onclick="window.closeCustomerModal()" class="p-2 text-slate-400 hover:text-white transition-colors"><i data-lucide="x" class="w-6 h-6"></i></button>
+        </div>
+
+        <div class="auth-card-content p-8">
+            <form id="customerForm" onsubmit="window.handleCustomerSubmit(event)" class="space-y-4">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div class="md:col-span-2">
+                        <label class="text-[10px] font-bold text-slate-500 uppercase ml-1">Nome Completo</label>
+                        <input type="text" id="custName" required class="input-pro" placeholder="Ex: Maria Oliveira">
+                    </div>
+                    <div>
+                        <label class="text-[10px] font-bold text-slate-500 uppercase ml-1">WhatsApp</label>
+                        <input type="text" id="custPhone" required class="input-pro" placeholder="(00) 00000-0000">
+                    </div>
+                    <div>
+                        <label class="text-[10px] font-bold text-slate-500 uppercase ml-1">CPF (Opcional)</label>
+                        <input type="text" id="custCpf" class="input-pro" placeholder="000.000.000-00">
+                    </div>
+                    <div class="md:col-span-2">
+                        <label class="text-[10px] font-bold text-slate-500 uppercase ml-1">Endereço de Entrega</label>
+                        <textarea id="custAddress" class="input-pro" rows="2" placeholder="Rua, número, bairro..."></textarea>
+                    </div>
+                </div>
+                <button type="submit" class="w-full bg-primary-600 text-white py-4 rounded-2xl font-bold shadow-xl hover:bg-primary-700 uppercase tracking-widest text-xs mt-4">
+                    Salvar Cliente
+                </button>
+            </form>
+        </div>
+    </div>
+</div>
+
+
     <!-- MODAL PRODUTO -->
     <div id="productModal" class="modal-overlay fixed inset-0 z-[150] flex items-center justify-center p-4 hidden">
         <div class="bg-white rounded-[2.5rem] shadow-2xl w-full max-w-4xl auth-card-container overflow-hidden">
@@ -5413,28 +5452,32 @@ window.processarBaixaSilenciosa = async (orderId, orderData) => {
 };
 
 // --- LÓGICA DE CLIENTES & RANKING ---
-window.renderCustomerRanking = () => {
+window.renderCustomerRanking = async () => {
+    // Garante que temos os clientes cadastrados carregados
+    if (Object.keys(savedCustomers).length === 0) await window.loadSavedCustomers();
+
     const customerStats = {};
     const orders = Object.values(ordersCache);
 
-    // 1. Processa todos os pedidos para somar gastos por telefone
     orders.forEach(order => {
         if (order.status !== 'canceled') {
             const phone = order.customer.phone.replace(/\D/g, '');
+            
+            // Se o cliente existe no banco, usamos os dados de lá, senão usamos do pedido
+            const info = savedCustomers[phone] || { 
+                name: order.customer.name, 
+                phone: order.customer.phone,
+                isGuest: true // Marca como cliente não cadastrado no banco
+            };
+
             if (!customerStats[phone]) {
-                customerStats[phone] = {
-                    name: order.customer.name,
-                    phone: order.customer.phone,
-                    orderCount: 0,
-                    totalSpent: 0
-                };
+                customerStats[phone] = { ...info, orderCount: 0, totalSpent: 0 };
             }
             customerStats[phone].orderCount++;
             customerStats[phone].totalSpent += (order.total || 0);
         }
     });
 
-    // 2. Transforma em array e ordena pelo valor total gasto (do maior para o menor)
     const ranking = Object.values(customerStats).sort((a, b) => b.totalSpent - a.totalSpent);
 
     const tbody = document.getElementById('customerTableBody');
@@ -5449,13 +5492,14 @@ window.renderCustomerRanking = () => {
                 </td>
                 <td class="px-6 py-4">
                     <div class="flex flex-col">
-                        <span class="font-bold text-slate-800 text-sm">${c.name}</span>
+                        <div class="flex items-center gap-2">
+                            <span class="font-bold text-slate-800 text-sm">${c.name}</span>
+                            ${!c.isGuest ? '<i data-lucide="check-circle" class="w-3 h-3 text-blue-500"></i>' : ''}
+                        </div>
                         <span class="text-[10px] text-slate-400 font-mono">${c.phone}</span>
                     </div>
                 </td>
-                <td class="px-6 py-4 text-center font-bold text-slate-600 text-xs">
-                    ${c.orderCount}
-                </td>
+                <td class="px-6 py-4 text-center font-bold text-slate-600 text-xs">${c.orderCount}</td>
                 <td class="px-6 py-4 text-right">
                     <span class="font-black text-slate-900 text-sm">R$ ${c.totalSpent.toFixed(2).replace('.',',')}</span>
                 </td>
@@ -5469,6 +5513,56 @@ window.renderCustomerRanking = () => {
     }).join('');
 
     if (window.lucide) lucide.createIcons();
+};
+
+// --- GESTÃO DE CLIENTES (CRM) ---
+let savedCustomers = {}; // Cache dos clientes cadastrados no banco
+
+window.openCustomerModal = () => {
+    document.getElementById('customerForm').reset();
+    document.getElementById('customerModal').classList.remove('hidden');
+    applyPhoneMask('custPhone');
+};
+
+window.closeCustomerModal = () => {
+    document.getElementById('customerModal').classList.add('hidden');
+};
+
+// Salvar Cliente no Firestore
+window.handleCustomerSubmit = async (e) => {
+    e.preventDefault();
+    const phone = document.getElementById('custPhone').value.replace(/\D/g, '');
+    if(!phone) return;
+
+    try {
+        const custRef = doc(db, `stores/${currentStoreId}/customers`, phone);
+        const data = {
+            name: document.getElementById('custName').value,
+            phone: document.getElementById('custPhone').value,
+            cpf: document.getElementById('custCpf').value,
+            address: document.getElementById('custAddress').value,
+            updatedAt: Date.now()
+        };
+
+        await setDoc(custRef, data, { merge: true });
+        showToast("✅ Cliente salvo com sucesso!");
+        window.closeCustomerModal();
+        
+        // Recarrega os dados e o ranking
+        await window.loadSavedCustomers();
+        window.renderCustomerRanking();
+    } catch (e) {
+        showToast("❌ Erro ao salvar cliente.");
+    }
+};
+
+// Carregar clientes cadastrados do Banco
+window.loadSavedCustomers = async () => {
+    const snap = await getDocs(collection(db, `stores/${currentStoreId}/customers`));
+    savedCustomers = {};
+    snap.forEach(doc => {
+        savedCustomers[doc.id] = doc.data();
+    });
 };
 
 
