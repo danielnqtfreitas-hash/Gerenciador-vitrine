@@ -79,13 +79,22 @@
         
         .sidebar-link { transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1); border-right: 4px solid transparent; }
         .sidebar-link.active { 
-            background-color: theme('colors.primary.50'); 
-            color: theme('colors.primary.700'); 
-            border-right-color: theme('colors.primary.600'); 
-            font-weight: 600;
-        }
-        .sidebar-link:hover:not(.active) { background-color: theme('colors.slate.50'); color: theme('colors.slate.800'); }
-        
+    background-color: var(--brand-50) !important; 
+    color: var(--brand-700) !important; 
+    border-right: 4px solid var(--brand-600) !important; 
+    font-weight: 600;
+}
+
+.sidebar-link:hover:not(.active) { 
+    background-color: #f8fafc; 
+    color: #1e293b; 
+}
+
+/* Ajuste do input de cor para não ficar gigante */
+input[type="color"] {
+    padding: 0;
+    inline-size: 100%;
+}
         #mobileSidebar { transition: transform 0.3s ease-in-out; }
         .sidebar-hidden { transform: translateX(-100%); }
         .sidebar-visible { transform: translateX(0); }
@@ -5707,29 +5716,29 @@ window.loadSavedCustomers = async () => {
 };
 
      window.applyDynamicColors = (hex) => {
-    if (!hex) return;
+    if (!hex || hex === "undefined") hex = "#8b5cf6";
 
-    // Função simples para clarear cores (para gerar o tom 50 e 100)
-    const lighten = (color, percent) => {
-        const num = parseInt(color.replace("#",""), 16),
-        amt = Math.round(2.55 * percent),
-        R = (num >> 16) + amt,
-        G = (num >> 8 & 0x00FF) + amt,
-        B = (num & 0x0000FF) + amt;
-        return "#" + (0x1000000 + (R<255?R<1?0:R:255)*0x10000 + (G<255?G<1?0:G:255)*0x100 + (B<255?B<1?0:B:255)).toString(16).slice(1);
+    // Função para clarear o Hex de forma limpa para tons 50 e 100
+    const shadeColor = (col, amt) => {
+        col = col.replace(/^#/, '');
+        if (col.length === 3) col = col[0] + col[0] + col[1] + col[1] + col[2] + col[2];
+        let [r, g, b] = col.match(/.{2}/g).map(x => parseInt(x, 16));
+        r = Math.round(Math.min(255, r + (255 - r) * amt));
+        g = Math.round(Math.min(255, g + (255 - g) * amt));
+        b = Math.round(Math.min(255, b + (255 - b) * amt));
+        const fill = (n) => n.toString(16).padStart(2, '0');
+        return `#${fill(r)}${fill(g)}${fill(b)}`;
     }
 
     const root = document.documentElement;
     root.style.setProperty('--brand-500', hex);
-    root.style.setProperty('--brand-600', hex); // Você pode escurecer um pouco se preferir
+    root.style.setProperty('--brand-600', hex);
     root.style.setProperty('--brand-700', hex);
-    root.style.setProperty('--brand-100', lighten(hex, 40));
-    root.style.setProperty('--brand-50', lighten(hex, 50));
+    root.style.setProperty('--brand-100', shadeColor(hex, 0.8)); // 80% mais claro
+    root.style.setProperty('--brand-50', shadeColor(hex, 0.92));  // 92% mais claro (fundo do menu)
     
-    // Atualiza a meta tag do navegador para mobile
     document.querySelector('meta[name="theme-color"]')?.setAttribute('content', hex);
 };
-
 
     </script>
 </body>
