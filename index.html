@@ -4733,6 +4733,7 @@ window.finishManualOrder = async () => {
         });
 
         await Promise.all(stockPromises);
+     await updateDoc(doc(db, `stores/${currentStoreId}/config/store`), { lastUpdate: Date.now() });
       await loadProductsCache(true);
         
         showToast("✅ Venda finalizada e estoque sincronizado!");
