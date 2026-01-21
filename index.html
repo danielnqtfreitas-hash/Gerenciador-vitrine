@@ -2632,7 +2632,7 @@ const pUnit = document.getElementById('prodPromoUnit').value;
 
 if (pValue > 0) {
     const dataFinal = new Date();
-    // Cálculo: Se for dias (24h), se for horas (1h)
+    // Se for dias, multiplica por 24h. Se for horas, por 1h.
     const multiplier = pUnit === 'days' ? (24 * 60 * 60 * 1000) : (60 * 60 * 1000);
     
     dataFinal.setTime(dataFinal.getTime() + (pValue * multiplier));
@@ -2675,17 +2675,18 @@ if (pValue > 0) {
         }
 
         // --- 6. SALVAMENTO FINAL ---
-        const data = {
+                const data = {
             name: document.getElementById('prodName').value,
             sku: document.getElementById('prodSku').value || '',
             category: document.getElementById('prodCategory').value,
             value: parseFloat(document.getElementById('prodValue').value) || 0,
             promoValue: parseFloat(document.getElementById('prodPromo').value) || null,   
-            promoValueInput: pValue || null, // Salva o número digitado (ex: 12)
-            promoUnitInput: pUnit || 'days', // Salva a unidade (ex: 'hours')
-            promoUntil: promoUntil,
-            promoDays: promoDays || null,
-            promoUntil: promoUntil,
+            
+            // ✅ Novos campos para o sistema de Horas/Dias
+            promoValueInput: pValue || null, 
+            promoUnitInput: pUnit || 'days', 
+            promoUntil: promoUntil,          
+
             stock: totalStock, 
             cost: parseFloat(document.getElementById('prodCost').value) || 0,
             images: imageUrls,
@@ -2699,8 +2700,9 @@ if (pValue > 0) {
         };
 
         await setDoc(docRef, data, { merge: true });
-      await loadProductsCache(true);
-        window.markAsDirty(); 
+        await loadProductsCache(true);
+        window.markAsDirty();
+
 
         showToast("✅ Produto e variações salvos!");
         document.getElementById('productModal').classList.add('hidden'); 
