@@ -1131,21 +1131,17 @@
                                 </div>
 
                                 <div class="space-y-1">
-    <label class="text-[10px] font-bold text-amber-600 uppercase ml-1">Duração da Oferta</label>
-    <div class="flex gap-2">
-        <div class="relative flex-1">
-            <input type="number" id="prodPromoValue" step="any" placeholder="Ex: 12" class="input-pro bg-white">
-        </div>
-        <select id="prodPromoUnit" class="w-28 bg-slate-100 border-none rounded-xl text-[10px] font-black uppercase text-slate-500 outline-none focus:ring-2 focus:ring-amber-500/20 px-3 cursor-pointer appearance-none">
-            <option value="hours">Horas</option>
-            <option value="days" selected>Dias</option>
-        </select>
-    </div>
-    <p class="text-[9px] text-slate-400 mt-1 italic leading-tight">
-        * A oferta expirará exatamente após o tempo definido.
-    </p>
-</div>
-
+                                    <label class="text-[10px] font-bold text-amber-600 uppercase ml-1">Duração da Oferta Especial</label>
+                                    <div class="relative">
+                                        <input type="number" id="prodPromoDays" placeholder="Quantidade de dias (Ex: 7)" min="1" class="input-pro bg-white pr-16">
+                                        <div class="absolute right-3 top-3.5 flex items-center gap-1 pointer-events-none">
+                                            <span class="text-[10px] font-black text-slate-400 uppercase">Dias</span>
+                                            <i data-lucide="clock" class="w-3.5 h-3.5 text-amber-500"></i>
+                                        </div>
+                                    </div>
+                                    <p class="text-[9px] text-slate-400 mt-1 italic">* A oferta expirará automaticamente após este período.</p>
+                                </div>
+                            </div>
 
                                                         <div class="space-y-5">
                                 <h4 class="text-[11px] font-black uppercase text-slate-400 tracking-widest border-b border-slate-100 pb-2">Controle de Estoque & Lucro</h4>
@@ -2508,8 +2504,9 @@ function updateQuotas() {
 
         // --- GESTÃO DE PRODUTOS ---
         window.openProductModal = (p = null) => {
-    variationsHistoryCache = new Map();
-    if(!p && allProducts.length >= (storeConfig.maxProducts || 999)) { 
+
+            variationsHistoryCache = new Map();
+    if(!p && allProducts.length >= storeConfig.maxProducts) { 
         showToast(`Limite do plano atingido.`); 
         return; 
     }
@@ -2524,14 +2521,14 @@ function updateQuotas() {
         document.getElementById('prodCategory').value = p.category; 
         document.getElementById('prodValue').value = p.value;
         document.getElementById('prodPromo').value = p.promoValue || ''; 
-        document.getElementById('prodPromoValue').value = p.promoValueInput || '';
-        document.getElementById('prodPromoUnit').value = p.promoUnitInput || 'days';
-
+        document.getElementById('prodPromoDays').value = p.promoDays || ''; 
+      
         document.getElementById('prodStock').value = p.stock || 0;
-        document.getElementById('prodCost').value = p.cost || 0;
+        document.getElementById('prodCost').value = p.cost || 0; // Carrega o custo
         document.getElementById('prodDesc').value = p.description || '';
         document.getElementById('prodFeatured').checked = p.isFeatured; 
         
+        // Carrega os textos nos campos de input
         document.getElementById('prodSizesInput').value = p.sizes ? p.sizes.join(', ') : '';
         document.getElementById('prodColorsInput').value = p.colors ? p.colors.join(', ') : '';
         
@@ -2545,15 +2542,14 @@ function updateQuotas() {
             document.getElementById('variationMatrixContainer').classList.add('hidden');
         }
         
+        // Calcula o lucro ao abrir
         if(window.calculateProfit) window.calculateProfit();
 
     } else {
-        // ✅ LIMPEZA PARA NOVO PRODUTO
         document.getElementById('prodModalTitle').textContent = "Adicionar Novo Produto";
         document.getElementById('productForm').reset(); 
         document.getElementById('prodId').value = ''; 
-        document.getElementById('prodPromoValue').value = ''; // Novo ID
-        document.getElementById('prodPromoUnit').value = 'days'; // Novo ID
+        document.getElementById('prodPromoDays').value = ''; 
         document.getElementById('prodSku').value = generateSKU();
         document.getElementById('prodProfit').value = '';
         currentProductImages = []; 
@@ -2566,7 +2562,8 @@ function updateQuotas() {
     lucide.createIcons();
 };
 
-      
+
+       
         window.handleProductSubmit = async (e) => {
     e.preventDefault();
     const id = document.getElementById('prodId').value;
@@ -2626,18 +2623,17 @@ function updateQuotas() {
         }
 
        let promoUntil = null;
-const pValueInput = document.getElementById('prodPromoValue').value;
-const pValue = parseFloat(pValueInput);
-const pUnit = document.getElementById('prodPromoUnit').value;
+const promoDaysInput = document.getElementById('prodPromoDays').value;
+const promoDays = parseInt(promoDaysInput);
 
-if (pValue > 0) {
+if (promoDays > 0) {
     const dataFinal = new Date();
-    // Se for dias, multiplica por 24h. Se for horas, por 1h.
-    const multiplier = pUnit === 'days' ? (24 * 60 * 60 * 1000) : (60 * 60 * 1000);
+    // Adiciona exatamente a quantidade de dias (24h por dia) a partir de AGORA
+    dataFinal.setTime(dataFinal.getTime() + (promoDays * 24 * 60 * 60 * 1000));
     
-    dataFinal.setTime(dataFinal.getTime() + (pValue * multiplier));
-    promoUntil = dataFinal.getTime();
+    promoUntil = dataFinal.getTime(); 
 }
+
      
         // --- 4. LÓGICA DA LIXEIRA (SOFT DELETE) ---
         if (snap.exists()) {
@@ -2675,18 +2671,14 @@ if (pValue > 0) {
         }
 
         // --- 6. SALVAMENTO FINAL ---
-                const data = {
+        const data = {
             name: document.getElementById('prodName').value,
             sku: document.getElementById('prodSku').value || '',
             category: document.getElementById('prodCategory').value,
             value: parseFloat(document.getElementById('prodValue').value) || 0,
             promoValue: parseFloat(document.getElementById('prodPromo').value) || null,   
-            
-            // ✅ Novos campos para o sistema de Horas/Dias
-            promoValueInput: pValue || null, 
-            promoUnitInput: pUnit || 'days', 
-            promoUntil: promoUntil,          
-
+            promoDays: promoDays || null,
+            promoUntil: promoUntil,
             stock: totalStock, 
             cost: parseFloat(document.getElementById('prodCost').value) || 0,
             images: imageUrls,
@@ -2700,9 +2692,8 @@ if (pValue > 0) {
         };
 
         await setDoc(docRef, data, { merge: true });
-        await loadProductsCache(true);
-        window.markAsDirty();
-
+      await loadProductsCache(true);
+        window.markAsDirty(); 
 
         showToast("✅ Produto e variações salvos!");
         document.getElementById('productModal').classList.add('hidden'); 
