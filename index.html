@@ -3425,8 +3425,8 @@ window.handleBannerSubmit = async (e) => {
             loadBannersCache() 
         ]);
       }
-    const tabs = ['orders', 'dashboard', 'banners', 'products', 'categories', 'config', 'finance'];
-    const fab = document.getElementById('fabAddOrder');
+     const tabs = ['orders', 'dashboard', 'banners', 'products', 'categories', 'config', 'finance', 'customers'];
+        const fab = document.getElementById('fabAddOrder');
 
     tabs.forEach(tab => {
         const view = document.getElementById(`view-${tab}`);
@@ -3510,14 +3510,15 @@ window.handleBannerSubmit = async (e) => {
     }
 
     const titles = { 
-        orders: 'Pedidos', 
-        dashboard: 'Dashboard', 
-        banners: 'Banners', 
-        products: 'Produtos', 
-        categories: 'Categorias', 
-        config: 'Configurações', 
-        finance: 'Financeiro' 
-    };
+    orders: 'Pedidos', 
+    dashboard: 'Dashboard', 
+    banners: 'Banners', 
+    products: 'Produtos', 
+    categories: 'Categorias', 
+    config: 'Configurações', 
+    finance: 'Financeiro',
+    customers: 'Clientes'
+};
     document.getElementById('page-title').innerText = titles[tabName] || 'Painel';
 
     if (typeof toggleMobileSidebar === 'function' && !document.getElementById('mobileSidebar').classList.contains('sidebar-hidden')) {
