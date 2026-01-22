@@ -3444,15 +3444,27 @@ window.handleBannerSubmit = async (e) => {
     });
 
         // --- BLOCO DE ECONOMIA BLAZE: COLE AQUI ---
-    if (tabName === 'dashboard' && !isDashboardLoaded) {
-        const dashRef = doc(db, `stores/${currentStoreId}/analytics/global`);
-        const d = await getDoc(dashRef); 
-        if (d.exists()) {
-            document.getElementById('dash-total-visits').textContent = d.data().totalVisits || 0;
-            isDashboardLoaded = true; 
+    if (tabName === 'dashboard') {
+    setTimeout(() => {
+        if (typeof window.calculateSalesInsights === 'function') {
+            window.calculateSalesInsights();
         }
-    }
+    }, 50);
 
+    // --- ATUALIZAÇÃO DO CARD DE PRODUTOS usando o cache ---
+    const count = window.getCachedProductCount ? window.getCachedProductCount() : 0;
+
+    const totalEl = document.getElementById("dash-total-products");
+    if (totalEl) totalEl.textContent = count;
+
+    // Limite já é atualizado por quem carrega os dados da loja
+    // Só garantimos que existe
+    const limitEl = document.getElementById("dash-limit-products");
+    if (limitEl && window.storeLimits) {
+        limitEl.textContent = " / " + (window.storeLimits.products || 0);
+    }
+}
+     
     if (tabName === 'config' && !isConfigLoaded) {
         // Se você clicar na engrenagem, ele busca os dados da loja (PIX, Taxas, etc)
         if (typeof initStoreData === 'function') {
@@ -5826,7 +5838,9 @@ window.loadSavedCustomers = async (force = false) => {
         metaApple.setAttribute('content', 'default');
     }
 };
-
+window.getCachedProductCount = () => {
+    return Array.isArray(allProducts) ? allProducts.length : 0;
+};
     </script>
 </body>
 </html>
