@@ -3261,10 +3261,8 @@ window.handleBannerSubmit = async (e) => {
     
     const id = document.getElementById('bannerId').value;
     const isNew = !id;
-    // O limite real é 1 se o carrossel estiver desativado, senão usa o maxBanners do plano
     const maxAllowed = storeConfig.hasCarousel ? (parseInt(storeConfig.maxBanners) || 0) : 1;
 
-    // VERIFICAÇÃO DE SEGURANÇA
     if (isNew && allBanners.length >= maxAllowed) {
         const msg = storeConfig.hasCarousel 
             ? `Limite de ${maxAllowed} banners atingido.` 
@@ -3298,8 +3296,14 @@ window.handleBannerSubmit = async (e) => {
         };
 
         await setDoc(doc(db, `stores/${currentStoreId}/hero_cards`, finalId), data, { merge: true });
-       await loadBannersCache(true);
-      window.markAsDirty();
+        
+        // 1. Atualiza a memória (allBanners)
+        await loadBannersCache(true);
+        
+        // 2. ATUALIZA A TELA (O que estava faltando!)
+        renderBannerList(); 
+        
+        window.markAsDirty();
         
         document.getElementById('bannerModal').classList.add('hidden');
         showToast("✅ Banner publicado!");
@@ -3310,6 +3314,7 @@ window.handleBannerSubmit = async (e) => {
         btn.disabled = false;
     }
 };
+
 
 
         window.deleteBanner = async (id) => {
