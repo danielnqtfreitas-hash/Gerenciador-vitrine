@@ -3428,9 +3428,15 @@ window.handleBannerSubmit = async (e) => {
     }
 }
 
-    if (tabName === 'categories') await loadCategoriesCache();
-    if (tabName === 'banners') await loadBannersCache();
+    if (tabName === 'categories') {
+        await loadCategoriesCache();
+        renderCategoryList(); // Garante que a lista apareça
+    }
 
+    if (tabName === 'banners') {
+        await loadBannersCache();
+        renderBannerList();
+     
     if (tabName === 'dashboard' || tabName === 'finance') {
         await Promise.all([
             loadProductsCache(),
