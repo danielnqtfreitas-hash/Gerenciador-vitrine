@@ -3405,18 +3405,17 @@ window.handleBannerSubmit = async (e) => {
         }
     }
 
-if (tabName === 'categories') await loadCategoriesCache();
-if (tabName === 'banners') await loadBannersCache();
+    if (tabName === 'categories') await loadCategoriesCache();
+    if (tabName === 'banners') await loadBannersCache();
 
-if (tabName === 'dashboard' || tabName === 'finance') {
-    await Promise.all([
-        loadProductsCache(),
-        loadCategoriesCache(),
-        loadBannersCache()
-    ]);
-}
+    if (tabName === 'dashboard' || tabName === 'finance') {
+        await Promise.all([
+            loadProductsCache(),
+            loadCategoriesCache(),
+            loadBannersCache()
+        ]);
+    }
 
-    // --- REMOVER TODAS AS ABAS ---
     const tabs = ['orders','dashboard','banners','products','categories','config','finance','customers'];
     const fab = document.getElementById('fabAddOrder');
 
@@ -3433,66 +3432,69 @@ if (tabName === 'dashboard' || tabName === 'finance') {
 
     if (tabName === 'dashboard') {
 
-    // --- VISITAS (carrega uma vez) ---
-    if (!window.isDashboardLoaded) {
-        const dashRef = doc(db, `stores/${currentStoreId}/analytics/global`);
-        const d = await getDoc(dashRef);
-        if (d.exists()) {
-            document.getElementById('dash-total-visits').textContent = d.data().totalVisits || 0;
+        if (!window.isDashboardLoaded) {
+            const dashRef = doc(db, `stores/${currentStoreId}/analytics/global`);
+            const d = await getDoc(dashRef);
+            if (d.exists()) {
+                document.getElementById('dash-total-visits').textContent = d.data().totalVisits || 0;
+            }
+            window.isDashboardLoaded = true;
         }
-        window.isDashboardLoaded = true;
-    }
 
-    // --- INSIGHTS ---
-    setTimeout(() => {
-        if (typeof window.calculateSalesInsights === 'function') {
-            window.calculateSalesInsights();
+        setTimeout(() => {
+            if (typeof window.calculateSalesInsights === 'function') {
+                window.calculateSalesInsights();
+            }
+        }, 50);
+
+        const prodCount = window.getCachedProductCount?.() || 0;
+        document.getElementById("dash-total-products").textContent = prodCount;
+
+        if (window.getCachedBannerCount) {
+            const bannerCount = window.getCachedBannerCount();
+            document.getElementById("dash-total-banners").textContent = bannerCount;
         }
-    }, 50);
 
-    // --- PRODUTOS ---
-    const prodCount = window.getCachedProductCount?.() || 0;
-    document.getElementById("dash-total-products").textContent = prodCount;
+        if (window.getCachedCategoryCount) {
+            const catCount = window.getCachedCategoryCount();
+            const el = document.getElementById("dash-total-cats");
+            if (el) el.textContent = catCount;
+        }
 
-    // --- BANNERS ---
-    if (window.getCachedBannerCount) {
-        const bannerCount = window.getCachedBannerCount();
-        document.getElementById("dash-total-banners").textContent = bannerCount;
+        if (window.storeLimits?.products !== undefined) {
+            document.getElementById("dash-limit-products").textContent =
+                " / " + window.storeLimits.products;
+        }
+
+        if (window.storeLimits?.banners !== undefined) {
+            document.getElementById("dash-limit-banners").textContent =
+                " / " + window.storeLimits.banners;
+        }
     }
 
-    // --- CATEGORIAS ---
-    if (window.getCachedCategoryCount) {
-        document.getElementById("dash-total-cats").textContent =
-            window.getCachedCategoryCount();
-    }
-
-    // --- LIMITE DOS PRODUTOS ---
-    if (window.storeLimits?.products !== undefined) {
-        document.getElementById("dash-limit-products").textContent =
-            " / " + window.storeLimits.products;
-    }
-
-    // --- LIMITE DOS BANNERS ---
-    if (window.storeLimits?.banners !== undefined) {
-        document.getElementById("dash-limit-banners").textContent =
-            " / " + window.storeLimits.banners;
-    }
-
-}
-    
-    
     const activeView = document.getElementById(`view-${tabName}`);
     if (activeView) activeView.classList.remove('hidden');
 
-    // --- CONFIG ---
-    if (tabName === 'config' && !isConfigLoaded) {
-        if (typeof initStoreData === 'function') {
-            await initStoreData();
-            isConfigLoaded = true;
+    if (tabName === 'dashboard') {
+        setTimeout(() => {
+            if (typeof window.calculateSalesInsights === 'function') {
+                window.calculateSalesInsights();
+            }
+        }, 50);
+    }
+
+    if (tabName === "config") {
+        if (typeof window.renderDeliveryAreas === "function") {
+            setTimeout(() => window.renderDeliveryAreas(), 50);
         }
     }
 
-    // --- FINANCEIRO ---
+    const activeBtn = document.getElementById(`nav-${tabName}`);
+    if (activeBtn) {
+        activeBtn.classList.add('text-primary','bg-primary/5','border-r-4','border-primary','font-bold','active');
+        activeBtn.classList.remove('text-slate-600','font-medium');
+    }
+
     if (tabName === 'finance') {
         setTimeout(() => {
             if (typeof window.initFinanceDashboard === 'function') {
@@ -3501,47 +3503,42 @@ if (tabName === 'dashboard' || tabName === 'finance') {
         }, 100);
     }
 
-    // --- BOTÃO DO MENU ---
-    const activeBtn = document.getElementById(`nav-${tabName}`);
-    if (activeBtn) {
-        activeBtn.classList.add('text-primary','bg-primary/5','border-r-4','border-primary','font-bold','active');
-        activeBtn.classList.remove('text-slate-600','font-medium');
-    }
+    lucide.createIcons();
 
     if (fab) {
-        if (tabName === 'orders') fab.classList.remove('hidden');
-        else fab.classList.add('hidden');
+        if (tabName === 'orders') {
+            fab.classList.remove('hidden');
+        } else {
+            fab.classList.add('hidden');
+        }
     }
 
-    // --- CLIENTES ---
     if (tabName === 'customers') {
         window.renderCustomerRanking();
     }
 
-    // --- BADGE ---
     if (tabName === 'orders') {
         document.getElementById('menuBadge')?.classList.add('hidden');
         document.getElementById('menuBadgeMobile')?.classList.add('hidden');
     }
 
-    // --- TITULO ---
-    const titles = { 
-        orders:'Pedidos',
-        dashboard:'Dashboard',
-        banners:'Banners',
-        products:'Produtos',
-        categories:'Categorias',
-        config:'Configurações',
-        finance:'Financeiro',
-        customers:'Clientes'
+    const titles = {
+        orders: 'Pedidos',
+        dashboard: 'Dashboard',
+        banners: 'Banners',
+        products: 'Produtos',
+        categories: 'Categorias',
+        config: 'Configurações',
+        finance: 'Financeiro',
+        customers: 'Clientes'
     };
     document.getElementById('page-title').innerText = titles[tabName] || 'Painel';
 
-    // --- MOBILE ---
-    if (typeof toggleMobileSidebar === 'function' &&
-        !document.getElementById('mobileSidebar').classList.contains('sidebar-hidden')) {
+    if (typeof toggleMobileSidebar === 'function'
+        && !document.getElementById('mobileSidebar').classList.contains('sidebar-hidden')) {
         toggleMobileSidebar();
     }
+};
 
     lucide.createIcons();
 };
