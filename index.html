@@ -3009,12 +3009,14 @@ showToast("🗑️ Produto e todos os arquivos removidos!");
     lucide.createIcons();
 }
 
-        
-        window.handleCategorySubmit = async (e) => {
+      window.handleCategorySubmit = async (e) => {
     e.preventDefault();
 
-    const name = document.getElementById('catInputName').value.trim();
-    const isMagic = document.getElementById('catMagic')?.checked || false;
+    const nameInput = document.getElementById('catInputName');
+    const name = nameInput.value.trim();
+    // O ID catMagic não existe no seu HTML atual, então usamos uma proteção
+    const catMagicEl = document.getElementById('catMagic');
+    const isMagic = catMagicEl ? catMagicEl.checked : false;
     const editId = document.getElementById('editingCategoryId').value;
 
     if (!name) {
@@ -3023,58 +3025,48 @@ showToast("🗑️ Produto e todos os arquivos removidos!");
     }
 
     try {
-        const catRef = editId
-            ? doc(db, `stores/${currentStoreId}/categories`, editId)
-            : null;
-
         if (editId) {
+            const catRef = doc(db, `stores/${currentStoreId}/categories`, editId);
             const oldDoc = await getDoc(catRef);
             const oldName = oldDoc.exists() ? oldDoc.data().name : null;
 
             await updateDoc(catRef, {
-                name,
+                name: name,
                 magic: isMagic
             });
 
-            // Atualiza produtos se o nome mudou
             if (oldName && oldName !== name) {
                 const q = query(
                     collection(db, `stores/${currentStoreId}/products`),
                     where("category", "==", oldName)
                 );
-
                 const snap = await getDocs(q);
                 const updates = snap.docs.map(d =>
-                    updateDoc(
-                        doc(db, `stores/${currentStoreId}/products`, d.id),
-                        { category: name }
-                    )
+                    updateDoc(doc(db, `stores/${currentStoreId}/products`, d.id), { category: name })
                 );
                 await Promise.all(updates);
             }
-
         } else {
-            await addDoc(
-                collection(db, `stores/${currentStoreId}/categories`),
-                {
-                    name,
-                    status: 'active',
-                    magic: isMagic,
-                    createdAt: Date.now()
-                }
-            );
+            await addDoc(collection(db, `stores/${currentStoreId}/categories`), {
+                name: name,
+                status: 'active',
+                magic: isMagic,
+                createdAt: Date.now()
+            });
         }
-await loadCategoriesCache(true)
-        // Marca atualização geral da loja
+
+        await loadCategoriesCache(true);
+        renderCategoryList(); // Adicionei esta linha para atualizar a lista na hora
         window.markAsDirty(); 
-cancelCategoryEdit();
-showToast("Categoria salva com sucesso.");
+        window.cancelCategoryEdit(); 
+        showToast("✅ Categoria salva com sucesso!");
+
     } catch (err) {
-        console.error(err);
+        console.error("Erro ao salvar:", err);
         showToast("Erro ao salvar categoria.");
     }
 };
-
+        
 window.openEditCategory = (id, name) => {
     document.getElementById('catFormTitle').textContent = "Editar Departamento";
     document.getElementById('catInputName').value = name;
@@ -3084,11 +3076,15 @@ window.openEditCategory = (id, name) => {
 };
 
 window.cancelCategoryEdit = () => {
-    document.getElementById('catFormTitle').textContent = "Departamentos";
-    document.getElementById('catInputName').value = '';
-    document.getElementById('editingCategoryId').value = '';
-    document.getElementById('btnCatSubmit').textContent = "Criar Categoria";
-    document.getElementById('btnCancelEditCat').classList.add('hidden');
+    const title = document.getElementById('catFormTitle');
+    const input = document.getElementById('catInputName');
+    const editId = document.getElementById('editingCategoryId');
+    const btn = document.getElementById('btnCatSubmit');
+
+    if (title) title.textContent = "Departamentos";
+    if (input) input.value = '';
+    if (editId) editId.value = '';
+    if (btn) btn.textContent = "Salvar";
 };
 
 window.deleteCategory = async (id) => {
