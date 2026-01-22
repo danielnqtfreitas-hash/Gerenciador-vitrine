@@ -2901,17 +2901,39 @@ showToast("🗑️ Produto e todos os arquivos removidos!");
 
 
         window.toggleProductStatus = async (id, currentStatus) => {
-            const newStatus = currentStatus === 'paused' ? 'active' : 'paused';
-            try {
-                await updateDoc(doc(db, `stores/${currentStoreId}/products`, id), { status: newStatus });
-                const storeRef = doc(db, `stores/${currentStoreId}/config/store`);
-                window.markAsDirty();
-                showToast(newStatus === 'paused' ? "Pausado." : "Ativado.");
-            } catch (e) {
-                showToast("Erro ao mudar status.");
-            }
-        };
+    const newStatus = currentStatus === 'paused' ? 'active' : 'paused';
 
+    try {
+        // 1. Atualiza no Firestore
+        await updateDoc(doc(db, `stores/${currentStoreId}/products`, id), { status: newStatus });
+
+        // 2. Atualiza no array em memória
+        const idx = allProducts.findIndex(p => p.id === id);
+        if (idx !== -1) {
+            allProducts[idx].status = newStatus;
+        }
+
+        // 3. Atualiza o cache local (sem precisar recarregar)
+        localStorage.setItem(
+            `cache_products_${currentStoreId}`,
+            JSON.stringify(allProducts)
+        );
+
+        // 4. Re-renderiza a lista imediatamente
+        renderProductList();
+        updateQuotas(); // opcional, se quiser atualizar contadores
+
+        // 5. Marca edição pendente
+        window.markAsDirty();
+
+        // 6. Feedback visual
+        showToast(newStatus === 'paused' ? "Pausado." : "Ativado.");
+        
+    } catch (e) {
+        console.error(e);
+        showToast("Erro ao mudar status.");
+    }
+};
         window.toggleCategoryAccordion = (catName) => {
             const safeId = catName.replace(/\s+/g, '-');
             const group = document.getElementById(`cat-group-${safeId}`);
