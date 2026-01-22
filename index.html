@@ -2240,7 +2240,6 @@ setPersistence(auth, browserLocalPersistence)
                         initStoreData(); 
                         initAnalyticsChart();
                         initAnalyticsInsights();
-                        await window.syncMaster()
                         initOrderListener(currentStoreId);
                         loadMagicCategoriesFeedback();
                         changeTab('orders');   
@@ -3404,26 +3403,34 @@ window.handleBannerSubmit = async (e) => {
 
         
     window.changeTab = async (tabName) => { 
-    // 1. Validação Premium
+    // --- NOVO: VALIDAÇÃO DE RECURSO PREMIUM (FINANCEIRO) ---
     if (tabName === 'finance' && storeConfig.hasFinance !== true) {
         showToast("💎 Recurso Premium: A Gestão Financeira requer o plano PRO.");
         return; 
     }
-
-    // 2. SINCRONIZAÇÃO INTELIGENTE (Substitui todos aqueles IFs antigos)
-    const dataTabs = ['products', 'categories', 'banners', 'dashboard', 'finance'];
-    if (dataTabs.includes(tabName)) {
-        await window.syncMaster(); // Decide se usa cache ou Firebase automaticamente
-    }
-
-    // 3. Limpeza de ofertas se estiver na aba de produtos
+// Só faz a leitura se for a primeira vez que o lojista entra na aba
     if (tabName === 'products') {
+        // O Promise.all faz os dois carregarem ao mesmo tempo (mais rápido)
+        await Promise.all([
+            loadProductsCache(), 
+            loadCategoriesCache()
+        ]);
         window.limparOfertasExpiradas(allProducts);
     }
 
-    // 4. Lógica Visual: Esconde todas as abas e mostra a selecionada
-    const tabs = ['orders', 'dashboard', 'banners', 'products', 'categories', 'config', 'finance', 'customers'];
-    const fab = document.getElementById('fabAddOrder');
+    if (tabName === 'categories') await loadCategoriesCache();
+    if (tabName === 'banners') await loadBannersCache();
+     
+    // Dashboard e Financeiro dependem de tudo carregado para fazer contas
+    if (tabName === 'dashboard' || tabName === 'finance') {
+        await Promise.all([
+            loadProductsCache(), 
+            loadCategoriesCache(),
+            loadBannersCache() 
+        ]);
+      }
+     const tabs = ['orders', 'dashboard', 'banners', 'products', 'categories', 'config', 'finance', 'customers'];
+        const fab = document.getElementById('fabAddOrder');
 
     tabs.forEach(tab => {
         const view = document.getElementById(`view-${tab}`);
@@ -3436,7 +3443,7 @@ window.handleBannerSubmit = async (e) => {
         }
     });
 
-    // 5. BLOCO DE ECONOMIA BLAZE (Analytics e Config)
+        // --- BLOCO DE ECONOMIA BLAZE: COLE AQUI ---
     if (tabName === 'dashboard' && !isDashboardLoaded) {
         const dashRef = doc(db, `stores/${currentStoreId}/analytics/global`);
         const d = await getDoc(dashRef); 
@@ -3447,19 +3454,20 @@ window.handleBannerSubmit = async (e) => {
     }
 
     if (tabName === 'config' && !isConfigLoaded) {
+        // Se você clicar na engrenagem, ele busca os dados da loja (PIX, Taxas, etc)
         if (typeof initStoreData === 'function') {
             await initStoreData();
             isConfigLoaded = true;
         }
     }
+    // --- FIM DO BLOCO DE ECONOMIA ---
 
-    // 6. Exibe a View Ativa
+      
     const activeView = document.getElementById(`view-${tabName}`);
     if (activeView) activeView.classList.remove('hidden');
 
-    // 7. Gatilhos de Gráficos e Insights
-    if (tabName === 'dashboard' || tabName === 'finance') {
-        window.initFinanceDashboard();
+    // --- LOGICA ESPECÍFICA PARA O DASHBOARD (CORREÇÃO AQUI) ---
+    if (tabName === 'dashboard') {
         setTimeout(() => {
             if (typeof window.calculateSalesInsights === 'function') {
                 window.calculateSalesInsights();
@@ -3467,8 +3475,27 @@ window.handleBannerSubmit = async (e) => {
         }, 50);
     }
 
-    if (window.lucide) lucide.createIcons();
-};
+    if (tabName === "config") {
+        if (typeof window.renderDeliveryAreas === "function") {
+            setTimeout(() => window.renderDeliveryAreas(), 50);
+        }
+    }
+
+    const activeBtn = document.getElementById(`nav-${tabName}`);
+    if (activeBtn) {
+        activeBtn.classList.add('text-primary', 'bg-primary/5', 'border-r-4', 'border-primary', 'font-bold', 'active');
+        activeBtn.classList.remove('text-slate-600', 'font-medium');
+    }
+
+    if (tabName === 'finance') {
+        setTimeout(() => {
+            if (typeof window.initFinanceDashboard === 'function') {
+                window.initFinanceDashboard();
+            }
+        }, 100);
+    }
+
+    lucide.createIcons();
         
     if (fab) {
         if (tabName === 'orders') {
@@ -5799,38 +5826,6 @@ window.loadSavedCustomers = async (force = false) => {
         metaApple.setAttribute('content', 'default');
     }
 };
-
-     window.syncMaster = async (force = false) => {
-    console.log("🔄 Iniciando Sincronização Mestre...");
-    
-    try {
-        // Dispara os três carregamentos ao mesmo tempo
-        await Promise.all([
-            loadProductsCache(force),
-            loadCategoriesCache(force),
-            loadBannersCache(force)
-        ]);
-
-        // Após carregar tudo, atualiza os contadores do Dashboard
-        const updateDash = (id, value) => {
-            const el = document.getElementById(id);
-            if (el) el.textContent = value;
-        };
-
-        updateDash('dash-total-products', allProducts.length);
-        updateDash('dash-total-cats', allCategories.length);
-        updateDash('dash-total-banners', allBanners.length);
-        
-        // Atualiza os limites visuais (baseado na storeConfig)
-        updateDash('dash-limit-products', ` / ${storeConfig.maxProducts || 0}`);
-        updateDash('dash-limit-banners', ` / ${storeConfig.hasCarousel ? (storeConfig.maxBanners || 1) : 1}`);
-
-        console.log("✅ Sincronização concluída com sucesso!");
-    } catch (error) {
-        console.error("❌ Erro na Sincronização Mestre:", error);
-    }
-};
-
 
     </script>
 </body>
