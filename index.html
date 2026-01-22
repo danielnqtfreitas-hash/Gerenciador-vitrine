@@ -2534,6 +2534,32 @@ async function loadCategoriesCache(force = false) {
     return; // ⬅ remove renderCategoryList
 }
 
+     async function loadBannersCache(force = false) {
+    if (!currentStoreId) return;
+    const cacheKey = `cache_banners_${currentStoreId}`;
+    const timeKey = `cache_time_banners_${currentStoreId}`;
+    
+    const localData = localStorage.getItem(cacheKey);
+    const localTime = localStorage.getItem(timeKey);
+    const serverTime = storeConfig.lastUpdate?.toString();
+
+    // Se os dados no cache forem iguais aos do servidor, não gasta leitura do Firebase
+    if (!force && localData && localTime === serverTime) {
+        allBanners = JSON.parse(localData);
+        bannersLoaded = true;
+        return;
+    }
+
+    // Caso contrário, busca no Firebase
+    const snap = await getDocs(collection(db, `stores/${currentStoreId}/hero_cards`));
+    allBanners = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+
+    localStorage.setItem(cacheKey, JSON.stringify(allBanners));
+    localStorage.setItem(timeKey, serverTime || Date.now().toString());
+    bannersLoaded = true;
+}
+
+
         function updateUIByPlan() {
     // Define os limites com base no que veio do Super Admin
     const maxProds = parseInt(storeConfig.maxProducts) || 0;
