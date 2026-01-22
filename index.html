@@ -2855,41 +2855,40 @@ showToast("🗑️ Produto e todos os arquivos removidos!");
     }
 };
 
-
-        window.toggleProductStatus = async (id, currentStatus) => {
+window.toggleProductStatus = async (id, currentStatus) => {
     const newStatus = currentStatus === 'paused' ? 'active' : 'paused';
 
     try {
-        // 1. Atualiza no Firestore
-        await updateDoc(doc(db, `stores/${currentStoreId}/products`, id), { status: newStatus });
+        await updateDoc(doc(db, `stores/${currentStoreId}/products`, id), {
+            status: newStatus
+        });
 
-        // 2. Atualiza no array em memória
         const idx = allProducts.findIndex(p => p.id === id);
         if (idx !== -1) {
             allProducts[idx].status = newStatus;
         }
 
-        // 3. Atualiza o cache local (sem precisar recarregar)
         localStorage.setItem(
             `cache_products_${currentStoreId}`,
             JSON.stringify(allProducts)
         );
 
-        // 4. Re-renderiza a lista imediatamente
-        renderProductList();
-        updateQuotas(); // opcional, se quiser atualizar contadores
+        if (!categoriesLoaded) {
+            await loadCategoriesCache();
+        }
 
-        // 5. Marca edição pendente
+        renderProductList();
+        updateQuotas();
         window.markAsDirty();
 
-        // 6. Feedback visual
         showToast(newStatus === 'paused' ? "Pausado." : "Ativado.");
-        
+
     } catch (e) {
         console.error(e);
         showToast("Erro ao mudar status.");
     }
 };
+        
         window.toggleCategoryAccordion = (catName) => {
             const safeId = catName.replace(/\s+/g, '-');
             const group = document.getElementById(`cat-group-${safeId}`);
@@ -3382,25 +3381,29 @@ window.handleBannerSubmit = async (e) => {
 
     window.changeTab = async (tabName) => { 
 
-    // --- NOVO: VALIDAÇÃO DO FINANCEIRO ---
+    if (tabName === 'finance' && storeConfig.hasFinance !== true) {
+        showToast("💎 Recurso Premium: A Gestão Financeira requer o plano PRO.");
+        return;
+    }
+
     if (tabName === 'products') {
-    await Promise.all([
-        loadProductsCache(),
-        loadCategoriesCache()
-    ]);
+        await Promise.all([
+            loadProductsCache(),
+            loadCategoriesCache()
+        ]);
 
-    if (typeof window.limparOfertasExpiradas === "function") {
-        window.limparOfertasExpiradas(allProducts);
-    }
+        if (typeof window.limparOfertasExpiradas === "function") {
+            window.limparOfertasExpiradas(allProducts);
+        }
 
-    if (typeof renderProductList === "function") {
-        renderProductList();
-    }
+        if (typeof renderProductList === "function") {
+            renderProductList();
+        }
 
-    if (typeof updateQuotas === "function") {
-        updateQuotas();
+        if (typeof updateQuotas === "function") {
+            updateQuotas();
+        }
     }
-}
 
 if (tabName === 'categories') await loadCategoriesCache();
 if (tabName === 'banners') await loadBannersCache();
