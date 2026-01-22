@@ -3443,13 +3443,55 @@ window.handleBannerSubmit = async (e) => {
         }
     });
 
-        // --- BLOCO DE ECONOMIA BLAZE: COLE AQUI ---
-    if (tabName === 'dashboard') {
+// --- BLOCO DE ECONOMIA BLAZE: COLE AQUI ---
+if (tabName === 'dashboard') {
+
+    // --- VISITAS (Firestore, carrega só 1x) ---
+    if (!window.isDashboardLoaded) {
+        const dashRef = doc(db, `stores/${currentStoreId}/analytics/global`);
+        const d = await getDoc(dashRef);
+        if (d.exists()) {
+            document.getElementById('dash-total-visits').textContent = d.data().totalVisits || 0;
+        }
+        window.isDashboardLoaded = true;
+    }
+
+    // --- INSIGHTS ---
     setTimeout(() => {
         if (typeof window.calculateSalesInsights === 'function') {
             window.calculateSalesInsights();
         }
     }, 50);
+
+    // --- PRODUTOS ---
+    const prodCount = window.getCachedProductCount ? window.getCachedProductCount() : 0;
+    const totalEl = document.getElementById("dash-total-products");
+    if (totalEl) totalEl.textContent = prodCount;
+
+    const limitEl = document.getElementById("dash-limit-products");
+    if (limitEl && window.storeLimits) {
+        limitEl.textContent = " / " + (window.storeLimits.products || 0);
+    }
+
+    // --- BANNERS ---
+    if (window.getCachedBannerCount) {
+        const bannerCount = window.getCachedBannerCount();
+        const bannerTotalEl = document.getElementById("dash-total-banners");
+        if (bannerTotalEl) bannerTotalEl.textContent = bannerCount;
+
+        const bannerLimitEl = document.getElementById("dash-limit-banners");
+        if (bannerLimitEl && window.storeLimits?.banners !== undefined) {
+            bannerLimitEl.textContent = " / " + window.storeLimits.banners;
+        }
+    }
+
+    // --- CATEGORIAS ---
+    if (window.getCachedCategoryCount) {
+        const catCount = window.getCachedCategoryCount();
+        const catTotalEl = document.getElementById("dash-total-cats");
+        if (catTotalEl) catTotalEl.textContent = catCount;
+    }
+}
 
     // --- ATUALIZAÇÃO DO CARD DE PRODUTOS usando o cache ---
     const count = window.getCachedProductCount ? window.getCachedProductCount() : 0;
