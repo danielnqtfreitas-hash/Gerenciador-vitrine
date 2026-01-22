@@ -3905,35 +3905,49 @@ async function initAnalyticsInsights() {
 };
 
 
-
     window.bulkToggleStatus = async (categoryName, newStatus) => {
     const actionText = newStatus === 'paused' ? 'pausar todos os produtos de' : 'ativar todos os produtos de';
     if(!confirm(`Deseja ${actionText} "${categoryName}"?`)) return;
 
-    // Filtra apenas os produtos que pertencem a esta categoria
+    // 1. Filtra os produtos da categoria
     const productsToUpdate = allProducts.filter(p => p.category === categoryName);
     
-    if(productsToUpdate.length === 0) return;
+    if(productsToUpdate.length === 0) {
+        showToast("Nenhum produto nesta categoria.");
+        return;
+    }
 
     showToast("⚙️ Processando lote...");
 
     try {
+        // 2. Atualiza no Firebase
         const promises = productsToUpdate.map(p => 
             updateDoc(doc(db, `stores/${currentStoreId}/products`, p.id), { status: newStatus })
         );
-
         await Promise.all(promises);
 
-        // Notifica a vitrine para atualizar o cache
-        const storeRef = doc(db, `stores/${currentStoreId}/config`);
-        window.markAsDirty();
+        // 3. ATUALIZAÇÃO LOCAL (Crucial para o botão mudar na tela sem F5)
+        allProducts = allProducts.map(p => {
+            if (p.category === categoryName) {
+                return { ...p, status: newStatus };
+            }
+            return p;
+        });
 
-        showToast(`✅ Categoria "${categoryName}" ${newStatus === 'paused' ? 'pausada' : 'ativada'}!`);
+        // 4. Sincroniza o cache do navegador
+        localStorage.setItem(`cache_products_${currentStoreId}`, JSON.stringify(allProducts));
+
+        // 5. Marca para publicar e redesenha a lista
+        window.markAsDirty();
+        renderProductList(); 
+
+        showToast(`✅ Setor "${categoryName}" ${newStatus === 'paused' ? 'pausado' : 'ativado'}!`);
     } catch (err) {
-        console.error(err);
-        showToast("❌ Erro ao processar alteração em massa.");
+        console.error("Erro no lote:", err);
+        showToast("❌ Erro ao processar alteração.");
     }
 };
+
    
        window.openOrderModal = (id) => {
     const p = ordersCache[id];
