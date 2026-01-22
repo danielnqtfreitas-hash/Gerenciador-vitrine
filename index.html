@@ -3414,15 +3414,7 @@ window.handleBannerSubmit = async (e) => {
     window.changeTab = async (tabName) => { 
 
     // --- NOVO: VALIDAÇÃO DO FINANCEIRO ---
-    if (tabName === 'finance' && storeConfig.hasFinance !== true) {
-        showToast("💎 Recurso Premium: A Gestão Financeira requer o plano PRO.");
-        return;
-    }
-
-    // --- CARREGAMENTOS POR ABA ---
     if (tabName === 'products') {
-
-    // 1 — Carrega produtos + categorias ao mesmo tempo
     await Promise.all([
         loadProductsCache(),
         loadCategoriesCache()
