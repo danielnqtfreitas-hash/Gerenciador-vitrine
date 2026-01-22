@@ -3436,6 +3436,7 @@ window.handleBannerSubmit = async (e) => {
     if (tabName === 'banners') {
         await loadBannersCache();
         renderBannerList();
+    }
      
     if (tabName === 'dashboard' || tabName === 'finance') {
         await Promise.all([
