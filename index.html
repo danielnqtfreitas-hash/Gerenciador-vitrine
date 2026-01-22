@@ -2516,37 +2516,6 @@ async function loadCategoriesCache(force = false) {
     const localTime = localStorage.getItem(timeKey);
     const serverTime = storeConfig.lastUpdate?.toString();
 
-    // Regra: Usa o disco se não for forçado e o tempo coincidir
-    if (!force && localData && localTime === serverTime) {
-        console.log("📂 Categorias: Usando cache de disco.");
-        allCategories = JSON.parse(localData);
-        categoriesLoaded = true;
-        renderCategoryList();
-        return;
-    }
-
-    console.log("🌐 Categorias: Sincronizando com Firebase...");
-    const snap = await getDocs(collection(db, `stores/${currentStoreId}/categories`));
-    allCategories = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-
-    // Salva no disco
-    localStorage.setItem(cacheKey, JSON.stringify(allCategories));
-    localStorage.setItem(timeKey, serverTime || Date.now().toString());
-
-    categoriesLoaded = true;
-    const dashCats = document.getElementById('dash-total-cats');
-    if (dashCats) dashCats.textContent = allCategories.length;
-    renderCategoryList();
-}
-
-async function loadCategoriesCache(force = false) {
-    const cacheKey = `cache_categories_${currentStoreId}`;
-    const timeKey = `cache_time_categories_${currentStoreId}`;
-    
-    const localData = localStorage.getItem(cacheKey);
-    const localTime = localStorage.getItem(timeKey);
-    const serverTime = storeConfig.lastUpdate?.toString();
-
     if (!force && localData && localTime === serverTime) {
         console.log("📂 Categorias: Usando cache de disco.");
         allCategories = JSON.parse(localData);
