@@ -3402,16 +3402,16 @@ window.handleBannerSubmit = async (e) => {
     }
 }
 
-    if (tabName === 'categories') await loadCategoriesCache();
-    if (tabName === 'banners') await loadBannersCache();
+if (tabName === 'categories') await loadCategoriesCache();
+if (tabName === 'banners') await loadBannersCache();
 
-    if (tabName === 'dashboard' || tabName === 'finance') {
-        await Promise.all([
-            loadProductsCache(),
-            loadCategoriesCache(),
-            loadBannersCache()
-        ]);
-    }
+if (tabName === 'dashboard' || tabName === 'finance') {
+    await Promise.all([
+        loadProductsCache(),
+        loadCategoriesCache(),
+        loadBannersCache()
+    ]);
+}
 
     // --- REMOVER TODAS AS ABAS ---
     const tabs = ['orders','dashboard','banners','products','categories','config','finance','customers'];
