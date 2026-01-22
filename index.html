@@ -3464,6 +3464,25 @@ window.handleBannerSubmit = async (e) => {
         limitEl.textContent = " / " + (window.storeLimits.products || 0);
     }
 }
+
+     // --- ATUALIZAÇÃO DO CARD DE BANNERS usando o cache ---
+if (window.getCachedBannerCount) {
+    const bannerCount = window.getCachedBannerCount();
+    const bannerTotalEl = document.getElementById("dash-total-banners");
+    if (bannerTotalEl) bannerTotalEl.textContent = bannerCount;
+
+    const bannerLimitEl = document.getElementById("dash-limit-banners");
+    if (bannerLimitEl && window.storeLimits?.banners !== undefined) {
+        bannerLimitEl.textContent = " / " + window.storeLimits.banners;
+    }
+}
+
+// --- ATUALIZAÇÃO DO CARD DE CATEGORIAS usando o cache ---
+if (window.getCachedCategoryCount) {
+    const catCount = window.getCachedCategoryCount();
+    const catTotalEl = document.getElementById("dash-total-cats");
+    if (catTotalEl) catTotalEl.textContent = catCount;
+}
      
     if (tabName === 'config' && !isConfigLoaded) {
         // Se você clicar na engrenagem, ele busca os dados da loja (PIX, Taxas, etc)
@@ -5840,6 +5859,14 @@ window.loadSavedCustomers = async (force = false) => {
 };
 window.getCachedProductCount = () => {
     return Array.isArray(allProducts) ? allProducts.length : 0;
+};
+
+     window.getCachedBannerCount = () => {
+    return Array.isArray(allBanners) ? allBanners.length : 0;
+};
+
+window.getCachedCategoryCount = () => {
+    return Array.isArray(allCategories) ? allCategories.length : 0;
 };
     </script>
 </body>
