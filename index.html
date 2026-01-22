@@ -2481,41 +2481,32 @@ window.initOrderListener = (storeId) => {
       // --- FUNÇÕES DE CACHE CIRÚRGICO ---
 
 async function loadProductsCache(force = false) {
-    // 1. Identificadores únicos para o cache no disco
     const cacheKey = `cache_products_${currentStoreId}`;
     const timeKey = `cache_time_${currentStoreId}`;
     
-    // 2. Pega o que está no disco e o horário da última alteração no servidor
     const localData = localStorage.getItem(cacheKey);
     const localTime = localStorage.getItem(timeKey);
-    const serverTime = storeConfig.lastUpdate?.toString(); // Vem do seu onSnapshot de config
+    const serverTime = storeConfig.lastUpdate?.toString();
 
-    // 3. REGRA DE OURO: Só busca se for forçado OU se o tempo no servidor for diferente do disco
     if (!force && localData && localTime === serverTime) {
         console.log("⚡ Cache de Disco Validado: Usando localStorage (Custo Zero)");
         allProducts = JSON.parse(localData);
         productsLoaded = true;
-        renderProductList();
-        updateQuotas();
-        return;
+        return;   // ⬅ REMOVE renderProductList daqui
     }
 
-    // 4. Se chegou aqui, é porque houve alteração ou é a primeira vez
     console.log("🌐 Cache Expirado ou Vazio: Buscando do Firebase...");
     const q = query(collection(db, `stores/${currentStoreId}/products`));
     const snap = await getDocs(q);
-    
+
     allProducts = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-    
-    // 5. Salva no disco para o próximo F5
+
     localStorage.setItem(cacheKey, JSON.stringify(allProducts));
     localStorage.setItem(timeKey, serverTime || Date.now().toString());
-    
-    productsLoaded = true;
-    renderProductList();
-    updateQuotas();
-}
 
+    productsLoaded = true;
+    return; // ⬅ REMOVE renderProductList daqui também
+}
 
 async function loadCategoriesCache(force = false) {
     const cacheKey = `cache_categories_${currentStoreId}`;
@@ -2548,35 +2539,31 @@ async function loadCategoriesCache(force = false) {
     renderCategoryList();
 }
 
-async function loadBannersCache(force = false) {
-    const cacheKey = `cache_banners_${currentStoreId}`;
-    const timeKey = `cache_time_banners_${currentStoreId}`;
+async function loadCategoriesCache(force = false) {
+    const cacheKey = `cache_categories_${currentStoreId}`;
+    const timeKey = `cache_time_categories_${currentStoreId}`;
     
     const localData = localStorage.getItem(cacheKey);
     const localTime = localStorage.getItem(timeKey);
     const serverTime = storeConfig.lastUpdate?.toString();
 
     if (!force && localData && localTime === serverTime) {
-        console.log("🖼️ Banners: Usando cache de disco.");
-        allBanners = JSON.parse(localData);
-        bannersLoaded = true;
-        renderBannerList();
-        return;
+        console.log("📂 Categorias: Usando cache de disco.");
+        allCategories = JSON.parse(localData);
+        categoriesLoaded = true;
+        return; // ⬅ remove renderCategoryList
     }
 
-    console.log("🌐 Banners: Sincronizando com Firebase...");
-    const snap = await getDocs(collection(db, `stores/${currentStoreId}/hero_cards`));
-    allBanners = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+    console.log("🌐 Categorias: Sincronizando com Firebase...");
+    const snap = await getDocs(collection(db, `stores/${currentStoreId}/categories`));
+    allCategories = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
 
-    localStorage.setItem(cacheKey, JSON.stringify(allBanners));
+    localStorage.setItem(cacheKey, JSON.stringify(allCategories));
     localStorage.setItem(timeKey, serverTime || Date.now().toString());
 
-    bannersLoaded = true;
-    const dashBanners = document.getElementById('dash-total-banners');
-    if (dashBanners) dashBanners.textContent = allBanners.length;
-    renderBannerList();
+    categoriesLoaded = true;
+    return; // ⬅ remove renderCategoryList
 }
-
 
         function updateUIByPlan() {
     // Define os limites com base no que veio do Super Admin
@@ -3434,12 +3421,25 @@ window.handleBannerSubmit = async (e) => {
 
     // --- CARREGAMENTOS POR ABA ---
     if (tabName === 'products') {
-        await Promise.all([
-            loadProductsCache(),
-            loadCategoriesCache()
-        ]);
+
+    // 1 — Carrega produtos + categorias ao mesmo tempo
+    await Promise.all([
+        loadProductsCache(),
+        loadCategoriesCache()
+    ]);
+
+    if (typeof window.limparOfertasExpiradas === "function") {
         window.limparOfertasExpiradas(allProducts);
     }
+
+    if (typeof renderProductList === "function") {
+        renderProductList();
+    }
+
+    if (typeof updateQuotas === "function") {
+        updateQuotas();
+    }
+}
 
     if (tabName === 'categories') await loadCategoriesCache();
     if (tabName === 'banners') await loadBannersCache();
