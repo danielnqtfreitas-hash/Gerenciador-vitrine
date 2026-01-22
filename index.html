@@ -2852,10 +2852,7 @@ if (promoDays > 0) {
         if(loader) loader.classList.add('hidden');
     }
 };
-            window.getCachedProductCount = () => {
-    if (!Array.isArray(allProducts)) return 0;
-    return allProducts.length;
-};
+            
        
                window.deleteProduct = async (id, imageUrls = []) => {
     if(!confirm("Deseja apagar este produto permanentemente? Suas fotos também serão removidas do servidor.")) return;
@@ -3476,11 +3473,6 @@ window.handleBannerSubmit = async (e) => {
                 window.calculateSalesInsights();
             }
         }, 50);
-    }
-     const productCountEl = document.getElementById("dash-product-count");
-    if (productCountEl && window.getCachedProductCount) {
-        productCountEl.textContent = window.getCachedProductCount();
-    }
     }
 
     if (tabName === "config") {
