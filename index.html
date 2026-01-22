@@ -2516,6 +2516,37 @@ async function loadCategoriesCache(force = false) {
     const localTime = localStorage.getItem(timeKey);
     const serverTime = storeConfig.lastUpdate?.toString();
 
+    // Regra: Usa o disco se não for forçado e o tempo coincidir
+    if (!force && localData && localTime === serverTime) {
+        console.log("📂 Categorias: Usando cache de disco.");
+        allCategories = JSON.parse(localData);
+        categoriesLoaded = true;
+        renderCategoryList();
+        return;
+    }
+
+    console.log("🌐 Categorias: Sincronizando com Firebase...");
+    const snap = await getDocs(collection(db, `stores/${currentStoreId}/categories`));
+    allCategories = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+
+    // Salva no disco
+    localStorage.setItem(cacheKey, JSON.stringify(allCategories));
+    localStorage.setItem(timeKey, serverTime || Date.now().toString());
+
+    categoriesLoaded = true;
+    const dashCats = document.getElementById('dash-total-cats');
+    if (dashCats) dashCats.textContent = allCategories.length;
+    renderCategoryList();
+}
+
+async function loadCategoriesCache(force = false) {
+    const cacheKey = `cache_categories_${currentStoreId}`;
+    const timeKey = `cache_time_categories_${currentStoreId}`;
+    
+    const localData = localStorage.getItem(cacheKey);
+    const localTime = localStorage.getItem(timeKey);
+    const serverTime = storeConfig.lastUpdate?.toString();
+
     if (!force && localData && localTime === serverTime) {
         console.log("📂 Categorias: Usando cache de disco.");
         allCategories = JSON.parse(localData);
@@ -2855,40 +2886,41 @@ showToast("🗑️ Produto e todos os arquivos removidos!");
     }
 };
 
-window.toggleProductStatus = async (id, currentStatus) => {
+
+        window.toggleProductStatus = async (id, currentStatus) => {
     const newStatus = currentStatus === 'paused' ? 'active' : 'paused';
 
     try {
-        await updateDoc(doc(db, `stores/${currentStoreId}/products`, id), {
-            status: newStatus
-        });
+        // 1. Atualiza no Firestore
+        await updateDoc(doc(db, `stores/${currentStoreId}/products`, id), { status: newStatus });
 
+        // 2. Atualiza no array em memória
         const idx = allProducts.findIndex(p => p.id === id);
         if (idx !== -1) {
             allProducts[idx].status = newStatus;
         }
 
+        // 3. Atualiza o cache local (sem precisar recarregar)
         localStorage.setItem(
             `cache_products_${currentStoreId}`,
             JSON.stringify(allProducts)
         );
 
-        if (!categoriesLoaded) {
-            await loadCategoriesCache();
-        }
-
+        // 4. Re-renderiza a lista imediatamente
         renderProductList();
-        updateQuotas();
+        updateQuotas(); // opcional, se quiser atualizar contadores
+
+        // 5. Marca edição pendente
         window.markAsDirty();
 
+        // 6. Feedback visual
         showToast(newStatus === 'paused' ? "Pausado." : "Ativado.");
-
+        
     } catch (e) {
         console.error(e);
         showToast("Erro ao mudar status.");
     }
 };
-        
         window.toggleCategoryAccordion = (catName) => {
             const safeId = catName.replace(/\s+/g, '-');
             const group = document.getElementById(`cat-group-${safeId}`);
@@ -3381,29 +3413,25 @@ window.handleBannerSubmit = async (e) => {
 
     window.changeTab = async (tabName) => { 
 
-    if (tabName === 'finance' && storeConfig.hasFinance !== true) {
-        showToast("💎 Recurso Premium: A Gestão Financeira requer o plano PRO.");
-        return;
-    }
-
+    // --- NOVO: VALIDAÇÃO DO FINANCEIRO ---
     if (tabName === 'products') {
-        await Promise.all([
-            loadProductsCache(),
-            loadCategoriesCache()
-        ]);
+    await Promise.all([
+        loadProductsCache(),
+        loadCategoriesCache()
+    ]);
 
-        if (typeof window.limparOfertasExpiradas === "function") {
-            window.limparOfertasExpiradas(allProducts);
-        }
-
-        if (typeof renderProductList === "function") {
-            renderProductList();
-        }
-
-        if (typeof updateQuotas === "function") {
-            updateQuotas();
-        }
+    if (typeof window.limparOfertasExpiradas === "function") {
+        window.limparOfertasExpiradas(allProducts);
     }
+
+    if (typeof renderProductList === "function") {
+        renderProductList();
+    }
+
+    if (typeof updateQuotas === "function") {
+        updateQuotas();
+    }
+}
 
     if (tabName === 'categories') await loadCategoriesCache();
     if (tabName === 'banners') await loadBannersCache();
@@ -3416,6 +3444,7 @@ window.handleBannerSubmit = async (e) => {
         ]);
     }
 
+    // --- REMOVER TODAS AS ABAS ---
     const tabs = ['orders','dashboard','banners','products','categories','config','finance','customers'];
     const fab = document.getElementById('fabAddOrder');
 
@@ -3432,69 +3461,66 @@ window.handleBannerSubmit = async (e) => {
 
     if (tabName === 'dashboard') {
 
-        if (!window.isDashboardLoaded) {
-            const dashRef = doc(db, `stores/${currentStoreId}/analytics/global`);
-            const d = await getDoc(dashRef);
-            if (d.exists()) {
-                document.getElementById('dash-total-visits').textContent = d.data().totalVisits || 0;
-            }
-            window.isDashboardLoaded = true;
+    // --- VISITAS (carrega uma vez) ---
+    if (!window.isDashboardLoaded) {
+        const dashRef = doc(db, `stores/${currentStoreId}/analytics/global`);
+        const d = await getDoc(dashRef);
+        if (d.exists()) {
+            document.getElementById('dash-total-visits').textContent = d.data().totalVisits || 0;
         }
-
-        setTimeout(() => {
-            if (typeof window.calculateSalesInsights === 'function') {
-                window.calculateSalesInsights();
-            }
-        }, 50);
-
-        const prodCount = window.getCachedProductCount?.() || 0;
-        document.getElementById("dash-total-products").textContent = prodCount;
-
-        if (window.getCachedBannerCount) {
-            const bannerCount = window.getCachedBannerCount();
-            document.getElementById("dash-total-banners").textContent = bannerCount;
-        }
-
-        if (window.getCachedCategoryCount) {
-            const catCount = window.getCachedCategoryCount();
-            const el = document.getElementById("dash-total-cats");
-            if (el) el.textContent = catCount;
-        }
-
-        if (window.storeLimits?.products !== undefined) {
-            document.getElementById("dash-limit-products").textContent =
-                " / " + window.storeLimits.products;
-        }
-
-        if (window.storeLimits?.banners !== undefined) {
-            document.getElementById("dash-limit-banners").textContent =
-                " / " + window.storeLimits.banners;
-        }
+        window.isDashboardLoaded = true;
     }
 
+    // --- INSIGHTS ---
+    setTimeout(() => {
+        if (typeof window.calculateSalesInsights === 'function') {
+            window.calculateSalesInsights();
+        }
+    }, 50);
+
+    // --- PRODUTOS ---
+    const prodCount = window.getCachedProductCount?.() || 0;
+    document.getElementById("dash-total-products").textContent = prodCount;
+
+    // --- BANNERS ---
+    if (window.getCachedBannerCount) {
+        const bannerCount = window.getCachedBannerCount();
+        document.getElementById("dash-total-banners").textContent = bannerCount;
+    }
+
+    // --- CATEGORIAS ---
+    if (window.getCachedCategoryCount) {
+        document.getElementById("dash-total-cats").textContent =
+            window.getCachedCategoryCount();
+    }
+
+    // --- LIMITE DOS PRODUTOS ---
+    if (window.storeLimits?.products !== undefined) {
+        document.getElementById("dash-limit-products").textContent =
+            " / " + window.storeLimits.products;
+    }
+
+    // --- LIMITE DOS BANNERS ---
+    if (window.storeLimits?.banners !== undefined) {
+        document.getElementById("dash-limit-banners").textContent =
+            " / " + window.storeLimits.banners;
+    }
+
+}
+    
+    
     const activeView = document.getElementById(`view-${tabName}`);
     if (activeView) activeView.classList.remove('hidden');
 
-    if (tabName === 'dashboard') {
-        setTimeout(() => {
-            if (typeof window.calculateSalesInsights === 'function') {
-                window.calculateSalesInsights();
-            }
-        }, 50);
-    }
-
-    if (tabName === "config") {
-        if (typeof window.renderDeliveryAreas === "function") {
-            setTimeout(() => window.renderDeliveryAreas(), 50);
+    // --- CONFIG ---
+    if (tabName === 'config' && !isConfigLoaded) {
+        if (typeof initStoreData === 'function') {
+            await initStoreData();
+            isConfigLoaded = true;
         }
     }
 
-    const activeBtn = document.getElementById(`nav-${tabName}`);
-    if (activeBtn) {
-        activeBtn.classList.add('text-primary','bg-primary/5','border-r-4','border-primary','font-bold','active');
-        activeBtn.classList.remove('text-slate-600','font-medium');
-    }
-
+    // --- FINANCEIRO ---
     if (tabName === 'finance') {
         setTimeout(() => {
             if (typeof window.initFinanceDashboard === 'function') {
@@ -3503,42 +3529,47 @@ window.handleBannerSubmit = async (e) => {
         }, 100);
     }
 
-    lucide.createIcons();
-
-    if (fab) {
-        if (tabName === 'orders') {
-            fab.classList.remove('hidden');
-        } else {
-            fab.classList.add('hidden');
-        }
+    // --- BOTÃO DO MENU ---
+    const activeBtn = document.getElementById(`nav-${tabName}`);
+    if (activeBtn) {
+        activeBtn.classList.add('text-primary','bg-primary/5','border-r-4','border-primary','font-bold','active');
+        activeBtn.classList.remove('text-slate-600','font-medium');
     }
 
+    if (fab) {
+        if (tabName === 'orders') fab.classList.remove('hidden');
+        else fab.classList.add('hidden');
+    }
+
+    // --- CLIENTES ---
     if (tabName === 'customers') {
         window.renderCustomerRanking();
     }
 
+    // --- BADGE ---
     if (tabName === 'orders') {
         document.getElementById('menuBadge')?.classList.add('hidden');
         document.getElementById('menuBadgeMobile')?.classList.add('hidden');
     }
 
-    const titles = {
-        orders: 'Pedidos',
-        dashboard: 'Dashboard',
-        banners: 'Banners',
-        products: 'Produtos',
-        categories: 'Categorias',
-        config: 'Configurações',
-        finance: 'Financeiro',
-        customers: 'Clientes'
+    // --- TITULO ---
+    const titles = { 
+        orders:'Pedidos',
+        dashboard:'Dashboard',
+        banners:'Banners',
+        products:'Produtos',
+        categories:'Categorias',
+        config:'Configurações',
+        finance:'Financeiro',
+        customers:'Clientes'
     };
     document.getElementById('page-title').innerText = titles[tabName] || 'Painel';
 
-    if (typeof toggleMobileSidebar === 'function'
-        && !document.getElementById('mobileSidebar').classList.contains('sidebar-hidden')) {
+    // --- MOBILE ---
+    if (typeof toggleMobileSidebar === 'function' &&
+        !document.getElementById('mobileSidebar').classList.contains('sidebar-hidden')) {
         toggleMobileSidebar();
     }
-};
 
     lucide.createIcons();
 };
