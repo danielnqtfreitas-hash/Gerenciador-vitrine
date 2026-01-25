@@ -4509,7 +4509,10 @@ list.sort((a, b) => {
 
         // --- FUNÇÕES DO MODAL DE PEDIDO MANUAL ---
 
-window.openManualOrderModal = () => {
+window.openManualOrderModal = async () => {
+    if (typeof allProducts === 'undefined' || allProducts.length === 0) {
+        await loadProductsCache(); 
+    }
     const modal = document.getElementById("manualOrderModal");
     const fab = document.getElementById("fabAddOrder");
     
