@@ -5786,6 +5786,8 @@ window.deleteCustomerPermanent = async (phone) => {
         window.renderCustomerRanking();
         showToast("🗑️ Cliente removido com sucesso!");
 
+     window.renderCustomerRanking();
+
     } catch (e) {
         console.error("Erro ao excluir cliente:", e);
         showToast("❌ Erro ao excluir do banco de dados.");
