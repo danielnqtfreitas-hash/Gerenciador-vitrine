@@ -5811,17 +5811,23 @@ window.handleCustomerSubmit = async (e) => {
         };
 
         await setDoc(custRef, data, { merge: true });
+     
         
-        // --- O SEGREDO PARA MOSTRAR NA HORA ---
-        // 1. Atualiza o cache local imediatamente
-        savedCustomers[phoneRaw] = data;
-        
-        // 2. Fecha o modal
-        window.closeCustomerModal();
-        showToast("✅ Cliente atualizado!");
-        
-        // 3. Força a renderização da lista
-        window.renderCustomerRanking();
+        // 1. ATUALIZE O TIMESTAMP NO SERVIDOR (Crucial para o refresh funcionar)
+if (window.markAsDirty) {
+    await window.markAsDirty(); 
+}
+
+// 2. Atualiza o cache local imediatamente
+savedCustomers[phoneRaw] = data;
+
+// 3. Salva no localStorage para que o refresh já tenha o dado novo
+const cacheKey = `cache_customers_${currentStoreId}`;
+localStorage.setItem(cacheKey, JSON.stringify(savedCustomers));
+
+window.closeCustomerModal();
+showToast("✅ Cliente atualizado!");
+window.renderCustomerRanking(); 
         
     } catch (e) {
         showToast("❌ Erro ao salvar.");
