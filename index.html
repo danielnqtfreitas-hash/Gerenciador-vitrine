@@ -221,6 +221,13 @@ tailwind.config = {
 .tooltip:hover .tooltip-box {
   opacity: 1;
 }
+     <style>
+    /* Força os inputs de variação a mostrarem maiúsculo visualmente */
+    #variationContainer input {
+        text-transform: uppercase;
+    }
+</style>
+
     </style>
 </head>
 <body class="text-slate-800 antialiased h-screen overflow-y-auto flex bg-slate-50">
@@ -2739,6 +2746,9 @@ function updateQuotas() {
             }
             updatedVariations.push({
                 ...v,
+               // ADICIONE .toUpperCase() E .trim() AQUI:
+        color: (v.color || 'PADRAO').trim().toUpperCase(),
+        size: (v.size || 'UNICO').trim().toUpperCase(),    
                 image: varImageUrl,
                 price: parseFloat(v.price) || 0,
                 stock: parseInt(v.stock) || 0, // GARANTE QUE O ESTOQUE DA VARIAÇÃO SEJA SALVO
