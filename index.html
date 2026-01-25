@@ -3678,7 +3678,6 @@ function executaPlanoBCopia(texto) {
         await updateDoc(storeRef, { 
             deliveryAreas: updatedAreas,
            });
-renderDeliveryAreas();
       window.markAsDirty();
         
         // Limpa campos
@@ -3688,6 +3687,7 @@ renderDeliveryAreas();
     } catch (e) { 
         showToast("❌ Erro ao salvar.");
     }
+         renderDeliveryAreas();
 };
 
 
