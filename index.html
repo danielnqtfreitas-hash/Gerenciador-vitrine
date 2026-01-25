@@ -230,16 +230,7 @@ tailwind.config = {
 
     </style>
 </head>
-<body class="text-slate-800 antialiased h-screen overflow-y-auto flex bg-slate-50">e
-
-<div id="initial-loader" class="fixed inset-0 z-[9999] bg-white flex flex-col items-center justify-center transition-opacity duration-500">
-    <div class="w-12 h-12 border-4 border-slate-200 border-t-primary-600 rounded-full animate-spin"></div>
-    <p class="mt-4 text-slate-500 font-bold animate-pulse text-[10px] uppercase tracking-widest">Sincronizando Loja...</p>
-</div>
-
-<div id="auth-screen" class="hidden"> ... </div>
-<div id="main-content" class="hidden"> ... </div>
-
+<body class="text-slate-800 antialiased h-screen overflow-y-auto flex bg-slate-50">
     
    <!-- MODAL: Pedido Manual -->
   
@@ -1465,56 +1456,29 @@ document.addEventListener('click', () => {
 // 1. Forçamos o login a ser LOCAL (não apaga quando fecha a aba)
 setPersistence(auth, browserLocalPersistence)
     .then(() => {
-        // --- TRAVA DE SEGURANÇA ---
-        // Se após 4 segundos o loader ainda estiver lá, ele será removido à força
-        setTimeout(() => {
-            const fallbackLoader = document.getElementById('initial-loader');
-            if (fallbackLoader) {
-                console.warn("Segurança: Removendo loader por timeout.");
-                fallbackLoader.classList.add('opacity-0');
-                setTimeout(() => fallbackLoader.remove(), 500);
-            }
-        }, 4000);
-
-        return onAuthStateChanged(auth, async (user) => {
+        // O observador agora roda "dentro" da garantia de persistência
+        return onAuthStateChanged(auth, (user) => {
             const authScreen = document.getElementById('auth-screen');
             const mainContent = document.getElementById('main-content');
-            const loader = document.getElementById('initial-loader');
-
-            const hideLoader = () => {
-                if (loader) {
-                    loader.classList.add('opacity-0');
-                    setTimeout(() => loader.remove(), 500);
-                }
-            };
 
             if (user) {
-                console.log("Sessão recuperada:", user.uid);
+                console.log("Sessão recuperada com sucesso:", user.uid);
                 currentStoreId = user.uid;
                 
-                // Removemos o 'await' do CarregarDadosPainel para não travar a tela
-                // A tela abre e os dados carregam em seguida
-                if (typeof CarregarDadosPainel === 'function') {
-                    CarregarDadosPainel().catch(e => console.error("Erro no CarregarDados:", e));
-                }
-                
+                // Garante a troca de telas
                 if (authScreen) authScreen.classList.add('hidden');
                 if (mainContent) mainContent.classList.remove('hidden');
-                hideLoader();
-
+                
+                CarregarDadosPainel();
             } else {
                 console.log("Nenhum usuário logado.");
                 if (authScreen) authScreen.classList.remove('hidden');
                 if (mainContent) mainContent.classList.add('hidden');
-                hideLoader();
             }
         });
     })
     .catch((error) => {
         console.error("Erro ao configurar persistência:", error);
-        // Se der erro na persistência, tira o loader para não travar o usuário
-        const loader = document.getElementById('initial-loader');
-        if (loader) loader.remove();
     });
 
 // 2. Escuta de mensagens (mantido igual)
