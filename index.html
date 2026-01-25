@@ -4277,74 +4277,174 @@ window.deleteOrder = async (id) => {
         }
     }
 };
+window.initFinanceDashboard = () => {
+    const main = document.getElementById('main-content');
+    if (!main) return;
 
-        window.initFinanceDashboard = () => {
+    main.innerHTML = `
+        <div class="p-4 md:p-8 space-y-8 animate-fade-in">
+            <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+                <div>
+                    <h2 class="text-3xl font-black text-slate-800 tracking-tight">Gestão Financeira</h2>
+                    <p class="text-slate-500 font-medium">Relatórios detalhados de faturamento e estoque.</p>
+                </div>
+                
+                <div class="flex bg-slate-100 p-1.5 rounded-2xl border border-slate-200 shadow-sm" id="finance-filters">
+                    <button onclick="updateFinanceView('today')" id="btn-today" class="px-4 py-2 rounded-xl text-xs font-bold transition-all bg-white text-primary-600 shadow-sm">Hoje</button>
+                    <button onclick="updateFinanceView('week')" id="btn-week" class="px-4 py-2 rounded-xl text-xs font-bold transition-all text-slate-500">Semana</button>
+                    <button onclick="updateFinanceView('month')" id="btn-month" class="px-4 py-2 rounded-xl text-xs font-bold transition-all text-slate-500">Mês</button>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6" id="fin-cards-top">
+                </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                <div class="lg:col-span-2 bg-white p-6 rounded-[2.5rem] border border-slate-100 shadow-sm">
+                    <h4 class="font-bold text-slate-800 mb-6 flex items-center gap-2">
+                        <i data-lucide="layers" class="w-5 h-5 text-primary-500"></i> Faturamento e Lucro por Meio de Pagamento
+                    </h4>
+                    <div id="payment-methods-grid" class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        </div>
+                </div>
+
+                <div class="bg-slate-900 p-6 rounded-[2.5rem] text-white shadow-xl relative overflow-hidden">
+                    <div class="relative z-10">
+                        <h4 class="font-bold mb-6 flex items-center gap-2 text-slate-400">
+                            <i data-lucide="package" class="w-5 h-5 text-primary-400"></i> Valor em Estoque
+                        </h4>
+                        <div class="space-y-6">
+                            <div>
+                                <span class="text-[10px] uppercase font-black text-slate-500 tracking-widest">Preço de Venda</span>
+                                <div id="fin-stock-value" class="text-3xl font-black text-primary-400">R$ 0,00</div>
+                                <span id="fin-stock-count" class="text-[10px] text-slate-400">0 unidades em estoque</span>
+                            </div>
+                            <div class="grid grid-cols-2 gap-4 pt-4 border-t border-white/10">
+                                <div>
+                                    <span class="text-[10px] uppercase font-bold text-slate-500">Custo Total</span>
+                                    <div id="fin-stock-cost" class="font-bold text-sm">R$ 0,00</div>
+                                </div>
+                                <div>
+                                    <span class="text-[10px] uppercase font-bold text-emerald-500">Lucro Potencial</span>
+                                    <div id="fin-profit-potential" class="font-bold text-sm text-emerald-400">R$ 0,00</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div id="growth-chart-container" class="bg-white p-8 rounded-[2.5rem] border border-slate-100 shadow-sm h-80">
+                <canvas id="growthChart"></canvas>
+            </div>
+        </div>
+    `;
+
+    window.updateFinanceView('today'); // Inicia carregando o dia de hoje
+    if(window.lucide) lucide.createIcons();
+};
+
+     window.updateFinanceView = (range) => {
     const now = new Date();
-    const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
-    const startOfWeek = now.getTime() - (now.getDay() * 24 * 60 * 60 * 1000);
-    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1).getTime();
-    const startOfLastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1).getTime();
+    let startTime;
 
-    let revDay = 0, revWeek = 0, revMonth = 0, revTotal = 0, countDay = 0;
-    let revLastMonth = 0;
+    // Ajuste de Data (Mesma lógica sua, mas simplificada)
+    if (range === 'today') startTime = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
+    else if (range === 'week') startTime = now.getTime() - (now.getDay() * 24 * 60 * 60 * 1000);
+    else if (range === 'month') startTime = new Date(now.getFullYear(), now.getMonth(), 1).getTime();
 
-    // 1. CÁLCULO DE FATURAMENTO (CORRIGIDO PARA TODOS OS FORMATOS DE DATA)
+    // Reset de Variáveis de Cálculo
+    let totals = { rev: 0, profit: 0, count: 0 };
+    let pay = {
+        pix: { rev: 0, prof: 0 },
+        money: { rev: 0, prof: 0 },
+        card: { rev: 0, prof: 0 }
+    };
+
+    // 1. CÁLCULO DE VENDAS (Baseado no seu ordersCache)
     Object.values(ordersCache).forEach(order => {
-        let orderTime = 0;
+        let orderTime = order.createdAt?.toMillis ? order.createdAt.toMillis() : (Number(order.createdAt) || 0);
         
-        // Verifica todos os formatos possíveis de data do Firebase e JS
-        if (order.createdAt?.toMillis) orderTime = order.createdAt.toMillis();
-        else if (order.createdAt?.toDate) orderTime = order.createdAt.toDate().getTime();
-        else if (order.createdAt instanceof Date) orderTime = order.createdAt.getTime();
-        else if (typeof order.createdAt === 'number') orderTime = order.createdAt;
+        if (orderTime >= startTime && order.status !== 'canceled' && order.status !== 'Cancelado') {
+            const val = Number(order.total) || 0;
+            const cost = Number(order.totalCost) || 0; // Se não tiver totalCost, o lucro será igual ao total
+            const profit = val - cost;
 
-        const value = Number(order.total) || 0;
+            totals.rev += val;
+            totals.profit += profit;
+            totals.count++;
 
-        // Filtra pedidos cancelados (aceita 'canceled' e 'Cancelado')
-        if (order.status !== 'canceled' && order.status !== 'Cancelado') {
-            revTotal += value;
-            if (orderTime >= startOfDay) { revDay += value; countDay++; }
-            if (orderTime >= startOfWeek) { revWeek += value; }
-            if (orderTime >= startOfMonth) { revMonth += value; }
-            if (orderTime >= startOfLastMonth && orderTime < startOfMonth) { revLastMonth += value; }
+            // Filtro por método de pagamento
+            const method = (order.paymentMethod || '').toLowerCase();
+            if (method.includes('pix')) { pay.pix.rev += val; pay.pix.prof += profit; }
+            else if (method.includes('dinheiro')) { pay.money.rev += val; pay.money.prof += profit; }
+            else { pay.card.rev += val; pay.card.prof += profit; }
         }
     });
 
-    // 2. CÁLCULOS DE ESTOQUE (GARANTINDO CONVERSÃO DE NÚMERO)
-    let stockValue = 0, stockCost = 0, totalItems = 0;
-
+    // 2. CÁLCULOS DE ESTOQUE (Mantendo exatamente seu allProducts)
+    let stockV = 0, stockC = 0, stockQty = 0;
     allProducts.forEach(p => {
         const qty = Number(p.stock) || 0;
-        const price = Number(p.value) || 0;
-        const cost = Number(p.cost) || 0;
-
-        stockValue += (price * qty);
-        stockCost += (cost * qty);
-        totalItems += qty;
+        stockV += (Number(p.value || p.price) * qty);
+        stockC += (Number(p.cost) * qty);
+        stockQty += qty;
     });
 
-    // 3. ATUALIZAÇÃO DA UI (COM VERIFICAÇÃO DE SEGURANÇA)
-    const setTxt = (id, txt) => {
-        const el = document.getElementById(id);
-        if(el) el.textContent = txt;
-    };
+    // 3. ATUALIZAÇÃO DA UI
+    const format = (v) => `R$ ${v.toFixed(2).replace('.', ',')}`;
 
-    setTxt('fin-rev-day', `R$ ${revDay.toFixed(2).replace('.',',')}`);
-    setTxt('fin-orders-day', `${countDay} pedidos hoje`);
-    setTxt('fin-rev-week', `R$ ${revWeek.toFixed(2).replace('.',',')}`);
-    setTxt('fin-rev-month', `R$ ${revMonth.toFixed(2).replace('.',',')}`);
-    setTxt('fin-rev-total', `R$ ${revTotal.toFixed(2).replace('.',',')}`);
-    
-    setTxt('fin-stock-value', `R$ ${stockValue.toFixed(2).replace('.',',')}`);
-    setTxt('fin-stock-cost', `R$ ${stockCost.toFixed(2).replace('.',',')}`);
-    setTxt('fin-profit-potential', `R$ ${(stockValue - stockCost).toFixed(2).replace('.',',')}`);
-    setTxt('fin-stock-count', `${totalItems} unidades disponíveis`);
+    // Cards Superiores
+    document.getElementById('fin-cards-top').innerHTML = `
+        ${createSmallCard('Faturamento Total', format(totals.rev), 'trending-up', 'text-primary-600')}
+        ${createSmallCard('Lucro Total', format(totals.profit), 'dollar-sign', 'text-emerald-600')}
+        ${createSmallCard('Ticket Médio', format(totals.rev / (totals.count || 1)), 'users', 'text-blue-600')}
+        ${createSmallCard('Total de Pedidos', totals.count, 'shopping-bag', 'text-orange-600')}
+    `;
 
-    // 4. CHAMA OS COMPONENTES VISUAIS
-    if (typeof renderGrowthFeedback === 'function') renderGrowthFeedback(revMonth, revLastMonth);
-    if (typeof initGrowthChart === 'function') initGrowthChart();
+    // Cards de Pagamento
+    document.getElementById('payment-methods-grid').innerHTML = `
+        ${createPayCard('PIX', format(pay.pix.rev), format(pay.pix.prof), 'bg-cyan-500')}
+        ${createPayCard('Dinheiro', format(pay.money.rev), format(pay.money.prof), 'bg-emerald-500')}
+        ${createPayCard('Cartão', format(pay.card.rev), format(pay.card.prof), 'bg-blue-500')}
+    `;
+
+    // Dados de Estoque (IDs mantidos para compatibilidade)
+    document.getElementById('fin-stock-value').textContent = format(stockV);
+    document.getElementById('fin-stock-cost').textContent = format(stockC);
+    document.getElementById('fin-profit-potential').textContent = format(stockV - stockC);
+    document.getElementById('fin-stock-count').textContent = `${stockQty} unidades disponíveis`;
+
+    // Ativa botões de filtro
+    document.querySelectorAll('#finance-filters button').forEach(b => b.classList.replace('bg-white', 'text-slate-500'));
+    document.getElementById(`btn-${range}`).className = "px-4 py-2 rounded-xl text-xs font-bold transition-all bg-white text-primary-600 shadow-sm";
+
+    if(window.initGrowthChart) window.initGrowthChart(); // Religar seu gráfico
 };
 
+// Funções auxiliares para gerar os cards
+const createSmallCard = (title, val, icon, color) => `
+    <div class="bg-white p-5 rounded-3xl border border-slate-100 shadow-sm">
+        <div class="flex justify-between items-center mb-2">
+            <span class="text-[10px] font-black text-slate-400 uppercase tracking-widest">${title}</span>
+            <i data-lucide="${icon}" class="w-4 h-4 ${color}"></i>
+        </div>
+        <h3 class="text-xl font-black text-slate-900">${val}</h3>
+    </div>
+`;
+
+const createPayCard = (label, rev, prof, dot) => `
+    <div class="p-4 rounded-2xl bg-slate-50 border border-slate-100">
+        <div class="flex items-center gap-2 mb-3">
+            <div class="w-2 h-2 rounded-full ${dot}"></div>
+            <span class="text-xs font-bold text-slate-600">${label}</span>
+        </div>
+        <div class="text-lg font-black text-slate-800">${rev}</div>
+        <div class="text-[10px] font-bold text-emerald-600 mt-1">Lucro: ${prof}</div>
+    </div>
+`;
+
+        
 
         window.initGrowthChart = () => {
     const ctx = document.getElementById('growthChart').getContext('2d');
