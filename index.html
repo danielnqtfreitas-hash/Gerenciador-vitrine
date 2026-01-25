@@ -255,10 +255,34 @@ tailwind.config = {
                 <div class="space-y-4">
                     <h4 class="text-[11px] font-black uppercase text-slate-400 tracking-widest border-b border-slate-100 pb-2">Informações do Cliente</h4>
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div class="space-y-1">
-                            <label class="text-[10px] font-bold text-slate-500 uppercase ml-1">Nome do Cliente</label>
-                            <input id="manualName" type="text" placeholder="Ex: João Silva" class="input-pro">
-                        </div>
+                        <div class="mb-3">
+    <label class="block text-[10px] font-bold text-slate-500 uppercase mb-1">Cliente</label>
+    <div class="flex gap-2">
+        <input type="text" id="manualOrderCustName" 
+               class="flex-1 p-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm" 
+               placeholder="Nome do cliente">
+        
+        <button type="button" onclick="window.openCustomerSelector()" 
+                class="p-2.5 bg-primary-50 text-primary-600 rounded-xl hover:bg-primary-100 transition-all shadow-sm"
+                title="Selecionar dos contatos">
+            <i data-lucide="users" class="w-5 h-5"></i>
+        </button>
+    </div>
+</div>
+
+<div class="mb-4">
+    <label class="block text-[10px] font-bold text-slate-500 uppercase mb-1">Total Final (Opcional)</label>
+    <div class="relative">
+        <span class="absolute left-3 top-2.5 text-slate-400 text-sm font-bold">R$</span>
+        <input type="number" id="manualOrderTotalOverride" step="0.01" 
+               class="w-full p-2.5 pl-10 bg-amber-50 border border-amber-200 rounded-xl text-sm font-black text-amber-900" 
+               placeholder="0,00">
+    </div>
+    <p class="text-[9px] text-amber-600 mt-1 font-medium">
+        ⚠️ Se preencher aqui, este valor será o total, ignorando a soma dos itens.
+    </p>
+</div>
+
                         <div class="space-y-1">
                             <label class="text-[10px] font-bold text-slate-500 uppercase ml-1">WhatsApp</label>
                             <input id="manualPhone" type="text" placeholder="(00) 00000-0000" class="input-pro">
@@ -4545,17 +4569,37 @@ window.closeManualOrderModal = () => {
     const modal = document.getElementById("manualOrderModal");
     const fab = document.getElementById("fabAddOrder");
     
-    // Verifica se a aba de pedidos está ativa no momento
-    const isOrdersTab = document.getElementById('nav-orders').classList.contains('active');
-
+    // 1. Esconde o Modal
     if (modal) modal.classList.add("hidden");
+
+    // 2. LIMPEZA DE TODOS OS CAMPOS (Evita lixo no próximo pedido)
+    document.getElementById('manualOrderCustName').value = "";
+    document.getElementById('manualPhone').value = "";
+    document.getElementById('manualAddress').value = "";
+    document.getElementById('manualOrderTotalOverride').value = ""; // Limpa o valor manual
+    document.getElementById('manualProductSearch').value = "";
+    document.getElementById('manualPayment').value = "";
     
-    // Só mostra o FAB novamente se o modal fechar E o usuário ainda estiver na aba de pedidos
+    // 3. Reseta o carrinho interno e a visualização
+    manualOrder = []; 
+    if (typeof window.renderManualOrderItems === 'function') {
+        window.renderManualOrderItems();
+    }
+    
+    // 4. Lógica do Botão Flutuante (FAB)
+    // Verifica se a aba de pedidos está ativa antes de mostrar o botão de volta
+    const navOrders = document.getElementById('nav-orders');
+    const isOrdersTab = navOrders && navOrders.classList.contains('active');
+
     if (fab && isOrdersTab) {
         fab.classList.remove("hidden");
     }
-};
 
+    // 5. Para o Scanner de Câmera (caso esteja ligado)
+    if (typeof window.stopBarcodeScanner === 'function') {
+        window.stopBarcodeScanner();
+    }
+};
 
         // --- BUSCA DE PRODUTOS PARA PEDIDO MANUAL ---
 
@@ -4750,18 +4794,29 @@ window.finishManualOrder = async () => {
     if (btn) btn.disabled = true;
 
     try {
-        const total = manualOrder.reduce((sum, i) => sum + i.qty * i.price, 0);
+        // --- LÓGICA DE VALOR TOTAL (AUTOMÁTICO VS MANUAL) ---
+        const overrideInput = document.getElementById('manualOrderTotalOverride');
+        const overrideValue = parseFloat(overrideInput.value);
         
+        let totalFinal;
+        if (!isNaN(overrideValue) && overrideValue > 0) {
+            totalFinal = overrideValue; // Usa o valor que você digitou no campo amarelo
+        } else {
+            // Soma automática do carrinho
+            totalFinal = manualOrder.reduce((sum, i) => sum + i.qty * i.price, 0);
+        }
+
         // 1. Cria o documento do pedido
         const newOrder = {
             customer: {
-                name: document.getElementById("manualName")?.value || "Cliente Local",
+                // ATENÇÃO: Ajustado para os IDs que estão no seu HTML
+                name: document.getElementById("manualOrderCustName")?.value || "Cliente Local",
                 phone: document.getElementById("manualPhone")?.value || "",
                 address: document.getElementById("manualAddress")?.value || ""
             },
             paymentMethod: payment,
             items: manualOrder,
-            total: Number(total.toFixed(2)),
+            total: Number(totalFinal.toFixed(2)),
             status: "completed",
             createdAt: new Date(),
             manual: true,
@@ -4770,7 +4825,7 @@ window.finishManualOrder = async () => {
 
         await addDoc(collection(db, `stores/${currentStoreId}/orders`), newOrder);
 
-        // 2. LÓGICA DE AGRUPAMENTO PARA BAIXA DE ESTOQUE
+        // 2. LÓGICA DE BAIXA DE ESTOQUE (Mantida a sua lógica original que está ótima)
         const itemsByProduct = manualOrder.reduce((acc, item) => {
             if (!acc[item.id]) acc[item.id] = [];
             acc[item.id].push(item);
@@ -4787,15 +4842,12 @@ window.finishManualOrder = async () => {
                 let updateData = {};
 
                 if (prodData.variations && prodData.variations.length > 0) {
-                    // Atualiza múltiplas variações no mesmo array antes de salvar
                     let novasVariacoes = [...prodData.variations];
-                    
                     itemsToUpdate.forEach(itemCarrinho => {
                         novasVariacoes = novasVariacoes.map(v => {
                             const isMatch = v.sku === itemCarrinho.sku || 
                                            (v.color === itemCarrinho.variationDetails?.color && 
                                             v.size === itemCarrinho.variationDetails?.size);
-                            
                             if (isMatch) {
                                 const estoqueAtualVar = Number(v.stock) || 0;
                                 return { ...v, stock: Math.max(0, estoqueAtualVar - Number(itemCarrinho.qty)) };
@@ -4803,32 +4855,33 @@ window.finishManualOrder = async () => {
                             return v;
                         });
                     });
-
                     updateData.variations = novasVariacoes;
-                    // Recalcula o total do estoque do produto pai
                     updateData.stock = novasVariacoes.reduce((sum, v) => sum + (Number(v.stock) || 0), 0);
                 } else {
-                    // Produto simples
                     const totalQty = itemsToUpdate.reduce((sum, i) => sum + Number(i.qty), 0);
                     const estoqueGeralAntigo = Number(prodData.stock) || 0;
                     updateData.stock = Math.max(0, estoqueGeralAntigo - totalQty);
                 }
-
                 updateData.status = updateData.stock <= 0 ? 'paused' : 'active';
                 return updateDoc(productRef, updateData);
             }
         });
 
         await Promise.all(stockPromises);
-     await updateDoc(doc(db, `stores/${currentStoreId}/config/store`), { lastUpdate: Date.now() });
-      await loadProductsCache(true);
-     renderProductList();
+        
+        // 3. ATUALIZAÇÃO DE CACHE E INTERFACE
+        await updateDoc(doc(db, `stores/${currentStoreId}/config/store`), { lastUpdate: Date.now() });
+        await loadProductsCache(true);
+        renderProductList();
         
         showToast("✅ Venda finalizada e estoque sincronizado!");
+        
+        // 4. LIMPEZA DOS CAMPOS
         manualOrder = [];
-        document.getElementById("manualName").value = "";
+        document.getElementById("manualOrderCustName").value = "";
         document.getElementById("manualPhone").value = "";
         document.getElementById("manualAddress").value = "";
+        document.getElementById("manualOrderTotalOverride").value = ""; // Limpa campo manual
         document.getElementById("manualProductSearch").value = "";
         document.getElementById("manualSearchResults").innerHTML = "";
         
@@ -5939,6 +5992,56 @@ window.getCachedProductCount = () => {
 window.getCachedCategoryCount = () => {
     return Array.isArray(allCategories) ? allCategories.length : 0;
 };
+     window.openCustomerSelector = () => {
+    // Pegamos a lista de clientes do seu cache
+    const customers = Object.values(savedCustomers);
+    
+    const html = `
+        <div id="tempCustomerModal" class="fixed inset-0 z-[999] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
+            <div class="bg-white rounded-2xl w-full max-w-sm max-h-[70vh] flex flex-col shadow-2xl animate-in zoom-in duration-200">
+                <div class="p-4 border-b flex justify-between items-center bg-slate-50 rounded-t-2xl">
+                    <h3 class="font-bold text-slate-800 flex items-center gap-2">
+                        <i data-lucide="users" class="w-4 h-4 text-primary-500"></i> Meus Clientes
+                    </h3>
+                    <button onclick="document.getElementById('tempCustomerModal').remove()" class="p-1 hover:bg-slate-200 rounded-lg">&times;</button>
+                </div>
+                <div class="p-2 overflow-y-auto">
+                    ${customers.length === 0 ? '<p class="p-8 text-center text-slate-400 text-xs">Nenhum cliente cadastrado.</p>' : 
+                      customers.map(c => `
+                        <div onclick="window.selectCustomerForOrder('${c.phone.replace(/\D/g,'')}')" 
+                             class="p-3 hover:bg-primary-50 rounded-xl cursor-pointer border-b border-slate-50 last:border-0 flex items-center justify-between group">
+                            <div class="flex flex-col">
+                                <span class="font-bold text-sm text-slate-700 group-hover:text-primary-600">${c.name}</span>
+                                <span class="text-[10px] text-slate-400 font-mono">${c.phone}</span>
+                            </div>
+                            <i data-lucide="chevron-right" class="w-4 h-4 text-slate-300"></i>
+                        </div>
+                    `).join('')}
+                </div>
+            </div>
+        </div>
+    `;
+    document.body.insertAdjacentHTML('beforeend', html);
+    if(window.lucide) lucide.createIcons();
+};
+
+window.selectCustomerForOrder = (phone) => {
+    const c = savedCustomers[phone];
+    if (c) {
+        // Preenche o nome e o telefone no seu modal de pedido manual
+        document.getElementById('manualOrderCustName').value = c.name;
+        document.getElementById('manualOrderCustPhone').value = c.phone;
+        
+        // Se você tiver campo de endereço no pedido manual, preencha também:
+        const addrField = document.getElementById('manualOrderCustAddress');
+        if(addrField) addrField.value = c.address || '';
+
+        // Remove o seletor
+        document.getElementById('tempCustomerModal').remove();
+        showToast(`✅ ${c.name} selecionado!`);
+    }
+};
+
     </script>
 </body>
 </html>
