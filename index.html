@@ -2817,6 +2817,7 @@ if (promoDays > 0) {
 
         await setDoc(docRef, data, { merge: true });
       await loadProductsCache(true);
+     renderProductList();
         window.markAsDirty(); 
 
         showToast("✅ Produto e variações salvos!");
@@ -2871,6 +2872,7 @@ if (promoDays > 0) {
         // 4. Sincroniza vitrine
         await deleteDoc(docRef); 
       await loadProductsCache(true);
+     renderProductList();
 // Avisa o botão para ficar colorido
 window.markAsDirty(); 
 showToast("🗑️ Produto e todos os arquivos removidos!");
@@ -4800,6 +4802,7 @@ window.finishManualOrder = async () => {
         await Promise.all(stockPromises);
      await updateDoc(doc(db, `stores/${currentStoreId}/config/store`), { lastUpdate: Date.now() });
       await loadProductsCache(true);
+     renderProductList();
         
         showToast("✅ Venda finalizada e estoque sincronizado!");
         manualOrder = [];
@@ -4906,7 +4909,7 @@ await updateDoc(doc(db, `stores/${currentStoreId}/config/store`), {
 await loadProductsCache(true); ;
             orderUpdate.stockDeducted = false;
         }
-
+renderProductList();
         // --- SALVAR ATUALIZAÇÃO DO PEDIDO ---
         await updateDoc(orderRef, orderUpdate);
 
