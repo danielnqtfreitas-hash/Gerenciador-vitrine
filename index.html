@@ -4549,22 +4549,35 @@ list.sort((a, b) => {
 
 
         // --- FUNÇÕES DO MODAL DE PEDIDO MANUAL ---
-
 window.openManualOrderModal = async () => {
-    if (typeof allProducts === 'undefined' || allProducts.length === 0) {
-        await loadProductsCache(); 
-     await window.loadSavedCustomers();
-    }
+    // 1. Forçamos o carregamento dos dados MAIS RECENTES (estoque real)
+    // O true indica 'forceRefresh', ignorando o cache de disco
+    await loadProductsCache(true); 
+    
+    // 2. Também carregamos os clientes
+    await window.loadSavedCustomers();
+
     const modal = document.getElementById("manualOrderModal");
     const fab = document.getElementById("fabAddOrder");
+
+    if (modal) modal.classList.remove("hidden");
+    if (fab) fab.classList.add("hidden");
+
+    // Limpezas de praxe
+    manualOrder = [];
+    window.renderManualOrderItems();
     
-    if (modal) {
-        modal.classList.remove("hidden");
-        // Esconde o FAB para não atrapalhar a digitação
-        if (fab) fab.classList.add("hidden"); 
-        lucide.createIcons();
-    }
+    // Limpar campos de texto
+    document.getElementById("manualOrderCustName").value = "";
+    document.getElementById("manualPhone").value = "";
+    document.getElementById("manualAddress").value = "";
+    document.getElementById("manualOrderTotalOverride").value = "";
+    document.getElementById("manualProductSearch").value = "";
+    document.getElementById("manualSearchResults").innerHTML = "";
+
+    if(window.lucide) lucide.createIcons();
 };
+
 
 window.closeManualOrderModal = () => {
     const modal = document.getElementById("manualOrderModal");
