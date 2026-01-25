@@ -3663,7 +3663,8 @@ function executaPlanoBCopia(texto) {
 
     try {
         const storeRef = doc(db, `stores/${currentStoreId}/config/store`);
-        
+
+     
         // BUSCA DIRETA NO BANCO PARA GARANTIR QUE NÃO VAI SOBRESCREVER NADA
         const docSnap = await getDoc(storeRef);
         let currentAreas = [];
@@ -3677,7 +3678,7 @@ function executaPlanoBCopia(texto) {
         await updateDoc(storeRef, { 
             deliveryAreas: updatedAreas,
            });
-
+renderDeliveryAreas();
       window.markAsDirty();
         
         // Limpa campos
@@ -3701,6 +3702,7 @@ function executaPlanoBCopia(texto) {
         await updateDoc(storeRef, { 
             deliveryAreas: deliveryAreas, 
               });
+     renderDeliveryAreas();
       window.markAsDirty();
         showToast("Bairro removido!");
         // O renderDeliveryAreas() será chamado automaticamente pelo onSnapshot acima
