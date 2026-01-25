@@ -2812,7 +2812,9 @@ if (promoDays > 0) {
             colors: [...new Set(updatedVariations.map(v => v.color))].filter(c => c && c !== 'PADRAO'),
             sizes: [...new Set(updatedVariations.map(v => v.size))].filter(s => s && s !== 'UNICO'),
             trashFiles: stillInTrash,
-            status: totalStock > 0 ? 'active' : 'paused'
+            status: totalStock > 0 ? 'active' : 'paused', 
+            updatedAt: Date.now(),
+            ...(isNew && { createdAt: Date.now() }) 
         };
 
         await setDoc(docRef, data, { merge: true });
