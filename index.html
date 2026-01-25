@@ -3678,16 +3678,18 @@ function executaPlanoBCopia(texto) {
         await updateDoc(storeRef, { 
             deliveryAreas: updatedAreas,
            });
+     deliveryAreas = updatedAreas; 
       window.markAsDirty();
         
         // Limpa campos
         nameInput.value = ''; 
         feeInput.value = ''; 
+     renderDeliveryAreas();
         showToast("✅ Bairro salvo!");
     } catch (e) { 
         showToast("❌ Erro ao salvar.");
     }
-         renderDeliveryAreas();
+         
 };
 
 
