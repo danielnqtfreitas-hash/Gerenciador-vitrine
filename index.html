@@ -4553,6 +4553,7 @@ list.sort((a, b) => {
 window.openManualOrderModal = async () => {
     if (typeof allProducts === 'undefined' || allProducts.length === 0) {
         await loadProductsCache(); 
+     await window.loadSavedCustomers();
     }
     const modal = document.getElementById("manualOrderModal");
     const fab = document.getElementById("fabAddOrder");
@@ -6028,17 +6029,22 @@ window.getCachedCategoryCount = () => {
 window.selectCustomerForOrder = (phone) => {
     const c = savedCustomers[phone];
     if (c) {
-        // Preenche o nome e o telefone no seu modal de pedido manual
-        document.getElementById('manualOrderCustName').value = c.name;
-        document.getElementById('manualOrderCustPhone').value = c.phone;
+        // 1. Preenche o Nome
+        document.getElementById('manualOrderCustName').value = c.name || '';
         
-        // Se você tiver campo de endereço no pedido manual, preencha também:
-        const addrField = document.getElementById('manualOrderCustAddress');
-        if(addrField) addrField.value = c.address || '';
+        // 2. Preenche o WhatsApp (manualPhone)
+        const phoneField = document.getElementById('manualPhone');
+        if (phoneField) phoneField.value = c.phone || '';
+        
+        // 3. Preenche o Endereço (manualAddress)
+        const addrField = document.getElementById('manualAddress');
+        if (addrField) addrField.value = c.address || '';
 
-        // Remove o seletor
-        document.getElementById('tempCustomerModal').remove();
-        showToast(`✅ ${c.name} selecionado!`);
+        // Fecha o seletor
+        const tempModal = document.getElementById('tempCustomerModal');
+        if (tempModal) tempModal.remove();
+        
+        showToast(`✅ Dados de ${c.name} carregados!`);
     }
 };
 
