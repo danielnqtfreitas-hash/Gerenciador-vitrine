@@ -5653,34 +5653,28 @@ window.renderCustomerRanking = async () => {
                     </span>
                 </td>
                 <td class="px-4 py-4">
-                    <div class="flex flex-col min-w-0">
-                        <div class="flex items-center gap-1">
-                            <span class="font-bold text-slate-800 text-xs truncate">${c.name}</span>
-                            ${!c.isGuest ? '<i data-lucide="check-circle" class="w-3 h-3 text-blue-500 shrink-0"></i>' : ''}
-                        </div>
-                        <span class="text-[9px] text-slate-400 font-mono tracking-tighter">${c.phone}</span>
-                    </div>
-                </td>
-                <td class="px-4 py-4 text-center">
-                    <span class="text-xs font-bold text-slate-600">${c.orderCount}</span>
-                </td>
-                <td class="px-4 py-4 text-right">
-                    <span class="font-black text-slate-900 text-xs">R$ ${c.totalSpent.toFixed(2).replace('.',',')}</span>
-                </td>
-                <td class="px-4 py-4">
     <div class="flex items-center justify-center gap-1">
         <button onclick="window.openCustomerDetails('${phoneRaw}')" class="p-2 text-slate-400 hover:text-primary-600 hover:bg-primary-50 rounded-lg transition-all" title="Ver Detalhes">
             <i data-lucide="eye" class="w-4 h-4"></i>
         </button>
-        <button onclick="window.editCustomer('${phoneRaw}')" class="p-2 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all" title="Editar Dados">
-            <i data-lucide="pencil" class="w-4 h-4"></i>
-        </button>
-        
-        <button onclick="window.deleteCustomerPermanent('${phoneRaw}')" class="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all" title="Excluir Cliente">
-            <i data-lucide="trash-2" class="w-4 h-4"></i>
-        </button>
+
+        ${!c.isGuest ? `
+            <button onclick="window.editCustomer('${phoneRaw}')" class="p-2 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all" title="Editar Dados">
+                <i data-lucide="pencil" class="w-4 h-4"></i>
+            </button>
+            
+            <button onclick="window.deleteCustomerPermanent('${phoneRaw}')" class="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all" title="Excluir Cliente">
+                <i data-lucide="trash-2" class="w-4 h-4"></i>
+            </button>
+        ` : `
+            <span class="p-2 text-slate-300" title="Cliente de Pedido Automático">
+                <i data-lucide="shopping-bag" class="w-4 h-4"></i>
+            </span>
+        `}
     </div>
 </td>
+
+              
             </tr>
         `;
         tbody.insertAdjacentHTML('beforeend', row);
