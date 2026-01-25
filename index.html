@@ -1472,36 +1472,38 @@ return onAuthStateChanged(auth, async (user) => {
     const mainContent = document.getElementById('main-content');
     const loader = document.getElementById('initial-loader');
 
+    // Função interna para remover o loader com segurança
+    const hideLoader = () => {
+        if (loader) {
+            loader.classList.add('opacity-0');
+            setTimeout(() => loader.remove(), 500);
+        }
+    };
+
     if (user) {
-        console.log("Sessão recuperada com sucesso:", user.uid);
+        console.log("Sessão recuperada:", user.uid);
         currentStoreId = user.uid;
         
-        // Mantém TODAS as suas funções de carregamento
-        // Usamos await para que a tela só apareça quando os dados estiverem prontos
         try {
+            // Tenta carregar os dados
             if (typeof CarregarDadosPainel === 'function') {
                 await CarregarDadosPainel();
             }
         } catch (e) {
-            console.error("Erro ao carregar dados iniciais:", e);
+            console.error("Erro ao carregar dados, mas liberando a tela:", e);
+        } finally {
+            // INDEPENDENTE de dar erro ou não, mostra o painel e tira o loader
+            if (authScreen) authScreen.classList.add('hidden');
+            if (mainContent) mainContent.classList.remove('hidden');
+            hideLoader();
         }
 
-        // Garante a troca de telas
-        if (authScreen) authScreen.classList.add('hidden');
-        if (mainContent) mainContent.classList.remove('hidden');
-        
     } else {
-        console.log("Nenhum usuário logado.");
+        console.log("Nenhum usuário logado. Mostrando tela de login.");
+        // Se não tem usuário (primeiro login), mostra a tela de login e tira o loader NA HORA
         if (authScreen) authScreen.classList.remove('hidden');
         if (mainContent) mainContent.classList.add('hidden');
-    }
-
-    // FINALMENTE: Remove o loader com suavidade
-    if (loader) {
-        loader.classList.add('opacity-0');
-        setTimeout(() => {
-            loader.remove(); 
-        }, 500); // Meio segundo de fade-out para um efeito profissional
+        hideLoader();
     }
 });
 
