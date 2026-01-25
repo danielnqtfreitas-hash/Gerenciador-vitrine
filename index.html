@@ -232,10 +232,14 @@ tailwind.config = {
 </head>
 <body class="text-slate-800 antialiased h-screen overflow-y-auto flex bg-slate-50">e
 
- <div id="initial-loader" class="fixed inset-0 z-[9999] bg-white flex flex-col items-center justify-center">
-    <div class="w-12 h-12 border-4 border-primary-200 border-t-primary-600 rounded-full animate-spin"></div>
-    <p class="mt-4 text-slate-500 font-medium animate-pulse">Sincronizando sua loja...</p>
- </div>
+<div id="initial-loader" class="fixed inset-0 z-[9999] bg-white flex flex-col items-center justify-center transition-opacity duration-500">
+    <div class="w-12 h-12 border-4 border-slate-200 border-t-primary-600 rounded-full animate-spin"></div>
+    <p class="mt-4 text-slate-500 font-bold animate-pulse text-[10px] uppercase tracking-widest">Sincronizando Loja...</p>
+</div>
+
+<div id="auth-screen" class="hidden"> ... </div>
+<div id="main-content" class="hidden"> ... </div>
+
     
    <!-- MODAL: Pedido Manual -->
   
