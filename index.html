@@ -5767,30 +5767,40 @@ window.editCustomer = (phone) => {
 };
 
 window.deleteCustomerPermanent = async (phone) => {
-    // 1. Confirmação de segurança
-    if(!confirm("Tem certeza que deseja excluir este cliente do seu cadastro fixo? Isso não apagará o histórico de pedidos dele.")) return;
+    if (!confirm("⚠️ Tem certeza? Isso excluirá os dados cadastrais deste cliente permanentemente.")) return;
 
     try {
-        const phoneRaw = phone.replace(/\D/g, '');
-        const custRef = doc(db, `stores/${currentStoreId}/customers`, phoneRaw);
-
-        // 2. Remove do Firestore
+        const custRef = doc(db, `stores/${currentStoreId}/customers`, phone);
+        
+        // 1. Deleta do Firebase
         await deleteDoc(custRef);
 
-        // 3. Remove do cache local (Memória RAM)
-        if (savedCustomers[phoneRaw]) {
-            delete savedCustomers[phoneRaw];
+        // 2. Remove da variável na memória
+        delete savedCustomers[phone];
+
+        // 3. ATUALIZA O DISCO (LocalStorage) - Isso é o que faltava!
+        // Sobrescrevemos o cache local com a lista que já não tem o cliente
+        const cacheKey = `cache_customers_${currentStoreId}`;
+        localStorage.setItem(cacheKey, JSON.stringify(savedCustomers));
+
+        // 4. MUITO IMPORTANTE: Reseta o timer do cache
+        // Ao remover o 'timeKey', forçamos o sistema a baixar tudo do zero no próximo F5
+        const timeKey = `cache_time_customers_${currentStoreId}`;
+        localStorage.removeItem(timeKey);
+
+        // 5. Avisa o servidor (para outros aparelhos saberem da mudança)
+        if (window.markAsDirty) {
+            await window.markAsDirty();
         }
 
-        // 4. Atualiza a interface na hora
+        showToast("🗑️ Cliente removido!");
+        
+        // 6. Redesenha a tela na hora
         window.renderCustomerRanking();
-        showToast("🗑️ Cliente removido com sucesso!");
-
-     window.renderCustomerRanking();
-
+        
     } catch (e) {
-        console.error("Erro ao excluir cliente:", e);
-        showToast("❌ Erro ao excluir do banco de dados.");
+        console.error(e);
+        showToast("❌ Erro ao excluir cliente.");
     }
 };
      
