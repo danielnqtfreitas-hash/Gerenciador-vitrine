@@ -1439,7 +1439,8 @@ let customEnd = null;
         let lastOrderCount = 0; // Variável global para controle de som
         let ordersCache = {}; // Guarda os pedidos para o modal de detalhes
 let isFirstLoad = true;
-     let currentFinanceRange = 'today'; // Começa mostrando o faturamento de hoje
+let currentFinanceRange = 'today';
+
         let variationsMatrix = [];
       let needsPublish = false;
 let cachedPublicPlans = null; 
@@ -5038,27 +5039,6 @@ window.stopBarcodeScanner = () => {
         document.getElementById('scanner-container').classList.add('hidden');
     }
 };
-// Variável global para guardar o filtro atual
-let currentFinanceRange = 'today';
-
-window.updateFinanceRange = (range) => {
-    currentFinanceRange = range;
-    
-    // Atualiza visual dos botões
-    const ranges = ['today', 'yesterday', 'week', 'month'];
-    ranges.forEach(r => {
-        const btn = document.getElementById(`fin-range-${r}`);
-        if(btn) {
-            btn.classList.toggle('bg-white', r === range);
-            btn.classList.toggle('shadow-sm', r === range);
-            btn.classList.toggle('text-primary-600', r === range);
-            btn.classList.toggle('text-slate-500', r !== range);
-        }
-    });
-
-    // Recalcula o dashboard
-    window.initFinanceDashboard();
-};
 
 window.applyCustomDate = () => {
     const start = document.getElementById('customDateStart').value;
@@ -5072,21 +5052,6 @@ window.applyCustomDate = () => {
     
     document.getElementById('modalCustomDate').classList.add('hidden');
     updateFinanceRange('custom');
-};
-
-window.updateFinanceRange = (range) => {
-    currentFinanceRange = range;
-    
-    const ranges = ['today', 'yesterday', 'week', 'month'];
-    ranges.forEach(r => {
-        const btn = document.getElementById(`fin-range-${r}`);
-        if(btn) {
-            const isActive = r === range;
-            btn.className = `px-4 py-2 rounded-xl text-[10px] font-black transition-all ${isActive ? 'bg-white shadow-sm text-primary-600' : 'text-slate-500'}`;
-        }
-    });
-
-    window.initFinanceDashboard();
 };
 
 window.initFinanceDashboard = () => {
