@@ -679,6 +679,7 @@ tailwind.config = {
     class="fixed bottom-6 right-6 bg-primary-600 text-white w-14 h-14 rounded-full shadow-lg flex items-center justify-center active:scale-95 transition-all z-40">
     <i data-lucide="plus" class="w-6 h-6"></i>
            </button>
+          <div id="view-finance" class="hidden animate-fade-in"></div>
 <div id="view-dashboard" class="max-w-6xl mx-auto space-y-6 hidden animate-fade-in">
     <div class="bg-white rounded-3xl border border-slate-200 p-8 flex flex-col md:flex-row items-center justify-between shadow-sm gap-6">
         <div class="flex items-center gap-5">
@@ -4168,17 +4169,18 @@ window.deleteOrder = async (id) => {
 };
 
 window.initFinanceDashboard = () => {
-    const main = document.getElementById('main-content');
-    if (!main) return;
+    // CORREÇÃO: Mudamos de 'main-content' para 'view-finance'
+    const view = document.getElementById('view-finance');
+    if (!view) return;
 
-    // DESENHANDO A NOVA INTERFACE COMPLETA
-    main.innerHTML = `
-        <div class="p-4 md:p-8 space-y-8 animate-fade-in max-w-7xl mx-auto">
+    // DESENHANDO A INTERFACE
+    view.innerHTML = `
+        <div class="space-y-8 animate-fade-in max-w-7xl mx-auto">
             
             <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
                 <div>
                     <h3 class="text-3xl font-black text-slate-900 tracking-tight">Gestão Financeira</h3>
-                    <p class="text-slate-500 font-medium text-sm">Controle total de faturamento, lucro e estoque.</p>
+                    <p class="text-slate-500 font-medium text-sm">Controle de faturamento, lucro e estoque.</p>
                 </div>
                 
                 <div class="flex flex-wrap items-center gap-2">
@@ -4192,17 +4194,14 @@ window.initFinanceDashboard = () => {
                 </div>
             </div>
 
-            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6" id="fin-top-cards">
-                </div>
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6" id="fin-top-cards"></div>
 
             <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                
                 <div class="lg:col-span-2 bg-white rounded-[2.5rem] p-8 border border-slate-200 shadow-sm">
                     <h4 class="font-bold text-slate-800 mb-6 flex items-center gap-2 uppercase text-xs tracking-widest">
                         <i data-lucide="wallet" class="w-4 h-4 text-primary-500"></i> Desempenho por Pagamento
                     </h4>
-                    <div id="fin-payment-methods" class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                        </div>
+                    <div id="fin-payment-methods" class="grid grid-cols-1 md:grid-cols-3 gap-4"></div>
                 </div>
 
                 <div class="bg-slate-900 rounded-[2.5rem] p-8 text-white shadow-2xl relative overflow-hidden">
@@ -4219,23 +4218,22 @@ window.initFinanceDashboard = () => {
                                     <p class="text-sm font-bold" id="fin-stock-cost">R$ 0,00</p>
                                 </div>
                                 <div class="bg-emerald-500/10 p-4 rounded-2xl border border-emerald-500/20">
-                                    <p class="text-[9px] font-black text-emerald-500 uppercase">Lucro em Estoque (Potencial)</p>
+                                    <p class="text-[9px] font-black text-emerald-500 uppercase">Lucro Potencial</p>
                                     <p class="text-lg font-black text-emerald-400" id="fin-profit-potential">R$ 0,00</p>
                                 </div>
                             </div>
                         </div>
                     </div>
-                    <div class="absolute -right-10 -bottom-10 w-40 h-40 bg-primary-600/10 rounded-full blur-3xl"></div>
                 </div>
             </div>
 
-            <div class="bg-white rounded-[2.5rem] p-8 border border-slate-200 shadow-sm">
-                 <h4 class="font-bold text-slate-800 mb-8 uppercase text-xs tracking-widest">Evolução de Vendas</h4>
-                 <div class="h-64"><canvas id="growthChart"></canvas></div>
+            <div class="bg-white rounded-[2.5rem] p-8 border border-slate-200 shadow-sm h-80">
+                 <canvas id="growthChart"></canvas>
             </div>
         </div>
     `;
 
+    // Chama a função que preenche os números
     window.updateFinanceView('today');
     if(window.lucide) lucide.createIcons();
 };
