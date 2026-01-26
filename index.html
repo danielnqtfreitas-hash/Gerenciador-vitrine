@@ -3556,12 +3556,12 @@ window.handleBannerSubmit = async (e) => {
 
     // --- FINANCEIRO ---
     if (tabName === 'finance') {
-        setTimeout(() => {
-            if (typeof window.initFinanceDashboard === 'function') {
-                window.initFinanceDashboard();
-            }
-        }, 100);
-    }
+    setTimeout(() => {
+        if (typeof window.initFinanceDashboard === 'function') {
+            window.initFinanceDashboard();
+        }
+    }, 150); // Um pequeno delay para garantir que o HTML renderizou
+}
 
     // --- BOTÃO DO MENU ---
     const activeBtn = document.getElementById(`nav-${tabName}`);
