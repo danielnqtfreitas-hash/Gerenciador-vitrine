@@ -1133,6 +1133,27 @@ tailwind.config = {
             </form>       
             </div>
          </div>
+
+     <div id="modalCustomDate" class="modal-overlay fixed inset-0 z-[200] flex items-center justify-center p-4 hidden">
+    <div class="bg-white rounded-[2rem] shadow-2xl w-full max-w-sm p-8 animate-fade-in">
+        <h3 class="text-lg font-bold text-slate-800 mb-6">Filtrar por Período</h3>
+        <div class="space-y-4">
+            <div>
+                <label class="text-[10px] font-black text-slate-400 uppercase">Data Inicial</label>
+                <input type="date" id="customDateStart" class="input-pro">
+            </div>
+            <div>
+                <label class="text-[10px] font-black text-slate-400 uppercase">Data Final</label>
+                <input type="date" id="customDateEnd" class="input-pro">
+            </div>
+        </div>
+        <div class="flex gap-3 mt-8">
+            <button onclick="document.getElementById('modalCustomDate').classList.add('hidden')" class="flex-1 py-3 text-slate-400 font-bold uppercase text-xs">Cancelar</button>
+            <button onclick="window.applyCustomDate()" class="flex-1 bg-slate-900 text-white py-3 rounded-xl font-bold uppercase text-xs shadow-lg">Aplicar Filtro</button>
+        </div>
+    </div>
+</div>
+
       
     <!-- MODAL RECORTE -->
     <div id="cropModal" class="modal-overlay fixed inset-0 z-[200] flex items-center justify-center p-4 hidden">
@@ -5187,21 +5208,35 @@ function renderPaymentChart(methods) {
     const ctx = document.getElementById('paymentMethodsChart')?.getContext('2d');
     if (!ctx) return;
     if (paymentChartInstance) paymentChartInstance.destroy();
+
+    const values = Object.values(methods).map(m => m.rev);
+    const labels = Object.values(methods).map(m => m.label);
+    const colors = Object.values(methods).map(m => m.color);
+
     paymentChartInstance = new Chart(ctx, {
         type: 'doughnut',
         data: {
-            labels: Object.values(methods).map(m => m.label),
+            labels: labels,
             datasets: [{
-                data: Object.values(methods).map(m => m.rev),
-                backgroundColor: Object.values(methods).map(m => m.color),
-                borderWidth: 0,
-                cutout: '70%'
+                data: values,
+                backgroundColor: colors,
+                borderWidth: 2,
+                cutout: '65%'
             }]
         },
-        options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } }
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    display: true, // AQUI: Faz aparecer os nomes embaixo
+                    position: 'bottom',
+                    labels: { boxWidth: 12, font: { size: 10, weight: 'bold' } }
+                }
+            }
+        }
     });
 }
-
 
 window.expandImage = (url) => {
     const modal = document.getElementById('imageViewerModal');
@@ -6007,6 +6042,25 @@ window.selectCustomerForOrder = (phone) => {
         showToast(`✅ Dados de ${c.name} carregados!`);
     }
 };
+
+     window.applyCustomDate = () => {
+    const start = document.getElementById('customDateStart').value;
+    const end = document.getElementById('customDateEnd').value;
+    
+    if(!start || !end) return showToast("⚠️ Escolha o início e o fim.");
+    
+    // Converte as datas para milissegundos para o banco de dados entender
+    customStart = new Date(start + "T00:00:00").getTime();
+    customEnd = new Date(end + "T23:59:59").getTime();
+    
+    document.getElementById('modalCustomDate').classList.add('hidden');
+    
+    // Define o modo como 'custom' e atualiza
+    currentFinanceRange = 'custom';
+    window.initFinanceDashboard();
+    showToast("📅 Período filtrado!");
+};
+
 
     </script>
 </body>
