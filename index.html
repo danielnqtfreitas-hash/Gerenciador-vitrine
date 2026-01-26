@@ -1427,6 +1427,7 @@ let customEnd = null;
         let ordersCache = {}; // Guarda os pedidos para o modal de detalhes
 let isFirstLoad = true;
      let paymentChartInstance = null;
+let currentFinanceRange = 'today';
         let variationsMatrix = [];
       let needsPublish = false;
 let cachedPublicPlans = null; 
@@ -4271,153 +4272,6 @@ window.deleteOrder = async (id) => {
     }
 };
 
-window.initFinanceDashboard = () => {
-    const now = new Date();
-    const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
-    const monthStart = new Date(now.getFullYear(), now.getMonth(), 1).getTime();
-    
-    let filterStart = todayStart;
-    let filterEnd = Infinity;
-
-    // Lógica de Filtro baseada no botão clicado
-    if (currentFinanceRange === 'week') {
-        filterStart = now.getTime() - (7 * 24 * 60 * 60 * 1000);
-    } else if (currentFinanceRange === 'month') {
-        filterStart = monthStart;
-    } else if (currentFinanceRange === 'custom') {
-        filterStart = customStart;
-        filterEnd = customEnd;
-    }
-
-    // Acumuladores de métricas
-    let metrics = {
-        totalRev: 0,
-        totalCost: 0,
-        orderCount: 0,
-        byMethod: {
-            pix: { rev: 0, cost: 0, count: 0, label: 'PIX', color: '#8b5cf6' },
-            dinheiro: { rev: 0, cost: 0, count: 0, label: 'Dinheiro', color: '#22c55e' },
-            cartao_credito: { rev: 0, cost: 0, count: 0, label: 'Cartão', color: '#3b82f6' },
-            outros: { rev: 0, cost: 0, count: 0, label: 'Outros', color: '#94a3b8' }
-        }
-    };
-
-    // 1. Processar Pedidos (Filtragem e Cálculo)
-    const orders = Object.values(ordersCache);
-    orders.forEach(order => {
-        let orderTime = order.createdAt?.toMillis ? order.createdAt.toMillis() : 0;
-        
-        if (order.status !== 'canceled' && orderTime >= filterStart && orderTime <= filterEnd) {
-            const rev = Number(order.total) || 0;
-            metrics.totalRev += rev;
-            metrics.orderCount++;
-
-            // Calcular Custo do Pedido
-            let orderCost = 0;
-            if (order.items) {
-                order.items.forEach(item => {
-                    const prodOriginal = allProducts.find(p => p.id === item.id);
-                    const itemCost = item.cost || (prodOriginal ? prodOriginal.cost : 0);
-                    orderCost += (Number(itemCost) * Number(item.qty));
-                });
-            }
-            metrics.totalCost += orderCost;
-
-            // Agrupar por método de pagamento
-            let method = order.paymentMethod?.toLowerCase() || 'outros';
-            if (method.includes('pix')) method = 'pix';
-            if (method.includes('cartao')) method = 'cartao_credito';
-            if (!metrics.byMethod[method]) method = 'outros';
-            
-            metrics.byMethod[method].rev += rev;
-            metrics.byMethod[method].cost += orderCost;
-            metrics.byMethod[method].count++;
-        }
-    });
-
-    // 2. Cálculos Finais
-    const profit = metrics.totalRev - metrics.totalCost;
-    const avgTicket = metrics.orderCount > 0 ? metrics.totalRev / metrics.orderCount : 0;
-    const margin = metrics.totalRev > 0 ? (profit / metrics.totalRev) * 100 : 0;
-
-    // 3. Atualizar a Interface (IDs mapeados do seu HTML)
-    const setTxt = (id, txt) => {
-        const el = document.getElementById(id);
-        if(el) el.textContent = txt;
-    };
-
-    setTxt('fin-total-rev', `R$ ${metrics.totalRev.toFixed(2).replace('.',',')}`);
-    setTxt('fin-total-profit', `R$ ${profit.toFixed(2).replace('.',',')}`);
-    setTxt('fin-order-count', `${metrics.orderCount} pedidos no período`);
-    setTxt('fin-avg-ticket', `R$ ${avgTicket.toFixed(2).replace('.',',')}`);
-    setTxt('fin-margin', `${margin.toFixed(1)}% margem`);
-
-    // Atualizar Estoque
-    let stockValue = 0, stockCost = 0;
-    allProducts.forEach(p => {
-        const qty = Number(p.stock) || 0;
-        stockValue += (Number(p.value) || 0) * qty;
-        stockCost += (Number(p.cost) || 0) * qty;
-    });
-    setTxt('fin-stock-total-value', `R$ ${stockValue.toFixed(2).replace('.',',')}`);
-    setTxt('fin-stock-profit-potential', `Lucro oculto: R$ ${(stockValue - stockCost).toFixed(2).replace('.',',')}`);
-
-    // 4. Renderizar Componentes Visuais
-    renderPaymentTable(metrics.byMethod);
-    renderPaymentChart(metrics.byMethod);
-    if (typeof renderTopProfitable === 'function') renderTopProfitable();
-    if (typeof initGrowthChart === 'function') initGrowthChart();
-
-    if (window.lucide) lucide.createIcons();
-};
-
-function renderPaymentTable(methods) {
-    const tbody = document.getElementById('payment-table-body');
-    if(!tbody) return;
-    tbody.innerHTML = Object.values(methods).map(m => `
-        <tr class="text-xs">
-            <td class="py-4">
-                <div class="flex items-center gap-2">
-                    <span class="w-2 h-2 rounded-full" style="background-color: ${m.color}"></span>
-                    <span class="font-bold text-slate-700 uppercase">${m.label}</span>
-                </div>
-            </td>
-            <td class="py-4 text-center font-medium text-slate-500">${m.count}</td>
-            <td class="py-4 text-right font-bold text-slate-800">R$ ${m.rev.toFixed(2).replace('.',',')}</td>
-            <td class="py-4 text-right font-bold text-green-600">R$ ${(m.rev - m.cost).toFixed(2).replace('.',',')}</td>
-        </tr>
-    `).join('');
-}
-
-function renderPaymentChart(methods) {
-    const canvas = document.getElementById('paymentMethodsChart');
-    if (!canvas) return;
-    const ctx = canvas.getContext('2d');
-    const data = Object.values(methods).map(m => m.rev);
-    const labels = Object.values(methods).map(m => m.label);
-    const colors = Object.values(methods).map(m => m.color);
-
-    if (paymentChartInstance) paymentChartInstance.destroy();
-    
-    paymentChartInstance = new Chart(ctx, {
-        type: 'doughnut',
-        data: {
-            labels: labels,
-            datasets: [{
-                data: data,
-                backgroundColor: colors,
-                borderWidth: 0,
-                cutout: '75%'
-            }]
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            plugins: { legend: { display: false } }
-        }
-    });
-}
-
         window.initGrowthChart = () => {
     const ctx = document.getElementById('growthChart').getContext('2d');
     
@@ -5221,117 +5075,136 @@ window.updateFinanceRange = (range) => {
 
     window.initFinanceDashboard();
 };
-
+     
+// Variável de controle global para o gráfico
 window.initFinanceDashboard = () => {
+    console.log("Calculando Financeiro... Pedidos no cache:", Object.keys(ordersCache).length);
+    
     const now = new Date();
     const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
-    const monthStart = new Date(now.getFullYear(), now.getMonth(), 1).getTime(); // Fixo: 1º dia deste mês
+    const monthStart = new Date(now.getFullYear(), now.getMonth(), 1).getTime();
     
     let filterStart = todayStart;
     let filterEnd = Infinity;
-    let label = "Vendas Hoje";
 
-    // Lógica do filtro de botões
-    if (currentFinanceRange === 'yesterday') {
-        filterStart = todayStart - (24 * 60 * 60 * 1000);
-        filterEnd = todayStart;
-        label = "Vendas Ontem";
-    } else if (currentFinanceRange === 'week') {
+    // Lógica de Filtro
+    if (currentFinanceRange === 'week') {
         filterStart = now.getTime() - (7 * 24 * 60 * 60 * 1000);
-        label = "Últimos 7 Dias";
     } else if (currentFinanceRange === 'month') {
         filterStart = monthStart;
-        label = "Vendas no Mês";
     } else if (currentFinanceRange === 'custom') {
-        filterStart = customStart;
-        filterEnd = customEnd;
-        label = "Período Selecionado";
+        filterStart = customStart || 0;
+        filterEnd = customEnd || Infinity;
     }
 
-    let revFiltered = 0;      // Valor que muda com o filtro
-    let countFiltered = 0;    // Quantidade que muda com o filtro
-    let revMonthFixed = 0;    // Valor SEMPRE do mês atual (acumulado)
-    let revTotalAll = 0;      // Valor histórico total
+    let metrics = {
+        totalRev: 0,
+        totalCost: 0,
+        orderCount: 0,
+        byMethod: {
+            pix: { rev: 0, cost: 0, count: 0, label: 'PIX', color: '#8b5cf6' },
+            dinheiro: { rev: 0, cost: 0, count: 0, label: 'Dinheiro', color: '#22c55e' },
+            cartao_credito: { rev: 0, cost: 0, count: 0, label: 'Cartão', color: '#3b82f6' },
+            outros: { rev: 0, cost: 0, count: 0, label: 'Outros', color: '#94a3b8' }
+        }
+    };
 
+    // 1. Processar Pedidos
     Object.values(ordersCache).forEach(order => {
+        // Converte data do Firebase ou JS puro para timestamp
         let orderTime = 0;
         if (order.createdAt?.toMillis) orderTime = order.createdAt.toMillis();
         else if (order.createdAt?.toDate) orderTime = order.createdAt.toDate().getTime();
+        else orderTime = new Date(order.createdAt).getTime();
         
-        const value = Number(order.total) || 0;
+        if (order.status !== 'canceled' && orderTime >= filterStart && orderTime <= filterEnd) {
+            const rev = Number(order.total) || 0;
+            metrics.totalRev += rev;
+            metrics.orderCount++;
 
-        if (order.status !== 'canceled' && order.status !== 'Cancelado') {
-            revTotalAll += value;
+            let orderCost = 0;
+            order.items.forEach(item => {
+                const prodOriginal = allProducts.find(p => p.id === item.id);
+                const itemCost = item.cost || (prodOriginal ? prodOriginal.cost : 0);
+                orderCost += (Number(itemCost) * Number(item.qty));
+            });
+            metrics.totalCost += orderCost;
 
-            // 1. Soma para o filtro selecionado (Hoje/Ontem/Calendário)
-            if (orderTime >= filterStart && orderTime <= filterEnd) {
-                revFiltered += value;
-                countFiltered++;
-            }
-
-            // 2. Soma FIXA para o acumulado do mês (Independente do filtro)
-            if (orderTime >= monthStart) {
-                revMonthFixed += value;
-            }
+            let method = (order.paymentMethod || 'outros').toLowerCase();
+            if (method.includes('pix')) method = 'pix';
+            if (method.includes('cartao')) method = 'cartao_credito';
+            if (!metrics.byMethod[method]) method = 'outros';
+            
+            metrics.byMethod[method].rev += rev;
+            metrics.byMethod[method].cost += orderCost;
+            metrics.byMethod[method].count++;
         }
     });
+
+    // 2. Atualizar UI (Mapeado exatamente para os IDs do seu HTML)
+    const profit = metrics.totalRev - metrics.totalCost;
+    const avgTicket = metrics.orderCount > 0 ? metrics.totalRev / metrics.orderCount : 0;
+    const margin = metrics.totalRev > 0 ? (profit / metrics.totalRev) * 100 : 0;
 
     const setTxt = (id, txt) => {
         const el = document.getElementById(id);
         if(el) el.textContent = txt;
     };
 
-    // Atualiza o título do card principal conforme o botão
-    const cardTitle = document.querySelector('#view-finance p.text-slate-400');
-    if(cardTitle) cardTitle.textContent = label.toUpperCase();
+    setTxt('fin-total-rev', `R$ ${metrics.totalRev.toFixed(2).replace('.',',')}`);
+    setTxt('fin-total-profit', `R$ ${profit.toFixed(2).replace('.',',')}`);
+    setTxt('fin-order-count', `${metrics.orderCount} pedidos no período`);
+    setTxt('fin-avg-ticket', `R$ ${avgTicket.toFixed(2).replace('.',',')}`);
+    setTxt('fin-margin', `${margin.toFixed(1)}% margem`);
 
-    // EXIBIÇÃO DOS DADOS
-    setTxt('fin-rev-day', `R$ ${revFiltered.toFixed(2).replace('.',',')}`); // Valor Filtrado
-    setTxt('fin-orders-day', `${countFiltered} pedidos no período`);
-    
-    setTxt('fin-rev-month', `R$ ${revMonthFixed.toFixed(2).replace('.',',')}`); // FIXO: Acumulado do Mês
-    setTxt('fin-rev-total', `R$ ${revTotalAll.toFixed(2).replace('.',',')}`);
-
-    // Cálculos de estoque permanecem iguais
-    let stockValue = 0, stockCost = 0, totalItems = 0;
+    // Valor de Estoque
+    let stockValue = 0, stockCost = 0;
     allProducts.forEach(p => {
         const qty = Number(p.stock) || 0;
         stockValue += (Number(p.value) || 0) * qty;
         stockCost += (Number(p.cost) || 0) * qty;
-        totalItems += qty;
     });
+    setTxt('fin-stock-total-value', `R$ ${stockValue.toFixed(2).replace('.',',')}`);
+    setTxt('fin-stock-profit-potential', `Lucro oculto: R$ ${(stockValue - stockCost).toFixed(2).replace('.',',')}`);
 
-    setTxt('fin-stock-value', `R$ ${stockValue.toFixed(2).replace('.',',')}`);
-    setTxt('fin-stock-cost', `R$ ${stockCost.toFixed(2).replace('.',',')}`);
-    setTxt('fin-profit-potential', `R$ ${(stockValue - stockCost).toFixed(2).replace('.',',')}`);
-    setTxt('fin-stock-count', `${totalItems} unidades disponíveis`);
-
-     if (typeof window.calculateSalesInsights === 'function') {
-        window.calculateSalesInsights();
-    }
-
-    if (typeof initGrowthChart === 'function') initGrowthChart();
-
-    // Se houver ícones novos nos rankings, o Lucide precisa ser chamado por último
-    if (typeof lucide !== 'undefined') lucide.createIcons();
+    // 3. Gráficos e Tabelas
+    renderPaymentTable(metrics.byMethod);
+    renderPaymentChart(metrics.byMethod);
 };
 
-        window.updatePremiumUI = () => {
-    if (!storeConfig) return;
+function renderPaymentTable(methods) {
+    const tbody = document.getElementById('payment-table-body');
+    if(!tbody) return;
+    tbody.innerHTML = Object.values(methods).map(m => `
+        <tr class="text-xs">
+            <td class="py-4"><div class="flex items-center gap-2"><span class="w-2 h-2 rounded-full" style="background-color: ${m.color}"></span><span class="font-bold text-slate-700 uppercase">${m.label}</span></div></td>
+            <td class="py-4 text-center font-medium text-slate-500">${m.count}</td>
+            <td class="py-4 text-right font-bold text-slate-800">R$ ${m.rev.toFixed(2).replace('.',',')}</td>
+            <td class="py-4 text-right font-bold text-green-600">R$ ${(m.rev - m.cost).toFixed(2).replace('.',',')}</td>
+        </tr>
+    `).join('');
+}
 
-    // Ajuste Visual na Sidebar (Financeiro)
-    const navFinance = document.getElementById('nav-finance');
-    if (navFinance) {
-        if (storeConfig.hasFinance !== true) {
-            navFinance.innerHTML = `<i data-lucide="lock" class="w-5 h-5 mr-3"></i> <span class="opacity-50">Financeiro (PRO)</span>`;
-            navFinance.classList.add('cursor-not-allowed');
-        } else {
-            navFinance.innerHTML = `<i data-lucide="dollar-sign" class="w-5 h-5 mr-3"></i> Financeiro`;
-            navFinance.classList.remove('cursor-not-allowed');
-        }
-    }
-    lucide.createIcons();
-};
+function renderPaymentChart(methods) {
+    const ctx = document.getElementById('paymentMethodsChart')?.getContext('2d');
+    if (!ctx) return;
+    if (paymentChartInstance) paymentChartInstance.destroy();
+    paymentChartInstance = new Chart(ctx, {
+        type: 'doughnut',
+        data: {
+            labels: Object.values(methods).map(m => m.label),
+            datasets: [{
+                data: Object.values(methods).map(m => m.rev),
+                backgroundColor: Object.values(methods).map(m => m.color),
+                borderWidth: 0,
+                cutout: '70%'
+            }]
+        },
+        options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } }
+    });
+}
+
+
 window.expandImage = (url) => {
     const modal = document.getElementById('imageViewerModal');
     const img = document.getElementById('expandedImage');
