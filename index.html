@@ -762,103 +762,111 @@ tailwind.config = {
     <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div>
             <h3 class="text-3xl font-extrabold text-slate-900 tracking-tight">Gestão Financeira</h3>
-            <p class="text-slate-500 font-medium">Análise de rentabilidade e fluxo de caixa.</p>
+            <p class="text-slate-500 font-medium">Faturamento e desempenho em tempo real.</p>
         </div>
         
-        <div class="flex flex-wrap items-center gap-2">
-            <div class="flex bg-slate-100 p-1 rounded-2xl border border-slate-200">
-                <button onclick="updateFinanceRange('today')" id="fin-range-today" class="px-4 py-2 rounded-xl text-[10px] font-black transition-all">HOJE</button>
-                <button onclick="updateFinanceRange('week')" id="fin-range-week" class="px-4 py-2 rounded-xl text-[10px] font-black transition-all">7 DIAS</button>
-                <button onclick="updateFinanceRange('month')" id="fin-range-month" class="px-4 py-2 rounded-xl text-[10px] font-black transition-all">MÊS</button>
+<div class="flex flex-wrap items-center gap-2 mb-6">
+    <div class="flex bg-slate-100 p-1 rounded-2xl border border-slate-200">
+        <button onclick="updateFinanceRange('today')" id="fin-range-today" class="px-4 py-2 rounded-xl text-[10px] font-black transition-all bg-white shadow-sm text-primary-600">HOJE</button>
+        <button onclick="updateFinanceRange('yesterday')" id="fin-range-yesterday" class="px-4 py-2 rounded-xl text-[10px] font-black transition-all text-slate-500">ONTEM</button>
+        <button onclick="updateFinanceRange('week')" id="fin-range-week" class="px-4 py-2 rounded-xl text-[10px] font-black transition-all text-slate-500">7 DIAS</button>
+        <button onclick="updateFinanceRange('month')" id="fin-range-month" class="px-4 py-2 rounded-xl text-[10px] font-black transition-all text-slate-500">MÊS</button>
+    </div>
+    
+    <button onclick="document.getElementById('modalCustomDate').classList.remove('hidden')" class="flex items-center gap-2 px-4 py-2 bg-white border border-slate-200 rounded-2xl text-[10px] font-black text-slate-600 hover:bg-slate-50 transition-all shadow-sm">
+        <i data-lucide="calendar" class="w-3.5 h-3.5"></i> PERSONALIZADO
+    </button>
+</div>
+
+<div id="modalCustomDate" class="modal-overlay fixed inset-0 z-[200] flex items-center justify-center p-4 hidden">
+    <div class="bg-white rounded-[2rem] shadow-2xl w-full max-w-xs p-6 animate-fade-in">
+        <h4 class="text-sm font-black text-slate-800 uppercase mb-4 tracking-widest">Filtrar Período</h4>
+        <div class="space-y-4">
+            <div>
+                <label class="text-[10px] font-bold text-slate-400 uppercase ml-1">Data Inicial</label>
+                <input type="date" id="customDateStart" class="input-pro">
             </div>
-            <button onclick="document.getElementById('modalCustomDate').classList.remove('hidden')" class="p-2.5 bg-white border border-slate-200 rounded-xl shadow-sm">
-                <i data-lucide="calendar" class="w-4 h-4 text-slate-600"></i>
-            </button>
+            <div>
+                <label class="text-[10px] font-bold text-slate-400 uppercase ml-1">Data Final</label>
+                <input type="date" id="customDateEnd" class="input-pro">
+            </div>
+            <div class="flex gap-2 pt-2">
+                <button onclick="document.getElementById('modalCustomDate').classList.add('hidden')" class="flex-1 py-3 text-slate-400 text-[10px] font-black uppercase">Fechar</button>
+                <button onclick="applyCustomDate()" class="flex-1 bg-slate-900 text-white py-3 rounded-xl text-[10px] font-black uppercase shadow-lg">Filtrar</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+        <div class="flex items-center gap-2 bg-white p-2 rounded-2xl shadow-sm border border-slate-100">
+            <div class="w-10 h-10 bg-green-100 text-green-600 rounded-xl flex items-center justify-center">
+                <i data-lucide="trending-up" class="w-6 h-6"></i>
+            </div>
+            <div class="pr-4">
+                <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Status do Caixa</p>
+                <p class="text-xs font-bold text-green-600">Fluxo Positivo</p>
+            </div>
         </div>
     </div>
 
-    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        <div class="bg-slate-900 p-6 rounded-[2rem] text-white shadow-xl relative overflow-hidden">
-            <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Faturamento Total</p>
-            <h3 class="text-2xl font-black" id="fin-total-rev">R$ 0,00</h3>
-            <p class="text-[9px] text-primary-400 mt-2 font-bold" id="fin-order-count">0 pedidos no período</p>
-            <i data-lucide="trending-up" class="absolute -right-2 -bottom-2 w-16 h-16 opacity-10"></i>
-        </div>
-
-        <div class="bg-white p-6 rounded-[2rem] border border-slate-200 shadow-sm">
-            <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Lucro Líquido</p>
-            <h3 class="text-2xl font-black text-green-600" id="fin-total-profit">R$ 0,00</h3>
-            <div class="flex items-center gap-1 mt-2">
-                <span class="text-[9px] font-black px-2 py-0.5 bg-green-50 text-green-600 rounded-full border border-green-100" id="fin-margin">0% margem</span>
-            </div>
-        </div>
-
-        <div class="bg-white p-6 rounded-[2rem] border border-slate-200 shadow-sm">
-            <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Ticket Médio</p>
-            <h3 class="text-2xl font-black text-slate-800" id="fin-avg-ticket">R$ 0,00</h3>
-            <p class="text-[9px] text-slate-400 mt-2 font-medium">Média por venda</p>
-        </div>
-
-        <div class="bg-amber-50 p-6 rounded-[2rem] border border-amber-100 shadow-sm">
-            <p class="text-[10px] font-bold text-amber-600 uppercase tracking-widest mb-1">Patrimônio em Estoque</p>
-            <h3 class="text-2xl font-black text-amber-900" id="fin-stock-total-value">R$ 0,00</h3>
-            <p class="text-[9px] text-amber-600 mt-2 font-bold" id="fin-stock-profit-potential">Lucro oculto: R$ 0,00</p>
-        </div>
-    </div>
-
-    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <div class="lg:col-span-1 bg-white p-8 rounded-[2.5rem] border border-slate-200 shadow-sm">
-            <h4 class="text-sm font-black text-slate-800 uppercase mb-6 flex items-center gap-2">
-                <i data-lucide="pie-chart" class="w-4 h-4 text-primary-500"></i> Divisão por Pagamento
-            </h4>
-            <div class="h-48 relative">
-                <canvas id="paymentMethodsChart"></canvas>
-            </div>
-            <div id="payment-legend" class="mt-6 space-y-2">
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div class="relative overflow-hidden bg-slate-900 rounded-[2.5rem] p-8 text-white shadow-2xl">
+            <div class="relative z-10">
+                <p class="text-xs font-bold text-slate-400 uppercase tracking-[0.2em] mb-2">Vendas Hoje</p>
+                <h3 class="text-4xl font-black mb-4" id="fin-rev-day">R$ 0,00</h3>
+                <div class="flex items-center gap-2 text-green-400 text-xs font-bold">
+                    <i data-lucide="shopping-bag" class="w-4 h-4"></i>
+                    <span id="fin-orders-day">0 pedidos hoje</span>
                 </div>
+            </div>
+            <div class="absolute -right-10 -bottom-10 w-40 h-40 bg-primary-600/20 rounded-full blur-3xl"></div>
         </div>
 
-        <div class="lg:col-span-2 bg-white p-8 rounded-[2.5rem] border border-slate-200 shadow-sm">
-            <h4 class="text-sm font-black text-slate-800 uppercase mb-6 flex items-center gap-2">
-                <i data-lucide="layout-list" class="w-4 h-4 text-primary-500"></i> Detalhes por Modalidade
-            </h4>
-            <div class="overflow-x-auto">
-                <table class="w-full text-left">
-                    <thead>
-                        <tr class="text-[10px] uppercase text-slate-400 border-b border-slate-50">
-                            <th class="pb-4 font-black">Método</th>
-                            <th class="pb-4 font-black text-center">Vendas</th>
-                            <th class="pb-4 font-black text-right">Faturamento</th>
-                            <th class="pb-4 font-black text-right">Lucro Estimado</th>
-                        </tr>
-                    </thead>
-                    <tbody id="payment-table-body" class="divide-y divide-slate-50">
-                        </tbody>
-                </table>
+        <div class="bg-white rounded-[2.5rem] p-8 border border-slate-200 shadow-sm">
+            <p class="text-xs font-bold text-slate-400 uppercase tracking-widest mb-2">Faturamento Mensal</p>
+            <h3 class="text-3xl font-black text-slate-800" id="fin-rev-month">R$ 0,00</h3>
+            <div class="mt-4 flex items-center gap-2">
+                <span class="px-2 py-1 bg-blue-50 text-blue-600 text-[10px] font-black rounded-lg uppercase">Acumulado</span>
             </div>
+        </div>
+
+        <div class="bg-white rounded-[2.5rem] p-8 border border-slate-200 shadow-sm border-l-4 border-l-green-500">
+            <p class="text-xs font-bold text-slate-400 uppercase tracking-widest mb-2">Lucro Potencial</p>
+            <h3 class="text-3xl font-black text-green-600" id="fin-profit-potential">R$ 0,00</h3>
+            <p class="text-[10px] text-slate-400 mt-2 font-medium italic">Baseado no stock atual.</p>
         </div>
     </div>
 
-    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <div class="bg-white p-8 rounded-[2.5rem] border border-slate-200 shadow-sm">
-            <h4 class="text-sm font-black text-slate-800 uppercase mb-6 flex items-center gap-2">
-                <i data-lucide="award" class="w-4 h-4 text-yellow-500"></i> Produtos mais Lucrativos
-            </h4>
-            <div id="fin-top-profitable" class="space-y-4">
-                <p class="text-xs text-slate-400 italic">Analisando margens...</p>
-            </div>
-        </div>
-
-        <div class="bg-white p-8 rounded-[2.5rem] border border-slate-200 shadow-sm">
-            <h4 class="text-sm font-black text-slate-800 uppercase mb-6 flex items-center gap-2">
-                <i data-lucide="bar-chart-3" class="w-4 h-4 text-primary-500"></i> Desempenho de Vendas
-            </h4>
-            <div class="h-48 relative">
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <div class="lg:col-span-2 bg-white rounded-[2.5rem] p-8 border border-slate-200 shadow-sm">
+            <h4 class="font-bold text-slate-800 mb-8">Evolução de Vendas</h4>
+            <div class="h-64 relative">
                 <canvas id="growthChart"></canvas>
             </div>
         </div>
+
+        <div class="space-y-6">
+            <div class="bg-primary-600 rounded-[2.5rem] p-6 text-white shadow-xl">
+                <p class="text-[10px] font-black opacity-60 uppercase tracking-widest mb-1">Total Histórico</p>
+                <h3 class="text-2xl font-black" id="fin-rev-total">R$ 0,00</h3>
+            </div>
+
+            <div class="bg-white rounded-[2.5rem] p-6 border border-slate-200 shadow-sm">
+                <p class="text-xs font-black text-slate-500 uppercase tracking-widest mb-4">Patrimônio em Stock</p>
+                <h3 class="text-xl font-bold text-slate-800" id="fin-stock-value">R$ 0,00</h3>
+                <div class="mt-4 p-3 bg-slate-50 rounded-2xl border border-slate-100">
+                    <p class="text-[9px] font-black text-slate-400 uppercase">Custo de Aquisição</p>
+                    <p class="text-sm font-bold text-slate-700" id="fin-stock-cost">R$ 0,00</p>
+                </div>
+                <p class="text-[10px] text-slate-400 font-bold mt-2 text-center" id="fin-stock-count">0 unidades</p>
+            </div>
+        </div>
     </div>
-             </div>
+
+    <div id="fin-growth-feedback" class="bg-slate-100 rounded-[2rem] p-6 text-slate-600 text-center border-2 border-dashed border-slate-200">
+    </div>
+</div>
          
 
             <div id="view-banners" class="max-w-6xl mx-auto space-y-6 hidden animate-fade-in">
@@ -1133,27 +1141,6 @@ tailwind.config = {
             </form>       
             </div>
          </div>
-
-     <div id="modalCustomDate" class="modal-overlay fixed inset-0 z-[200] flex items-center justify-center p-4 hidden">
-    <div class="bg-white rounded-[2rem] shadow-2xl w-full max-w-sm p-8 animate-fade-in">
-        <h3 class="text-lg font-bold text-slate-800 mb-6">Filtrar por Período</h3>
-        <div class="space-y-4">
-            <div>
-                <label class="text-[10px] font-black text-slate-400 uppercase">Data Inicial</label>
-                <input type="date" id="customDateStart" class="input-pro">
-            </div>
-            <div>
-                <label class="text-[10px] font-black text-slate-400 uppercase">Data Final</label>
-                <input type="date" id="customDateEnd" class="input-pro">
-            </div>
-        </div>
-        <div class="flex gap-3 mt-8">
-            <button onclick="document.getElementById('modalCustomDate').classList.add('hidden')" class="flex-1 py-3 text-slate-400 font-bold uppercase text-xs">Cancelar</button>
-            <button onclick="window.applyCustomDate()" class="flex-1 bg-slate-900 text-white py-3 rounded-xl font-bold uppercase text-xs shadow-lg">Aplicar Filtro</button>
-        </div>
-    </div>
-</div>
-
       
     <!-- MODAL RECORTE -->
     <div id="cropModal" class="modal-overlay fixed inset-0 z-[200] flex items-center justify-center p-4 hidden">
@@ -1447,8 +1434,6 @@ let customEnd = null;
         let lastOrderCount = 0; // Variável global para controle de som
         let ordersCache = {}; // Guarda os pedidos para o modal de detalhes
 let isFirstLoad = true;
-     let paymentChartInstance = null;
-let currentFinanceRange = 'today';
         let variationsMatrix = [];
       let needsPublish = false;
 let cachedPublicPlans = null; 
@@ -1509,72 +1494,37 @@ onMessage(messaging, (payload) => {
 // 3. Função de carregar dados (mantida igual)
 async function CarregarDadosPainel() {
     try {
-        // 1. LEITURA OBRIGATÓRIA DA CONFIGURAÇÃO
+        // 1. A ÚNICA LEITURA OBRIGATÓRIA: Pega a configuração e o "Sinalizador de Mudança" (lastUpdate)
         const configRef = doc(db, `stores/${currentStoreId}/config/store`);
-        const configSnap = await getDoc(configRef);
+        const configSnap = await getDoc(configRef); // getDoc puro = 1 leitura única
         
         if (!configSnap.exists()) return;
-        const data = configSnap.data();
-
-        // 2. SINCRONIZAÇÃO DE VARIÁVEIS E LIMITES (O que faz o Dashboard aparecer)
-        storeConfig = {
-            ...data,
-            maxProducts: parseInt(data.maxProducts || 0),
-            maxBanners: parseInt(data.maxBanners || 0),
-            hasCarousel: data.hasCarousel === true,
-            hasFinance: data.hasFinance === true
-        };
-
+        storeConfig = configSnap.data();
         const serverLastUpdate = storeConfig.lastUpdate?.toString() || "0";
 
-        // 3. PREENCHIMENTO DOS INPUTS DE CONFIGURAÇÃO E PIX
-        const campos = {
-            'confStoreName': data.storeName || '',
-            'confWhatsapp': data.whatsappNumber || '',
-            'confFooter': data.footerText || '',
-            'confColorPrimary': data.primaryColor || '#8b5cf6',
-            'cfgPixKey': data.pix?.key || '',
-            'cfgPixName': data.pix?.name || '',
-            'cfgPixBank': data.pix?.bank || ''
-        };
-
-        for (const [id, valor] of Object.entries(campos)) {
-            const el = document.getElementById(id);
-            if (el) el.value = valor;
-        }
-
-        // 4. CARREGAMENTO INTELIGENTE (COLEÇÕES)
+        // 2. CARREGAMENTO INTELIGENTE (Custo zero se nada mudou no banco)
+        // Só baixa do Firebase se o lastUpdate do servidor for diferente do que temos no navegador
         allProducts = await loadCollectionSmart('products', `prods_${currentStoreId}`, serverLastUpdate);
         allCategories = await loadCollectionSmart('categories', `cats_${currentStoreId}`, serverLastUpdate);
         allBanners = await loadCollectionSmart('hero_cards', `banners_${currentStoreId}`, serverLastUpdate);
 
-        // 5. ATUALIZAÇÃO DA INTERFACE VISUAL
-        if (data.storeName) {
-            const nameSidebar = document.getElementById('sidebarStoreName');
-            if (nameSidebar) nameSidebar.textContent = data.storeName;
-        }
-
-        // Atualiza os números "/50", "/5" e as barras de progresso
-        updateUIByPlan(); 
-        updateQuotas();
-        
-        // Renderiza as listas
+        // 3. ATUALIZA A INTERFACE (Sem precisar baixar nada novo)
         renderProductList();
         renderCategoryList();
         renderBannerList();
-        
-        // Aplica cores e categorias mágicas
-        if (data.primaryColor) window.applyDynamicColors(data.primaryColor);
+        updateQuotas();
+        updatePremiumUI();
+
+        // 4. MANTÉM O QUE VOCÊ JÁ TINHA (Sua regra de Categorias Mágicas)
         await loadMagicCategoriesFeedback(storeConfig);
 
-        console.log("🚀 Painel sincronizado e interface preenchida!");
+        console.log("🚀 Painel sincronizado com economia de dados!");
 
     } catch (error) {
         console.error("Erro crítico no carregamento:", error);
         if (typeof showToast === 'function') showToast("Erro ao sincronizar dados", "error");
     }
 }
-
 
 // --- FUNÇÃO AUXILIAR PARA ECONOMIA (Blaze Optimization) ---
 async function loadCollectionSmart(collectionName, cacheKey, serverTime) {
@@ -3613,12 +3563,12 @@ window.handleBannerSubmit = async (e) => {
 
     // --- FINANCEIRO ---
     if (tabName === 'finance') {
-    setTimeout(() => {
-        if (typeof window.initFinanceDashboard === 'function') {
-            window.initFinanceDashboard();
-        }
-    }, 150); // Um pequeno delay para garantir que o HTML renderizou
-}
+        setTimeout(() => {
+            if (typeof window.initFinanceDashboard === 'function') {
+                window.initFinanceDashboard();
+            }
+        }, 100);
+    }
 
     // --- BOTÃO DO MENU ---
     const activeBtn = document.getElementById(`nav-${tabName}`);
@@ -4327,6 +4277,74 @@ window.deleteOrder = async (id) => {
         }
     }
 };
+
+        window.initFinanceDashboard = () => {
+    const now = new Date();
+    const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
+    const startOfWeek = now.getTime() - (now.getDay() * 24 * 60 * 60 * 1000);
+    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1).getTime();
+    const startOfLastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1).getTime();
+
+    let revDay = 0, revWeek = 0, revMonth = 0, revTotal = 0, countDay = 0;
+    let revLastMonth = 0;
+
+    // 1. CÁLCULO DE FATURAMENTO (CORRIGIDO PARA TODOS OS FORMATOS DE DATA)
+    Object.values(ordersCache).forEach(order => {
+        let orderTime = 0;
+        
+        // Verifica todos os formatos possíveis de data do Firebase e JS
+        if (order.createdAt?.toMillis) orderTime = order.createdAt.toMillis();
+        else if (order.createdAt?.toDate) orderTime = order.createdAt.toDate().getTime();
+        else if (order.createdAt instanceof Date) orderTime = order.createdAt.getTime();
+        else if (typeof order.createdAt === 'number') orderTime = order.createdAt;
+
+        const value = Number(order.total) || 0;
+
+        // Filtra pedidos cancelados (aceita 'canceled' e 'Cancelado')
+        if (order.status !== 'canceled' && order.status !== 'Cancelado') {
+            revTotal += value;
+            if (orderTime >= startOfDay) { revDay += value; countDay++; }
+            if (orderTime >= startOfWeek) { revWeek += value; }
+            if (orderTime >= startOfMonth) { revMonth += value; }
+            if (orderTime >= startOfLastMonth && orderTime < startOfMonth) { revLastMonth += value; }
+        }
+    });
+
+    // 2. CÁLCULOS DE ESTOQUE (GARANTINDO CONVERSÃO DE NÚMERO)
+    let stockValue = 0, stockCost = 0, totalItems = 0;
+
+    allProducts.forEach(p => {
+        const qty = Number(p.stock) || 0;
+        const price = Number(p.value) || 0;
+        const cost = Number(p.cost) || 0;
+
+        stockValue += (price * qty);
+        stockCost += (cost * qty);
+        totalItems += qty;
+    });
+
+    // 3. ATUALIZAÇÃO DA UI (COM VERIFICAÇÃO DE SEGURANÇA)
+    const setTxt = (id, txt) => {
+        const el = document.getElementById(id);
+        if(el) el.textContent = txt;
+    };
+
+    setTxt('fin-rev-day', `R$ ${revDay.toFixed(2).replace('.',',')}`);
+    setTxt('fin-orders-day', `${countDay} pedidos hoje`);
+    setTxt('fin-rev-week', `R$ ${revWeek.toFixed(2).replace('.',',')}`);
+    setTxt('fin-rev-month', `R$ ${revMonth.toFixed(2).replace('.',',')}`);
+    setTxt('fin-rev-total', `R$ ${revTotal.toFixed(2).replace('.',',')}`);
+    
+    setTxt('fin-stock-value', `R$ ${stockValue.toFixed(2).replace('.',',')}`);
+    setTxt('fin-stock-cost', `R$ ${stockCost.toFixed(2).replace('.',',')}`);
+    setTxt('fin-profit-potential', `R$ ${(stockValue - stockCost).toFixed(2).replace('.',',')}`);
+    setTxt('fin-stock-count', `${totalItems} unidades disponíveis`);
+
+    // 4. CHAMA OS COMPONENTES VISUAIS
+    if (typeof renderGrowthFeedback === 'function') renderGrowthFeedback(revMonth, revLastMonth);
+    if (typeof initGrowthChart === 'function') initGrowthChart();
+};
+
 
         window.initGrowthChart = () => {
     const ctx = document.getElementById('growthChart').getContext('2d');
@@ -5081,6 +5099,8 @@ window.stopBarcodeScanner = () => {
         document.getElementById('scanner-container').classList.add('hidden');
     }
 };
+// Variável global para guardar o filtro atual
+let currentFinanceRange = 'today';
 
 window.updateFinanceRange = (range) => {
     currentFinanceRange = range;
@@ -5129,150 +5149,117 @@ window.updateFinanceRange = (range) => {
 
     window.initFinanceDashboard();
 };
-     
-// Variável de controle global para o gráfico
+
 window.initFinanceDashboard = () => {
-    console.log("Calculando Financeiro... Pedidos no cache:", Object.keys(ordersCache).length);
-    
     const now = new Date();
     const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
-    const monthStart = new Date(now.getFullYear(), now.getMonth(), 1).getTime();
+    const monthStart = new Date(now.getFullYear(), now.getMonth(), 1).getTime(); // Fixo: 1º dia deste mês
     
     let filterStart = todayStart;
     let filterEnd = Infinity;
+    let label = "Vendas Hoje";
 
-    // Lógica de Filtro
-    if (currentFinanceRange === 'week') {
+    // Lógica do filtro de botões
+    if (currentFinanceRange === 'yesterday') {
+        filterStart = todayStart - (24 * 60 * 60 * 1000);
+        filterEnd = todayStart;
+        label = "Vendas Ontem";
+    } else if (currentFinanceRange === 'week') {
         filterStart = now.getTime() - (7 * 24 * 60 * 60 * 1000);
+        label = "Últimos 7 Dias";
     } else if (currentFinanceRange === 'month') {
         filterStart = monthStart;
+        label = "Vendas no Mês";
     } else if (currentFinanceRange === 'custom') {
-        filterStart = customStart || 0;
-        filterEnd = customEnd || Infinity;
+        filterStart = customStart;
+        filterEnd = customEnd;
+        label = "Período Selecionado";
     }
 
-    let metrics = {
-        totalRev: 0,
-        totalCost: 0,
-        orderCount: 0,
-        byMethod: {
-            pix: { rev: 0, cost: 0, count: 0, label: 'PIX', color: '#8b5cf6' },
-            dinheiro: { rev: 0, cost: 0, count: 0, label: 'Dinheiro', color: '#22c55e' },
-            cartao_credito: { rev: 0, cost: 0, count: 0, label: 'Cartão', color: '#3b82f6' },
-            outros: { rev: 0, cost: 0, count: 0, label: 'Outros', color: '#94a3b8' }
-        }
-    };
+    let revFiltered = 0;      // Valor que muda com o filtro
+    let countFiltered = 0;    // Quantidade que muda com o filtro
+    let revMonthFixed = 0;    // Valor SEMPRE do mês atual (acumulado)
+    let revTotalAll = 0;      // Valor histórico total
 
-    // 1. Processar Pedidos
     Object.values(ordersCache).forEach(order => {
-        // Converte data do Firebase ou JS puro para timestamp
         let orderTime = 0;
         if (order.createdAt?.toMillis) orderTime = order.createdAt.toMillis();
         else if (order.createdAt?.toDate) orderTime = order.createdAt.toDate().getTime();
-        else orderTime = new Date(order.createdAt).getTime();
         
-        if (order.status !== 'canceled' && orderTime >= filterStart && orderTime <= filterEnd) {
-            const rev = Number(order.total) || 0;
-            metrics.totalRev += rev;
-            metrics.orderCount++;
+        const value = Number(order.total) || 0;
 
-            let orderCost = 0;
-            order.items.forEach(item => {
-                const prodOriginal = allProducts.find(p => p.id === item.id);
-                const itemCost = item.cost || (prodOriginal ? prodOriginal.cost : 0);
-                orderCost += (Number(itemCost) * Number(item.qty));
-            });
-            metrics.totalCost += orderCost;
+        if (order.status !== 'canceled' && order.status !== 'Cancelado') {
+            revTotalAll += value;
 
-            let method = (order.paymentMethod || 'outros').toLowerCase();
-            if (method.includes('pix')) method = 'pix';
-            if (method.includes('cartao')) method = 'cartao_credito';
-            if (!metrics.byMethod[method]) method = 'outros';
-            
-            metrics.byMethod[method].rev += rev;
-            metrics.byMethod[method].cost += orderCost;
-            metrics.byMethod[method].count++;
+            // 1. Soma para o filtro selecionado (Hoje/Ontem/Calendário)
+            if (orderTime >= filterStart && orderTime <= filterEnd) {
+                revFiltered += value;
+                countFiltered++;
+            }
+
+            // 2. Soma FIXA para o acumulado do mês (Independente do filtro)
+            if (orderTime >= monthStart) {
+                revMonthFixed += value;
+            }
         }
     });
-
-    // 2. Atualizar UI (Mapeado exatamente para os IDs do seu HTML)
-    const profit = metrics.totalRev - metrics.totalCost;
-    const avgTicket = metrics.orderCount > 0 ? metrics.totalRev / metrics.orderCount : 0;
-    const margin = metrics.totalRev > 0 ? (profit / metrics.totalRev) * 100 : 0;
 
     const setTxt = (id, txt) => {
         const el = document.getElementById(id);
         if(el) el.textContent = txt;
     };
 
-    setTxt('fin-total-rev', `R$ ${metrics.totalRev.toFixed(2).replace('.',',')}`);
-    setTxt('fin-total-profit', `R$ ${profit.toFixed(2).replace('.',',')}`);
-    setTxt('fin-order-count', `${metrics.orderCount} pedidos no período`);
-    setTxt('fin-avg-ticket', `R$ ${avgTicket.toFixed(2).replace('.',',')}`);
-    setTxt('fin-margin', `${margin.toFixed(1)}% margem`);
+    // Atualiza o título do card principal conforme o botão
+    const cardTitle = document.querySelector('#view-finance p.text-slate-400');
+    if(cardTitle) cardTitle.textContent = label.toUpperCase();
 
-    // Valor de Estoque
-    let stockValue = 0, stockCost = 0;
+    // EXIBIÇÃO DOS DADOS
+    setTxt('fin-rev-day', `R$ ${revFiltered.toFixed(2).replace('.',',')}`); // Valor Filtrado
+    setTxt('fin-orders-day', `${countFiltered} pedidos no período`);
+    
+    setTxt('fin-rev-month', `R$ ${revMonthFixed.toFixed(2).replace('.',',')}`); // FIXO: Acumulado do Mês
+    setTxt('fin-rev-total', `R$ ${revTotalAll.toFixed(2).replace('.',',')}`);
+
+    // Cálculos de estoque permanecem iguais
+    let stockValue = 0, stockCost = 0, totalItems = 0;
     allProducts.forEach(p => {
         const qty = Number(p.stock) || 0;
         stockValue += (Number(p.value) || 0) * qty;
         stockCost += (Number(p.cost) || 0) * qty;
+        totalItems += qty;
     });
-    setTxt('fin-stock-total-value', `R$ ${stockValue.toFixed(2).replace('.',',')}`);
-    setTxt('fin-stock-profit-potential', `Lucro oculto: R$ ${(stockValue - stockCost).toFixed(2).replace('.',',')}`);
 
-    // 3. Gráficos e Tabelas
-    renderPaymentTable(metrics.byMethod);
-    renderPaymentChart(metrics.byMethod);
+    setTxt('fin-stock-value', `R$ ${stockValue.toFixed(2).replace('.',',')}`);
+    setTxt('fin-stock-cost', `R$ ${stockCost.toFixed(2).replace('.',',')}`);
+    setTxt('fin-profit-potential', `R$ ${(stockValue - stockCost).toFixed(2).replace('.',',')}`);
+    setTxt('fin-stock-count', `${totalItems} unidades disponíveis`);
+
+     if (typeof window.calculateSalesInsights === 'function') {
+        window.calculateSalesInsights();
+    }
+
+    if (typeof initGrowthChart === 'function') initGrowthChart();
+
+    // Se houver ícones novos nos rankings, o Lucide precisa ser chamado por último
+    if (typeof lucide !== 'undefined') lucide.createIcons();
 };
 
-function renderPaymentTable(methods) {
-    const tbody = document.getElementById('payment-table-body');
-    if(!tbody) return;
-    tbody.innerHTML = Object.values(methods).map(m => `
-        <tr class="text-xs">
-            <td class="py-4"><div class="flex items-center gap-2"><span class="w-2 h-2 rounded-full" style="background-color: ${m.color}"></span><span class="font-bold text-slate-700 uppercase">${m.label}</span></div></td>
-            <td class="py-4 text-center font-medium text-slate-500">${m.count}</td>
-            <td class="py-4 text-right font-bold text-slate-800">R$ ${m.rev.toFixed(2).replace('.',',')}</td>
-            <td class="py-4 text-right font-bold text-green-600">R$ ${(m.rev - m.cost).toFixed(2).replace('.',',')}</td>
-        </tr>
-    `).join('');
-}
+        window.updatePremiumUI = () => {
+    if (!storeConfig) return;
 
-function renderPaymentChart(methods) {
-    const ctx = document.getElementById('paymentMethodsChart')?.getContext('2d');
-    if (!ctx) return;
-    if (paymentChartInstance) paymentChartInstance.destroy();
-
-    const values = Object.values(methods).map(m => m.rev);
-    const labels = Object.values(methods).map(m => m.label);
-    const colors = Object.values(methods).map(m => m.color);
-
-    paymentChartInstance = new Chart(ctx, {
-        type: 'doughnut',
-        data: {
-            labels: labels,
-            datasets: [{
-                data: values,
-                backgroundColor: colors,
-                borderWidth: 2,
-                cutout: '65%'
-            }]
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            plugins: {
-                legend: {
-                    display: true, // AQUI: Faz aparecer os nomes embaixo
-                    position: 'bottom',
-                    labels: { boxWidth: 12, font: { size: 10, weight: 'bold' } }
-                }
-            }
+    // Ajuste Visual na Sidebar (Financeiro)
+    const navFinance = document.getElementById('nav-finance');
+    if (navFinance) {
+        if (storeConfig.hasFinance !== true) {
+            navFinance.innerHTML = `<i data-lucide="lock" class="w-5 h-5 mr-3"></i> <span class="opacity-50">Financeiro (PRO)</span>`;
+            navFinance.classList.add('cursor-not-allowed');
+        } else {
+            navFinance.innerHTML = `<i data-lucide="dollar-sign" class="w-5 h-5 mr-3"></i> Financeiro`;
+            navFinance.classList.remove('cursor-not-allowed');
         }
-    });
-}
-
+    }
+    lucide.createIcons();
+};
 window.expandImage = (url) => {
     const modal = document.getElementById('imageViewerModal');
     const img = document.getElementById('expandedImage');
@@ -6077,25 +6064,6 @@ window.selectCustomerForOrder = (phone) => {
         showToast(`✅ Dados de ${c.name} carregados!`);
     }
 };
-
-     window.applyCustomDate = () => {
-    const start = document.getElementById('customDateStart').value;
-    const end = document.getElementById('customDateEnd').value;
-    
-    if(!start || !end) return showToast("⚠️ Escolha o início e o fim.");
-    
-    // Converte as datas para milissegundos para o banco de dados entender
-    customStart = new Date(start + "T00:00:00").getTime();
-    customEnd = new Date(end + "T23:59:59").getTime();
-    
-    document.getElementById('modalCustomDate').classList.add('hidden');
-    
-    // Define o modo como 'custom' e atualiza
-    currentFinanceRange = 'custom';
-    window.initFinanceDashboard();
-    showToast("📅 Período filtrado!");
-};
-
 
     </script>
 </body>
