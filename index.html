@@ -4271,20 +4271,25 @@ window.deleteOrder = async (id) => {
     }
 };
 
-        
-
 window.initFinanceDashboard = () => {
     const now = new Date();
     const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
+    const monthStart = new Date(now.getFullYear(), now.getMonth(), 1).getTime();
     
-    // Definição de datas para o filtro (mesma lógica que você já tem)
     let filterStart = todayStart;
     let filterEnd = Infinity;
-    if (currentFinanceRange === 'week') filterStart = now.getTime() - (7 * 24 * 60 * 60 * 1000);
-    else if (currentFinanceRange === 'month') filterStart = new Date(now.getFullYear(), now.getMonth(), 1).getTime();
-    else if (currentFinanceRange === 'custom') { filterStart = customStart; filterEnd = customEnd; }
 
-    // Variáveis de Cálculo
+    // Lógica de Filtro baseada no botão clicado
+    if (currentFinanceRange === 'week') {
+        filterStart = now.getTime() - (7 * 24 * 60 * 60 * 1000);
+    } else if (currentFinanceRange === 'month') {
+        filterStart = monthStart;
+    } else if (currentFinanceRange === 'custom') {
+        filterStart = customStart;
+        filterEnd = customEnd;
+    }
+
+    // Acumuladores de métricas
     let metrics = {
         totalRev: 0,
         totalCost: 0,
@@ -4297,8 +4302,9 @@ window.initFinanceDashboard = () => {
         }
     };
 
-    // 1. PROCESSAR PEDIDOS FILTRADOS
-    Object.values(ordersCache).forEach(order => {
+    // 1. Processar Pedidos (Filtragem e Cálculo)
+    const orders = Object.values(ordersCache);
+    orders.forEach(order => {
         let orderTime = order.createdAt?.toMillis ? order.createdAt.toMillis() : 0;
         
         if (order.status !== 'canceled' && orderTime >= filterStart && orderTime <= filterEnd) {
@@ -4306,18 +4312,21 @@ window.initFinanceDashboard = () => {
             metrics.totalRev += rev;
             metrics.orderCount++;
 
-            // Calcular Custo Total do Pedido (Soma do custo de cada item)
+            // Calcular Custo do Pedido
             let orderCost = 0;
-            order.items.forEach(item => {
-                // Tenta pegar o custo salvo no item, senão busca no catálogo atual
-                const prodOriginal = allProducts.find(p => p.id === item.id);
-                const itemCost = item.cost || (prodOriginal ? prodOriginal.cost : 0);
-                orderCost += (Number(itemCost) * Number(item.qty));
-            });
+            if (order.items) {
+                order.items.forEach(item => {
+                    const prodOriginal = allProducts.find(p => p.id === item.id);
+                    const itemCost = item.cost || (prodOriginal ? prodOriginal.cost : 0);
+                    orderCost += (Number(itemCost) * Number(item.qty));
+                });
+            }
             metrics.totalCost += orderCost;
 
-            // Separar por método
+            // Agrupar por método de pagamento
             let method = order.paymentMethod?.toLowerCase() || 'outros';
+            if (method.includes('pix')) method = 'pix';
+            if (method.includes('cartao')) method = 'cartao_credito';
             if (!metrics.byMethod[method]) method = 'outros';
             
             metrics.byMethod[method].rev += rev;
@@ -4326,39 +4335,51 @@ window.initFinanceDashboard = () => {
         }
     });
 
-    // 2. CÁLCULO DE ESTOQUE ATUAL
-    let stockStats = { totalValue: 0, totalCost: 0, items: 0 };
-    allProducts.forEach(p => {
-        const qty = Number(p.stock) || 0;
-        stockStats.totalValue += (Number(p.value) || 0) * qty;
-        stockStats.totalCost += (Number(p.cost) || 0) * qty;
-        stockStats.items += qty;
-    });
-
-    // 3. ATUALIZAR INTERFACE (CARDS)
+    // 2. Cálculos Finais
     const profit = metrics.totalRev - metrics.totalCost;
-    const margin = metrics.totalRev > 0 ? (profit / metrics.totalRev) * 100 : 0;
     const avgTicket = metrics.orderCount > 0 ? metrics.totalRev / metrics.orderCount : 0;
+    const margin = metrics.totalRev > 0 ? (profit / metrics.totalRev) * 100 : 0;
 
-    const setTxt = (id, txt) => { if(document.getElementById(id)) document.getElementById(id).textContent = txt; };
-    
+    // 3. Atualizar a Interface (IDs mapeados do seu HTML)
+    const setTxt = (id, txt) => {
+        const el = document.getElementById(id);
+        if(el) el.textContent = txt;
+    };
+
     setTxt('fin-total-rev', `R$ ${metrics.totalRev.toFixed(2).replace('.',',')}`);
     setTxt('fin-total-profit', `R$ ${profit.toFixed(2).replace('.',',')}`);
     setTxt('fin-order-count', `${metrics.orderCount} pedidos no período`);
-    setTxt('fin-margin', `${margin.toFixed(1)}% margem`);
     setTxt('fin-avg-ticket', `R$ ${avgTicket.toFixed(2).replace('.',',')}`);
-    
-    setTxt('fin-stock-total-value', `R$ ${stockStats.totalValue.toFixed(2).replace('.',',')}`);
-    setTxt('fin-stock-profit-potential', `Lucro oculto: R$ ${(stockStats.totalValue - stockStats.totalCost).toFixed(2).replace('.',',')}`);
+    setTxt('fin-margin', `${margin.toFixed(1)}% margem`);
 
-    // 4. ATUALIZAR TABELA DE MÉTODOS
-    const tableBody = document.getElementById('payment-table-body');
-    tableBody.innerHTML = Object.values(metrics.byMethod).map(m => `
+    // Atualizar Estoque
+    let stockValue = 0, stockCost = 0;
+    allProducts.forEach(p => {
+        const qty = Number(p.stock) || 0;
+        stockValue += (Number(p.value) || 0) * qty;
+        stockCost += (Number(p.cost) || 0) * qty;
+    });
+    setTxt('fin-stock-total-value', `R$ ${stockValue.toFixed(2).replace('.',',')}`);
+    setTxt('fin-stock-profit-potential', `Lucro oculto: R$ ${(stockValue - stockCost).toFixed(2).replace('.',',')}`);
+
+    // 4. Renderizar Componentes Visuais
+    renderPaymentTable(metrics.byMethod);
+    renderPaymentChart(metrics.byMethod);
+    if (typeof renderTopProfitable === 'function') renderTopProfitable();
+    if (typeof initGrowthChart === 'function') initGrowthChart();
+
+    if (window.lucide) lucide.createIcons();
+};
+
+function renderPaymentTable(methods) {
+    const tbody = document.getElementById('payment-table-body');
+    if(!tbody) return;
+    tbody.innerHTML = Object.values(methods).map(m => `
         <tr class="text-xs">
             <td class="py-4">
                 <div class="flex items-center gap-2">
                     <span class="w-2 h-2 rounded-full" style="background-color: ${m.color}"></span>
-                    <span class="font-bold text-slate-700">${m.label}</span>
+                    <span class="font-bold text-slate-700 uppercase">${m.label}</span>
                 </div>
             </td>
             <td class="py-4 text-center font-medium text-slate-500">${m.count}</td>
@@ -4366,18 +4387,12 @@ window.initFinanceDashboard = () => {
             <td class="py-4 text-right font-bold text-green-600">R$ ${(m.rev - m.cost).toFixed(2).replace('.',',')}</td>
         </tr>
     `).join('');
-
-    // 5. GRÁFICO DE PIZZA (PAYMENT METHODS)
-    renderPaymentChart(metrics.byMethod);
-
-    // 6. TOP PRODUTOS POR LUCRO (Sugestão Útil)
-    renderTopProfitable();
-
-    if (window.lucide) lucide.createIcons();
-};
+}
 
 function renderPaymentChart(methods) {
-    const ctx = document.getElementById('paymentMethodsChart').getContext('2d');
+    const canvas = document.getElementById('paymentMethodsChart');
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
     const data = Object.values(methods).map(m => m.rev);
     const labels = Object.values(methods).map(m => m.label);
     const colors = Object.values(methods).map(m => m.color);
@@ -4392,7 +4407,7 @@ function renderPaymentChart(methods) {
                 data: data,
                 backgroundColor: colors,
                 borderWidth: 0,
-                cutout: '70%'
+                cutout: '75%'
             }]
         },
         options: {
@@ -4402,35 +4417,6 @@ function renderPaymentChart(methods) {
         }
     });
 }
-
-function renderTopProfitable() {
-    // Calcula o lucro unitário de cada produto e ordena
-    const profitable = allProducts
-        .map(p => ({
-            name: p.name,
-            profit: (Number(p.value) || 0) - (Number(p.cost) || 0),
-            stock: p.stock
-        }))
-        .filter(p => p.profit > 0)
-        .sort((a, b) => b.profit - a.profit)
-        .slice(0, 4);
-
-    const container = document.getElementById('fin-top-profitable');
-    container.innerHTML = profitable.map(p => `
-        <div class="flex items-center justify-between p-4 bg-slate-50 rounded-2xl border border-slate-100">
-            <div>
-                <p class="text-xs font-bold text-slate-800">${p.name}</p>
-                <p class="text-[9px] text-slate-400 uppercase font-black">Lucro de R$ ${p.profit.toFixed(2)} / un</p>
-            </div>
-            <div class="text-right">
-                <span class="text-[10px] font-black bg-green-100 text-green-700 px-2 py-1 rounded-lg">
-                    ${p.stock} em estoque
-                </span>
-            </div>
-        </div>
-    `).join('');
-}
-
 
         window.initGrowthChart = () => {
     const ctx = document.getElementById('growthChart').getContext('2d');
