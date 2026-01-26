@@ -1509,37 +1509,25 @@ onMessage(messaging, (payload) => {
 // 3. Função de carregar dados (mantida igual)
 async function CarregarDadosPainel() {
     try {
+        // 1. LEITURA OBRIGATÓRIA DA CONFIGURAÇÃO
         const configRef = doc(db, `stores/${currentStoreId}/config/store`);
         const configSnap = await getDoc(configRef);
         
         if (!configSnap.exists()) return;
-        
-        // 1. Salva as configurações na variável global
         const data = configSnap.data();
+
+        // 2. SINCRONIZAÇÃO DE VARIÁVEIS E LIMITES (O que faz o Dashboard aparecer)
         storeConfig = {
             ...data,
-            maxProducts: parseInt(data.maxProducts) || 0,
-            maxBanners: parseInt(data.maxBanners) || 0,
+            maxProducts: parseInt(data.maxProducts || 0),
+            maxBanners: parseInt(data.maxBanners || 0),
             hasCarousel: data.hasCarousel === true,
             hasFinance: data.hasFinance === true
         };
 
         const serverLastUpdate = storeConfig.lastUpdate?.toString() || "0";
 
-        // 2. Carregamento Inteligente de Listas
-        allProducts = await loadCollectionSmart('products', `prods_${currentStoreId}`, serverLastUpdate);
-        allCategories = await loadCollectionSmart('categories', `cats_${currentStoreId}`, serverLastUpdate);
-        allBanners = await loadCollectionSmart('hero_cards', `banners_${currentStoreId}`, serverLastUpdate);
-
-        // 3. PREENCHIMENTO DOS LIMITES E DASHBOARD (O que estava faltando)
-        // Atualiza os números "/50", "/5" no Dashboard
-        if (typeof updateUIByPlan === 'function') updateUIByPlan();
-        
-        // Atualiza os contadores (0 de 50)
-        if (typeof updateQuotas === 'function') updateQuotas();
-
-        // 4. PREENCHIMENTO DOS CAMPOS DE CONFIGURAÇÃO (O que estava faltando)
-        // Isso preenche os inputs na aba "Configurações"
+        // 3. PREENCHIMENTO DOS INPUTS DE CONFIGURAÇÃO E PIX
         const campos = {
             'confStoreName': data.storeName || '',
             'confWhatsapp': data.whatsappNumber || '',
@@ -1555,19 +1543,35 @@ async function CarregarDadosPainel() {
             if (el) el.value = valor;
         }
 
-        // 5. ATUALIZA AS LISTAS VISUAIS
+        // 4. CARREGAMENTO INTELIGENTE (COLEÇÕES)
+        allProducts = await loadCollectionSmart('products', `prods_${currentStoreId}`, serverLastUpdate);
+        allCategories = await loadCollectionSmart('categories', `cats_${currentStoreId}`, serverLastUpdate);
+        allBanners = await loadCollectionSmart('hero_cards', `banners_${currentStoreId}`, serverLastUpdate);
+
+        // 5. ATUALIZAÇÃO DA INTERFACE VISUAL
+        if (data.storeName) {
+            const nameSidebar = document.getElementById('sidebarStoreName');
+            if (nameSidebar) nameSidebar.textContent = data.storeName;
+        }
+
+        // Atualiza os números "/50", "/5" e as barras de progresso
+        updateUIByPlan(); 
+        updateQuotas();
+        
+        // Renderiza as listas
         renderProductList();
         renderCategoryList();
         renderBannerList();
         
+        // Aplica cores e categorias mágicas
         if (data.primaryColor) window.applyDynamicColors(data.primaryColor);
-        if (typeof loadMagicCategoriesFeedback === 'function') loadMagicCategoriesFeedback(data);
+        await loadMagicCategoriesFeedback(storeConfig);
 
-        console.log("🚀 Painel e Configurações sincronizados!");
+        console.log("🚀 Painel sincronizado e interface preenchida!");
 
     } catch (error) {
         console.error("Erro crítico no carregamento:", error);
-        showToast("Erro ao sincronizar dados");
+        if (typeof showToast === 'function') showToast("Erro ao sincronizar dados", "error");
     }
 }
 
