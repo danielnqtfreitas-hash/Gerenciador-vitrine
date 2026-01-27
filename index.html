@@ -5630,26 +5630,27 @@ async function loadSmart(collectionName, storageKey) {
         const shortId = orderId.toUpperCase().slice(-5);
         
         items.forEach(item => {
-            // No banco de dados (Orders), as variações estão em variationDetails
+            // Pegamos o objeto de variações que foi salvo no pedido
             const vd = item.variationDetails || {};
             
-            // Geramos o ID exatamente como a vitrine faz:
-            // Pegamos o valor, garantimos que é string e removemos espaços.
-            const size = (vd.size || "").toString().replace(/\s/g,'');
-            const color = (vd.color || "").toString().replace(/\s/g,'');
+            // Tratamento rigoroso: Se for null ou undefined, vira string vazia
+            // Exatamente como a Vitrine faz com o (item.v.size || '')
+            const size = (vd.size && vd.size !== "null") ? vd.size.toString().replace(/\s/g,'') : "";
+            const color = (vd.color && vd.color !== "null") ? vd.color.toString().replace(/\s/g,'') : "";
             
+            // Monta o ID final
             const resId = `res_${shortId}_${item.id}_${size}_${color}`;
             
-            console.log("Tentando limpar reserva:", resId); // Para você conferir no F12
+            console.log("Tentando limpar reserva:", resId);
             
             const resRef = doc(db, `stores/${currentStoreId}/stock_reserves`, resId);
             batch.delete(resRef);
         });
 
         await batch.commit();
-        console.log(`🧹 Reservas limpas para o pedido ${shortId}`);
+        console.log(`🧹 Shadow Stock: Reservas limpas para o pedido ${shortId}`);
     } catch (e) {
-        console.error("Erro ao limpar reservas:", e);
+        console.error("Erro ao limpar reservas fantasmas:", e);
     }
 };
 
