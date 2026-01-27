@@ -5657,13 +5657,6 @@ async function loadSmart(collectionName, storageKey) {
 
 window.processarBaixaSilenciosa = async (orderId, orderData) => {
     try {
-     await window.limparReservasFantasmas(orderId, orderData.items);
-        const itemsByProduct = orderData.items.reduce((acc, item) => {
-            if (!acc[item.id]) acc[item.id] = [];
-            acc[item.id].push(item);
-            return acc;
-        }, {});
-
         const stockPromises = Object.keys(itemsByProduct).map(async (productId) => {
             const productRef = doc(db, `stores/${currentStoreId}/products`, productId);
             const snap = await getDoc(productRef);
