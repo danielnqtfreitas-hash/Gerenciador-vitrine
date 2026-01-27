@@ -4886,6 +4886,10 @@ window.updateOrderStatus = async (id, status) => {
         if (!p) return;
 
         const orderRef = doc(db, `stores/${currentStoreId}/orders`, id);
+     if (status === 'confirmed' || status === 'canceled' || status === 'completed') {
+            console.log("🧹 Iniciando limpeza de Shadow Stock para o pedido:", id);
+            await window.limparReservasFantasmas(id, p.items);
+        }
         const orderUpdate = { status: status };
         
         const estavaCancelado = p.status === 'canceled' || p.status === 'Cancelado';
