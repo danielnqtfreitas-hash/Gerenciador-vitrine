@@ -4885,11 +4885,10 @@ window.updateOrderStatus = async (id, status) => {
         const p = ordersCache[id];
         if (!p) return;
 
-        const orderRef = doc(db, `stores/${currentStoreId}/orders`, id);
-     if (status === 'confirmed' || status === 'canceled' || status === 'completed') {
-            console.log("🧹 Iniciando limpeza de Shadow Stock para o pedido:", id);
-            await window.limparReservasFantasmas(id, p.items);
-        }
+        if (['confirmed', 'canceled', 'completed'].includes(status)) {
+    console.log("🧹 Faxina de Shadow Stock iniciada...");
+    await window.limparReservasFantasmas(id, p.items);
+}
         const orderUpdate = { status: status };
         
         const estavaCancelado = p.status === 'canceled' || p.status === 'Cancelado';
@@ -5632,36 +5631,51 @@ async function loadSmart(collectionName, storageKey) {
     try {
         const batch = writeBatch(db);
         
-        // --- MUDANÇA AQUI: Mantemos o case original do orderId (que costuma ser minúsculo) ---
-        // Se no seu banco o ID do documento começa com minúsculas, remova o .toUpperCase()
-        const sID = orderId; 
+        // 🚀 O SEGREDO: Extrair os últimos 5 caracteres em MAIÚSCULO (UHFV8)
+        // Isso precisa bater exatamente com o que a vitrine salvou
+        const shortId = orderId.toUpperCase().slice(-5); 
 
         items.forEach(item => {
             const vd = item.variationDetails || {};
             
-            // 1. Tratamento idêntico ao que a vitrine usa para gerar o ID
-            // Se for null ou undefined, vira ""
+            // Tratamento de strings para bater com o padrão da vitrine (minúsculas e sem espaços)
             const s = (vd.size && vd.size !== "null") ? vd.size.toString().toLowerCase().replace(/\s/g,'') : "";
             const c = (vd.color && vd.color !== "null") ? vd.color.toString().toLowerCase().replace(/\s/g,'') : "";
             
-            // 2. Montagem do ID (Ex: res_ydxel_prod_123__)
-            const resId = `res_${sID}_${item.id}_${s}_${c}`;
+            // Montagem idêntica ao seu exemplo: res_UHFV8_prod_1767914877425__
+            const resId = `res_${shortId}_${item.id}_${s}_${c}`;
             
-            console.log("🧹 Tentando deletar reserva no banco:", resId);
+            console.log("🧹 Faxina Shadow Stock:", resId);
             
             const resRef = doc(db, `stores/${currentStoreId}/stock_reserves`, resId);
             batch.delete(resRef);
         });
 
         await batch.commit();
-        console.log(`✅ Sucesso: Shadow Stock limpo para o pedido ${orderId}`);
+        console.log(`✅ Reservas do pedido ${shortId} limpas com sucesso!`);
     } catch (e) {
-        console.error("❌ Erro crítico ao limpar reservas:", e);
+        console.error("❌ Erro ao limpar fantasmas:", e);
     }
 };
 
 window.processarBaixaSilenciosa = async (orderId, orderData) => {
     try {
+        // 1. Validação de dados de entrada
+        const items = orderData.items || [];
+        if (items.length === 0) {
+            console.warn("⚠️ Pedido sem itens. Abortando baixa.");
+            return;
+        }
+
+        // 2. AGRUPAMENTO CIRÚRGICO: Organiza itens por ID de produto pai 
+        // para evitar múltiplas leituras/escritas no mesmo documento
+        const itemsByProduct = items.reduce((acc, item) => {
+            if (!acc[item.id]) acc[item.id] = [];
+            acc[item.id].push(item);
+            return acc;
+        }, {});
+
+        // 3. Processamento em Lote (Promises)
         const stockPromises = Object.keys(itemsByProduct).map(async (productId) => {
             const productRef = doc(db, `stores/${currentStoreId}/products`, productId);
             const snap = await getDoc(productRef);
@@ -5671,50 +5685,69 @@ window.processarBaixaSilenciosa = async (orderId, orderData) => {
                 const itemsToUpdate = itemsByProduct[productId];
                 let updatePayload = {};
 
+                // CENÁRIO A: Produto com Variações (Cores/Tamanhos)
                 if (prodData.variations && prodData.variations.length > 0) {
                     let novasVariacoes = [...prodData.variations];
+                    
                     itemsToUpdate.forEach(itemPedido => {
+                        // Busca pelo SKU da variação ou combinação Cor/Tamanho
                         const { sku } = itemPedido.variationDetails || {};
                         novasVariacoes = novasVariacoes.map(v => {
                             if (v.sku === sku) {
-                                return { ...v, stock: Math.max(0, (Number(v.stock) || 0) - Number(itemPedido.qty)) };
+                                const estoqueAtualVar = Number(v.stock) || 0;
+                                return { ...v, stock: Math.max(0, estoqueAtualVar - Number(itemPedido.qty)) };
                             }
                             return v;
                         });
                     });
+                    
                     updatePayload.variations = novasVariacoes;
-                    updatePayload.stock = novasVariacoes.reduce((sum, v) => sum + (Number(v.stock) || 0), 0);
-                } else {
+                    // Recalcula estoque total somando apenas variações ativas
+                    updatePayload.stock = novasVariacoes.reduce((sum, v) => sum + (v.active !== false ? (Number(v.stock) || 0) : 0), 0);
+                } 
+                // CENÁRIO B: Produto Simples
+                else {
                     const totalQty = itemsToUpdate.reduce((sum, i) => sum + Number(i.qty), 0);
-                    updatePayload.stock = Math.max(0, (Number(prodData.stock) || 0) - totalQty);
+                    const estoqueGeralAntigo = Number(prodData.stock) || 0;
+                    updatePayload.stock = Math.max(0, estoqueGeralAntigo - totalQty);
                 }
+
+                // Atualiza status baseado no novo estoque
                 updatePayload.status = updatePayload.stock <= 0 ? 'paused' : 'active';
+                updatePayload.lastStockUpdate = Date.now();
+
                 return updateDoc(productRef, updatePayload);
             }
         });
 
+        // Executa todas as baixas de estoque real
         await Promise.all(stockPromises);
 
-        // 1. Marca como processado no banco de dados
-        await updateDoc(doc(db, `stores/${currentStoreId}/orders`, orderId), { stockDeducted: true });
-        
-        // 2. Avisa a vitrine dos clientes para atualizar
-        await updateDoc(doc(db, `stores/${currentStoreId}/config/store`), { lastUpdate: Date.now() });
-        
-        console.log("✅ Estoque reservado automaticamente.");
+        // 🚀 4. LIMPEZA DOS FANTASMAS (SHADOW STOCK)
+        // Chamamos a função usando o shortId (ex: UHFV8) para bater com a vitrine
+        await window.limparReservasFantasmas(orderId, items);
 
-        // 3. 🚀 ATUALIZAÇÃO EM TEMPO REAL NO SEU PAINEL:
-        await loadProductsCache(true); // Puxa os novos números do banco para a memória 'allProducts'
+        // 5. MARCAÇÃO DE SUCESSO E SINCRONIA
+        // Evita que o listener processe o mesmo pedido novamente
+        await updateDoc(doc(db, `stores/${currentStoreId}/orders`, orderId), { 
+            stockDeducted: true,
+            processedAt: Date.now()
+        });
         
-        // 4. MANDA DESENHAR NA TELA:
-        renderProductList();           // Redesenha a lista na aba de produtos
-        window.initFinanceDashboard(); // Atualiza os valores no financeiro/dashboard
+        // Sinaliza para a vitrine pública atualizar os dados
+        await updateDoc(doc(db, `stores/${currentStoreId}/config/store`), { 
+            lastUpdate: Date.now() 
+        });
         
-        // Opcional: Mostra um aviso discreto que o estoque foi atualizado
-        console.log("📱 Interface do lojista atualizada sem F5.");
+        console.log(`✅ Sincronia completa para pedido ${orderId}`);
+
+        // 6. ATUALIZAÇÃO DA UI DO LOJISTA (Sem F5)
+        await loadProductsCache(true); // Força refresh do cache local
+        renderProductList();           // Redesenha a lista de produtos
+        if (window.initFinanceDashboard) window.initFinanceDashboard(); // Atualiza métricas
 
     } catch (e) {
-        console.error("Erro na reserva de estoque:", e);
+        console.error("❌ Erro crítico na sincronia de estoque:", e);
     }
 };
 
