@@ -5619,34 +5619,39 @@ async function loadSmart(collectionName, storageKey) {
 
      window.limparReservasFantasmas = async (orderId, items) => {
     try {
-        const batch = writeBatch(db);
-        
-        // 🚀 O SEGREDO: Extrair os últimos 5 caracteres em MAIÚSCULO (UHFV8)
-        // Isso precisa bater exatamente com o que a vitrine salvou
-        const shortId = orderId.toUpperCase().slice(-5); 
+        const shortId = orderId.toUpperCase().slice(-5); // Pega os 5 digitos (ex: HAY6T)
+        console.log("🧹 Iniciando faxina para o pedido:", shortId);
 
-        items.forEach(item => {
-            const vd = item.variationDetails || {};
-            
-            // Tratamento de strings para bater com o padrão da vitrine (minúsculas e sem espaços)
-            const s = (vd.size && vd.size !== "null") ? vd.size.toString().toLowerCase().replace(/\s/g,'') : "";
-            const c = (vd.color && vd.color !== "null") ? vd.color.toString().toLowerCase().replace(/\s/g,'') : "";
-            
-            // Montagem idêntica ao seu exemplo: res_UHFV8_prod_1767914877425__
-            const resId = `res_${shortId}_${item.id}_${s}_${c}`;
-            
-            console.log("🧹 Faxina Shadow Stock:", resId);
-            
-            const resRef = doc(db, `stores/${currentStoreId}/stock_reserves`, resId);
-            batch.delete(resRef);
+        // Em vez de prever o ID, vamos buscar todos que começam com esse prefixo do pedido
+        const reservesRef = collection(db, `stores/${currentStoreId}/stock_reserves`);
+        
+        // Buscamos documentos onde o ID comece com res_HAY6T
+        const q = query(
+            reservesRef, 
+            where("__name__", ">=", `res_${shortId}`),
+            where("__name__", "<=", `res_${shortId}\uf8ff`)
+        );
+
+        const snap = await getDocs(q);
+        
+        if (snap.empty) {
+            console.log("Nenhuma reserva fantasma encontrada para este pedido.");
+            return;
+        }
+
+        const batch = writeBatch(db);
+        snap.forEach((doc) => {
+            console.log("🗑️ Apagando reserva encontrada:", doc.id);
+            batch.delete(doc.ref);
         });
 
         await batch.commit();
-        console.log(`✅ Reservas do pedido ${shortId} limpas com sucesso!`);
+        console.log(`✅ Sucesso: ${snap.size} reservas fantasma removidas.`);
     } catch (e) {
-        console.error("❌ Erro ao limpar fantasmas:", e);
+        console.error("❌ Erro na faxina de stock:", e);
     }
 };
+
 
 window.processarBaixaSilenciosa = async (orderId, orderData) => {
     try {
