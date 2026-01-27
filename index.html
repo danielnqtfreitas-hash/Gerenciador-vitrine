@@ -5623,8 +5623,33 @@ async function loadSmart(collectionName, storageKey) {
 
     return data;
 }
+
+     window.limparReservasFantasmas = async (orderId, items) => {
+    try {
+        const batch = writeBatch(db);
+        const shortId = orderId.toUpperCase().slice(-5);
+        
+        items.forEach(item => {
+            // Reconstrói o ID exatamente como o cliente gerou no site
+            // Usamos a variação se existir, senão fica vazio
+            const size = (item.variationDetails?.size || "").replace(/\s/g,'');
+            const color = (item.variationDetails?.color || "").replace(/\s/g,'');
+            const resId = `res_${shortId}_${item.id}_${size}_${color}`;
+            
+            const resRef = doc(db, `stores/${currentStoreId}/stock_reserves`, resId);
+            batch.delete(resRef);
+        });
+
+        await batch.commit();
+        console.log(`🧹 Shadow Stock: Reservas limpas para o pedido ${shortId}`);
+    } catch (e) {
+        console.error("Erro ao limpar reservas fantasmas:", e);
+    }
+};
+
 window.processarBaixaSilenciosa = async (orderId, orderData) => {
     try {
+     await window.limparReservasFantasmas(orderId, orderData.items);
         const itemsByProduct = orderData.items.reduce((acc, item) => {
             if (!acc[item.id]) acc[item.id] = [];
             acc[item.id].push(item);
