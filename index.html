@@ -5631,27 +5631,32 @@ async function loadSmart(collectionName, storageKey) {
      window.limparReservasFantasmas = async (orderId, items) => {
     try {
         const batch = writeBatch(db);
-        const shortId = orderId.toUpperCase().slice(-5);
         
+        // --- MUDANÇA AQUI: Mantemos o case original do orderId (que costuma ser minúsculo) ---
+        // Se no seu banco o ID do documento começa com minúsculas, remova o .toUpperCase()
+        const sID = orderId; 
+
         items.forEach(item => {
             const vd = item.variationDetails || {};
             
-            // Lógica IDÊNTICA à vitrine: trata nulos e força minúsculas
+            // 1. Tratamento idêntico ao que a vitrine usa para gerar o ID
+            // Se for null ou undefined, vira ""
             const s = (vd.size && vd.size !== "null") ? vd.size.toString().toLowerCase().replace(/\s/g,'') : "";
             const c = (vd.color && vd.color !== "null") ? vd.color.toString().toLowerCase().replace(/\s/g,'') : "";
             
-            const resId = `res_${shortId}_${item.id}_${s}_${c}`;
+            // 2. Montagem do ID (Ex: res_ydxel_prod_123__)
+            const resId = `res_${sID}_${item.id}_${s}_${c}`;
             
-            console.log("🔍 Tentando deletar reserva:", resId);
+            console.log("🧹 Tentando deletar reserva no banco:", resId);
             
             const resRef = doc(db, `stores/${currentStoreId}/stock_reserves`, resId);
             batch.delete(resRef);
         });
 
         await batch.commit();
-        console.log(`🧹 Shadow Stock: Reservas limpas para o pedido ${shortId}`);
+        console.log(`✅ Sucesso: Shadow Stock limpo para o pedido ${orderId}`);
     } catch (e) {
-        console.error("Erro ao limpar reservas:", e);
+        console.error("❌ Erro crítico ao limpar reservas:", e);
     }
 };
 
