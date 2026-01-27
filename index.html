@@ -5619,36 +5619,39 @@ async function loadSmart(collectionName, storageKey) {
 
      window.limparReservasFantasmas = async (orderId, items) => {
     try {
-        const shortId = orderId.toUpperCase().slice(-5); // Pega os 5 digitos (ex: HAY6T)
-        console.log("🧹 Iniciando faxina para o pedido:", shortId);
+        const shortId = orderId.toUpperCase().slice(-5); 
+        console.log("🔍 Limpando reservas para o prefixo:", shortId);
 
-        // Em vez de prever o ID, vamos buscar todos que começam com esse prefixo do pedido
+        // Referência da coleção
         const reservesRef = collection(db, `stores/${currentStoreId}/stock_reserves`);
         
-        // Buscamos documentos onde o ID comece com res_HAY6T
-        const q = query(
-            reservesRef, 
-            where("__name__", ">=", `res_${shortId}`),
-            where("__name__", "<=", `res_${shortId}\uf8ff`)
-        );
-
-        const snap = await getDocs(q);
+        // 1. Buscamos as reservas que existem lá agora
+        const snap = await getDocs(reservesRef);
         
-        if (snap.empty) {
-            console.log("Nenhuma reserva fantasma encontrada para este pedido.");
+        if (snap.empty) return;
+
+        // 2. Filtramos apenas as que pertencem a este pedido
+        const docsParaDeletar = snap.docs.filter(doc => doc.id.includes(shortId));
+
+        if (docsParaDeletar.length === 0) {
+            console.log("Nenhuma reserva fantasma encontrada para deletar.");
             return;
         }
 
-        const batch = writeBatch(db);
-        snap.forEach((doc) => {
-            console.log("🗑️ Apagando reserva encontrada:", doc.id);
-            batch.delete(doc.ref);
-        });
+        // 3. Deletamos um por um (mais garantido para passar pelas suas regras atuais)
+        for (const docSnapshot of docsParaDeletar) {
+            try {
+                await deleteDoc(docSnapshot.ref);
+                console.log("🗑️ Reserva removida:", docSnapshot.id);
+            } catch (err) {
+                console.warn("⚠️ Falha ao deletar reserva individual (verifique as regras):", docSnapshot.id);
+            }
+        }
 
-        await batch.commit();
-        console.log(`✅ Sucesso: ${snap.size} reservas fantasma removidas.`);
+        console.log(`✅ Processo de limpeza para ${shortId} finalizado.`);
+        
     } catch (e) {
-        console.error("❌ Erro na faxina de stock:", e);
+        console.error("❌ Erro geral na faxina:", e);
     }
 };
 
