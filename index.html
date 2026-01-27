@@ -4879,35 +4879,35 @@ window.finishManualOrder = async () => {
 
 
 // FUNÇÃO PARA ATUALIZAR STATUS E BAIXAR ESTOQUE (COM RECIBO PIX)
-// FUNÇÃO PARA ATUALIZAR STATUS E BAIXAR/DEVOLVER ESTOQUE (VERSÃO CORRIGIDA PARA MÚLTIPLAS VARIAÇÕES)
+
 window.updateOrderStatus = async (id, status) => {
     try {
         const p = ordersCache[id];
         if (!p) return;
 
+        // 🚀 CORREÇÃO 1: Referência do documento do pedido
+        const orderRef = doc(db, `stores/${currentStoreId}/orders`, id);
+
+        // 🧹 FAXINA: Limpa reservas fantasmas ao aceitar, cancelar ou concluir
         if (['confirmed', 'canceled', 'completed'].includes(status)) {
-    console.log("🧹 Faxina de Shadow Stock iniciada...");
-    await window.limparReservasFantasmas(id, p.items);
-}
+            console.log("🧹 Faxina de Shadow Stock iniciada...");
+            await window.limparReservasFantasmas(id, p.items);
+        }
+
         const orderUpdate = { status: status };
-        
         const estavaCancelado = p.status === 'canceled' || p.status === 'Cancelado';
         const alreadyDeducted = p.stockDeducted === true;
 
+        // --- CASO A: CONFIRMAR OU CONCLUIR (BAIXAR ESTOQUE) ---
         if ((status === 'confirmed' || status === 'completed') && (!alreadyDeducted || estavaCancelado)) {
             await window.processarBaixaSilenciosa(id, p);
             orderUpdate.stockDeducted = true;
-            
-            await loadProductsCache(true); 
-            renderProductList();
-            window.initFinanceDashboard();
         }
 
-
-        // --- CASO B: CANCELAR (DEVOLVER ESTOQUE) ---
+        // --- CASO B: CANCELAR (ESTORNAR ESTOQUE) ---
         if (status === 'canceled' && alreadyDeducted) {
             console.log("Estornando estoque de forma agrupada...");
-
+            
             const itemsByProduct = p.items.reduce((acc, item) => {
                 if (!acc[item.id]) acc[item.id] = [];
                 acc[item.id].push(item);
@@ -4925,22 +4925,15 @@ window.updateOrderStatus = async (id, status) => {
 
                     if (prodData.variations && prodData.variations.length > 0) {
                         let novasVariacoes = [...prodData.variations];
-                        
                         itemsToRestore.forEach(itemPedido => {
-                            const { color, size, sku } = itemPedido.variationDetails || {};
-
+                            const { sku } = itemPedido.variationDetails || {};
                             novasVariacoes = novasVariacoes.map(v => {
-                                const matchSKU = sku && v.sku === sku;
-                                const matchCombo = (v.color || "").trim().toLowerCase() === (color || "").trim().toLowerCase() &&
-                                                   (v.size || "").trim().toLowerCase() === (size || "").trim().toLowerCase();
-
-                                if (matchSKU || matchCombo) {
+                                if (v.sku === sku) {
                                     return { ...v, stock: (Number(v.stock) || 0) + Number(itemPedido.qty) };
                                 }
                                 return v;
                             });
                         });
-
                         updatePayload.variations = novasVariacoes;
                         updatePayload.stock = novasVariacoes.reduce((sum, v) => sum + (v.active !== false ? (Number(v.stock) || 0) : 0), 0);
                     } else {
@@ -4948,59 +4941,56 @@ window.updateOrderStatus = async (id, status) => {
                         updatePayload.stock = (Number(prodData.stock) || 0) + totalQty;
                     }
 
-                    // Sempre reativa ao devolver estoque
                     if (updatePayload.stock > 0) updatePayload.status = 'active';
                     return updateDoc(productRef, updatePayload);
                 }
             });
 
             await Promise.all(stockPromises);
-
-// 🚀 ATUALIZAÇÃO IMEDIATA NO FIREBASE
-// Isso faz com que a vitrine perceba que o estoque mudou sem você clicar em publicar
-await updateDoc(doc(db, `stores/${currentStoreId}/config/store`), { 
-    lastUpdate: Date.now() 
-});
-
-// Atualiza o seu próprio cache local para o faturamento bater
-await loadProductsCache(true); ;
             orderUpdate.stockDeducted = false;
         }
-renderProductList();
-        // --- SALVAR ATUALIZAÇÃO DO PEDIDO ---
+
+        // --- SALVAR NO FIREBASE ---
         await updateDoc(orderRef, orderUpdate);
 
-        // --- NOTIFICAÇÃO VIA WHATSAPP (Apenas na confirmação) ---
+        // 🚀 SINCRONIA IMEDIATA COM A VITRINE
+        await updateDoc(doc(db, `stores/${currentStoreId}/config/store`), { lastUpdate: Date.now() });
+
+        // --- NOTIFICAÇÃO VIA WHATSAPP (RECIBO PIX) ---
         if (status === 'confirmed') {
             const itemsText = p.items.map(i => {
-                const productRef = i.sku || i.id?.slice(-4).toUpperCase() || 'N/A';
                 const vars = i.variationDetails ? ` (${i.variationDetails.color}/${i.variationDetails.size})` : '';
-                return `• ${i.qty}x ${i.name}${vars} - *[REF: ${productRef}]*`;
+                return `• ${i.qty}x ${i.name}${vars}`;
             }).join('\n');
 
             const pixInfo = storeConfig.pix || {};
             let pixBlock = "";
+            
+            // Verifica se o cliente escolheu PIX ou se você quer mandar os dados mesmo assim
             if (p.paymentMethod.toLowerCase().includes('pix') && pixInfo.key) {
-                pixBlock = `\n\n🔹 *PAGAMENTO PIX*\nChave: \`${pixInfo.key}\`\nTitular: ${pixInfo.name}`;
+                pixBlock = `\n\n━━━━━━━━━━━━━━━\n🔹 *DADOS PARA PAGAMENTO PIX*\n\n*Chave:* \`${pixInfo.key}\`\n*Titular:* ${pixInfo.name}\n*Banco:* ${pixInfo.bank}\n━━━━━━━━━━━━━━━\n_Favor enviar o comprovante após o pagamento._`;
             }
 
-            const msg = `🛍️ *PEDIDO CONFIRMADO!*\nOlá, *${p.customer.name}*!\n\n🆔 *Pedido:* #${p.id.slice(-5).toUpperCase()}\n\n📋 *ITENS:*\n${itemsText}\n\n💰 *TOTAL:* R$ ${p.total.toFixed(2).replace('.', ',')}${pixBlock}\n\n⏳ Já estamos preparando tudo!`;
+            const msg = `🛍️ *PEDIDO CONFIRMADO!*\n\nOlá, *${p.customer.name}*!\nO seu pedido foi recebido e já estamos preparando.\n\n🆔 *Pedido:* #${p.id.slice(-5).toUpperCase()}\n\n📋 *RESUMO:*\n${itemsText}\n\n💰 *TOTAL:* R$ ${p.total.toFixed(2).replace('.', ',')}${pixBlock}\n\n⏳ Avisaremos assim que sair para entrega!`;
+            
             const phone = p.customer.phone.replace(/\D/g, '');
             window.open(`https://wa.me/55${phone}?text=${encodeURIComponent(msg)}`, '_blank');
         }
 
-        // Limpa cache e sincroniza vitrine
-        localStorage.removeItem('app_cache_v4_' + currentStoreId);
-        window.markAsDirty(); // Troque para economizar dados
-showToast(`Pedido ${status} e estoque sincronizado! ✅`);
-
+        // --- ATUALIZAÇÃO DA UI ---
+        await loadProductsCache(true); 
+        renderProductList();
+        if (window.initFinanceDashboard) window.initFinanceDashboard();
+        
+        showToast(`Pedido ${status} e estoque atualizado! ✅`);
         document.getElementById('orderDetailModal').classList.add('hidden');
 
     } catch (e) {
         console.error("Erro no updateOrderStatus:", e);
-        showToast("Erro ao processar alteração.");
+        showToast("❌ Erro ao processar alteração.");
     }
 };
+        
                                                 
 window.startBarcodeScanner = () => {
     const container = document.getElementById('scanner-container');
