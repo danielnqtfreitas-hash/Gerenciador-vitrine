@@ -1785,7 +1785,7 @@ window.updateVariationPrice = (idx, value) => {
         cropper.replace(imageSrc);
     } else {
         cropper = new Cropper(img, {
-            aspectRatio: 1, 
+            aspectRatio: NaN, 
             viewMode: 2, 
             autoCropArea: 1, 
             responsive: true,
@@ -1812,43 +1812,50 @@ window.updateVariationPrice = (idx, value) => {
     currentVariationCropIndex = null;
 };
 
-      window.confirmCrop = () => {
+    window.confirmCrop = () => {
     if (!cropper) return;
 
-    // 1. Gera a imagem recortada (Quadrada 800x800, JPEG 70%)
-    const canvas = cropper.getCroppedCanvas({ 
-        width: 800, 
-        height: 800, 
-        imageSmoothingQuality: 'high' 
+    // 1. Pegamos o recorte do lojista (pode ser 3:4, 16:9, qualquer tamanho)
+    // Não forçamos largura/altura aqui para pegar a proporção que ele escolheu
+    const croppedCanvas = cropper.getCroppedCanvas({
+        imageSmoothingQuality: 'high'
     });
-    const optimizedDataUrl = canvas.toDataURL('image/jpeg', 0.7);
 
-    // --- LÓGICA DE DECISÃO: É VARIAÇÃO OU FOTO PRINCIPAL? ---
+    // 2. Criamos o "Canvas Final" que será obrigatoriamente 1:1 (quadrado)
+    const finalCanvas = document.createElement('canvas');
+    const size = 800; // Tamanho padrão da sua vitrine
+    finalCanvas.width = size;
+    finalCanvas.height = size;
+    const ctx = finalCanvas.getContext('2d');
 
+    // 3. Pintamos o fundo de branco (para as bordas)
+    ctx.fillStyle = '#FFFFFF';
+    ctx.fillRect(0, 0, size, size);
+
+    // 4. Calculamos como centralizar a imagem recortada dentro do quadrado
+    const ratio = Math.min(size / croppedCanvas.width, size / croppedCanvas.height);
+    const newWidth = croppedCanvas.width * ratio;
+    const newHeight = croppedCanvas.height * ratio;
+    const x = (size - newWidth) / 2;
+    const y = (size - newHeight) / 2;
+
+    // 5. Desenhamos a imagem centralizada com as bordas brancas
+    ctx.drawImage(croppedCanvas, x, y, newWidth, newHeight);
+
+    // 6. Convertemos para o formato final
+    const optimizedDataUrl = finalCanvas.toDataURL('image/jpeg', 0.8);
+
+    // --- LÓGICA DE DESTINO (VARIAÇÃO OU PRINCIPAL) ---
     if (currentVariationCropIndex !== null) {
-        // CENÁRIO A: Estamos recortando uma FOTO DE VARIAÇÃO
-        
-        // Salva na matriz na posição correta
         variationsMatrix[currentVariationCropIndex].image = optimizedDataUrl;
-        
-        // Atualiza a tabela visualmente
         renderMatrixUI();
-        
-        // Reseta o índice e fecha o modal
         currentVariationCropIndex = null;
         closeCropModal();
-        
-        showToast("✅ Foto da variação atualizada!");
-
+        showToast("✅ Foto da variação processada!");
     } else {
-        // CENÁRIO B: Estamos recortando FOTOS PRINCIPAIS (Lógica original)
-        
         currentProductImages.push(optimizedDataUrl);
         renderImagePreviews();
-
-        // Gerencia a fila de múltiplas imagens
         imageQueue.shift(); 
-
         if (imageQueue.length > 0) {
             loadNextImageInQueue();
         } else {
@@ -1856,7 +1863,6 @@ window.updateVariationPrice = (idx, value) => {
         }
     }
 };
-
         
         function loadNextImageInQueue() {
     if (imageQueue.length === 0) {
