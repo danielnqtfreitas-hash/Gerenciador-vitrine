@@ -4998,30 +4998,45 @@ window.updateOrderStatus = async (id, status) => {
 };
         
                                                 
+// --- SCANNER CORRIGIDO PARA TODOS OS FORMATOS (EAN-13, ETC) ---
 window.startBarcodeScanner = () => {
     const container = document.getElementById('scanner-container');
     container.classList.remove('hidden');
     
+    // Inicializa o leitor
     html5QrCode = new Html5Qrcode("reader");
     
-    const config = { fps: 10, qrbox: { width: 250, height: 150 } };
+    // --- CONFIGURAÇÃO CIRÚRGICA PARA MÚLTIPLOS FORMATOS ---
+    const config = { 
+        fps: 15, 
+        qrbox: { width: 250, height: 150 },
+        // Esta é a lista que permite a leitura de 13 dígitos (EAN_13) e outros padrões
+        formatsToSupport: [ 
+            Html5QrcodeSupportedFormats.EAN_13, 
+            Html5QrcodeSupportedFormats.EAN_8, 
+            Html5QrcodeSupportedFormats.CODE_128, 
+            Html5QrcodeSupportedFormats.CODE_39, 
+            Html5QrcodeSupportedFormats.UPC_A, 
+            Html5QrcodeSupportedFormats.UPC_E,
+            Html5QrcodeSupportedFormats.QR_CODE 
+        ]
+    };
 
     html5QrCode.start({ facingMode: "environment" }, config, (decodedText) => {
         const query = decodedText.toUpperCase().trim();
         document.getElementById('manualProductSearch').value = query;
-        window.renderManualProductSearch(); // Filtra a lista visualmente
+        
+        // Mantém a sua função de renderizar a busca visual
+        window.renderManualProductSearch(); 
         
         let itemEncontrado = null;
         let variacaoEncontrada = null;
 
-        // --- BUSCA AVANÇADA: Procura em todos os produtos e suas variações ---
+        // Mantém a sua lógica de busca no array allProducts
         allProducts.forEach(p => {
-            // Verifica se o SKU do produto pai coincide
             if (p.sku && p.sku.toUpperCase() === query) {
                 itemEncontrado = p;
             }
-            
-            // Verifica se algum SKU de variação coincide
             if (p.variations) {
                 const vMatch = p.variations.find(v => v.sku && v.sku.toUpperCase() === query);
                 if (vMatch) {
@@ -5032,7 +5047,7 @@ window.startBarcodeScanner = () => {
         });
 
         if (itemEncontrado) {
-            // Adiciona automaticamente o item (com variação se houver)
+            // Mantém a sua função de adição ao carrinho manual
             window.addManualItem(itemEncontrado.id, variacaoEncontrada);
             
             const nomeExibir = variacaoEncontrada 
@@ -5044,13 +5059,12 @@ window.startBarcodeScanner = () => {
             showToast("⚠️ Código não reconhecido no catálogo.");
         }
 
-        window.stopBarcodeScanner(); // Fecha a câmera após a leitura
+        window.stopBarcodeScanner(); 
     }).catch((err) => {
         console.error("Erro na câmera:", err);
         showToast("❌ Erro ao abrir câmera.");
     });
 };
-
 
 window.stopBarcodeScanner = () => {
     if (html5QrCode) {
