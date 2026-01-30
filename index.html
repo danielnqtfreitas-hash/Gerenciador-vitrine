@@ -292,25 +292,14 @@ tailwind.config = {
                             <input id="manualAddress" type="text" placeholder="Rua, número, bairro..." class="input-pro">
                         </div>
                         <div class="md:col-span-2 space-y-1">
-    <label class="text-[10px] font-bold text-slate-500 uppercase ml-1">Forma de Pagamento</label>
-    <select id="manualPayment" onchange="window.togglePrazoFields(this.value)" class="input-pro bg-white">
-        <option value="">Selecione...</option>
-        <option value="pix">PIX</option>
-        <option value="dinheiro">Dinheiro</option>
-        <option value="cartao_credito">Cartão</option>
-        <option value="a_prazo">A Prazo</option>
-    </select>
-</div>
-
-<div id="prazoFields" class="hidden md:col-span-2 grid grid-cols-2 gap-4 p-4 bg-amber-50 rounded-2xl border border-amber-100 animate-fade-in">
-    <div>
-        <label class="text-[9px] font-black text-amber-600 uppercase ml-1">Nº Parcelas</label>
-        <input type="number" id="prazoQty" value="1" min="1" class="w-full p-2.5 rounded-xl border-amber-200 bg-white text-sm outline-none focus:ring-2 focus:ring-amber-500">
-    </div>
-    <div>
-        <label class="text-[9px] font-black text-amber-600 uppercase ml-1">1º Vencimento</label>
-        <input type="date" id="prazoFirstDate" class="w-full p-2.5 rounded-xl border-amber-200 bg-white text-sm outline-none">
-    </div>
+                            <label class="text-[10px] font-bold text-slate-500 uppercase ml-1">Forma de Pagamento</label>
+                            <select id="manualPayment" class="input-pro bg-white">
+                                <option value="">Selecione...</option>
+                                <option value="pix">PIX</option>
+                                <option value="dinheiro">Dinheiro</option>
+                                <option value="cartao_credito">Cartão</option>
+                            </select>
+                        </div>
                     </div>
                 </div>
 
@@ -4804,49 +4793,24 @@ window.finishManualOrder = async () => {
             totalFinal = manualOrder.reduce((sum, i) => sum + i.qty * i.price, 0);
         }
 
-        // 1. Definição do Objeto Base
-const payment = document.getElementById("manualPayment").value;
+        // 1. Cria o documento do pedido
+        const newOrder = {
+            customer: {
+                // ATENÇÃO: Ajustado para os IDs que estão no seu HTML
+                name: document.getElementById("manualOrderCustName")?.value || "Cliente Local",
+                phone: document.getElementById("manualPhone")?.value || "",
+                address: document.getElementById("manualAddress")?.value || ""
+            },
+            paymentMethod: payment,
+            items: manualOrder,
+            total: Number(totalFinal.toFixed(2)),
+            status: "completed",
+            createdAt: new Date(),
+            manual: true,
+            stockDeducted: true
+        };
 
-const newOrder = {
-    customer: {
-        name: document.getElementById("manualOrderCustName")?.value || "Cliente Local",
-        phone: document.getElementById("manualPhone")?.value || "",
-        address: document.getElementById("manualAddress")?.value || ""
-    },
-    paymentMethod: payment,
-    items: manualOrder,
-    total: Number(totalFinal.toFixed(2)),
-    // Se for fiado, o status inicial é 'prazo_pendente' para o lojista cobrar depois
-    status: payment === 'a_prazo' ? 'prazo_pendente' : 'completed',
-    createdAt: new Date(),
-    manual: true,
-    stockDeducted: true
-};
-
-// 🚀 ADIÇÃO CIRÚRGICA: Lógica de Parcelamento do Fiado
-if (payment === 'a_prazo') {
-    const installmentsQty = parseInt(document.getElementById('prazoQty').value) || 1;
-    const firstDate = document.getElementById('prazoFirstDate').value;
-    
-    newOrder.installments = [];
-    // T12:00:00 evita que o fuso horário mude o dia para ontem no banco de dados
-    let dateRef = new Date(firstDate + "T12:00:00"); 
-
-    for (let i = 1; i <= installmentsQty; i++) {
-        newOrder.installments.push({
-            numero: i,
-            valor: Number((totalFinal / installmentsQty).toFixed(2)),
-            vencimento: dateRef.toISOString().split('T')[0],
-            pago: false // Status individual da parcela
-        });
-        
-        // Pula 1 mês para a próxima parcela
-        dateRef.setMonth(dateRef.getMonth() + 1);
-    }
-}
-
-// Salva no Firebase (Mantém igual o seu addDoc)
-await addDoc(collection(db, `stores/${currentStoreId}/orders`), newOrder);
+        await addDoc(collection(db, `stores/${currentStoreId}/orders`), newOrder);
 
         // 2. LÓGICA DE BAIXA DE ESTOQUE (Mantida a sua lógica original que está ótima)
         const itemsByProduct = manualOrder.reduce((acc, item) => {
@@ -4917,9 +4881,6 @@ await addDoc(collection(db, `stores/${currentStoreId}/orders`), newOrder);
     } finally {
         if (btn) btn.disabled = false;
     }
- document.getElementById('prazoFields').classList.add('hidden');
-    document.getElementById('prazoQty').value = 1;
-}
 };
 
 
@@ -6251,18 +6212,6 @@ window.applyCustomDate = () => {
     currentFinanceRange = 'custom';
     window.initFinanceDashboard();
 };
-
-     window.togglePrazoFields = (val) => {
-    const fields = document.getElementById('prazoFields');
-    if (val === 'a_prazo') {
-        fields.classList.remove('hidden');
-        // Define a data de hoje como sugestão inicial
-        document.getElementById('prazoFirstDate').value = new Date().toISOString().split('T')[0];
-    } else {
-        fields.classList.add('hidden');
-    }
-};
-
 
 
     </script>
