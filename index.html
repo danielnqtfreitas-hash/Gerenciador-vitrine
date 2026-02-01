@@ -3092,9 +3092,9 @@ showToast("🗑️ Produto e todos os arquivos removidos!");
                         </div>
                         <div class="flex gap-1">
                             <button onclick="toggleProductStatus('${p.id}', '${p.status || 'active'}')" class="p-2 ${isPaused ? 'text-green-600' : 'text-amber-500'} hover:bg-slate-100 rounded-lg"><i data-lucide="${isPaused ? 'eye' : 'eye-off'}" class="w-4 h-4"></i></button>
-                            <button onclick="window.openProductModal('${p.id}')" class="p-2 text-blue-500 hover:bg-blue-50 rounded-lg">
-    <i data-lucide="pencil" class="w-4 h-4"></i>
-</button>
+                            const btnEditar = `<button onclick="editProduct('${doc.id}')" class="p-2 text-blue-600">
+    <i data-lucide="edit"></i>
+</button>`;
                               <button onclick='deleteProduct("${p.id}", ${JSON.stringify(p.images || [])})' class="p-2 text-red-500 hover:bg-red-50 rounded-lg"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
                         </div>
                     </div>`;
