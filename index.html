@@ -292,28 +292,17 @@ tailwind.config = {
                             <input id="manualAddress" type="text" placeholder="Rua, número, bairro..." class="input-pro">
                         </div>
                         <div class="md:col-span-2 space-y-1">
-    <label class="text-[10px] font-bold text-slate-500 uppercase ml-1">Forma de Pagamento</label>
-    <select id="manualPayment" class="input-pro bg-white" onchange="window.toggleInstallmentFields()">
-        <option value="">Selecione...</option>
-        <option value="pix">PIX</option>
-        <option value="dinheiro">Dinheiro</option>
-        <option value="cartao_credito">Cartão (Débito/Crédito)</option>
-        <option value="a_prazo">A Prazo / Parcelado</option>
-    </select>
-</div>
+                            <label class="text-[10px] font-bold text-slate-500 uppercase ml-1">Forma de Pagamento</label>
+                            <select id="manualPayment" class="input-pro bg-white">
+                                <option value="">Selecione...</option>
+                                <option value="pix">PIX</option>
+                                <option value="dinheiro">Dinheiro</option>
+                                <option value="cartao_credito">Cartão</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
 
-<div id="installmentContainer" class="md:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-4 hidden animate-fade-in bg-slate-50 p-4 rounded-2xl border border-slate-200">
-    <div class="space-y-1">
-        <label class="text-[10px] font-bold text-slate-500 uppercase ml-1">Nº de Parcelas</label>
-        <input id="manualInstallments" type="number" value="1" min="1" class="input-pro">
-    </div>
-    <div class="space-y-1">
-        <label class="text-[10px] font-bold text-slate-500 uppercase ml-1">Vencimento / Prazo</label>
-        <input id="manualDueDate" type="text" placeholder="Ex: 30 dias ou 10/05" class="input-pro">
-      </div>
-     </div>
-    </div>       
-                 
                 <div class="space-y-4">
                     <h4 class="text-[11px] font-black uppercase text-slate-400 tracking-widest border-b border-slate-100 pb-2">Adicionar Itens</h4>
                     <div class="flex gap-2">
@@ -4593,7 +4582,6 @@ window.closeManualOrderModal = () => {
     if (typeof window.stopBarcodeScanner === 'function') {
         window.stopBarcodeScanner();
     }
- window.toggleInstallmentFields();
 };
 
         // --- BUSCA DE PRODUTOS PARA PEDIDO MANUAL ---
@@ -4789,30 +4777,31 @@ window.finishManualOrder = async () => {
     const payment = document.getElementById("manualPayment").value;
     if (!payment) return showToast("⚠️ Escolha o pagamento!");
 
-    // Captura campos de prazo
-    const installments = document.getElementById("manualInstallments").value;
-    const dueDate = document.getElementById("manualDueDate").value;
-
     const btn = document.querySelector('button[onclick="window.finishManualOrder()"]');
     if (btn) btn.disabled = true;
 
     try {
+        // --- LÓGICA DE VALOR TOTAL (AUTOMÁTICO VS MANUAL) ---
         const overrideInput = document.getElementById('manualOrderTotalOverride');
         const overrideValue = parseFloat(overrideInput.value);
         
-        let totalFinal = !isNaN(overrideValue) && overrideValue > 0 
-            ? overrideValue 
-            : manualOrder.reduce((sum, i) => sum + i.qty * i.price, 0);
+        let totalFinal;
+        if (!isNaN(overrideValue) && overrideValue > 0) {
+            totalFinal = overrideValue; // Usa o valor que você digitou no campo amarelo
+        } else {
+            // Soma automática do carrinho
+            totalFinal = manualOrder.reduce((sum, i) => sum + i.qty * i.price, 0);
+        }
 
+        // 1. Cria o documento do pedido
         const newOrder = {
             customer: {
+                // ATENÇÃO: Ajustado para os IDs que estão no seu HTML
                 name: document.getElementById("manualOrderCustName")?.value || "Cliente Local",
                 phone: document.getElementById("manualPhone")?.value || "",
                 address: document.getElementById("manualAddress")?.value || ""
             },
-            // Se for a prazo, salvamos o detalhe no método de pagamento
-            paymentMethod: payment === 'a_prazo' ? `A Prazo (${installments}x - ${dueDate})` : payment,
-            installmentDetails: payment === 'a_prazo' ? { installments, dueDate } : null,
+            paymentMethod: payment,
             items: manualOrder,
             total: Number(totalFinal.toFixed(2)),
             status: "completed",
@@ -4822,7 +4811,6 @@ window.finishManualOrder = async () => {
         };
 
         await addDoc(collection(db, `stores/${currentStoreId}/orders`), newOrder);
-       
 
         // 2. LÓGICA DE BAIXA DE ESTOQUE (Mantida a sua lógica original que está ótima)
         const itemsByProduct = manualOrder.reduce((acc, item) => {
@@ -4886,7 +4874,6 @@ window.finishManualOrder = async () => {
         
         window.renderManualOrderItems();
         window.closeManualOrderModal();
-            showToast("✅ Venda a prazo registrada!");
 
     } catch (e) {
         console.error("Erro ao finalizar venda:", e);
@@ -6224,17 +6211,6 @@ window.applyCustomDate = () => {
     document.getElementById('modalCustomDate').classList.add('hidden');
     currentFinanceRange = 'custom';
     window.initFinanceDashboard();
-};
-
-     // Função para mostrar os campos de prazo apenas quando necessário
-window.toggleInstallmentFields = () => {
-    const payment = document.getElementById("manualPayment").value;
-    const container = document.getElementById("installmentContainer");
-    if (payment === "a_prazo") {
-        container.classList.remove("hidden");
-    } else {
-        container.classList.add("hidden");
-    }
 };
 
 
