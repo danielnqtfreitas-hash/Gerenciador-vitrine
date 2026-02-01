@@ -310,9 +310,10 @@ tailwind.config = {
     <div class="space-y-1">
         <label class="text-[10px] font-bold text-slate-500 uppercase ml-1">Vencimento / Prazo</label>
         <input id="manualDueDate" type="text" placeholder="Ex: 30 dias ou 10/05" class="input-pro">
-    </div>
-</div>
-                
+      </div>
+     </div>
+    </div>       
+                 
                 <div class="space-y-4">
                     <h4 class="text-[11px] font-black uppercase text-slate-400 tracking-widest border-b border-slate-100 pb-2">Adicionar Itens</h4>
                     <div class="flex gap-2">
@@ -4592,6 +4593,7 @@ window.closeManualOrderModal = () => {
     if (typeof window.stopBarcodeScanner === 'function') {
         window.stopBarcodeScanner();
     }
+ window.toggleInstallmentFields();
 };
 
         // --- BUSCA DE PRODUTOS PARA PEDIDO MANUAL ---
