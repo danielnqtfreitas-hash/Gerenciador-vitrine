@@ -4049,6 +4049,28 @@ async function initAnalyticsInsights() {
        window.openOrderModal = (id) => {
     const p = ordersCache[id];
     if (!p) return;
+        // --- FORMATA PAGAMENTO (corrige [object Object]) ---
+let payText = "";
+
+if (typeof p.paymentMethod === "string") {
+    // PIX, DINHEIRO, CARTÃO
+    payText = p.paymentMethod.toUpperCase();
+} 
+else if (typeof p.paymentMethod === "object") {
+
+    if (p.paymentMethod.type === "fiado") {
+        payText = `A PRAZO — Receber em ${p.paymentMethod.dueDate}`;
+    }
+
+    if (p.paymentMethod.type === "parcelado") {
+        payText = `PARCELADO — ${p.paymentMethod.parcelas}x`;
+    }
+
+    // Caso futuro
+    if (!payText) {
+        payText = p.paymentMethod.type?.toUpperCase() || "DESCONHECIDO";
+    }
+}
 
     // --- CORREÇÃO 1: Atualiza o Título do Modal com o Código do Pedido ---
     const orderIdDisplay = document.getElementById('modalOrderId');
@@ -4074,7 +4096,7 @@ async function initAnalyticsInsights() {
                 </div>
                 <div class="p-4 bg-slate-50 rounded-2xl border border-slate-100">
                     <p class="text-[10px] font-black text-slate-400 uppercase mb-2">Pagamento / Entrega</p>
-                    <p class="text-xs font-bold text-slate-700">${p.paymentMethod}</p>
+                    <p class="text-xs font-bold text-slate-700">${payText}</p>
                     <p class="text-[10px] text-slate-500 mt-1">${p.customer.addressString || 'Retirada na Loja'}</p>
                 </div>
             </div>
