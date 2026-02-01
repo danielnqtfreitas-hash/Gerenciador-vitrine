@@ -5209,18 +5209,35 @@ window.initFinanceDashboard = () => {
             }
             metrics.totalProfit += orderProfit;
 
-            // Distribuir por Método de Pagamento
-            const pay = (order.paymentMethod || '').toLowerCase();
-            if (pay.includes('pix')) {
-                metrics.pixRev += totalOrder;
-                metrics.pixProfit += orderProfit;
-            } else if (pay.includes('cartao') || pay.includes('crédito') || pay.includes('debito')) {
-                metrics.cardRev += totalOrder;
-                metrics.cardProfit += orderProfit;
-            } else {
-                metrics.cashRev += totalOrder;
-                metrics.cashProfit += orderProfit;
-            }
+            // --- Corrigir paymentMethod (string OU objeto) ---
+let payType = "";
+
+if (typeof order.paymentMethod === "string") {
+    // pagamento padrão
+    payType = order.paymentMethod.toLowerCase();
+} else if (typeof order.paymentMethod === "object" && order.paymentMethod !== null) {
+    // novo formato
+    payType = (order.paymentMethod.type || "").toLowerCase();
+}
+
+// Fiado/Parcelado NÃO entram no financeiro
+if (payType === "fiado" || payType === "parcelado") {
+    return; // pula este pedido
+}
+
+// Distribuir Receitas e Lucro por método
+if (payType.includes("pix")) {
+    metrics.pixRev += totalOrder;
+    metrics.pixProfit += orderProfit;
+}
+else if (payType.includes("cartao") || payType.includes("crédito") || payType.includes("debito")) {
+    metrics.cardRev += totalOrder;
+    metrics.cardProfit += orderProfit;
+}
+else {
+    metrics.cashRev += totalOrder;
+    metrics.cashProfit += orderProfit;
+}
         }
     });
 
