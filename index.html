@@ -1327,61 +1327,67 @@ tailwind.config = {
                         </div>
                     </div>
  <div class="space-y-8">
-                      <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
-    
-    <div class="space-y-5">
-        <h4 class="text-[11px] font-black uppercase text-slate-400 tracking-widest border-b border-slate-100 pb-2">Precificação & Ofertas</h4>
-        
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div class="space-y-1">
-                <label class="text-[10px] font-bold text-slate-500 uppercase ml-1">No Cartão</label>
-                <input type="number" step="0.01" id="prodValue" required oninput="calculateProfit()" placeholder="0.00" class="input-pro bg-white font-bold">
-            </div>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                            
+                            <div class="space-y-5">
+                                <h4 class="text-[11px] font-black uppercase text-slate-400 tracking-widest border-b border-slate-100 pb-2">Precificação Base</h4>
+                                
+                                <div class="grid grid-cols-2 gap-4">
+                                    <div class="space-y-1">
+                                        <label class="text-[10px] font-bold text-slate-500 uppercase ml-1">Preço Normal (R$)</label>
+                                        <input type="number" step="0.01" id="prodValue" required oninput="calculateProfit()" placeholder="0.00" class="input-pro bg-white">
+                                    </div>
 
-            <div class="space-y-1">
-                <label class="text-[10px] font-bold text-blue-600 uppercase ml-1">No PIX / Dinheiro</label>
-                <input type="number" step="0.01" id="prodCash" oninput="calculateProfit()" placeholder="0.00" class="input-pro bg-blue-50/30 border-blue-200 font-bold text-blue-700">
-            </div>
+                                    <div class="space-y-1">
+                                        <label class="text-[10px] font-bold text-green-600 uppercase ml-1">Preço Promo (R$)</label>
+                                        <input type="number" step="0.01" id="prodPromo" placeholder="Opcional" class="input-pro bg-white">
+                                    </div>
+                                </div>
 
-            <div class="space-y-1">
-                <label class="text-[10px] font-bold text-green-600 uppercase ml-1">Preço Promo</label>
-                <input type="number" step="0.01" id="prodPromo" oninput="calculateProfit()" placeholder="0.00" class="input-pro bg-emerald-50/30 border-emerald-100 font-bold text-emerald-700">
-            </div>
-        </div>
+                                <div class="space-y-1">
+                                    <label class="text-[10px] font-bold text-amber-600 uppercase ml-1">Duração da Oferta Especial</label>
+                                    <div class="relative">
+                                        <input type="number" id="prodPromoDays" placeholder="Quantidade de dias (Ex: 7)" min="1" class="input-pro bg-white pr-16">
+                                        <div class="absolute right-3 top-3.5 flex items-center gap-1 pointer-events-none">
+                                            <span class="text-[10px] font-black text-slate-400 uppercase">Dias</span>
+                                            <i data-lucide="clock" class="w-3.5 h-3.5 text-amber-500"></i>
+                                        </div>
+                                    </div>
+                                    <p class="text-[9px] text-slate-400 mt-1 italic">* A oferta expirará automaticamente após este período.</p>
+                                </div>
+                            </div>
 
-        <div class="space-y-1">
-            <label class="text-[10px] font-bold text-amber-600 uppercase ml-1">Duração da Oferta Especial</label>
-            <div class="relative">
-                <input type="number" id="prodPromoDays" placeholder="Quantidade de dias (Ex: 7)" min="1" class="input-pro bg-white pr-16">
-                <div class="absolute right-3 top-3.5 flex items-center gap-1 pointer-events-none">
-                    <span class="text-[10px] font-black text-slate-400 uppercase">Dias</span>
-                    <i data-lucide="clock" class="w-3.5 h-3.5 text-amber-500"></i>
-                </div>
-            </div>
-            <p class="text-[9px] text-slate-400 mt-1 italic">* A oferta expirará automaticamente após este período.</p>
-        </div>
-    </div>
-
-    <div class="space-y-5">
-        <h4 class="text-[11px] font-black uppercase text-slate-400 tracking-widest border-b border-slate-100 pb-2">Estoque & Lucro</h4>
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div>
-                <label class="text-[10px] font-bold text-slate-500 uppercase ml-1">Qtd Atual</label>
-                <input type="number" id="prodStock" min="0" placeholder="0" class="input-pro bg-white">
-            </div>
-            <div>
-                <label class="text-[10px] font-bold text-slate-500 uppercase ml-1">Custo (R$)</label>
-                <input type="number" step="0.01" id="prodCost" oninput="calculateProfit()" class="input-pro bg-white">
-            </div>
-            <div>
-                <label class="text-[10px] font-bold text-green-600 uppercase ml-1">Lucro Mínimo</label>
-                <input type="text" id="prodProfit" class="input-pro bg-green-50 border-green-200 font-bold text-green-700" disabled>
-            </div>
-        </div>
-        <p class="text-[9px] text-slate-400 mt-1 italic">O lucro é calculado sobre o menor valor de venda configurado.</p>
-    </div>
-       </div>
-       
+                                                        <div class="space-y-5">
+                                <h4 class="text-[11px] font-black uppercase text-slate-400 tracking-widest border-b border-slate-100 pb-2">Controle de Estoque & Lucro</h4>
+                                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                    <div>
+                                        <label class="text-[10px] font-bold text-slate-500 uppercase ml-1">Estoque</label>
+                                        <input type="number" id="prodStock" min="0" placeholder="0" class="input-pro bg-white">
+                                    </div>
+                                    <div>
+                                        <label class="text-[10px] font-bold text-slate-500 uppercase ml-1">Custo (R$)</label>
+                                        <input type="number" step="0.01" id="prodCost" oninput="calculateProfit()" class="input-pro bg-white">
+                                    </div>
+                                    <div>
+                                        <label class="text-[10px] font-bold text-green-600 uppercase ml-1">Lucro</label>
+                                        <input type="text" id="prodProfit" class="input-pro bg-green-50 border-green-200 font-bold text-green-700" disabled>
+                                    </div>
+                                </div>
+                            </div>
+                        </div> <div class="space-y-5 mt-8">
+                            <h4 class="text-[11px] font-black uppercase text-slate-400 tracking-widest border-b border-slate-100 pb-2">Gerador de Combinações</h4>
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div class="space-y-1">
+                                    <label class="text-[10px] font-bold text-slate-500 uppercase ml-1">Tamanhos (Vírgula)</label>
+                                    <input type="text" id="prodSizesInput" oninput="generateVariationMatrix()" placeholder="P, M, G" class="input-pro bg-white">
+                                </div>
+                                <div class="space-y-1">
+                                    <label class="text-[10px] font-bold text-slate-500 uppercase ml-1">Cores (Vírgula)</label>
+                                    <input type="text" id="prodColorsInput" oninput="generateVariationMatrix()" placeholder="Azul, Branco, Preto" class="input-pro bg-white">
+                                </div>
+                            </div>
+                        </div>
+                    </div> 
                         <div id="variationMatrixContainer" class="hidden animate-fade-in">
     <h4 class="text-[11px] font-black uppercase text-slate-400 tracking-widest border-b border-slate-100 pb-2 mb-4">
         Matriz de Variações Inteligente
@@ -2722,7 +2728,6 @@ function updateQuotas() {
         document.getElementById('prodSku').value = p.sku || ''; 
         document.getElementById('prodCategory').value = p.category; 
         document.getElementById('prodValue').value = p.value;
-        document.getElementById('prodCash').value = p.priceCash || '';
         document.getElementById('prodPromo').value = p.promoValue || ''; 
         document.getElementById('prodPromoDays').value = p.promoDays || ''; 
       
@@ -2752,8 +2757,7 @@ function updateQuotas() {
         document.getElementById('prodModalTitle').textContent = "Adicionar Novo Produto";
         document.getElementById('productForm').reset(); 
         document.getElementById('prodId').value = ''; 
-        document.getElementById('prodPromoDays').value = '';
-        document.getElementById('prodCash').value = '';
+        document.getElementById('prodPromoDays').value = ''; 
         document.getElementById('prodSku').value = generateSKU();
         document.getElementById('prodProfit').value = '';
         currentProductImages = []; 
@@ -2884,7 +2888,6 @@ if (promoDays > 0) {
             category: document.getElementById('prodCategory').value,
             value: parseFloat(document.getElementById('prodValue').value) || 0,
             promoValue: parseFloat(document.getElementById('prodPromo').value) || null,   
-            priceCash: parseFloat(document.getElementById('prodCash').value) || null,
             promoDays: promoDays || null,
             promoUntil: promoUntil,
             stock: totalStock, 
@@ -3058,12 +3061,12 @@ showToast("🗑️ Produto e todos os arquivos removidos!");
                 </div>
             </div>
             <div class="category-content border-t border-slate-50 p-4 space-y-3 bg-slate-50/30">
-                                ${products.map(p => {
+                ${products.map(p => {
                     const isPaused = p.status === 'paused';
                     const valNormal = p.value.toFixed(2).replace('.', ',');
                     const valPromo = p.promoValue ? p.promoValue.toFixed(2).replace('.', ',') : null;
-                    const valCash = p.priceCash ? p.priceCash.toFixed(2).replace('.', ',') : null; // <-- ADICIONADO
                     
+                    // Lógica de Cor do Estoque (Vermelho se <= 3)
                     const stock = Number(p.stock) || 0;
                     const stockClass = stock <= 3 ? 'bg-red-50 text-red-600 border-red-100' : 'bg-slate-100 text-slate-500 border-slate-200';
 
@@ -3075,27 +3078,19 @@ showToast("🗑️ Produto e todos os arquivos removidos!");
                                 ${p.sku ? `<span class="text-[8px] font-mono bg-slate-100 text-slate-400 px-1.5 py-0.5 rounded uppercase tracking-tighter">${p.sku}</span>` : ''}
                             </div>
                             
-                            <div class="flex flex-col mt-1">
-                                <div class="flex items-center gap-3">
-                                    <p class="text-[10px] font-bold text-slate-900">
-                                        R$ ${valNormal} 
-                                        ${valPromo ? `<span class="text-green-600 ml-2">→ R$ ${valPromo}</span>` : ''}
-                                    </p>
-                                    
-                                    <div class="flex items-center gap-1 px-2 py-0.5 rounded-lg border ${stockClass}">
-                                        <i data-lucide="package-2" class="w-3 h-3"></i>
-                                        <span class="text-[9px] font-black">${stock} un.</span>
-                                    </div>
+                            <div class="flex items-center gap-3 mt-1">
+                                <p class="text-[10px] font-bold text-slate-900">R$ ${valNormal} ${valPromo ? `<span class="text-green-600 ml-2">R$ ${valPromo}</span>` : ''}</p>
+                                
+                                <div class="flex items-center gap-1 px-2 py-0.5 rounded-lg border ${stockClass}">
+                                    <i data-lucide="package-2" class="w-3 h-3"></i>
+                                    <span class="text-[9px] font-black">${stock} un.</span>
                                 </div>
-                                ${valCash ? `<p class="text-[9px] font-black text-blue-500 uppercase mt-0.5">💰 À vista: R$ ${valCash}</p>` : ''}
                             </div>
                         </div>
                         <div class="flex gap-1">
                             <button onclick="toggleProductStatus('${p.id}', '${p.status || 'active'}')" class="p-2 ${isPaused ? 'text-green-600' : 'text-amber-500'} hover:bg-slate-100 rounded-lg"><i data-lucide="${isPaused ? 'eye' : 'eye-off'}" class="w-4 h-4"></i></button>
-                            const btnEditar = `<button onclick="editProduct('${doc.id}')" class="p-2 text-blue-600">
-    <i data-lucide="edit"></i>
-</button>`;
-                              <button onclick='deleteProduct("${p.id}", ${JSON.stringify(p.images || [])})' class="p-2 text-red-500 hover:bg-red-50 rounded-lg"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
+                            <button onclick='openProductModal(${JSON.stringify(p).replace(/'/g, "&apos;")})' class="p-2 text-blue-500 hover:bg-blue-50 rounded-lg"><i data-lucide="pencil" class="w-4 h-4"></i></button>
+                            <button onclick='deleteProduct("${p.id}", ${JSON.stringify(p.images || [])})' class="p-2 text-red-500 hover:bg-red-50 rounded-lg"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
                         </div>
                     </div>`;
                 }).join('')}
@@ -4294,43 +4289,22 @@ window.deleteOrder = async (id) => {
     }
 };
 
-window.calculateProfit = () => {
-    // 1. Captura os valores dos inputs
-    const cost = parseFloat(document.getElementById('prodCost').value) || 0;
-    const price = parseFloat(document.getElementById('prodValue').value) || 0;
-    const promo = parseFloat(document.getElementById('prodPromo').value) || 0;
-    const cash = parseFloat(document.getElementById('prodCash').value) || 0;
 
-    // 2. Filtra apenas os preços que foram preenchidos (maiores que zero)
-    const validPrices = [price, promo, cash].filter(p => p > 0);
+    window.calculateProfit = () => {
+  const cost = parseFloat(document.getElementById('prodCost').value) || 0;
+  const price = parseFloat(document.getElementById('prodValue').value) || 0;
 
-    // 3. Define o menor preço de venda como base para o lucro
-    // Se não houver nenhum preço válido, assume 0
-    const minPrice = validPrices.length > 0 ? Math.min(...validPrices) : 0;
+  const profit = price - cost;
 
-    // 4. Calcula o lucro líquido por unidade
-    const profit = minPrice - cost;
+  const profitInput = document.getElementById('prodProfit');
+  profitInput.value = profit >= 0
+    ? `R$ ${profit.toFixed(2)}`
+    : `- R$ ${Math.abs(profit).toFixed(2)}`;
 
-    // 5. Atualiza o campo visual
-    const profitInput = document.getElementById('prodProfit');
-    
-    if (minPrice === 0) {
-        profitInput.value = "Aguardando preços...";
-        profitInput.classList.remove('text-red-600', 'bg-red-50', 'text-green-700', 'bg-green-50');
-        return;
-    }
-
-    profitInput.value = profit >= 0 
-        ? `Lucro mín: R$ ${profit.toFixed(2)}` 
-        : `Prejuízo: R$ ${Math.abs(profit).toFixed(2)}`;
-
-    // 6. Alerta visual de prejuízo ou lucro
-    profitInput.classList.toggle('text-red-600', profit < 0);
-    profitInput.classList.toggle('bg-red-50', profit < 0);
-    profitInput.classList.toggle('text-green-700', profit >= 0);
-    profitInput.classList.toggle('bg-green-50', profit >= 0);
+  profitInput.classList.toggle('text-red-600', profit < 0);
+  profitInput.classList.toggle('bg-red-50', profit < 0);
 };
-    
+ 
     function generateSKU() {
   const storeNameEl = document.getElementById('sidebarStoreName');
   const storeName = storeNameEl ? storeNameEl.innerText : 'SKU';
@@ -6335,43 +6309,6 @@ window.handlePaymentChange = () => {
         parcelado.classList.remove("hidden");
     }
 };
-
-     window.editProduct = async (id) => {
-    // 1. Referência ao modal e ao formulário
-    const modal = document.getElementById('modalProduto');
-    const form = document.getElementById('formProduto');
-    
-    if (!modal) return console.error("Modal 'modalProduto' não encontrado.");
-
-    // 2. Lógica para obter os dados do produto
-    // Se estiver a usar Firebase Firestore:
-    try {
-        const docRef = doc(db, "produtos", id);
-        const docSnap = await getDoc(docRef);
-
-        if (docSnap.exists()) {
-            const produto = docSnap.data();
-
-            // 3. Preencher os campos do formulário
-            // Certifique-se de que os IDs (prodNome, prodPreco, etc) existem no seu HTML
-            if(document.getElementById('prodId')) document.getElementById('prodId').value = id;
-            if(document.getElementById('prodNome')) document.getElementById('prodNome').value = produto.nome || '';
-            if(document.getElementById('prodPreco')) document.getElementById('prodPreco').value = produto.preco || '';
-            if(document.getElementById('prodCategoria')) document.getElementById('prodCategoria').value = produto.categoria || '';
-            if(document.getElementById('prodDescricao')) document.getElementById('prodDescricao').value = produto.descricao || '';
-
-            // 4. Alterar o título do modal para "Editar"
-            const modalTitle = modal.querySelector('h3');
-            if (modalTitle) modalTitle.innerText = "Editar Produto";
-
-            // 5. Mostrar o modal removendo a classe 'hidden'
-            modal.classList.remove('hidden');
-        }
-    } catch (error) {
-        console.error("Erro ao carregar produto:", error);
-    }
-};
-
     </script>
 </body>
 </html>
