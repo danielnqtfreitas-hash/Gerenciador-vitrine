@@ -4859,7 +4859,10 @@ if (payment === "parcelado") {
 },
             items: manualOrder,
             total: Number(totalFinal.toFixed(2)),
-            status: "completed",
+            status: 
+    payment === "fiado" || payment === "parcelado"
+    ? "to_receive"
+    : "completed",
             createdAt: new Date(),
             manual: true,
             stockDeducted: true
