@@ -298,7 +298,24 @@ tailwind.config = {
                                 <option value="pix">PIX</option>
                                 <option value="dinheiro">Dinheiro</option>
                                 <option value="cartao_credito">Cartão</option>
+                             <option value="fiado">A Prazo</option>
+                             <option value="parcelado">Parcelado</option>
                             </select>
+                         
+<div id="paymentDetails" class="hidden mt-3 space-y-3">
+    
+    <div id="fiadoField" class="hidden">
+        <label class="text-[10px] font-bold text-slate-500 uppercase">Data para receber</label>
+        <input id="fiadoDueDate" type="date" class="input-pro">
+    </div>
+
+    <div id="parceladoField" class="hidden">
+        <label class="text-[10px] font-bold text-slate-500 uppercase">Número de parcelas</label>
+        <input id="parcelasQtd" type="number" min="1" max="12" class="input-pro" placeholder="Ex: 3">
+    </div>
+
+</div>
+
                         </div>
                     </div>
                 </div>
@@ -4775,6 +4792,19 @@ window.updateManualTotal = () => {
 window.finishManualOrder = async () => {
     if (manualOrder.length === 0) return showToast("⚠️ Carrinho vazio!");
     const payment = document.getElementById("manualPayment").value;
+ let paymentExtra = {};
+
+if (payment === "fiado") {
+    paymentExtra = {
+        dueDate: document.getElementById("fiadoDueDate").value
+    };
+}
+
+if (payment === "parcelado") {
+    paymentExtra = {
+        parcelas: parseInt(document.getElementById("parcelasQtd").value || 1)
+    };
+}
     if (!payment) return showToast("⚠️ Escolha o pagamento!");
 
     const btn = document.querySelector('button[onclick="window.finishManualOrder()"]');
@@ -4801,7 +4831,10 @@ window.finishManualOrder = async () => {
                 phone: document.getElementById("manualPhone")?.value || "",
                 address: document.getElementById("manualAddress")?.value || ""
             },
-            paymentMethod: payment,
+            paymentMethod: {
+    type: payment,
+    ...paymentExtra
+},
             items: manualOrder,
             total: Number(totalFinal.toFixed(2)),
             status: "completed",
@@ -6213,7 +6246,27 @@ window.applyCustomDate = () => {
     window.initFinanceDashboard();
 };
 
+window.handlePaymentChange = () => {
+    const payment = document.getElementById("manualPayment").value;
+    const container = document.getElementById("paymentDetails");
+    const fiado = document.getElementById("fiadoField");
+    const parcelado = document.getElementById("parceladoField");
 
+    // esconde tudo
+    container.classList.add("hidden");
+    fiado.classList.add("hidden");
+    parcelado.classList.add("hidden");
+
+    if (payment === "fiado") {
+        container.classList.remove("hidden");
+        fiado.classList.remove("hidden");
+    }
+
+    if (payment === "parcelado") {
+        container.classList.remove("hidden");
+        parcelado.classList.remove("hidden");
+    }
+};
     </script>
 </body>
 </html>
