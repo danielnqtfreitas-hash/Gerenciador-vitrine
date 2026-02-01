@@ -6335,6 +6335,43 @@ window.handlePaymentChange = () => {
         parcelado.classList.remove("hidden");
     }
 };
+
+     window.editProduct = async (id) => {
+    // 1. Referência ao modal e ao formulário
+    const modal = document.getElementById('modalProduto');
+    const form = document.getElementById('formProduto');
+    
+    if (!modal) return console.error("Modal 'modalProduto' não encontrado.");
+
+    // 2. Lógica para obter os dados do produto
+    // Se estiver a usar Firebase Firestore:
+    try {
+        const docRef = doc(db, "produtos", id);
+        const docSnap = await getDoc(docRef);
+
+        if (docSnap.exists()) {
+            const produto = docSnap.data();
+
+            // 3. Preencher os campos do formulário
+            // Certifique-se de que os IDs (prodNome, prodPreco, etc) existem no seu HTML
+            if(document.getElementById('prodId')) document.getElementById('prodId').value = id;
+            if(document.getElementById('prodNome')) document.getElementById('prodNome').value = produto.nome || '';
+            if(document.getElementById('prodPreco')) document.getElementById('prodPreco').value = produto.preco || '';
+            if(document.getElementById('prodCategoria')) document.getElementById('prodCategoria').value = produto.categoria || '';
+            if(document.getElementById('prodDescricao')) document.getElementById('prodDescricao').value = produto.descricao || '';
+
+            // 4. Alterar o título do modal para "Editar"
+            const modalTitle = modal.querySelector('h3');
+            if (modalTitle) modalTitle.innerText = "Editar Produto";
+
+            // 5. Mostrar o modal removendo a classe 'hidden'
+            modal.classList.remove('hidden');
+        }
+    } catch (error) {
+        console.error("Erro ao carregar produto:", error);
+    }
+};
+
     </script>
 </body>
 </html>
