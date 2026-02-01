@@ -293,7 +293,7 @@ tailwind.config = {
                         </div>
                         <div class="md:col-span-2 space-y-1">
                             <label class="text-[10px] font-bold text-slate-500 uppercase ml-1">Forma de Pagamento</label>
-                            <select id="manualPayment" class="input-pro bg-white">
+                            <select id="manualPayment" class="input-pro bg-white" onchange="window.handlePaymentChange()">
                                 <option value="">Selecione...</option>
                                 <option value="pix">PIX</option>
                                 <option value="dinheiro">Dinheiro</option>
