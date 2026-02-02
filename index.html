@@ -4984,12 +4984,14 @@ window.updateOrderStatus = async (id, status) => {
         }
 
         const orderUpdate = { status: status };
+
+        if (status === 'completed' && p.status === 'to_receive') {
+            orderUpdate.paymentMethod = "Dinheiro (Fiado Recebido)";
+        } 
+     
         const estavaCancelado = p.status === 'canceled' || p.status === 'Cancelado';
         const alreadyDeducted = p.stockDeducted === true;
 
-     if (status === 'completed' && p.status === 'to_receive') {
-            orderUpdate.paymentMethod = "Dinheiro (Fiado Recebido)";
-     } 
 
         // --- CASO A: CONFIRMAR OU CONCLUIR (BAIXAR ESTOQUE) ---
         if ((status === 'confirmed' || status === 'completed') && (!alreadyDeducted || estavaCancelado)) {
