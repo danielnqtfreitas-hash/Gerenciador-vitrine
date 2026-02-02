@@ -1329,22 +1329,22 @@ tailwind.config = {
     </div>
 
     <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
-        <div class="space-y-5">
-            <h4 class="text-[11px] font-black uppercase text-slate-400 tracking-widest border-b border-slate-100 pb-2">Precificação & Ofertas</h4>
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div class="space-y-1">
-                    <label class="text-[10px] font-bold text-slate-500 uppercase ml-1">No Cartão</label>
-                    <input type="number" step="0.01" id="prodValue" required oninput="calculateProfit()" placeholder="0.00" class="input-pro bg-white font-bold">
-                </div>
-                <div class="space-y-1">
-                    <label class="text-[10px] font-bold text-blue-600 uppercase ml-1">No PIX / Dinheiro</label>
-                    <input type="number" step="0.01" id="prodCash" oninput="calculateProfit()" placeholder="0.00" class="input-pro bg-blue-50/30 border-blue-200 font-bold text-blue-700">
-                </div>
-                <div class="space-y-1">
-                    <label class="text-[10px] font-bold text-green-600 uppercase ml-1">Preço Promo</label>
-                    <input type="number" step="0.01" id="prodPromo" oninput="calculateProfit()" placeholder="0.00" class="input-pro bg-emerald-50/30 border-emerald-100 font-bold text-emerald-700">
-                </div>
+    <div class="space-y-5">
+        <h4 class="text-[11px] font-black uppercase text-slate-400 tracking-widest border-b border-slate-100 pb-2">Precificação & Ofertas</h4>
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div class="space-y-1">
+                <label class="text-[10px] font-bold text-blue-600 uppercase ml-1">No PIX / Dinheiro</label>
+                <input type="number" step="0.01" id="prodValue" required oninput="calculateProfit()" placeholder="0.00" class="input-pro bg-blue-50/30 border-blue-200 font-bold text-blue-700">
             </div>
+            <div class="space-y-1">
+                <label class="text-[10px] font-bold text-slate-500 uppercase ml-1">No Cartão</label>
+                <input type="number" step="0.01" id="prodCard" oninput="calculateProfit()" placeholder="0.00" class="input-pro bg-white font-bold">
+            </div>
+            <div class="space-y-1">
+                <label class="text-[10px] font-bold text-green-600 uppercase ml-1">Preço Promo</label>
+                <input type="number" step="0.01" id="prodPromo" oninput="calculateProfit()" placeholder="0.00" class="input-pro bg-emerald-50/30 border-emerald-100 font-bold text-emerald-700">
+            </div>
+        </div>
 
             <div class="space-y-1">
                 <label class="text-[10px] font-bold text-amber-600 uppercase ml-1">Duração da Oferta Especial</label>
@@ -2723,14 +2723,19 @@ function updateQuotas() {
         catSelect.innerHTML = allCategories.map(c => `<option value="${c.name}">${c.name}</option>`).join('');
     }
     
-    if(p) {
+        if(p) {
         document.getElementById('prodModalTitle').textContent = "Editar Produto Existente";
         document.getElementById('prodId').value = p.id;
         document.getElementById('prodName').value = p.name || '';
         document.getElementById('prodSku').value = p.sku || ''; 
         document.getElementById('prodCategory').value = p.category || ''; 
+        
+        // O valor principal (R$ 100 antigo) cai aqui no campo de PIX/Dinheiro
         document.getElementById('prodValue').value = p.value || 0;
-        document.getElementById('prodCash').value = p.priceCash || '';
+        
+        // Carrega o novo valor de cartão (se houver) no campo No Cartão
+        document.getElementById('prodCard').value = p.priceCard || '';
+        
         document.getElementById('prodPromo').value = p.promoValue || ''; 
         document.getElementById('prodPromoDays').value = p.promoDays || ''; 
         document.getElementById('prodStock').value = p.stock || 0;
@@ -2756,6 +2761,7 @@ function updateQuotas() {
             }
         }
     } else {
+
         // --- LÓGICA PARA NOVO PRODUTO ---
         document.getElementById('prodModalTitle').textContent = "Adicionar Novo Produto";
         document.getElementById('productForm').reset(); 
@@ -2885,28 +2891,35 @@ if (promoDays > 0) {
         }
 
         // --- 6. SALVAMENTO FINAL ---
-        const data = {
-            name: document.getElementById('prodName').value,
-            sku: document.getElementById('prodSku').value || '',
-            category: document.getElementById('prodCategory').value,
-            value: parseFloat(document.getElementById('prodValue').value) || 0,
-            promoValue: parseFloat(document.getElementById('prodPromo').value) || null,   
-            priceCash: parseFloat(document.getElementById('prodCash').value) || null,
-            promoDays: promoDays || null,
-            promoUntil: promoUntil,
-            stock: totalStock, 
-            cost: parseFloat(document.getElementById('prodCost').value) || 0,
-            images: imageUrls,
-            description: document.getElementById('prodDesc').value || '',
-            isFeatured: document.getElementById('prodFeatured').checked,
-            variations: updatedVariations,
-            colors: [...new Set(updatedVariations.map(v => v.color))].filter(c => c && c !== 'PADRAO'),
-            sizes: [...new Set(updatedVariations.map(v => v.size))].filter(s => s && s !== 'UNICO'),
-            trashFiles: stillInTrash,
-            status: totalStock > 0 ? 'active' : 'paused', 
-            updatedAt: Date.now(),
-            ...(isNew && { createdAt: Date.now() }) 
-        };
+const data = {
+    name: document.getElementById('prodName').value,
+    sku: document.getElementById('prodSku').value || '',
+    category: document.getElementById('prodCategory').value,
+    
+    // value agora salva o que você digitar em "PIX / Dinheiro"
+    value: parseFloat(document.getElementById('prodValue').value) || 0, 
+    
+    // promoValue continua igual
+    promoValue: parseFloat(document.getElementById('prodPromo').value) || null,   
+    
+    // Trocamos 'priceCash' por 'priceCard' para salvar o valor do novo campo "No Cartão"
+    priceCard: parseFloat(document.getElementById('prodCard').value) || null, 
+    
+    promoDays: promoDays || null,
+    promoUntil: promoUntil,
+    stock: totalStock, 
+    cost: parseFloat(document.getElementById('prodCost').value) || 0,
+    images: imageUrls,
+    description: document.getElementById('prodDesc').value || '',
+    isFeatured: document.getElementById('prodFeatured').checked,
+    variations: updatedVariations,
+    colors: [...new Set(updatedVariations.map(v => v.color))].filter(c => c && c !== 'PADRAO'),
+    sizes: [...new Set(updatedVariations.map(v => v.size))].filter(s => s && s !== 'UNICO'),
+    trashFiles: stillInTrash,
+    status: totalStock > 0 ? 'active' : 'paused', 
+    updatedAt: Date.now(),
+    ...(isNew && { createdAt: Date.now() }) 
+};
 
         await setDoc(docRef, data, { merge: true });
       await loadProductsCache(true);
@@ -3067,10 +3080,10 @@ showToast("🗑️ Produto e todos os arquivos removidos!");
             <div class="category-content border-t border-slate-50 p-4 space-y-3 bg-slate-50/30">
                                 ${products.map(p => {
                     const isPaused = p.status === 'paused';
-                    const valNormal = p.value.toFixed(2).replace('.', ',');
-                    const valPromo = p.promoValue ? p.promoValue.toFixed(2).replace('.', ',') : null;
-                    const valCash = p.priceCash ? p.priceCash.toFixed(2).replace('.', ',') : null; // <-- ADICIONADO
-                    
+const valNormal = p.value.toFixed(2).replace('.', ','); // Este é o seu PIX (Valor antigo de R$ 100)
+const valPromo = p.promoValue ? p.promoValue.toFixed(2).replace('.', ',') : null;
+const valCard = p.priceCard ? p.priceCard.toFixed(2).replace('.', ',') : null; // Trocamos valCash por valCard
+
                     const stock = Number(p.stock) || 0;
                     const stockClass = stock <= 3 ? 'bg-red-50 text-red-600 border-red-100' : 'bg-slate-100 text-slate-500 border-slate-200';
 
@@ -3094,8 +3107,8 @@ showToast("🗑️ Produto e todos os arquivos removidos!");
                                         <span class="text-[9px] font-black">${stock} un.</span>
                                     </div>
                                 </div>
-                                ${valCash ? `<p class="text-[9px] font-black text-blue-500 uppercase mt-0.5">💰 À vista: R$ ${valCash}</p>` : ''}
-                            </div>
+                                ${valCard ? `<p class="text-[9px] font-black text-slate-500 uppercase mt-0.5">💳 No Cartão: R$ ${valCard}</p>` : ''}
+                                  </div>
                         </div>
                         <div class="flex gap-1">
     <button onclick="toggleProductStatus('${p.id}', '${p.status || 'active'}')" class="p-2 ${isPaused ? 'text-green-600' : 'text-amber-500'} hover:bg-slate-100 rounded-lg">
@@ -4308,17 +4321,17 @@ window.deleteOrder = async (id) => {
 };
 
 window.calculateProfit = () => {
-    // 1. Captura os valores dos inputs
+    // 1. Captura os valores dos inputs atualizados
     const cost = parseFloat(document.getElementById('prodCost').value) || 0;
-    const price = parseFloat(document.getElementById('prodValue').value) || 0;
+    const pix = parseFloat(document.getElementById('prodValue').value) || 0; // Valor Principal
+    const card = parseFloat(document.getElementById('prodCard').value) || 0; // Valor Cartão
     const promo = parseFloat(document.getElementById('prodPromo').value) || 0;
-    const cash = parseFloat(document.getElementById('prodCash').value) || 0;
 
     // 2. Filtra apenas os preços que foram preenchidos (maiores que zero)
-    const validPrices = [price, promo, cash].filter(p => p > 0);
+    // O lucro mínimo deve ser baseado no menor valor que você aceita receber
+    const validPrices = [pix, card, promo].filter(p => p > 0);
 
     // 3. Define o menor preço de venda como base para o lucro
-    // Se não houver nenhum preço válido, assume 0
     const minPrice = validPrices.length > 0 ? Math.min(...validPrices) : 0;
 
     // 4. Calcula o lucro líquido por unidade
@@ -4334,10 +4347,10 @@ window.calculateProfit = () => {
     }
 
     profitInput.value = profit >= 0 
-        ? `Lucro mín: R$ ${profit.toFixed(2)}` 
-        : `Prejuízo: R$ ${Math.abs(profit).toFixed(2)}`;
+        ? `Lucro mín: R$ ${profit.toFixed(2).replace('.', ',')}` 
+        : `Prejuízo: R$ ${Math.abs(profit).toFixed(2).replace('.', ',')}`;
 
-    // 6. Alerta visual de prejuízo ou lucro
+    // 6. Alerta visual de prejuízo (vermelho) ou lucro (verde)
     profitInput.classList.toggle('text-red-600', profit < 0);
     profitInput.classList.toggle('bg-red-50', profit < 0);
     profitInput.classList.toggle('text-green-700', profit >= 0);
@@ -4680,7 +4693,8 @@ window.renderManualProductSearch = () => {
                 
                 // --- PREÇO INTELIGENTE NA BUSCA (SIMPLES) ---
                 const basePrice = p.promoValue || p.value;
-                const finalPrice = (isCash && p.priceCash) ? p.priceCash : basePrice;
+// Se for cash (PIX), usa o valor principal/promo. Se for cartão, usa o priceCard.
+const finalPrice = isCash ? basePrice : (p.priceCard || p.value);
 
                 const fotoExibir = (p.images && p.images.length > 0) ? p.images[0] : null;
                 const temEstoque = (Number(p.stock) || 0) > 0;
@@ -4743,18 +4757,25 @@ window.addManualItem = (id, varData = null) => {
     const p = allProducts.find(prod => prod.id === id);
     if (!p) return;
 
-    // --- CIRURGIA: Lógica de Preço Inteligente ---
+    // --- CIRURGIA: Lógica de Preço Inteligente CORRIGIDA ---
     const paymentMethod = document.getElementById("manualPayment").value;
     const isCashMode = ['pix', 'dinheiro'].includes(paymentMethod);
 
-    // Prioridade: Preço À Vista (se selecionado e existir) -> Preço Variação -> Promo -> Valor Base
     let selectedPrice;
-    if (isCashMode && p.priceCash) {
-        selectedPrice = p.priceCash;
+    
+    if (isCashMode) {
+        // Se for PIX/Dinheiro: Prioridade Promoção -> Valor Principal (seu R$ 100 antigo)
+        selectedPrice = p.promoValue || p.value;
     } else {
-        selectedPrice = varData ? (varData.price || p.value) : (p.promoValue || p.value);
+        // Se for Cartão: Prioridade Valor de Cartão (novo campo) -> Valor Principal (fallback)
+        selectedPrice = p.priceCard || p.value;
     }
-    // ---------------------------------------------
+
+    // Se for uma variação e ela tiver um preço específico preenchido na matriz, ele domina
+    if (varData && varData.price > 0) {
+        selectedPrice = varData.price;
+    }
+    // -------------------------------------------------------
 
     const cartId = varData ? `${id}-${varData.sku}` : id;
     const existing = manualOrder.find(item => item.cartId === cartId);
@@ -4767,14 +4788,15 @@ window.addManualItem = (id, varData = null) => {
             return;
         }
         existing.qty++;
-        existing.price = selectedPrice; // Garante que o preço se ajuste se a forma de pagamento mudou
+        // Atualiza o preço caso o lojista tenha mudado a forma de pagamento no meio da seleção
+        existing.price = selectedPrice; 
     } else {
         manualOrder.push({
             cartId: cartId,
             id: id,
             name: varData ? `${p.name} (${varData.color}/${varData.size})` : p.name,
             sku: varData ? varData.sku : (p.sku || ''),
-            price: selectedPrice, // Inserção com o preço inteligente
+            price: selectedPrice,
             qty: 1,
             image: fotoItem,
             variationDetails: varData
@@ -4783,7 +4805,6 @@ window.addManualItem = (id, varData = null) => {
 
     window.renderManualOrderItems();
 };
-
 
 // --- MOSTRA OS ITENS ADICIONADOS NO PEDIDO ---
 
@@ -6337,7 +6358,7 @@ window.handlePaymentChange = () => {
     const fiado = document.getElementById("fiadoField");
     const parcelado = document.getElementById("parceladoField");
 
-    // 1. Sua lógica original de UI (Mantida 100%)
+    // Controle visual dos campos extras
     container.classList.add("hidden");
     fiado.classList.add("hidden");
     parcelado.classList.add("hidden");
@@ -6351,28 +6372,35 @@ window.handlePaymentChange = () => {
         parcelado.classList.remove("hidden");
     }
 
-    // --- 2. CIRURGIA: RECÁLCULO AUTOMÁTICO DE PREÇOS ---
-    const isCashMode = ['pix', 'dinheiro'].each ? ['pix', 'dinheiro'].includes(payment) : (payment === 'pix' || payment === 'dinheiro');
+    // --- LÓGICA DE RECÁLCULO DE PREÇOS NO CARRINHO ---
+    const isCashMode = ['pix', 'dinheiro'].includes(payment);
 
-    // Mapeia o carrinho atual e atualiza os preços com base na nova forma de pagamento
     manualOrder = manualOrder.map(item => {
         const p = allProducts.find(prod => prod.id === item.id);
         if (p) {
-            // Se for cash e houver preço à vista, usa ele. 
-            // Senão, volta para o preço da variação ou preço promocional/base.
-            const newPrice = (isCashMode && p.priceCash) 
-                ? p.priceCash 
-                : (item.variationDetails?.price || p.promoValue || p.value);
+            let newPrice;
+
+            // 1. Se o item for uma variação e tiver um preço específico na matriz, mantemos ele
+            if (item.variationDetails && item.variationDetails.price > 0) {
+                newPrice = item.variationDetails.price;
+            } 
+            // 2. Caso contrário, aplicamos a regra de troca de preço baseada no pagamento
+            else {
+                newPrice = isCashMode 
+                    ? (p.promoValue || p.value) // Prioridade Promoção -> Valor Principal (PIX)
+                    : (p.priceCard || p.value);  // Prioridade Valor Cartão -> Fallback Valor Principal
+            }
             
             return { ...item, price: newPrice };
         }
         return item;
     });
 
-    // 3. Atualiza a visualização do carrinho e os resultados da busca aberta
+    // Atualiza a visualização do carrinho e os resultados da busca (que mostram os preços)
     window.renderManualOrderItems();
     window.renderManualProductSearch();
 };
+
 
     </script>
 </body>
