@@ -4652,41 +4652,45 @@ window.closeManualOrderModal = () => {
 window.renderManualProductSearch = () => {
     const query = document.getElementById("manualProductSearch").value.toLowerCase();
     const container = document.getElementById("manualSearchResults");
-    container.innerHTML = "";
+    
+    // --- CIRURGIA: Captura o estado do pagamento ---
+    const paymentMethod = document.getElementById("manualPayment").value;
+    const isCash = ['pix', 'dinheiro'].includes(paymentMethod);
 
+    container.innerHTML = "";
     if (!query) return;
 
     allProducts.forEach(p => {
-        // Caso 1: O produto tem variações
         if (p.variations && p.variations.length > 0) {
             p.variations.forEach(v => {
                 if (v.active && (p.name.toLowerCase().includes(query) || (v.sku && v.sku.toLowerCase().includes(query)))) {
-                    const varPrice = v.price || p.promoValue || p.value;
+                    
+                    // --- PREÇO INTELIGENTE NA BUSCA ---
+                    const basePrice = v.price || p.promoValue || p.value;
+                    const varPrice = (isCash && p.priceCash) ? p.priceCash : basePrice;
+
                     const fotoExibir = v.image ? v.image : (p.images && p.images.length > 0 ? p.images[0] : null);
-                    
-                    // --- TRAVA DE ESTOQUE ---
                     const temEstoque = (Number(v.stock) || 0) > 0;
-                    
                     renderItemRow(container, p, `${p.name} (${v.color}/${v.size})`, v.sku, varPrice, v, fotoExibir, temEstoque);
                 }
             });
         } 
-        // Caso 2: Produto Simples
         else {
             if (p.name.toLowerCase().includes(query) || (p.sku && p.sku.toLowerCase().includes(query))) {
-                const fotoExibir = (p.images && p.images.length > 0) ? p.images[0] : null;
                 
-                // --- TRAVA DE ESTOQUE ---
-                const temEstoque = (Number(p.stock) || 0) > 0;
+                // --- PREÇO INTELIGENTE NA BUSCA (SIMPLES) ---
+                const basePrice = p.promoValue || p.value;
+                const finalPrice = (isCash && p.priceCash) ? p.priceCash : basePrice;
 
-                renderItemRow(container, p, p.name, p.sku, (p.promoValue || p.value), null, fotoExibir, temEstoque);
+                const fotoExibir = (p.images && p.images.length > 0) ? p.images[0] : null;
+                const temEstoque = (Number(p.stock) || 0) > 0;
+                renderItemRow(container, p, p.name, p.sku, finalPrice, null, fotoExibir, temEstoque);
             }
         }
     });
-
     lucide.createIcons();
 };
-
+     
 // Adicionado o parâmetro 'temEstoque' no final
 function renderItemRow(container, product, displayName, sku, price, varData = null, imgUrl = null, temEstoque = true) {
     const priceFormatted = price.toFixed(2).replace(".", ",");
@@ -4739,30 +4743,40 @@ window.addManualItem = (id, varData = null) => {
     const p = allProducts.find(prod => prod.id === id);
     if (!p) return;
 
-    // Criamos um ID único para o carrinho (ID do produto + SKU da variação)
+    // --- CIRURGIA: Lógica de Preço Inteligente ---
+    const paymentMethod = document.getElementById("manualPayment").value;
+    const isCashMode = ['pix', 'dinheiro'].includes(paymentMethod);
+
+    // Prioridade: Preço À Vista (se selecionado e existir) -> Preço Variação -> Promo -> Valor Base
+    let selectedPrice;
+    if (isCashMode && p.priceCash) {
+        selectedPrice = p.priceCash;
+    } else {
+        selectedPrice = varData ? (varData.price || p.value) : (p.promoValue || p.value);
+    }
+    // ---------------------------------------------
+
     const cartId = varData ? `${id}-${varData.sku}` : id;
     const existing = manualOrder.find(item => item.cartId === cartId);
-
-    // Definição Cirúrgica da Foto: Prioridade para a variação, depois foto principal
     const fotoItem = (varData && varData.image) ? varData.image : (p.images && p.images.length > 0 ? p.images[0] : null);
 
     if (existing) {
-        // Validação de estoque baseada na variação ou no pai
         const estoqueMax = varData ? (Number(varData.stock) || 0) : (Number(p.stock) || 0);
         if (existing.qty + 1 > estoqueMax) {
             showToast(`⚠️ Estoque insuficiente (${estoqueMax} un.)`);
             return;
         }
         existing.qty++;
+        existing.price = selectedPrice; // Garante que o preço se ajuste se a forma de pagamento mudou
     } else {
         manualOrder.push({
-            cartId: cartId, // ID único da linha
-            id: id,         // ID do produto no banco
+            cartId: cartId,
+            id: id,
             name: varData ? `${p.name} (${varData.color}/${varData.size})` : p.name,
             sku: varData ? varData.sku : (p.sku || ''),
-            price: varData ? varData.price : (p.promoValue || p.value),
+            price: selectedPrice, // Inserção com o preço inteligente
             qty: 1,
-            image: fotoItem, // <--- Aqui salvamos a foto correta
+            image: fotoItem,
             variationDetails: varData
         });
     }
@@ -6323,7 +6337,7 @@ window.handlePaymentChange = () => {
     const fiado = document.getElementById("fiadoField");
     const parcelado = document.getElementById("parceladoField");
 
-    // esconde tudo
+    // 1. Sua lógica original de UI (Mantida 100%)
     container.classList.add("hidden");
     fiado.classList.add("hidden");
     parcelado.classList.add("hidden");
@@ -6332,11 +6346,32 @@ window.handlePaymentChange = () => {
         container.classList.remove("hidden");
         fiado.classList.remove("hidden");
     }
-
     if (payment === "parcelado") {
         container.classList.remove("hidden");
         parcelado.classList.remove("hidden");
     }
+
+    // --- 2. CIRURGIA: RECÁLCULO AUTOMÁTICO DE PREÇOS ---
+    const isCashMode = ['pix', 'dinheiro'].each ? ['pix', 'dinheiro'].includes(payment) : (payment === 'pix' || payment === 'dinheiro');
+
+    // Mapeia o carrinho atual e atualiza os preços com base na nova forma de pagamento
+    manualOrder = manualOrder.map(item => {
+        const p = allProducts.find(prod => prod.id === item.id);
+        if (p) {
+            // Se for cash e houver preço à vista, usa ele. 
+            // Senão, volta para o preço da variação ou preço promocional/base.
+            const newPrice = (isCashMode && p.priceCash) 
+                ? p.priceCash 
+                : (item.variationDetails?.price || p.promoValue || p.value);
+            
+            return { ...item, price: newPrice };
+        }
+        return item;
+    });
+
+    // 3. Atualiza a visualização do carrinho e os resultados da busca aberta
+    window.renderManualOrderItems();
+    window.renderManualProductSearch();
 };
 
     </script>
