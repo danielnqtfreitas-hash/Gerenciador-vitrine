@@ -5179,12 +5179,12 @@ window.applyCustomDate = () => {
     updateFinanceRange('custom');
 };
 
+
 window.initFinanceDashboard = () => {
     const now = new Date();
     const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
     const monthStart = new Date(now.getFullYear(), now.getMonth(), 1).getTime();
     
-    // 1. Configurar Janela de Tempo (Filtros)
     let filterStart = todayStart;
     let filterEnd = Infinity;
     let label = "HOJE";
@@ -5205,7 +5205,6 @@ window.initFinanceDashboard = () => {
         label = "PERÍODO PERSONALIZADO";
     }
 
-    // 2. Acumuladores Financeiros
     let metrics = {
         totalRev: 0, totalProfit: 0, orders: 0,
         pixRev: 0, pixProfit: 0,
@@ -5213,26 +5212,40 @@ window.initFinanceDashboard = () => {
         cashRev: 0, cashProfit: 0
     };
 
-    // 3. Processar Pedidos
     Object.values(ordersCache).forEach(order => {
         let orderTime = 0;
         if (order.createdAt?.toMillis) orderTime = order.createdAt.toMillis();
         else if (order.createdAt?.toDate) orderTime = order.createdAt.toDate().getTime();
         else if (typeof order.createdAt === 'number') orderTime = order.createdAt;
 
-        // Filtro de Data e Status
+        // 1. Filtro básico de Data e Cancelamento
         if (orderTime >= filterStart && orderTime <= filterEnd && order.status !== 'canceled' && order.status !== 'Cancelado') {
+            
+            // --- IDENTIFICAÇÃO DO MÉTODO DE PAGAMENTO ---
+            let payType = "";
+            if (typeof order.paymentMethod === "string") {
+                payType = order.paymentMethod.toLowerCase();
+            } else if (typeof order.paymentMethod === "object" && order.paymentMethod !== null) {
+                payType = (order.paymentMethod.type || "").toLowerCase();
+            }
+
+            // --- REGRA DE OURO: SÓ SOMA SE NÃO FOR FIADO ATIVO ---
+            // Ignora se o status for 'to_receive' OU se o tipo ainda for fiado/parcelado
+            if (order.status === 'to_receive' || payType === "fiado" || payType === "parcelado") {
+                return; 
+            }
+
+            // Se passou da trava acima, somamos aos totais
             const totalOrder = Number(order.total) || 0;
             metrics.totalRev += totalOrder;
             metrics.orders++;
 
-            // Calcular Lucro do Pedido (Item por Item)
+            // Calcular Lucro
             let orderProfit = 0;
             if (order.items && Array.isArray(order.items)) {
                 order.items.forEach(item => {
                     const qty = Number(item.qty) || 0;
                     const price = Number(item.price) || 0;
-                    // Busca custo no catálogo
                     const prod = allProducts.find(p => p.id === item.id);
                     const cost = prod ? (Number(prod.cost) || 0) : 0;
                     orderProfit += (price - cost) * qty;
@@ -5240,39 +5253,23 @@ window.initFinanceDashboard = () => {
             }
             metrics.totalProfit += orderProfit;
 
-            // --- Corrigir paymentMethod (string OU objeto) ---
-let payType = "";
-
-if (typeof order.paymentMethod === "string") {
-    // pagamento padrão
-    payType = order.paymentMethod.toLowerCase();
-} else if (typeof order.paymentMethod === "object" && order.paymentMethod !== null) {
-    // novo formato
-    payType = (order.paymentMethod.type || "").toLowerCase();
-}
-
-// Fiado/Parcelado NÃO entram no financeiro
-if (payType === "fiado" || payType === "parcelado") {
-    return; // pula este pedido
-}
-
-// Distribuir Receitas e Lucro por método
-if (payType.includes("pix")) {
-    metrics.pixRev += totalOrder;
-    metrics.pixProfit += orderProfit;
-}
-else if (payType.includes("cartao") || payType.includes("crédito") || payType.includes("debito")) {
-    metrics.cardRev += totalOrder;
-    metrics.cardProfit += orderProfit;
-}
-else {
-    metrics.cashRev += totalOrder;
-    metrics.cashProfit += orderProfit;
-}
+            // Distribuir por método (O fiado convertido cairá em "cash/outros")
+            if (payType.includes("pix")) {
+                metrics.pixRev += totalOrder;
+                metrics.pixProfit += orderProfit;
+            }
+            else if (payType.includes("cartao") || payType.includes("crédito") || payType.includes("debito")) {
+                metrics.cardRev += totalOrder;
+                metrics.cardProfit += orderProfit;
+            }
+            else {
+                metrics.cashRev += totalOrder;
+                metrics.cashProfit += orderProfit;
+            }
         }
     });
 
-    // 4. Processar Patrimônio em Estoque
+    // 4. Processar Patrimônio em Estoque (Mantido igual)
     let stockValue = 0, stockCost = 0, totalItems = 0;
     allProducts.forEach(p => {
         const qty = Number(p.stock) || 0;
@@ -5307,9 +5304,10 @@ else {
     setTxt('fin-profit-potential', stockValue - stockCost);
     setTxt('fin-stock-count', `${totalItems} unidades disponíveis`);
  
-window.updateFinanceChart(filterStart, filterEnd, currentFinanceRange);
+    window.updateFinanceChart(filterStart, filterEnd, currentFinanceRange);
     if (window.lucide) lucide.createIcons();
 };
+        
 let financeChartInstance = null;
 
 window.updateFinanceChart = (filterStart, filterEnd, rangeType) => {
