@@ -2737,7 +2737,6 @@ function updateQuotas() {
         document.getElementById('prodDesc').value = p.description || '';
         document.getElementById('prodFeatured').checked = !!p.isFeatured; 
         
-        // Verificação de segurança para os campos de Tamanhos e Cores
         const sizeInp = document.getElementById('prodSizesInput');
         const colorInp = document.getElementById('prodColorsInput');
         if(sizeInp) sizeInp.value = p.sizes ? p.sizes.join(', ') : '';
@@ -2756,10 +2755,14 @@ function updateQuotas() {
             }
         }
     } else {
-        // Lógica para Novo Produto...
+        // --- LÓGICA PARA NOVO PRODUTO ---
         document.getElementById('prodModalTitle').textContent = "Adicionar Novo Produto";
         document.getElementById('productForm').reset(); 
         document.getElementById('prodId').value = ''; 
+        
+        // ✨ AQUI ESTÁ A CORREÇÃO: Gera o SKU automaticamente ao abrir para novo
+        document.getElementById('prodSku').value = generateSKU();
+        
         currentProductImages = []; 
         variationsMatrix = [];
         const matrixCont = document.getElementById('variationMatrixContainer');
@@ -2767,11 +2770,9 @@ function updateQuotas() {
     }
     
     renderImagePreviews();
-    // Esta linha final é a que realmente mostra o modal
     document.getElementById('productModal').classList.remove('hidden');
     if (typeof lucide !== 'undefined') lucide.createIcons();
 };
-
        
         window.handleProductSubmit = async (e) => {
     e.preventDefault();
