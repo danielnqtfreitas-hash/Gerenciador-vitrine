@@ -3061,12 +3061,33 @@ showToast("🗑️ Produto e todos os arquivos removidos!");
     }
 };
         window.toggleCategoryAccordion = (catName) => {
-            const safeId = catName.replace(/\s+/g, '-');
-            const group = document.getElementById(`cat-group-${safeId}`);
-            if (expandedCategories.has(catName)) { expandedCategories.delete(catName); group?.classList.add('collapsed'); } 
-            else { expandedCategories.add(catName); group?.classList.remove('collapsed'); }
-            lucide.createIcons();
-        };
+    // 1. Atualiza o estado no conjunto de categorias expandidas
+    if (expandedCategories.has(catName)) {
+        expandedCategories.delete(catName);
+    } else {
+        expandedCategories.add(catName);
+    }
+
+    // 2. Localiza o grupo pelo ID que criamos no novo render
+    const safeId = catName.replace(/\s+/g, '-');
+    const groupDiv = document.getElementById(`cat-group-${safeId}`);
+    
+    if (groupDiv) {
+        const content = groupDiv.querySelector('.category-content');
+        const icon = groupDiv.querySelector('.chevron-icon');
+
+        // 3. Aplica a animação e alterna a visibilidade
+        if (content) {
+            content.classList.toggle('hidden');
+        }
+        
+        // 4. Gira o ícone do chevron
+        if (icon) {
+            icon.classList.toggle('-rotate-90');
+        }
+    }
+};
+
        
        function renderProductList() {
     const search = document.getElementById('productSearch').value.toLowerCase();
