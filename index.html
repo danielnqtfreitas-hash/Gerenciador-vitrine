@@ -4245,78 +4245,103 @@ else if (typeof p.paymentMethod === "object") {
     document.getElementById('orderDetailModal').classList.remove('hidden');
 };
 
+
 window.editExistingOrder = (id) => {
     const p = ordersCache[id];
     if (!p) return;
 
-    // 1. Abre o modal manual
+    // 1. Abre o modal de pedido manual e esconde o de detalhes
+    document.getElementById('orderDetailModal').classList.add('hidden');
     window.openManualOrderModal();
     
-    // 2. Muda o título e o comportamento do botão de finalizar
+    // 2. Muda o título para indicar edição
     document.querySelector('#manualOrderModal h3').textContent = "Editando Pedido #" + id.slice(-5).toUpperCase();
+    
+    // 3. Altera o botão de finalizar para "Salvar Alterações"
     const btnFinish = document.querySelector('button[onclick="window.finishManualOrder()"]');
     btnFinish.innerHTML = `<i data-lucide="save" class="w-4 h-4"></i> Salvar Alterações`;
     btnFinish.setAttribute('onclick', `window.saveOrderEdit('${id}')`);
 
-    // 3. Preenche os dados do cliente
-    document.getElementById("manualOrderCustName").value = p.customer.name;
-    document.getElementById("manualPhone").value = p.customer.phone;
-    document.getElementById("manualAddress").value = p.customer.address || "";
-    document.getElementById("manualOrderTotalOverride").value = p.total;
-    document.getElementById("manualPayment").value = p.paymentMethod.type || p.paymentMethod;
+    // 4. RECUPERAÇÃO DE DADOS DO CLIENTE
+    document.getElementById("manualOrderCustName").value = p.customer.name || "";
+    document.getElementById("manualPhone").value = p.customer.phone || "";
+    document.getElementById("manualAddress").value = p.customer.address || p.customer.addressString || "";
+    document.getElementById("manualOrderTotalOverride").value = p.total || "";
+    
+    // 5. RECUPERAÇÃO DO PAGAMENTO
+    const payMethod = typeof p.paymentMethod === 'object' ? p.paymentMethod.type : p.paymentMethod;
+    document.getElementById("manualPayment").value = payMethod || "";
+    
+    // Dispara a lógica visual de campos extras (PIX, Parcelas, etc)
+    window.handlePaymentChange();
 
-    // 4. Carrega os itens no carrinho de edição
-    // Aqui está o truque: vamos atualizar os preços e custos para os valores ATUAIS do catálogo
+    // Se for parcelado ou fiado, recupera os detalhes específicos
+    if (p.paymentMethod.dueDate) document.getElementById("fiadoDueDate").value = p.paymentMethod.dueDate;
+    if (p.paymentMethod.parcelas) document.getElementById("parcelasQtd").value = p.paymentMethod.parcelas;
+
+    // 6. RECUPERAÇÃO DOS ITENS (Com atualização de custos)
     manualOrder = p.items.map(item => {
         const prodAtual = allProducts.find(prod => prod.id === item.id);
         return {
             ...item,
-            // Se o produto ainda existe no catálogo, pegamos o preço/custo novo
-            // Se não existe, mantemos o que estava no pedido
-            price: prodAtual ? (prodAtual.promoValue || prodAtual.value) : item.price,
-            cost: prodAtual ? prodAtual.cost : (item.cost || 0)
+            // Mantemos o preço que foi vendido, mas puxamos o custo ATUAL do catálogo
+            // Isso resolve o seu problema do lucro acumulado de R$ 100
+            cost: prodAtual ? prodAtual.cost : (item.cost || 0),
+            price: item.price // Mantém o valor acordado com o cliente na época
         };
     });
 
     window.renderManualOrderItems();
-    document.getElementById('orderDetailModal').classList.add('hidden');
     if (window.lucide) lucide.createIcons();
 };
 
      
      window.saveOrderEdit = async (id) => {
     const btn = document.querySelector(`button[onclick="window.saveOrderEdit('${id}')"]`);
-    if (btn) btn.disabled = true;
+    if (btn) {
+        btn.disabled = true;
+        btn.innerHTML = "Salvando...";
+    }
 
     try {
+        const pAntigo = ordersCache[id];
         const overrideValue = parseFloat(document.getElementById('manualOrderTotalOverride').value);
         const totalCalculado = manualOrder.reduce((sum, i) => sum + i.qty * i.price, 0);
         const totalFinal = !isNaN(overrideValue) && overrideValue > 0 ? overrideValue : totalCalculado;
 
+        const paymentType = document.getElementById("manualPayment").value;
         const orderRef = doc(db, `stores/${currentStoreId}/orders`, id);
         
-        await updateDoc(orderRef, {
+        // Monta o objeto de atualização
+        const updateData = {
             customer: {
                 name: document.getElementById("manualOrderCustName").value,
                 phone: document.getElementById("manualPhone").value,
-                address: document.getElementById("manualAddress").value
+                address: document.getElementById("manualAddress").value,
+                addressString: document.getElementById("manualAddress").value // Sincroniza os dois campos de endereço
             },
-            paymentMethod: document.getElementById("manualPayment").value,
-            items: manualOrder, // Agora com custos/preços atualizados
+            paymentMethod: paymentType,
+            items: manualOrder, 
             total: Number(totalFinal.toFixed(2)),
             updatedAt: Date.now()
-        });
+        };
 
-        showToast("✅ Pedido atualizado com novos valores!");
+        // Se mudou para Fiado ou Parcelado, adiciona os campos extras
+        if (paymentType === 'fiado') updateData.paymentMethod = { type: 'fiado', dueDate: document.getElementById("fiadoDueDate").value };
+        if (paymentType === 'parcelado') updateData.paymentMethod = { type: 'parcelado', parcelas: document.getElementById("parcelasQtd").value };
+
+        await updateDoc(orderRef, updateData);
+
+        showToast("✅ Pedido e lucro atualizados com sucesso!");
         window.closeManualOrderModal();
         
-        // Força a atualização do financeiro e da lista
+        // Recarrega o financeiro para refletir o novo lucro
         if (window.initFinanceDashboard) window.initFinanceDashboard();
         window.renderFilteredOrders();
 
     } catch (e) {
         console.error(e);
-        showToast("❌ Erro ao atualizar pedido.");
+        showToast("❌ Erro ao salvar edição.");
     } finally {
         if (btn) btn.disabled = false;
     }
