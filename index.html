@@ -688,6 +688,12 @@ tailwind.config = {
                 <div id="ordersCardsContainer" class="grid grid-cols-1 gap-1">
     <p class="text-center text-slate-400 py-10 italic text-sm">Carregando pedidos...</p>
                 </div>
+             <div class="flex justify-center py-6">
+    <button id="btnLoadMore" onclick="window.loadMoreOrders()" 
+            class="bg-white border border-slate-200 text-slate-600 px-6 py-2.5 rounded-xl text-xs font-bold shadow-sm hover:bg-slate-50 transition-all hidden">
+        Ver pedidos antigos
+    </button>
+             </div>
             
             </div>
              <button 
@@ -2376,66 +2382,62 @@ window.initOrderListener = (storeId) => {
     const q = query(
         collection(db, `stores/${storeId}/orders`),
         orderBy("createdAt", "desc"),
-        limit(ordersLimit)
+        limit(ordersLimit) // Limite inicial de 20
     );
 
-    const container = document.getElementById("ordersCardsContainer");
     const audio = document.getElementById('notifSound');
 
     onSnapshot(q, (snapshot) => {
-        if (!container) return;
+        // 1. ATUALIZAÇÃO DO GPS DE PAGINAÇÃO
+        // Só atualizamos o lastVisibleOrder no primeiro carregamento ou se a lista mudar,
+        // mas apenas para os documentos do "topo" da lista.
+        if (snapshot.docs.length > 0 && isFirstLoad) {
+            lastVisibleOrder = snapshot.docs[snapshot.docs.length - 1];
+        }
 
-        // 1. PROCESSAMENTO DE ESTOQUE (Sempre roda, mesmo no primeiro carregamento)
-        snapshot.docs.forEach((doc) => {
-            const orderData = doc.data();
-            const orderId = doc.id;
+        // 2. ESCUTA INDIVIDUAL DE MUDANÇAS (O segredo para não apagar o "Ver Mais")
+        snapshot.docChanges().forEach((change) => {
+            const orderData = change.doc.data();
+            const orderId = change.doc.id;
 
-            // 🚀 SE O PEDIDO NÃO TEVE BAIXA, PROCESSA AGORA (Independente de ser novo ou antigo)
-            if (orderData.stockDeducted !== true && orderData.status !== 'canceled') {
-                console.log(`🤖 Baixa Automática: Sincronizando estoque do pedido ${orderId}`);
-                window.processarBaixaSilenciosa(orderId, orderData);
-            }
-        });
+            if (change.type === "added" || change.type === "modified") {
+                // Atualiza ou Adiciona no Cache
+                ordersCache[orderId] = { id: orderId, ...orderData };
 
-        // 2. NOTIFICAÇÕES SONORAS (Apenas para o que é realmente NOVO após a página carregar)
-        if (!isFirstLoad) {
-            snapshot.docChanges().forEach((change) => {
-                if (change.type === "added") {
-                    const orderData = change.doc.data();
+                // PROCESSAMENTO DE ESTOQUE (Regra de Ouro)
+                if (orderData.stockDeducted !== true && orderData.status !== 'canceled') {
+                    console.log(`🤖 Sincronizando estoque: ${orderId}`);
+                    window.processarBaixaSilenciosa(orderId, orderData);
+                }
+
+                // NOTIFICAÇÃO SONORA (Apenas para novos reais)
+                if (change.type === "added" && !isFirstLoad) {
                     const now = Date.now();
                     const orderTime = orderData.createdAt?.toMillis ? orderData.createdAt.toMillis() : now;
-
-                    // Somente apita se o pedido tiver menos de 2 minutos
-                    if (now - orderTime < 120000) {
+                    if (now - orderTime < 120000) { // 2 minutos
                         if (audio) {
                             audio.currentTime = 0;
-                            audio.play().catch(e => console.warn("Áudio bloqueado."));
+                            audio.play().catch(e => console.warn("Áudio bloqueado. Clique na tela uma vez."));
                         }
                         showToast("🔔 Novo pedido recebido!");
                     }
                 }
-            });
-        }
+            }
 
-        // --- ATUALIZAÇÃO DE ESTADO E INTERFACE ---
+            if (change.type === "removed") {
+                // Remove do cache apenas se o pedido for realmente excluído do banco
+                delete ordersCache[orderId];
+            }
+        });
+
         isFirstLoad = false; 
 
-        if (snapshot.docs.length > 0) {
-            lastVisibleOrder = snapshot.docs[snapshot.docs.length - 1];
-        }
-
-        // Sincronização do Cache Local
-        const idsAtuais = snapshot.docs.map(doc => doc.id);
-        Object.keys(ordersCache).forEach(id => {
-            if (!idsAtuais.includes(id)) delete ordersCache[id];
-        });
-
-        snapshot.forEach(doc => {
-            ordersCache[doc.id] = { id: doc.id, ...doc.data() };
-        });
-
-        // Atualiza a tela e o financeiro
+        // 3. ATUALIZAÇÃO DA UI
         window.renderFilteredOrders(); 
+        
+        // 4. FINANCEIRO INDEPENDENTE
+        // Lembra que criamos a busca independente? Ela garante os 32 pedidos
+        // mesmo que a gente só esteja "ouvindo" os 20 aqui.
         window.initFinanceDashboard(); 
     });
 };
@@ -3645,14 +3647,27 @@ window.handleBannerSubmit = async (e) => {
         }
     }
 
-    // --- FINANCEIRO ---
-    if (tabName === 'finance') {
-        setTimeout(() => {
-            if (typeof window.initFinanceDashboard === 'function') {
-                window.initFinanceDashboard();
+    // --- FINANCEIRO (VERSÃO ATUALIZADA PARA BUSCA NO BANCO) ---
+if (tabName === 'finance') {
+    // 1. Feedback visual imediato para o lojista
+    const revEl = document.getElementById('fin-rev-day');
+    const profitEl = document.getElementById('fin-profit-real');
+    
+    if (revEl) revEl.textContent = "Calculando...";
+    if (profitEl) profitEl.textContent = "Calculando...";
+
+    // 2. Chama a função assíncrona com um pequeno delay para garantir que a aba carregou
+    setTimeout(async () => {
+        if (typeof window.initFinanceDashboard === 'function') {
+            try {
+                await window.initFinanceDashboard();
+            } catch (err) {
+                console.error("Erro ao processar financeiro:", err);
+                if (revEl) revEl.textContent = "Erro ao carregar";
             }
-        }, 100);
-    }
+        }
+    }, 100);
+     }
 
     // --- BOTÃO DO MENU ---
     const activeBtn = document.getElementById(`nav-${tabName}`);
@@ -4524,7 +4539,7 @@ window.renderFilteredOrders = () => {
         else if (s === 'to_receive') counts.to_receive++;
     });
 
-    // 3. Renderização das Abas (Design Discreto e sem Scroll)
+    // 3. Renderização das Abas
     let tabsHtml = `
         <div class="flex w-full bg-white border-b border-slate-100 sticky top-0 z-30 mb-4 overflow-hidden">
             ${tabs.map(tab => {
@@ -4544,7 +4559,7 @@ window.renderFilteredOrders = () => {
         </div>
     `;
 
-    // 4. Filtragem (Mantendo sua lógica de busca e aba)
+    // 4. Filtragem
     const activeTab = tabs.find(t => t.id === currentOrderTab);
     let list = Object.values(ordersCache).filter(p => activeTab.status.includes(p.status));
 
@@ -4558,7 +4573,7 @@ window.renderFilteredOrders = () => {
 
     list.sort((a, b) => (b.createdAt?.toMillis || 0) - (a.createdAt?.toMillis || 0));
 
-    // 5. Agrupamento por Data e Cards (Mantendo sua estrutura)
+    // 5. Agrupamento por Data e Cards
     const groups = {};
     list.forEach(p => {
         const d = p.createdAt?.toDate ? p.createdAt.toDate() : (typeof p.createdAt === 'number' ? new Date(p.createdAt) : new Date());
@@ -4588,8 +4603,22 @@ window.renderFilteredOrders = () => {
     });
 
     container.innerHTML = tabsHtml + (list.length === 0 ? `<div class="py-20 text-center opacity-20"><p class="text-[9px] font-black uppercase">Vazio</p></div>` : ordersHtml);
+
+    // --- CIRURGIA: LÓGICA DO BOTÃO "CARREGAR MAIS" ---
+    const btnLoadMore = document.getElementById('btnLoadMore');
+    if (btnLoadMore) {
+        // Regra: Só mostra o botão se não estiver pesquisando e se o cache global tiver atingido o limite inicial
+        const totalNoCache = Object.keys(ordersCache).length;
+        if (!search && totalNoCache >= 20) {
+            btnLoadMore.classList.remove('hidden');
+        } else {
+            btnLoadMore.classList.add('hidden');
+        }
+    }
+
     if (window.lucide) lucide.createIcons();
 };
+
 
 window.setOrderTab = (id) => { currentOrderTab = id; window.renderFilteredOrders(); };
     
@@ -5214,29 +5243,29 @@ window.applyCustomDate = () => {
     updateFinanceRange('custom');
 };
 
-
-window.initFinanceDashboard = () => {
+window.initFinanceDashboard = async () => {
     const now = new Date();
-    const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
-    const monthStart = new Date(now.getFullYear(), now.getMonth(), 1).getTime();
+    const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
     
     let filterStart = todayStart;
-    let filterEnd = Infinity;
+    let filterEnd = new Date(now.getTime() + 86400000); // Amanhã
     let label = "HOJE";
 
+    // --- MANTENDO SEUS FILTROS ORIGINAIS ---
     if (currentFinanceRange === 'yesterday') {
-        filterStart = todayStart - (24 * 60 * 60 * 1000);
+        filterStart = new Date(todayStart.getTime() - (24 * 60 * 60 * 1000));
         filterEnd = todayStart;
         label = "ONTEM";
     } else if (currentFinanceRange === 'week') {
-        filterStart = now.getTime() - (7 * 24 * 60 * 60 * 1000);
+        filterStart = new Date(now.getTime() - (7 * 24 * 60 * 60 * 1000));
         label = "ÚLTIMOS 7 DIAS";
     } else if (currentFinanceRange === 'month') {
         filterStart = monthStart;
         label = "ESTE MÊS";
     } else if (currentFinanceRange === 'custom') {
-        filterStart = customStart;
-        filterEnd = customEnd;
+        filterStart = new Date(customStart);
+        filterEnd = new Date(customEnd);
         label = "PERÍODO PERSONALIZADO";
     }
 
@@ -5247,16 +5276,23 @@ window.initFinanceDashboard = () => {
         cashRev: 0, cashProfit: 0
     };
 
-    Object.values(ordersCache).forEach(order => {
-        let orderTime = 0;
-        if (order.createdAt?.toMillis) orderTime = order.createdAt.toMillis();
-        else if (order.createdAt?.toDate) orderTime = order.createdAt.toDate().getTime();
-        else if (typeof order.createdAt === 'number') orderTime = order.createdAt;
+    try {
+        // --- BUSCA INDEPENDENTE (A solução para os 32 pedidos) ---
+        const q = query(
+            collection(db, `stores/${currentStoreId}/orders`),
+            where("createdAt", ">=", filterStart),
+            where("createdAt", "<=", filterEnd)
+        );
 
-        // 1. Filtro básico de Data e Cancelamento
-        if (orderTime >= filterStart && orderTime <= filterEnd && order.status !== 'canceled' && order.status !== 'Cancelado') {
-            
-            // --- IDENTIFICAÇÃO DO MÉTODO DE PAGAMENTO ---
+        const querySnapshot = await getDocs(q);
+        
+        querySnapshot.forEach(doc => {
+            const order = doc.data();
+
+            // 1. Filtro básico de Cancelamento (Sua lógica)
+            if (order.status === 'canceled' || order.status === 'Cancelado') return;
+
+            // --- IDENTIFICAÇÃO DO MÉTODO DE PAGAMENTO (Sua lógica) ---
             let payType = "";
             if (typeof order.paymentMethod === "string") {
                 payType = order.paymentMethod.toLowerCase();
@@ -5264,18 +5300,16 @@ window.initFinanceDashboard = () => {
                 payType = (order.paymentMethod.type || "").toLowerCase();
             }
 
-            // --- REGRA DE OURO: SÓ SOMA SE NÃO FOR FIADO ATIVO ---
-            // Ignora se o status for 'to_receive' OU se o tipo ainda for fiado/parcelado
+            // --- REGRA DE OURO: SÓ SOMA SE NÃO FOR FIADO ATIVO (Sua lógica) ---
             if (order.status === 'to_receive' || payType === "fiado" || payType === "parcelado") {
                 return; 
             }
 
-            // Se passou da trava acima, somamos aos totais
             const totalOrder = Number(order.total) || 0;
             metrics.totalRev += totalOrder;
             metrics.orders++;
 
-            // Calcular Lucro
+            // Calcular Lucro (Sua lógica)
             let orderProfit = 0;
             if (order.items && Array.isArray(order.items)) {
                 order.items.forEach(item => {
@@ -5288,59 +5322,57 @@ window.initFinanceDashboard = () => {
             }
             metrics.totalProfit += orderProfit;
 
-            // Distribuir por método (O fiado convertido cairá em "cash/outros")
+            // Distribuir por método (Sua lógica)
             if (payType.includes("pix")) {
                 metrics.pixRev += totalOrder;
                 metrics.pixProfit += orderProfit;
-            }
-            else if (payType.includes("cartao") || payType.includes("crédito") || payType.includes("debito")) {
+            } else if (payType.includes("cartao") || payType.includes("crédito") || payType.includes("debito")) {
                 metrics.cardRev += totalOrder;
                 metrics.cardProfit += orderProfit;
-            }
-            else {
+            } else {
                 metrics.cashRev += totalOrder;
                 metrics.cashProfit += orderProfit;
             }
-        }
-    });
+        });
 
-    // 4. Processar Patrimônio em Estoque (Mantido igual)
-    let stockValue = 0, stockCost = 0, totalItems = 0;
-    allProducts.forEach(p => {
-        const qty = Number(p.stock) || 0;
-        const price = Number(p.value) || 0;
-        const cost = Number(p.cost) || 0;
-        stockValue += price * qty;
-        stockCost += cost * qty;
-        totalItems += qty;
-    });
+        // 4. Patrimônio em Estoque (Sua lógica - inalterada)
+        let stockValue = 0, stockCost = 0, totalItems = 0;
+        allProducts.forEach(p => {
+            const qty = Number(p.stock) || 0;
+            const price = Number(p.value) || 0;
+            const cost = Number(p.cost) || 0;
+            stockValue += price * qty;
+            stockCost += cost * qty;
+            totalItems += qty;
+        });
 
-    // 5. Atualizar UI
-    const setTxt = (id, val) => {
-        const el = document.getElementById(id);
-        if(el) el.textContent = typeof val === 'number' ? `R$ ${val.toFixed(2).replace('.',',')}` : val;
-    };
+        // 5. Atualizar UI (Sua lógica - inalterada)
+        const setTxt = (id, val) => {
+            const el = document.getElementById(id);
+            if(el) el.textContent = typeof val === 'number' ? `R$ ${val.toFixed(2).replace('.',',')}` : val;
+        };
 
-    document.getElementById('fin-label-periodo').textContent = `FILTRO: ${label}`;
-    
-    setTxt('fin-rev-day', metrics.totalRev);
-    setTxt('fin-profit-real', metrics.totalProfit);
-    setTxt('fin-orders-day', `${metrics.orders} pedidos no período`);
+        document.getElementById('fin-label-periodo').textContent = `FILTRO: ${label}`;
+        setTxt('fin-rev-day', metrics.totalRev);
+        setTxt('fin-profit-real', metrics.totalProfit);
+        setTxt('fin-orders-day', `${metrics.orders} pedidos no período`);
+        setTxt('fin-rev-pix', metrics.pixRev);
+        setTxt('fin-profit-pix', metrics.pixProfit);
+        setTxt('fin-rev-card', metrics.cardRev);
+        setTxt('fin-profit-card', metrics.cardProfit);
+        setTxt('fin-rev-cash', metrics.cashRev);
+        setTxt('fin-profit-cash', metrics.cashProfit);
+        setTxt('fin-stock-value', stockValue);
+        setTxt('fin-stock-cost', stockCost);
+        setTxt('fin-profit-potential', stockValue - stockCost);
+        setTxt('fin-stock-count', `${totalItems} unidades disponíveis`);
 
-    setTxt('fin-rev-pix', metrics.pixRev);
-    setTxt('fin-profit-pix', metrics.pixProfit);
-    setTxt('fin-rev-card', metrics.cardRev);
-    setTxt('fin-profit-card', metrics.cardProfit);
-    setTxt('fin-rev-cash', metrics.cashRev);
-    setTxt('fin-profit-cash', metrics.cashProfit);
+        window.updateFinanceChart(filterStart.getTime(), filterEnd.getTime(), currentFinanceRange);
+        if (window.lucide) lucide.createIcons();
 
-    setTxt('fin-stock-value', stockValue);
-    setTxt('fin-stock-cost', stockCost);
-    setTxt('fin-profit-potential', stockValue - stockCost);
-    setTxt('fin-stock-count', `${totalItems} unidades disponíveis`);
- 
-    window.updateFinanceChart(filterStart, filterEnd, currentFinanceRange);
-    if (window.lucide) lucide.createIcons();
+    } catch (e) {
+        console.error("Erro no cálculo financeiro:", e);
+    }
 };
         
 let financeChartInstance = null;
