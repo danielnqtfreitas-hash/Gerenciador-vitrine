@@ -4096,139 +4096,154 @@ async function initAnalyticsInsights() {
     const p = ordersCache[id];
     if (!p) return;
 
-    // Helper para cores de status
-    const getStatusInfo = (s) => {
-        const map = {
-            'pending_whatsapp': { label: 'Recebido', color: 'bg-red-50 text-red-600 border-red-100' },
-            'confirmed': { label: 'Preparando', color: 'bg-amber-50 text-amber-600 border-amber-100' },
-            'completed': { label: 'Entregue', color: 'bg-emerald-50 text-emerald-600 border-emerald-100' },
-            'canceled': { label: 'Cancelado', color: 'bg-slate-100 text-slate-500 border-slate-200' },
-            'to_receive': { label: 'A Prazo', color: 'bg-indigo-50 text-indigo-600 border-indigo-100' }
+    const getStatusTheme = (s) => {
+        const themes = {
+            'pending_whatsapp': { label: 'Novo Pedido', icon: 'bell', color: 'text-rose-600', bg: 'bg-rose-50', border: 'border-rose-100' },
+            'confirmed': { label: 'Em Preparo', icon: 'package', color: 'text-amber-600', bg: 'bg-amber-50', border: 'border-amber-100' },
+            'completed': { label: 'Entregue', icon: 'check-circle', color: 'text-emerald-600', bg: 'bg-emerald-50', border: 'border-emerald-100' },
+            'canceled': { label: 'Cancelado', icon: 'x-circle', color: 'text-slate-500', bg: 'bg-slate-100', border: 'border-slate-200' },
+            'to_receive': { label: 'A Receber', icon: 'clock', color: 'text-indigo-600', bg: 'bg-indigo-50', border: 'border-indigo-100' }
         };
-        return map[s] || { label: s, color: 'bg-slate-50 text-slate-400' };
+        return themes[s] || { label: s, icon: 'help-circle', color: 'text-slate-400', bg: 'bg-slate-50', border: 'border-slate-100' };
     };
 
-    const status = getStatusInfo(p.status);
+    const theme = getStatusTheme(p.status);
     const modal = document.getElementById('orderDetailModal');
     const modalContent = modal.querySelector('.auth-card-content');
-    
-    // Formatação de Pagamento
     let payText = typeof p.paymentMethod === 'string' ? p.paymentMethod : (p.paymentMethod.type || 'Não informado');
 
     const renderMain = () => {
         modalContent.innerHTML = `
-            <div class="flex items-center justify-between bg-white p-4 rounded-2xl border border-slate-100 shadow-sm mb-6">
-                <div class="flex flex-col">
-                    <span class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Status Atual</span>
-                    <div class="flex items-center gap-2 mt-1">
-                        <span class="px-3 py-1 rounded-full text-[10px] font-bold border ${status.color}">${status.label.toUpperCase()}</span>
-                        <span class="text-[10px] text-slate-400 font-medium">${new Date(p.createdAt?.toDate ? p.createdAt.toDate() : p.createdAt).toLocaleString()}</span>
+            <div class="relative overflow-hidden rounded-3xl ${theme.bg} border ${theme.border} p-6 mb-6">
+                <div class="relative z-10 flex justify-between items-start">
+                    <div>
+                        <div class="flex items-center gap-2 mb-1">
+                            <i data-lucide="${theme.icon}" class="w-4 h-4 ${theme.color}"></i>
+                            <span class="text-[10px] font-black uppercase tracking-[0.2em] ${theme.color}">${theme.label}</span>
+                        </div>
+                        <h2 class="text-2xl font-black text-slate-800 tracking-tighter">#${p.id.toUpperCase().slice(-5)}</h2>
+                        <p class="text-[10px] text-slate-500 font-bold mt-1 uppercase opacity-70">${new Date(p.createdAt?.toDate ? p.createdAt.toDate() : p.createdAt).toLocaleString('pt-BR')}</p>
+                    </div>
+                    <div class="bg-white/60 backdrop-blur-md p-3 rounded-2xl shadow-sm border border-white">
+                        <i data-lucide="shopping-bag" class="w-6 h-6 text-slate-400"></i>
                     </div>
                 </div>
-                <div class="text-right">
-                    <span class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Pedido</span>
-                    <p class="text-sm font-black text-slate-800">#${p.id.toUpperCase().slice(-5)}</p>
+                <div class="absolute -right-10 -bottom-10 w-32 h-32 ${theme.color} opacity-5 rounded-full"></div>
+            </div>
+
+            <div class="bg-white rounded-[2rem] border border-slate-100 p-6 shadow-sm mb-6 space-y-4">
+                <div class="flex items-center gap-4">
+                    <div class="w-12 h-12 rounded-2xl bg-slate-50 flex items-center justify-center text-slate-400 border border-slate-100">
+                        <i data-lucide="user" class="w-6 h-6"></i>
+                    </div>
+                    <div class="min-w-0">
+                        <h4 class="text-sm font-black text-slate-800 leading-none mb-1">${p.customer.name}</h4>
+                        <p class="text-xs text-slate-500 font-medium">${p.customer.phone}</p>
+                    </div>
+                </div>
+                
+                <div class="flex items-start gap-4 pt-4 border-t border-slate-50">
+                    <div class="w-5 h-5 mt-0.5 flex items-center justify-center text-slate-300">
+                        <i data-lucide="map-pin" class="w-4 h-4"></i>
+                    </div>
+                    <p class="text-[11px] text-slate-500 leading-relaxed font-medium">${p.customer.address || p.customer.addressString || 'Retirada em mãos / Loja Física'}</p>
+                </div>
+
+                <div class="flex items-center gap-4 pt-4 border-t border-slate-50">
+                    <div class="w-5 h-5 flex items-center justify-center text-slate-300">
+                        <i data-lucide="wallet" class="w-4 h-4"></i>
+                    </div>
+                    <p class="text-[11px] font-black text-slate-700 uppercase tracking-tight">Pagamento: <span class="text-primary-600">${payText}</span></p>
                 </div>
             </div>
 
             <div class="space-y-3 mb-8">
-                <div class="flex items-start gap-4">
-                    <div class="w-10 h-10 rounded-xl bg-slate-100 flex items-center justify-center shrink-0">
-                        <i data-lucide="user" class="w-5 h-5 text-slate-500"></i>
-                    </div>
-                    <div class="min-w-0">
-                        <p class="text-sm font-bold text-slate-800 truncate">${p.customer.name}</p>
-                        <p class="text-xs text-slate-500">${p.customer.phone}</p>
-                    </div>
-                </div>
-                
-                <div class="flex items-start gap-4">
-                    <div class="w-10 h-10 rounded-xl bg-slate-100 flex items-center justify-center shrink-0">
-                        <i data-lucide="map-pin" class="w-5 h-5 text-slate-500"></i>
-                    </div>
-                    <div class="min-w-0">
-                        <p class="text-xs text-slate-600 leading-relaxed">${p.customer.address || p.customer.addressString || 'Retirada na Loja'}</p>
-                    </div>
-                </div>
-
-                <div class="flex items-start gap-4">
-                    <div class="w-10 h-10 rounded-xl bg-slate-100 flex items-center justify-center shrink-0">
-                        <i data-lucide="credit-card" class="w-5 h-5 text-slate-500"></i>
-                    </div>
-                    <div class="min-w-0">
-                        <p class="text-xs font-bold text-slate-700 uppercase">${payText}</p>
-                        ${p.paymentMethod.dueDate ? `<p class="text-[10px] text-indigo-600 font-bold">Vence em: ${p.paymentMethod.dueDate}</p>` : ''}
-                    </div>
-                </div>
-            </div>
-
-            <div class="space-y-4 mb-8">
-                <h4 class="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Itens do Pedido</h4>
+                <h4 class="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] ml-2 mb-4">Itens do Carrinho</h4>
                 ${p.items.map(i => {
                     const prodRef = allProducts.find(prod => prod.id === i.id);
                     let foto = (i.variationDetails?.image) || (prodRef?.images?.[0]) || null;
                     const varDesc = i.variationDetails ? `${i.variationDetails.color} / ${i.variationDetails.size}` : '';
 
                     return `
-                    <div class="flex items-center gap-4 p-3 bg-slate-50 rounded-2xl border border-slate-100">
-                        <div onclick="window.expandImage('${foto}')" class="w-16 h-16 rounded-xl overflow-hidden border bg-white shrink-0 cursor-zoom-in">
+                    <div class="group flex items-center gap-4 p-4 bg-white rounded-3xl border border-slate-100 hover:border-primary-200 transition-all shadow-sm">
+                        <div onclick="window.expandImage('${foto}')" class="w-16 h-16 rounded-2xl overflow-hidden border border-slate-50 bg-slate-50 shrink-0 cursor-zoom-in relative">
                             ${foto ? `<img src="${foto}" class="w-full h-full object-cover">` : `<div class="w-full h-full flex items-center justify-center text-slate-200"><i data-lucide="image" class="w-6 h-6"></i></div>`}
                         </div>
                         <div class="flex-1 min-w-0">
-                            <p class="text-xs font-bold text-slate-800 leading-tight">${i.name}</p>
-                            <div class="flex items-center gap-2 mt-1">
-                                <span class="text-[9px] font-mono bg-white border px-1.5 py-0.5 rounded text-slate-500 uppercase">${i.sku || 'S/ SKU'}</span>
-                                ${varDesc ? `<span class="text-[9px] font-bold text-primary-600 italic">${varDesc}</span>` : ''}
+                            <p class="text-xs font-black text-slate-800 leading-tight mb-1 truncate">${i.name}</p>
+                            <div class="flex flex-wrap items-center gap-2">
+                                <span class="text-[8px] font-black bg-slate-100 text-slate-500 px-2 py-0.5 rounded-full uppercase">${i.sku || 'N/A'}</span>
+                                ${varDesc ? `<span class="text-[9px] font-bold text-primary-500 italic">${varDesc}</span>` : ''}
                             </div>
                             <div class="flex justify-between items-end mt-2">
-                                <span class="text-[10px] font-bold text-slate-400">Qtd: ${i.qty}</span>
-                                <span class="text-sm font-black text-slate-900">R$ ${(i.price * i.qty).toFixed(2).replace('.',',')}</span>
+                                <span class="text-[10px] font-bold text-slate-400">Qtd <span class="text-slate-800">${i.qty}</span></span>
+                                <span class="text-sm font-black text-slate-900 tracking-tighter">R$ ${(i.price * i.qty).toFixed(2).replace('.',',')}</span>
                             </div>
                         </div>
                     </div>`;
                 }).join('')}
             </div>
 
-            <div class="p-5 bg-slate-900 rounded-[2rem] text-white shadow-xl mb-8 flex justify-between items-center">
-                <span class="text-xs font-bold opacity-60 uppercase tracking-widest">Total Geral</span>
-                <span class="text-2xl font-black">R$ ${p.total.toFixed(2).replace('.',',')}</span>
+            <div class="bg-slate-900 rounded-[2.5rem] p-8 text-white shadow-2xl mb-8 relative overflow-hidden">
+                <div class="relative z-10 flex justify-between items-center">
+                    <div>
+                        <p class="text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em] mb-1">Total à Receber</p>
+                        <h3 class="text-3xl font-black tracking-tighter">R$ ${p.total.toFixed(2).replace('.',',')}</h3>
+                    </div>
+                    <div class="w-12 h-12 bg-white/10 rounded-2xl flex items-center justify-center backdrop-blur-md">
+                        <i data-lucide="check-check" class="w-6 h-6 text-white"></i>
+                    </div>
+                </div>
+                <div class="absolute top-0 right-0 w-32 h-32 bg-primary-500/20 blur-[60px] rounded-full"></div>
             </div>
 
-            <div class="grid grid-cols-2 gap-3">
-                <button id="btnActionMain" class="col-span-2 py-4.5 bg-blue-600 text-white rounded-2xl font-black text-xs uppercase tracking-widest shadow-lg active:scale-95 transition-all">
-                    ${p.status === 'pending_whatsapp' ? 'Confirmar e Notificar' : 'Marcar como Entregue'}
+            <div class="space-y-3">
+                <button id="btnActionMain" class="w-full py-5 bg-primary-600 text-white rounded-3xl font-black text-[11px] uppercase tracking-[0.2em] shadow-xl shadow-primary-200 active:scale-95 transition-all flex items-center justify-center gap-3">
+                    <i data-lucide="${p.status === 'pending_whatsapp' ? 'send' : 'package-check'}" class="w-4 h-4"></i>
+                    ${p.status === 'pending_whatsapp' ? 'Confirmar Pedido' : 'Concluir Entrega'}
                 </button>
 
-                <button onclick="window.editExistingOrder('${p.id}')" class="py-4 bg-white border border-slate-200 text-slate-700 rounded-2xl font-bold text-[10px] uppercase flex items-center justify-center gap-2">
-                    <i data-lucide="edit-3" class="w-4 h-4"></i> Editar
-                </button>
-
-                <button id="btnStatusToggle" class="py-4 bg-white border border-slate-200 text-slate-700 rounded-2xl font-bold text-[10px] uppercase flex items-center justify-center gap-2">
-                    <i data-lucide="refresh-cw" class="w-4 h-4"></i> Status
-                </button>
+                <div class="grid grid-cols-2 gap-3">
+                    <button onclick="window.editExistingOrder('${p.id}')" class="py-4.5 bg-white border border-slate-200 text-slate-700 rounded-3xl font-black text-[10px] uppercase tracking-widest flex items-center justify-center gap-2 hover:bg-slate-50 transition-all">
+                        <i data-lucide="edit-3" class="w-4 h-4 text-primary-500"></i> Editar
+                    </button>
+                    <button id="btnStatusToggle" class="py-4.5 bg-white border border-slate-200 text-slate-700 rounded-3xl font-black text-[10px] uppercase tracking-widest flex items-center justify-center gap-2 hover:bg-slate-50 transition-all">
+                        <i data-lucide="layers" class="w-4 h-4 text-amber-500"></i> Status
+                    </button>
+                </div>
 
                 <a href="https://wa.me/55${p.customer.phone.replace(/\D/g,'')}" target="_blank" 
-                   class="col-span-2 py-4 bg-green-500 text-white rounded-2xl font-black text-xs uppercase tracking-widest flex justify-center items-center gap-2 shadow-lg">
-                    <i data-lucide="message-circle" class="w-5 h-5"></i> Conversar no WhatsApp
+                   class="w-full py-5 bg-emerald-500 text-white rounded-3xl font-black text-[11px] uppercase tracking-[0.2em] shadow-xl shadow-emerald-100 flex justify-center items-center gap-3 active:scale-95 transition-all">
+                    <i data-lucide="message-circle" class="w-5 h-5"></i> Abrir no WhatsApp
                 </a>
 
-                <button onclick="window.deleteOrder('${p.id}')" class="col-span-2 py-3 text-red-400 font-bold text-[9px] uppercase tracking-widest mt-2">
-                    Excluir Registro Permanentemente
+                <button onclick="window.deleteOrder('${p.id}')" class="w-full py-4 text-red-400 font-bold text-[9px] uppercase tracking-[0.3em] mt-4 opacity-50 hover:opacity-100 transition-all">
+                    Remover Histórico
                 </button>
             </div>
         `;
 
-        // Atribuir funções aos novos botões
         document.getElementById('btnActionMain').onclick = () => window.updateOrderStatus(p.id, p.status === 'pending_whatsapp' ? 'confirmed' : 'completed');
         
         document.getElementById('btnStatusToggle').onclick = () => {
             modalContent.innerHTML = `
-                <div class="space-y-3 p-2 animate-fade-in">
-                    <p class="text-[10px] font-black text-slate-400 uppercase text-center mb-6 tracking-[0.2em]">Alterar Fluxo do Pedido</p>
-                    <button onclick="window.updateOrderStatus('${p.id}', 'confirmed')" class="w-full p-5 bg-slate-50 rounded-2xl font-bold text-left flex justify-between items-center text-sm">✅ Confirmar Pedido <i data-lucide="chevron-right" class="w-4 h-4"></i></button>
-                    <button onclick="window.updateOrderStatus('${p.id}', 'completed')" class="w-full p-5 bg-slate-50 rounded-2xl font-bold text-left flex justify-between items-center text-sm">🏁 Finalizar (Entregue) <i data-lucide="chevron-right" class="w-4 h-4"></i></button>
-                    <button onclick="window.updateOrderStatus('${p.id}', 'canceled')" class="w-full p-5 bg-red-50 text-red-600 rounded-2xl font-bold text-left flex justify-between items-center text-sm">❌ Cancelar Pedido <i data-lucide="chevron-right" class="w-4 h-4"></i></button>
-                    <button onclick="window.openOrderModal('${p.id}')" class="w-full p-4 text-slate-400 text-[10px] font-black uppercase mt-8 text-center tracking-widest">Voltar para Detalhes</button>
+                <div class="py-6 animate-fade-in">
+                    <div class="text-center mb-8">
+                        <h4 class="text-lg font-black text-slate-800">Mudar Fluxo</h4>
+                        <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Atualize o progresso do pedido</p>
+                    </div>
+                    <div class="space-y-3">
+                        <button onclick="window.updateOrderStatus('${p.id}', 'confirmed')" class="w-full p-6 bg-amber-50 border border-amber-100 rounded-[2rem] font-black text-amber-700 text-left flex justify-between items-center text-xs uppercase tracking-widest group">
+                            Preparando Itens <i data-lucide="arrow-right" class="w-4 h-4 transition-transform group-hover:translate-x-1"></i>
+                        </button>
+                        <button onclick="window.updateOrderStatus('${p.id}', 'completed')" class="w-full p-6 bg-emerald-50 border border-emerald-100 rounded-[2rem] font-black text-emerald-700 text-left flex justify-between items-center text-xs uppercase tracking-widest group">
+                            Pedido Entregue <i data-lucide="check" class="w-4 h-4"></i>
+                        </button>
+                        <button onclick="window.updateOrderStatus('${p.id}', 'canceled')" class="w-full p-6 bg-rose-50 border border-rose-100 rounded-[2rem] font-black text-rose-700 text-left flex justify-between items-center text-xs uppercase tracking-widest group">
+                            Cancelar Pedido <i data-lucide="trash-2" class="w-4 h-4"></i>
+                        </button>
+                    </div>
+                    <button onclick="window.openOrderModal('${p.id}')" class="w-full py-8 text-slate-400 text-[10px] font-black uppercase tracking-[0.4em] text-center">Voltar</button>
                 </div>
             `;
             lucide.createIcons();
@@ -4240,6 +4255,7 @@ async function initAnalyticsInsights() {
     renderMain();
     modal.classList.remove('hidden');
 };
+                
 
 window.editExistingOrder = async (id) => {
     const p = ordersCache[id];
