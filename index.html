@@ -4942,19 +4942,33 @@ window.addManualItem = (id, varData = null) => {
 };
 
 // --- MOSTRA OS ITENS ADICIONADOS NO PEDIDO ---
-
 window.renderManualOrderItems = () => {
     const container = document.getElementById("manualOrderItems");
+    if (!container) return;
     container.innerHTML = "";
 
     manualOrder.forEach(item => {
+        // 1. Busca o estoque real para validar o botão de "+"
+        const prodOriginal = allProducts.find(p => p.id === item.id);
+        let estoqueDisponivel = 0;
+
+        if (prodOriginal) {
+            if (item.variationDetails) {
+                const vMatch = prodOriginal.variations?.find(v => v.sku === item.sku);
+                estoqueDisponivel = vMatch ? (Number(vMatch.stock) || 0) : 0;
+            } else {
+                estoqueDisponivel = Number(prodOriginal.stock) || 0;
+            }
+        }
+
         const subtotal = (item.qty * item.price).toFixed(2).replace('.', ',');
-        
-        // ALTERAÇÃO CIRÚRGICA: Usa diretamente a imagem salva no objeto do item
         const fotoUrl = item.image;
+        
+        // Verifica se atingiu o limite para desabilitar o botão visualmente
+        const noLimite = item.qty >= estoqueDisponivel;
 
         container.innerHTML += `
-            <div class="p-2 border rounded-2xl bg-white shadow-sm flex items-center gap-3 mb-2">
+            <div class="p-2 border rounded-2xl bg-white shadow-sm flex items-center gap-3 mb-2 animate-fade-in">
                 
                 <div class="w-12 h-12 rounded-xl overflow-hidden bg-slate-50 flex-shrink-0 border border-slate-100">
                     ${fotoUrl 
@@ -4970,30 +4984,71 @@ window.renderManualOrderItems = () => {
                 </div>
 
                 <div class="flex items-center gap-1 bg-slate-50 p-1 rounded-xl border border-slate-100">
-                    <button onclick="window.changeManualQty('${item.cartId}', -1)" class="w-7 h-7 flex items-center justify-center bg-white border border-slate-200 rounded-lg text-slate-600 active:bg-slate-100">-</button>
-                    <span class="font-bold text-xs min-w-[20px] text-center">${item.qty}</span>
-                    <button onclick="window.changeManualQty('${item.cartId}', 1)" class="w-7 h-7 flex items-center justify-center bg-white border border-slate-200 rounded-lg text-slate-600 active:bg-slate-100">+</button>
+                    <button onclick="window.changeManualQty('${item.cartId}', -1)" 
+                            class="w-7 h-7 flex items-center justify-center bg-white border border-slate-200 rounded-lg text-slate-600 active:scale-90 transition-all">
+                        <i data-lucide="minus" class="w-3 h-3"></i>
+                    </button>
+
+                    <span class="font-bold text-xs min-w-[24px] text-center">${item.qty}</span>
+
+                    <button onclick="window.changeManualQty('${item.cartId}', 1)" 
+                            ${noLimite ? 'disabled' : ''}
+                            class="w-7 h-7 flex items-center justify-center bg-white border border-slate-200 rounded-lg text-slate-600 active:scale-90 transition-all ${noLimite ? 'opacity-30 cursor-not-allowed' : ''}">
+                        <i data-lucide="plus" class="w-3 h-3"></i>
+                    </button>
                 </div>
 
             </div>
         `;
     });
 
+    // Atualiza o total geral do modal
     window.updateManualTotal();
-    if (typeof lucide !== 'undefined') lucide.createIcons();
-};    
+    
+    // Recria os ícones do Lucide (importante para o ícone de + e - aparecerem)
+    if (window.lucide) lucide.createIcons();
+};
 
 // --- ALTERAR QUANTIDADE (+/-) ---
-window.changeManualQty = (id, diff) => {
-    const item = manualOrder.find(i => i.id === id);
-    if (!item) return;
+window.changeManualQty = (cartId, diff) => {
+    // 1. Localiza o item no carrinho
+    const itemIndex = manualOrder.findIndex(i => i.cartId === cartId);
+    if (itemIndex === -1) return;
 
-    item.qty += diff;
+    const item = manualOrder[itemIndex];
 
-    if (item.qty <= 0) {
-        manualOrder = manualOrder.filter(i => i.id !== id);
+    // 2. Verifica o estoque real no catálogo
+    const prodOriginal = allProducts.find(p => p.id === item.id);
+    let estoqueMaximo = 0;
+
+    if (prodOriginal) {
+        if (item.variationDetails) {
+            // Busca o estoque da variação específica (Cor/Tamanho)
+            const vMatch = prodOriginal.variations?.find(v => v.sku === item.sku);
+            estoqueMaximo = vMatch ? (Number(vMatch.stock) || 0) : 0;
+        } else {
+            // Produto simples
+            estoqueMaximo = Number(prodOriginal.stock) || 0;
+        }
     }
 
+    // 3. Lógica de Aumento/Diminuição
+    const novaQtd = item.qty + diff;
+
+    if (novaQtd > estoqueMaximo && diff > 0) {
+        showToast(`⚠️ Limite de estoque atingido (${estoqueMaximo} un.)`);
+        return;
+    }
+
+    if (novaQtd <= 0) {
+        // Remove o item se chegar a zero
+        manualOrder.splice(itemIndex, 1);
+        showToast("🗑️ Item removido do carrinho");
+    } else {
+        item.qty = novaQtd;
+    }
+
+    // 4. Atualiza a interface
     window.renderManualOrderItems();
 };
 
