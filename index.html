@@ -1267,9 +1267,23 @@ tailwind.config = {
         </div>
 
     <!-- MODAL PRODUTO -->
-    <div id="productModal" class="modal-overlay fixed inset-0 z-[150] flex items-center justify-center p-4 hidden">
-    <div class="bg-white rounded-[2.5rem] shadow-2xl w-full max-w-4xl auth-card-container overflow-hidden border border-slate-100">
+    
+                  <div id="productModal" class="modal-overlay fixed inset-0 z-[150] flex items-center justify-center p-4 hidden">
+    <div class="bg-white rounded-[2.5rem] shadow-2xl w-full max-w-4xl auth-card-container overflow-hidden border border-slate-100 relative">
         
+        <div id="imageLoading" class="absolute inset-0 bg-white/95 flex items-center justify-center hidden z-[200] backdrop-blur-sm">
+            <div class="text-center">
+                <div class="relative mb-4 flex justify-center">
+                    <div class="absolute inset-0 bg-primary-500/20 rounded-full blur-xl animate-pulse"></div>
+                    <div class="relative bg-white p-4 rounded-3xl shadow-lg border border-primary-100 animate-bounce">
+                        <i data-lucide="upload-cloud" class="w-10 h-10 text-primary-600"></i>
+                    </div>
+                </div>
+                <h4 id="loadingText" class="text-sm font-black text-slate-800 uppercase tracking-widest">Processando...</h4>
+                <p id="loadingSubText" class="text-[10px] text-slate-400 font-bold mt-1 uppercase tracking-tighter">Sua vitrine está sendo atualizada</p>
+            </div>
+        </div>
+
         <div class="bg-slate-900 p-6 flex items-center justify-between relative overflow-hidden">
             <div class="relative z-10 flex items-center gap-4">
                 <div class="bg-primary-500/20 p-3 rounded-2xl backdrop-blur-md border border-white/10">
@@ -1312,6 +1326,7 @@ tailwind.config = {
                         </div>
                         <div id="imageGallery" class="col-span-2 md:col-span-3 grid grid-cols-2 md:grid-cols-3 gap-3"></div>
                     </div>
+                    <p id="photoLimitNotice" class="text-[9px] text-slate-400 font-bold mt-4 uppercase italic tracking-tighter">Selecione imagens nítidas para sua vitrine.</p>
                 </div>
 
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -1450,9 +1465,9 @@ tailwind.config = {
             </form>
         </div>
     </div>
-    </div>
+                  </div>      
+                        
 
-            
 <audio id="notifSound" src="https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3" preload="auto" loop></audio>
 
     <script type="module">
@@ -3056,9 +3071,10 @@ showToast("🗑️ Produto e todos os arquivos removidos!");
        function renderProductList() {
     const search = document.getElementById('productSearch').value.toLowerCase();
     const container = document.getElementById('productListGrouped');
+    if (!container) return;
     container.innerHTML = '';
-    const grouped = {};
     
+    const grouped = {};
     allCategories.forEach(c => grouped[c.name] = []);
     grouped["Sem Categoria"] = [];
     
@@ -3072,85 +3088,96 @@ showToast("🗑️ Produto e todos os arquivos removidos!");
     Object.keys(grouped).forEach(catName => {
         const products = grouped[catName];
         if (products.length === 0 && catName === "Sem Categoria") return;
+        
         const isCollapsed = !expandedCategories.has(catName);
         const safeId = catName.replace(/\s+/g, '-');
-        
         const hasActive = products.some(p => p.status !== 'paused');
 
         const groupDiv = document.createElement('div');
         groupDiv.id = `cat-group-${safeId}`;
-        groupDiv.className = `category-group bg-white rounded-3xl border shadow-sm overflow-hidden mb-4 ${isCollapsed ? 'collapsed' : ''}`;
+        groupDiv.className = `mb-6 animate-fade-in`;
         
         groupDiv.innerHTML = `
-            <div class="p-4 md:p-5 flex items-center justify-between bg-white">
-                <div class="flex items-center gap-4 cursor-pointer flex-1" onclick="toggleCategoryAccordion('${catName}')">
-                    <i data-lucide="chevron-down" class="chevron-icon w-5 h-5 text-slate-400 transition-transform"></i>
+            <div class="flex items-center justify-between mb-3 px-2">
+                <div class="flex items-center gap-3 cursor-pointer" onclick="toggleCategoryAccordion('${catName}')">
+                    <div class="w-8 h-8 rounded-xl bg-white border border-slate-200 flex items-center justify-center shadow-sm">
+                        <i data-lucide="chevron-down" class="chevron-icon w-4 h-4 text-slate-400 transition-transform ${isCollapsed ? '-rotate-90' : ''}"></i>
+                    </div>
                     <div>
-                        <h4 class="font-extrabold text-slate-800 uppercase tracking-wider text-xs md:text-sm">${catName}</h4>
-                        <span class="text-[10px] text-slate-400 font-bold">${products.length} produtos</span>
+                        <h4 class="font-black text-slate-800 uppercase tracking-widest text-[11px]">${catName}</h4>
+                        <span class="text-[9px] text-slate-400 font-bold uppercase">${products.length} Itens</span>
                     </div>
                 </div>
-                
-                <div class="flex gap-2">
-                    ${hasActive ? 
-                        `<button onclick="bulkToggleStatus('${catName}', 'paused')" class="text-[9px] font-black uppercase bg-amber-50 text-amber-600 px-3 py-2 rounded-xl border border-amber-100 hover:bg-amber-100 transition-all">Pausar Setor</button>` :
-                        `<button onclick="bulkToggleStatus('${catName}', 'active')" class="text-[9px] font-black uppercase bg-green-50 text-green-600 px-3 py-2 rounded-xl border border-green-100 hover:bg-green-100 transition-all">Ativar Setor</button>`
-                    }
-                </div>
+                <button onclick="bulkToggleStatus('${catName}', '${hasActive ? 'paused' : 'active'}')" 
+                    class="text-[9px] font-black uppercase px-4 py-2 rounded-xl border transition-all ${hasActive ? 'bg-amber-50 text-amber-600 border-amber-100' : 'bg-emerald-50 text-emerald-600 border-emerald-100'}">
+                    ${hasActive ? 'Pausar Setor' : 'Ativar Setor'}
+                </button>
             </div>
-            <div class="category-content border-t border-slate-50 p-4 space-y-3 bg-slate-50/30">
-                                ${products.map(p => {
+
+            <div class="category-content space-y-3 ${isCollapsed ? 'hidden' : ''}">
+                ${products.map(p => {
                     const isPaused = p.status === 'paused';
-const valNormal = p.value.toFixed(2).replace('.', ','); // Este é o seu PIX (Valor antigo de R$ 100)
-const valPromo = p.promoValue ? p.promoValue.toFixed(2).replace('.', ',') : null;
-const valCard = p.priceCard ? p.priceCard.toFixed(2).replace('.', ',') : null; // Trocamos valCash por valCard
-
+                    const valNormal = p.value.toFixed(2).replace('.', ',');
+                    const valPromo = p.promoValue ? p.promoValue.toFixed(2).replace('.', ',') : null;
+                    const valCard = p.priceCard ? p.priceCard.toFixed(2).replace('.', ',') : null;
                     const stock = Number(p.stock) || 0;
-                    const stockClass = stock <= 3 ? 'bg-red-50 text-red-600 border-red-100' : 'bg-slate-100 text-slate-500 border-slate-200';
 
-                    return `<div class="flex items-center gap-4 p-3 rounded-2xl border border-slate-100 bg-white hover:border-primary-100 transition-all ${isPaused ? 'opacity-60 grayscale-[0.5]' : ''}">
-                        <img src="${p.images?.[0]||''}" class="w-14 h-14 rounded-xl object-cover border">
-                        <div class="flex-1 min-w-0">
-                            <div class="flex items-center gap-2">
-                                <p class="font-bold text-slate-800 text-sm truncate">${p.name}</p>
-                                ${p.sku ? `<span class="text-[8px] font-mono bg-slate-100 text-slate-400 px-1.5 py-0.5 rounded uppercase tracking-tighter">${p.sku}</span>` : ''}
+                    return `
+                    <div class="relative bg-white p-4 rounded-[2rem] border border-slate-100 shadow-sm flex flex-col sm:flex-row gap-4 transition-all hover:border-primary-200 ${isPaused ? 'opacity-60 grayscale-[0.8]' : ''}">
+                        
+                        <div class="relative w-20 h-20 shrink-0 mx-auto sm:mx-0">
+                            <img src="${p.images?.[0] || ''}" class="w-full h-full object-cover rounded-2xl border border-slate-50">
+                            <div class="absolute -bottom-2 -right-2 px-2 py-1 rounded-lg border font-black text-[8px] shadow-sm ${stock <= 3 ? 'bg-rose-500 text-white border-rose-600' : 'bg-slate-900 text-white border-slate-800'}">
+                                ${stock} UN
+                            </div>
+                        </div>
+
+                        <div class="flex-1 min-w-0 flex flex-col justify-center">
+                            <div class="flex items-center gap-2 mb-1">
+                                <h5 class="font-black text-slate-800 text-sm truncate uppercase tracking-tight">${p.name}</h5>
+                                ${p.sku ? `<span class="text-[8px] font-mono bg-slate-50 text-slate-400 px-2 py-0.5 rounded-md border border-slate-100">#${p.sku}</span>` : ''}
                             </div>
                             
-                            <div class="flex flex-col mt-1">
-                                <div class="flex items-center gap-3">
-                                    <p class="text-[10px] font-bold text-slate-900">
+                            <div class="flex flex-wrap items-center gap-x-4 gap-y-1 mt-1">
+                                <div class="flex flex-col">
+                                    <span class="text-[8px] font-black text-slate-400 uppercase tracking-tighter">PIX/Dinheiro</span>
+                                    <p class="text-xs font-black text-slate-900">
                                         R$ ${valNormal} 
-                                        ${valPromo ? `<span class="text-green-600 ml-2">→ R$ ${valPromo}</span>` : ''}
+                                        ${valPromo ? `<span class="text-emerald-500 ml-1">→ R$ ${valPromo}</span>` : ''}
                                     </p>
-                                    
-                                    <div class="flex items-center gap-1 px-2 py-0.5 rounded-lg border ${stockClass}">
-                                        <i data-lucide="package-2" class="w-3 h-3"></i>
-                                        <span class="text-[9px] font-black">${stock} un.</span>
-                                    </div>
                                 </div>
-                                ${valCard ? `<p class="text-[9px] font-black text-slate-500 uppercase mt-0.5">💳 No Cartão: R$ ${valCard}</p>` : ''}
-                                  </div>
+                                
+                                ${valCard ? `
+                                <div class="flex flex-col border-l border-slate-100 pl-4">
+                                    <span class="text-[8px] font-black text-slate-400 uppercase tracking-tighter">No Cartão</span>
+                                    <p class="text-xs font-black text-slate-600 italic">R$ ${valCard}</p>
+                                </div>` : ''}
+                            </div>
                         </div>
-                        <div class="flex gap-1">
-    <button onclick="toggleProductStatus('${p.id}', '${p.status || 'active'}')" class="p-2 ${isPaused ? 'text-green-600' : 'text-amber-500'} hover:bg-slate-100 rounded-lg">
-        <i data-lucide="${isPaused ? 'eye' : 'eye-off'}" class="w-4 h-4"></i>
-    </button>
-    
-    <button onclick='openProductModal(${JSON.stringify(p).replace(/'/g, "&apos;")})' class="p-2 text-blue-600 hover:bg-slate-100 rounded-lg">
-        <i data-lucide="pencil" class="w-4 h-4"></i>
-    </button>
 
-    <button onclick='deleteProduct("${p.id}", ${JSON.stringify(p.images || [])})' class="p-2 text-red-500 hover:bg-red-50 rounded-lg">
-        <i data-lucide="trash-2" class="w-4 h-4"></i>
-    </button>
-</div>
+                        <div class="flex sm:flex-col justify-center gap-2 border-t sm:border-t-0 sm:border-l border-slate-50 pt-3 sm:pt-0 sm:pl-4">
+                            <button onclick="toggleProductStatus('${p.id}', '${p.status || 'active'}')" 
+                                class="flex-1 sm:flex-initial p-2.5 rounded-xl ${isPaused ? 'bg-emerald-50 text-emerald-600' : 'bg-amber-50 text-amber-600'} hover:scale-110 transition-transform">
+                                <i data-lucide="${isPaused ? 'eye' : 'eye-off'}" class="w-4 h-4 mx-auto"></i>
+                            </button>
+                            
+                            <button onclick='openProductModal(${JSON.stringify(p).replace(/'/g, "&apos;")})' 
+                                class="flex-1 sm:flex-initial p-2.5 bg-blue-50 text-blue-600 rounded-xl hover:scale-110 transition-transform">
+                                <i data-lucide="pencil" class="w-4 h-4 mx-auto"></i>
+                            </button>
+
+                            <button onclick='deleteProduct("${p.id}", ${JSON.stringify(p.images || [])})' 
+                                class="flex-1 sm:flex-initial p-2.5 bg-rose-50 text-rose-500 rounded-xl hover:scale-110 transition-transform">
+                                <i data-lucide="trash-2" class="w-4 h-4 mx-auto"></i>
+                            </button>
+                        </div>
                     </div>`;
                 }).join('')}
             </div>`;
         container.appendChild(groupDiv);
     });
-    lucide.createIcons();
-}
+    if (window.lucide) lucide.createIcons();
+       }
 
       window.handleCategorySubmit = async (e) => {
     e.preventDefault();
