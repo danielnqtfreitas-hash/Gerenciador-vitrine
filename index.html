@@ -1127,6 +1127,14 @@ tailwind.config = {
                         <h3 class="text-xl font-bold text-slate-800 mb-6 flex items-center gap-3"><i data-lucide="info" class="text-blue-600"></i> Identidade</h3>
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                             <div><label class="block text-xs font-bold text-slate-400 mb-1.5 uppercase">Nome da Loja</label><input type="text" id="confStoreName" class="input-pro"></div>
+                            <div class="mb-4">
+    <label class="block text-sm font-medium text-gray-700 mb-1">Tipo de Negócio</label>
+    <select id="configTipoNegocio" class="w-full p-2 border rounded-lg focus:ring-2 focus:ring-purple-500 outline-none">
+        <option value="varejo">Loja (Varejo, Roupas, Acessórios)</option>
+        <option value="restaurante">Restaurante / Delivery (Açaí, Pizza, Lanches)</option>
+    </select>
+    <p class="text-xs text-gray-500 mt-1">Isso mudará a forma como você cadastra seus produtos e gerencia o estoque.</p>
+</div>
                             <div><label class="block text-xs font-bold text-slate-400 mb-1.5 uppercase">WhatsApp Público</label><input type="text" id="confWhatsapp" class="input-pro"></div>
                         </div>
                     </div>
@@ -1420,40 +1428,59 @@ tailwind.config = {
                     </div>
                 </div>
 
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-                    <div class="md:col-span-1 bg-white p-6 rounded-[2rem] border border-slate-100 shadow-sm space-y-4">
-                        <div class="flex items-center gap-2">
-                            <i data-lucide="box" class="w-4 h-4 text-slate-400"></i>
-                            <h4 class="text-[10px] font-black text-slate-500 uppercase tracking-widest">Estoque Central</h4>
-                        </div>
-                        <div>
-                            <label class="text-[9px] font-black text-slate-400 uppercase ml-1">Custo Unid.</label>
-                            <input type="number" step="0.01" id="prodCost" oninput="calculateProfit()" class="w-full mt-1 p-4 bg-slate-50 border-none rounded-2xl text-sm font-bold focus:ring-2 focus:ring-slate-200 outline-none transition-all">
-                        </div>
-                        <div>
-                            <label class="text-[9px] font-black text-slate-400 uppercase ml-1">Qtd Geral</label>
-                            <input type="number" id="prodStock" min="0" class="w-full mt-1 p-4 bg-slate-50 border-none rounded-2xl text-sm font-bold focus:ring-2 focus:ring-slate-200 outline-none transition-all">
-                        </div>
-                    </div>
+               <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+    
+    <div id="colunaEstoque" class="md:col-span-1 bg-white p-6 rounded-[2rem] border border-slate-100 shadow-sm space-y-4">
+        <div class="flex items-center gap-2">
+            <i data-lucide="box" class="w-4 h-4 text-slate-400"></i>
+            <h4 class="text-[10px] font-black text-slate-500 uppercase tracking-widest">Estoque Central</h4>
+        </div>
+        <div>
+            <label class="text-[9px] font-black text-slate-400 uppercase ml-1">Custo Unid.</label>
+            <input type="number" step="0.01" id="prodCost" oninput="calculateProfit()" class="w-full mt-1 p-4 bg-slate-50 border-none rounded-2xl text-sm font-bold focus:ring-2 focus:ring-slate-200 outline-none transition-all">
+        </div>
+        <div>
+            <label class="text-[9px] font-black text-slate-400 uppercase ml-1">Qtd Geral</label>
+            <input type="number" id="prodStock" min="0" class="w-full mt-1 p-4 bg-slate-50 border-none rounded-2xl text-sm font-bold focus:ring-2 focus:ring-slate-200 outline-none transition-all">
+        </div>
+        <div class="flex items-center justify-between bg-white/5 px-4 py-3 rounded-2xl border border-white/5">
+            <span class="text-[9px] font-black text-slate-500 uppercase">Rentabilidade</span>
+            <input type="text" id="prodProfit" class="bg-transparent border-none text-right text-[10px] font-black uppercase tracking-widest text-emerald-400 outline-none" value="CALCULANDO..." disabled>
+        </div>
+    </div>
 
-                    <div class="md:col-span-2 bg-white p-6 rounded-[2rem] border border-slate-100 shadow-sm space-y-4">
-                        <div class="flex items-center gap-2">
-                            <i data-lucide="layers" class="w-4 h-4 text-primary-500"></i>
-                            <h4 class="text-[10px] font-black text-slate-500 uppercase tracking-widest">Configuração de Grades</h4>
-                        </div>
-                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                            <div>
-                                <label class="text-[9px] font-black text-slate-400 uppercase ml-1">Tamanhos (P, M, G...)</label>
-                                <input type="text" id="prodSizesInput" oninput="generateVariationMatrix()" class="w-full mt-1 p-4 bg-slate-50 border-none rounded-2xl text-xs font-bold focus:ring-2 focus:ring-primary-500 outline-none transition-all" placeholder="Separe por vírgula">
-                            </div>
-                            <div>
-                                <label class="text-[9px] font-black text-slate-400 uppercase ml-1">Cores (Azul, Preto...)</label>
-                                <input type="text" id="prodColorsInput" oninput="generateVariationMatrix()" class="w-full mt-1 p-4 bg-slate-50 border-none rounded-2xl text-xs font-bold focus:ring-2 focus:ring-primary-500 outline-none transition-all" placeholder="Separe por vírgula">
-                            </div>
-                        </div>
-                    </div>
-                </div>
+    <div id="containerComplementos" class="hidden md:col-span-3 bg-white p-6 rounded-[2rem] border border-slate-100 shadow-sm space-y-4">
+        <div class="flex items-center justify-between">
+            <div class="flex items-center gap-2">
+                <i data-lucide="list-plus" class="w-4 h-4 text-slate-400"></i>
+                <h4 class="text-[10px] font-black text-slate-500 uppercase tracking-widest">Subcategorias e Adicionais</h4>
+            </div>
+            <button type="button" onclick="addNewComplementGroup()" class="text-[9px] font-black uppercase bg-slate-900 text-white px-4 py-2 rounded-xl hover:bg-slate-800 transition-all">
+    + Novo Grupo
+</button>
+        </div>
+        <div id="complementGroupsArea" class="space-y-4">
+            <p class="text-[10px] text-slate-400 text-center py-4 italic">Nenhum adicional configurado para este produto.</p>
+        </div>
+    </div>
 
+    <div id="colunaGrades" class="md:col-span-2 bg-white p-6 rounded-[2rem] border border-slate-100 shadow-sm space-y-4">
+        <div class="flex items-center gap-2">
+            <i data-lucide="layers" class="w-4 h-4 text-primary-500"></i>
+            <h4 class="text-[10px] font-black text-slate-500 uppercase tracking-widest">Configuração de Grades</h4>
+        </div>
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+                <label class="text-[9px] font-black text-slate-400 uppercase ml-1">Tamanhos (P, M, G...)</label>
+                <input type="text" id="prodSizesInput" oninput="generateVariationMatrix()" class="w-full mt-1 p-4 bg-slate-50 border-none rounded-2xl text-xs font-bold focus:ring-2 focus:ring-primary-500 outline-none transition-all" placeholder="Separe por vírgula">
+            </div>
+            <div>
+                <label class="text-[9px] font-black text-slate-400 uppercase ml-1">Cores (Azul, Preto...)</label>
+                <input type="text" id="prodColorsInput" oninput="generateVariationMatrix()" class="w-full mt-1 p-4 bg-slate-50 border-none rounded-2xl text-xs font-bold focus:ring-2 focus:ring-primary-500 outline-none transition-all" placeholder="Separe por vírgula">
+            </div>
+        </div>
+    </div>
+</div>
                 <div id="variationMatrixContainer" class="hidden animate-fade-in bg-white rounded-[2.5rem] border border-slate-100 shadow-sm overflow-hidden">
                     <div class="p-6 bg-slate-50/50 border-b border-slate-100">
                         <h4 class="text-[10px] font-black text-slate-800 uppercase tracking-[0.2em]">Gerenciamento de Grade Individual</h4>
@@ -2508,6 +2535,11 @@ window.initOrderListener = (storeId) => {
     if (d.exists()) {
         const data = d.data();
 
+        if (data.tipoNegocio) {
+            const selectNegocio = document.getElementById('configTipoNegocio');
+            if (selectNegocio) selectNegocio.value = data.tipoNegocio;
+        }
+
      if (data.primaryColor) {
             window.applyDynamicColors(data.primaryColor);
         }
@@ -2771,29 +2803,50 @@ function updateQuotas() {
 
 
         // --- GESTÃO DE PRODUTOS ---
-        window.openProductModal = (p = null) => {
+    window.openProductModal = (p = null) => {
     variationsHistoryCache = new Map();
     
-    // Preenche as categorias
+    // 1. Identifica o tipo de negócio e os containers
+    const tipoNegocio = document.getElementById('configTipoNegocio')?.value || 'varejo';
+    const areaEstoque = document.getElementById('colunaEstoque');
+    const areaGrades = document.getElementById('colunaGrades');
+    const areaComplementos = document.getElementById('containerComplementos');
+
+    // 2. FORÇA a visibilidade correta (Independente de ser edição ou novo)
+    if (tipoNegocio === 'restaurante') {
+        if(areaEstoque) { areaEstoque.classList.add('hidden'); areaEstoque.style.display = 'none'; }
+        if(areaGrades) { areaGrades.classList.add('hidden'); areaGrades.style.display = 'none'; }
+        if(areaComplementos) { 
+            areaComplementos.classList.remove('hidden'); 
+            areaComplementos.style.display = 'block'; 
+        }
+    } else {
+        if(areaEstoque) { areaEstoque.classList.remove('hidden'); areaEstoque.style.display = 'grid'; }
+        if(areaGrades) { areaGrades.classList.remove('hidden'); areaGrades.style.display = 'block'; }
+        if(areaComplementos) { 
+            areaComplementos.classList.add('hidden'); 
+            areaComplementos.style.display = 'none'; 
+        }
+    }
+    
+    // 3. Preenchimento de categorias
     const catSelect = document.getElementById('prodCategory');
     if (catSelect) {
         catSelect.innerHTML = allCategories.map(c => `<option value="${c.name}">${c.name}</option>`).join('');
     }
     
-        if(p) {
+    if(p) {
+        // --- MODO EDIÇÃO ---
         document.getElementById('prodModalTitle').textContent = "Editar Produto Existente";
         document.getElementById('prodId').value = p.id;
         document.getElementById('prodName').value = p.name || '';
         document.getElementById('prodSku').value = p.sku || ''; 
         document.getElementById('prodCategory').value = p.category || ''; 
-        
-        // O valor principal (R$ 100 antigo) cai aqui no campo de PIX/Dinheiro
         document.getElementById('prodValue').value = p.value || 0;
-        
-        // Carrega o novo valor de cartão (se houver) no campo No Cartão
         document.getElementById('prodCard').value = p.priceCard || '';
         document.getElementById('prodMaxInstallments').value = p.maxInstallments || 1;
-if(window.calculateInstallmentValue) window.calculateInstallmentValue();
+        
+        if(window.calculateInstallmentValue) window.calculateInstallmentValue();
         
         document.getElementById('prodPromo').value = p.promoValue || ''; 
         document.getElementById('prodPromoDays').value = p.promoDays || ''; 
@@ -2810,9 +2863,13 @@ if(window.calculateInstallmentValue) window.calculateInstallmentValue();
         currentProductImages = p.images ? [...p.images] : [];
         variationsMatrix = p.variations || [];
         
+        // --- CARREGA COMPLEMENTOS SALVOS ---
+        window.currentProductComplements = p.complements || [];
+
         const matrixCont = document.getElementById('variationMatrixContainer');
         if (matrixCont) {
-            if (variationsMatrix.length > 0) {
+            // No modo restaurante, mesmo que tenha variações antigas, escondemos
+            if (variationsMatrix.length > 0 && tipoNegocio !== 'restaurante') {
                 matrixCont.classList.remove('hidden');
                 renderMatrixUI();
             } else {
@@ -2820,28 +2877,52 @@ if(window.calculateInstallmentValue) window.calculateInstallmentValue();
             }
         }
     } else {
-
-        // --- LÓGICA PARA NOVO PRODUTO ---
+        // --- MODO NOVO PRODUTO ---
         document.getElementById('prodModalTitle').textContent = "Adicionar Novo Produto";
         document.getElementById('productForm').reset(); 
         document.getElementById('prodId').value = ''; 
-        
-        // ✨ AQUI ESTÁ A CORREÇÃO: Gera o SKU automaticamente ao abrir para novo
         document.getElementById('prodSku').value = generateSKU();
         
         currentProductImages = []; 
         variationsMatrix = [];
+        window.currentProductComplements = [];
+        
         const matrixCont = document.getElementById('variationMatrixContainer');
         if(matrixCont) matrixCont.classList.add('hidden');
     }
     
+    // 4. Renderiza as áreas dinâmicas
+    if(typeof renderComplementGroups === "function") renderComplementGroups();
     renderImagePreviews();
+    
     document.getElementById('productModal').classList.remove('hidden');
     if (typeof lucide !== 'undefined') lucide.createIcons();
+};
+
+window.duplicateProduct = function(id) {
+    // 1. Localiza o produto original na sua lista de produtos carregados
+    const p = allProducts.find(item => item.id === id);
+    if (!p) {
+        showToast("❌ Erro ao localizar produto para duplicar.");
+        return;
+    }
+
+    // 2. Abre o modal com os dados do produto
+    window.openProductModal(p);
+
+    // 3. AGORA O SEGREDO: Limpamos o ID e alteramos o título
+    // Isso faz o Firebase entender que é um NOVO cadastro ao clicar em salvar
+    document.getElementById('prodId').value = ""; 
+    document.getElementById('prodName').value = p.name + " (Cópia)";
+    document.getElementById('prodModalTitle').textContent = "Duplicar Produto";
+
+    showToast("✨ Cópia criada! Ajuste o nome e salve.");
 };
        
         window.handleProductSubmit = async (e) => {
     e.preventDefault();
+    const tipoNegocio = document.getElementById('configTipoNegocio')?.value || 'varejo';
+    const complementsData = window.currentProductComplements || [];
     const id = document.getElementById('prodId').value;
     const isNew = !id;
 
@@ -2977,6 +3058,11 @@ installmentValue: (parseFloat(document.getElementById('prodCard').value) / (pars
     colors: [...new Set(updatedVariations.map(v => v.color))].filter(c => c && c !== 'PADRAO'),
     sizes: [...new Set(updatedVariations.map(v => v.size))].filter(s => s && s !== 'UNICO'),
     trashFiles: stillInTrash,
+    complements: window.currentProductComplements || [],
+   tipoNegocio: tipoNegocio,
+        complements: complementsData,
+        // Se for restaurante, estoque é "infinito" (999999)
+        stock: tipoNegocio === 'restaurante' ? 999999 : (parseInt(document.getElementById('prodStock').value) || 0),
     status: totalStock > 0 ? 'active' : 'paused', 
     updatedAt: Date.now(),
     ...(isNew && { createdAt: Date.now() }) 
@@ -3208,14 +3294,18 @@ showToast("🗑️ Produto e todos os arquivos removidos!");
                             </button>
                             
                             <button onclick='openProductModal(${JSON.stringify(p).replace(/'/g, "&apos;")})' 
-                                class="flex-1 sm:flex-initial p-2.5 bg-blue-50 text-blue-600 rounded-xl hover:scale-110 transition-transform">
-                                <i data-lucide="pencil" class="w-4 h-4 mx-auto"></i>
-                            </button>
+    class="flex-1 sm:flex-initial p-2.5 bg-blue-50 text-blue-600 rounded-xl hover:scale-110 transition-transform">
+    <i data-lucide="pencil" class="w-4 h-4 mx-auto"></i>
+</button>
 
-                            <button onclick='deleteProduct("${p.id}", ${JSON.stringify(p.images || [])})' 
-                                class="flex-1 sm:flex-initial p-2.5 bg-rose-50 text-rose-500 rounded-xl hover:scale-110 transition-transform">
-                                <i data-lucide="trash-2" class="w-4 h-4 mx-auto"></i>
-                            </button>
+<button onclick='duplicateProduct("${p.id}")' 
+    class="flex-1 sm:flex-initial p-2.5 bg-indigo-50 text-indigo-600 rounded-xl hover:scale-110 transition-transform" title="Duplicar">
+    <i data-lucide="copy" class="w-4 h-4 mx-auto"></i>
+</button>
+<button onclick='deleteProduct("${p.id}", ${JSON.stringify(p.images || [])})' 
+    class="flex-1 sm:flex-initial p-2.5 bg-rose-50 text-rose-500 rounded-xl hover:scale-110 transition-transform">
+    <i data-lucide="trash-2" class="w-4 h-4 mx-auto"></i>
+</button>
                         </div>
                     </div>`;
                 }).join('')}
@@ -3984,6 +4074,7 @@ window.saveStoreConfig = async function (event) {
         // --- Busca os dados atuais antes de salvar ---
         const docSnap = await getDoc(storeRef);
         const currentData = docSnap.exists() ? docSnap.data() : {};
+        const tipoNegocio = document.getElementById('configTipoNegocio').value;
         
         // Por padrão, mantemos a logo que já está no banco de dados
         let finalLogoUrl = currentData.logoUrl || "";
@@ -3998,7 +4089,7 @@ window.saveStoreConfig = async function (event) {
         // 2. Limpeza do WhatsApp
         const rawWhatsapp = document.getElementById('confWhatsapp').value.replace(/\D/g, '');
 
-        // 3. Preparação dos Dados (Incluindo os novos campos de PIX)
+        // 3. Preparação dos Dados (Incluindo os novos campos de PIX e Tipo de Negócio)
         const dataToSave = {
             storeName: document.getElementById('confStoreName').value,
             whatsappNumber: rawWhatsapp,
@@ -4006,6 +4097,7 @@ window.saveStoreConfig = async function (event) {
             primaryColor: document.getElementById('confColorPrimary').value,
             deliveryAreas: deliveryAreas, 
             logoUrl: finalLogoUrl,
+            tipoNegocio: tipoNegocio, // <--- ADICIONE ESTA LINHA AQUI
             // --- NOVOS CAMPOS PIX ---
             pix: {
                 key: document.getElementById('cfgPixKey').value,
@@ -5381,25 +5473,58 @@ window.updateOrderStatus = async (id, status) => {
 
         // --- NOTIFICAÇÃO VIA WHATSAPP (RECIBO PIX) ---
         if (status === 'confirmed') {
-            const itemsText = p.items.map(i => {
-                const vars = i.variationDetails ? ` (${i.variationDetails.color}/${i.variationDetails.size})` : '';
-                return `• ${i.qty}x ${i.name}${vars}`;
-            }).join('\n');
+    // 1. Identifica o modo atual do sistema
+    const tipoNegocio = storeConfig.tipoNegocio || 'varejo'; 
 
-            const pixInfo = storeConfig.pix || {};
-            let pixBlock = "";
-            
-            // Verifica se o cliente escolheu PIX ou se você quer mandar os dados mesmo assim
-            if (p.paymentMethod.toLowerCase().includes('pix') && pixInfo.key) {
-                pixBlock = `\n\n━━━━━━━━━━━━━━━\n🔹 *DADOS PARA PAGAMENTO PIX*\n\n*Chave:* \`${pixInfo.key}\`\n*Titular:* ${pixInfo.name}\n*Banco:* ${pixInfo.bank}\n━━━━━━━━━━━━━━━\n_Favor enviar o comprovante após o pagamento._`;
-            }
-
-            const msg = `🛍️ *PEDIDO CONFIRMADO!*\n\nOlá, *${p.customer.name}*!\nO seu pedido foi recebido e já estamos preparando.\n\n🆔 *Pedido:* #${p.id.slice(-5).toUpperCase()}\n\n📋 *RESUMO:*\n${itemsText}\n\n💰 *TOTAL:* R$ ${p.total.toFixed(2).replace('.', ',')}${pixBlock}\n\n⏳ Avisaremos assim que sair para entrega!`;
-            
-            const phone = p.customer.phone.replace(/\D/g, '');
-            window.open(`https://wa.me/55${phone}?text=${encodeURIComponent(msg)}`, '_blank');
+    // 2. Formata os itens (se adapta a Adicionais ou Variações)
+    const itemsText = p.items.map(i => {
+        let detalhes = '';
+        
+        // Se for Restaurante e tiver Adicionais/Complementos
+        if (tipoNegocio === 'restaurante' && i.escolhas && i.escolhas.length > 0) {
+            detalhes = i.escolhas.map(e => `\n   └ _${e.nome}_`).join('');
+        } 
+        // Se for Loja e tiver Grades (Cor/Tamanho)
+        else if (i.variationDetails) {
+            detalhes = ` (${i.variationDetails.color}/${i.variationDetails.size})`;
         }
+        
+        return `✅ *${i.qty}x ${i.name.toUpperCase()}*${detalhes}`;
+    }).join('\n\n');
 
+    // 3. Bloco de PIX (comum aos dois)
+    const pixInfo = storeConfig.pix || {};
+    let pixBlock = "";
+    if (p.paymentMethod.toLowerCase().includes('pix') && pixInfo.key) {
+        pixBlock = `\n\n━━━━━━━━━━━━━━━\n🔹 *PAGAMENTO PIX*\n*Chave:* \`${pixInfo.key}\`\n*Titular:* ${pixInfo.name}\n━━━━━━━━━━━━━━━\n_Envie o comprovante para iniciarmos o preparo!_`;
+    }
+
+    // 4. Construção da Mensagem baseada no Tipo de Negócio
+    let msg = "";
+    const firstName = p.customer.name.split(' ')[0];
+
+    if (tipoNegocio === 'restaurante') {
+        msg = `👨‍🍳 *PEDIDO NA COZINHA!* 👨‍🍳\n\n` +
+              `Olá, *${firstName}*! O Chef já recebeu seu pedido e o fogão já está aceso! 🔥\n\n` +
+              `🆔 *PEDIDO:* #${p.id.slice(-5).toUpperCase()}\n\n` +
+              `📋 *RESUMO DO PEDIDO:*\n${itemsText}\n\n` +
+              `💰 *TOTAL:* R$ ${p.total.toFixed(2).replace('.', ',')}` +
+              `${pixBlock}\n\n` +
+              `🛵 *STATUS:* Preparando com capricho. Avisaremos quando o motoboy sair!`;
+    } else {
+        msg = `🛍️ *PEDIDO CONFIRMADO!* 🛍️\n\n` +
+              `Olá, *${p.customer.name}*! Seu pedido foi confirmado e já estamos separando seus produtos.\n\n` +
+              `🆔 *PEDIDO:* #${p.id.slice(-5).toUpperCase()}\n\n` +
+              `📋 *ITENS:*\n${itemsText}\n\n` +
+              `💰 *TOTAL:* R$ ${p.total.toFixed(2).replace('.', ',')}` +
+              `${pixBlock}\n\n` +
+              `⏳ Avisaremos você assim que o pedido for enviado!`;
+    }
+    
+    // 5. Envio
+    const phone = p.customer.phone.replace(/\D/g, '');
+    window.open(`https://wa.me/55${phone}?text=${encodeURIComponent(msg)}`, '_blank');
+}
         // --- ATUALIZAÇÃO DA UI ---
         await loadProductsCache(true); 
         renderProductList();
@@ -6712,6 +6837,218 @@ window.handlePaymentChange = () => {
     // Mantém a sua função original de cálculo de lucro se ela existir
     if(typeof calculateProfit === "function") calculateProfit();
 }
+
+window.toggleProductFields = function() {
+    const tipo = document.getElementById('configTipoNegocio').value;
+    const containerEstoque = document.getElementById('containerEstoque'); // Certifique-se que a div do estoque tenha esse ID
+    
+    if (tipo === 'restaurante') {
+        containerEstoque.classList.add('hidden'); // Esconde estoque
+    } else {
+        containerEstoque.classList.remove('hidden'); // Mostra estoque
+    }
+};
+
+// 1. Inicialização da variável global
+window.currentProductComplements = [];
+
+// 2. Função para Adicionar Novo Grupo (Chama render porque cria novo HTML)
+window.addNewComplementGroup = function() {
+    if (!window.currentProductComplements) window.currentProductComplements = [];
+    
+    const newGroup = {
+        id: Date.now().toString(),
+        name: "",
+        min: 0,
+        max: 1,
+        items: []
+    };
+    
+    window.currentProductComplements.push(newGroup);
+    window.renderComplementGroups();
+};
+
+// 3. Atualiza os dados do GRUPO (NÃO chama render para não perder o foco/título)
+window.updateGroupData = function(id, field, value) {
+    if (!window.currentProductComplements) return;
+    const group = window.currentProductComplements.find(g => g.id === id);
+    if (group) {
+        group[field] = (field === 'min' || field === 'max') ? (parseInt(value) || 0) : value;
+    }
+    // Silencioso: salva na memória sem resetar o input da tela
+};
+
+// 4. Remover Grupo (Chama render)
+window.removeComplementGroup = function(id) {
+    window.currentProductComplements = window.currentProductComplements.filter(g => g.id !== id);
+    window.renderComplementGroups();
+};
+
+// 5. Adicionar Opção/Item (Chama render)
+window.addNewComplementGroup = function() {
+    if (!window.currentProductComplements) window.currentProductComplements = [];
+    
+    const groupId = Date.now().toString();
+    const newGroup = {
+        id: groupId,
+        name: "",
+        min: 0,
+        max: 1,
+        items: []
+    };
+    
+    window.currentProductComplements.push(newGroup);
+    
+    // FAZ O NOVO GRUPO JÁ APARECER ABERTO
+    window.expandedGroups.add(groupId);
+    
+    window.renderComplementGroups();
+};
+// 6. Remover Opção/Item (Chama render)
+window.removeOptionFromGroup = function(groupId, optionId) {
+    const group = window.currentProductComplements.find(g => g.id === groupId);
+    if (group) {
+        group.items = group.items.filter(item => item.id !== optionId);
+        window.renderComplementGroups();
+    }
+};
+
+// 7. Atualizar dados da OPÇÃO (NÃO chama render)
+window.updateOptionData = function(groupId, optionId, field, value) {
+    if (!window.currentProductComplements) return;
+    const group = window.currentProductComplements.find(g => g.id === groupId);
+    if (group) {
+        const item = group.items.find(i => i.id === optionId);
+        if (item) {
+            item[field] = field === 'price' ? (parseFloat(value) || 0) : value;
+        }
+    }
+    // Silencioso: salva na memória sem resetar o input da tela
+};
+
+// 8. Função de Renderização (Reconstrói a UI lendo a memória)
+window.renderComplementGroups = function() {
+    const area = document.getElementById('complementGroupsArea');
+    if (!area) return;
+
+    const groups = window.currentProductComplements || [];
+
+    if (groups.length === 0) {
+        area.innerHTML = `<p class="text-[10px] text-slate-400 text-center py-4 italic">Nenhum adicional configurado.</p>`;
+        return;
+    }
+
+    area.innerHTML = groups.map((group) => {
+        const isExpanded = window.expandedGroups.has(group.id);
+        const isPaused = group.status === 'paused';
+        
+        return `
+        <div class="bg-slate-50 rounded-[2rem] border border-slate-100 overflow-hidden mb-3 transition-all ${isPaused ? 'opacity-50 grayscale-[0.5]' : ''}">
+            <div class="flex items-center justify-between p-4 cursor-pointer hover:bg-slate-100/50 transition-colors" 
+                 onclick="toggleComplementGroup('${group.id}')">
+                <div class="flex items-center gap-3 flex-1">
+                    <div class="w-8 h-8 rounded-xl bg-white flex items-center justify-center shadow-sm">
+                        <i data-lucide="chevron-down" class="w-4 h-4 text-slate-400 transition-transform ${isExpanded ? '' : '-rotate-90'}"></i>
+                    </div>
+                    <div>
+                        <h5 class="text-[11px] font-black text-slate-700 uppercase tracking-tight flex items-center gap-2">
+                            ${group.name || 'Novo Grupo'} 
+                            ${isPaused ? '<span class="text-[8px] bg-amber-100 text-amber-600 px-2 py-0.5 rounded-full">PAUSADO</span>' : ''}
+                        </h5>
+                        <p class="text-[9px] text-slate-400 font-bold uppercase">${group.items.length} Opções • Regra: ${group.min}/${group.max}</p>
+                    </div>
+                </div>
+                
+                <div class="flex items-center gap-1">
+                    <button type="button" onclick="event.stopPropagation(); toggleGroupStatus('${group.id}')" 
+                        class="p-2 ${isPaused ? 'text-emerald-500' : 'text-amber-500'} hover:scale-110 transition-transform" 
+                        title="${isPaused ? 'Ativar Grupo' : 'Pausar Grupo'}">
+                        <i data-lucide="${isPaused ? 'eye' : 'eye-off'}" class="w-4 h-4"></i>
+                    </button>
+
+                    <button type="button" onclick="event.stopPropagation(); removeComplementGroup('${group.id}')" class="text-rose-400 p-2 hover:text-rose-600 hover:scale-110 transition-transform">
+                        <i data-lucide="trash-2" class="w-4 h-4"></i>
+                    </button>
+                </div>
+            </div>
+
+            <div class="${isExpanded ? 'p-4 pt-0 border-t border-white' : 'hidden'}">
+                <div class="space-y-4 pt-4">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                        <div>
+                            <label class="text-[8px] font-black text-slate-400 uppercase ml-1">Nome do Grupo</label>
+                            <input type="text" placeholder="Ex: Escolha o sabor" 
+                                value="${group.name || ''}"
+                                oninput="updateGroupData('${group.id}', 'name', this.value)"
+                                class="w-full bg-white p-3 rounded-xl text-xs font-bold border-none outline-none focus:ring-2 focus:ring-slate-200">
+                        </div>
+                        <div class="flex gap-2">
+                            <div class="flex-1">
+                                <label class="text-[8px] font-black text-slate-400 uppercase ml-1">Mínimo</label>
+                                <input type="number" value="${group.min}" oninput="updateGroupData('${group.id}', 'min', this.value)" class="w-full p-3 bg-white rounded-xl text-xs font-bold border-none">
+                            </div>
+                            <div class="flex-1">
+                                <label class="text-[8px] font-black text-slate-400 uppercase ml-1">Máximo</label>
+                                <input type="number" value="${group.max}" oninput="updateGroupData('${group.id}', 'max', this.value)" class="w-full p-3 bg-white rounded-xl text-xs font-bold border-none">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="space-y-2">
+                        <label class="text-[8px] font-black text-slate-400 uppercase ml-1">Itens do Grupo</label>
+                        ${group.items.map(item => `
+                            <div class="flex items-center gap-2 bg-white p-2 rounded-2xl shadow-sm border border-slate-50">
+                                <input type="text" placeholder="Item" value="${item.name || ''}"
+                                    oninput="updateOptionData('${group.id}', '${item.id}', 'name', this.value)"
+                                    class="flex-1 p-2 text-[11px] font-bold border-none outline-none bg-transparent">
+                                
+                                <div class="flex items-center gap-1 bg-slate-50 px-3 py-1 rounded-xl">
+                                    <span class="text-[10px] font-bold text-slate-400">R$</span>
+                                    <input type="number" step="0.01" value="${item.price || 0}"
+                                        oninput="updateOptionData('${group.id}', '${item.id}', 'price', this.value)"
+                                        class="w-14 p-1 bg-transparent text-[11px] font-bold border-none outline-none">
+                                </div>
+
+                                <button type="button" onclick="removeOptionFromGroup('${group.id}', '${item.id}')" class="p-2 text-slate-300 hover:text-rose-500">
+                                    <i data-lucide="x" class="w-3 h-3"></i>
+                                </button>
+                            </div>
+                        `).join('')}
+                    </div>
+
+                    <button type="button" onclick="addOptionToGroup('${group.id}')" class="w-full py-3 border-2 border-dashed border-slate-200 rounded-2xl text-[9px] font-black text-slate-400 hover:border-slate-300 transition-all uppercase">
+                        + Adicionar Opção
+                    </button>
+                </div>
+            </div>
+        </div>
+        `;
+    }).join('');
+
+    if (window.lucide) lucide.createIcons();
+};
+
+window.toggleGroupStatus = function(groupId) {
+    const group = window.currentProductComplements.find(g => g.id === groupId);
+    if (group) {
+        // Se não existir a propriedade 'status', ela começa como 'active'
+        group.status = (group.status === 'paused') ? 'active' : 'paused';
+        window.renderComplementGroups();
+    }
+};
+
+// Armazena qual grupo está expandido (por padrão, o último criado)
+window.expandedGroups = new Set();
+
+window.toggleComplementGroup = function(groupId) {
+    if (window.expandedGroups.has(groupId)) {
+        window.expandedGroups.delete(groupId);
+    } else {
+        window.expandedGroups.add(groupId);
+    }
+    window.renderComplementGroups();
+};
+
     </script>
 </body>
 </html>
