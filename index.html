@@ -4408,11 +4408,6 @@ async function initAnalyticsInsights() {
         <i data-lucide="message-circle" class="w-5 h-5"></i> Abrir no WhatsApp
     </a>
 
-    <button onclick="window.printOrder(${JSON.stringify(p).replace(/"/g, '&quot;')})" 
-    class="w-full py-4 bg-slate-100 text-slate-600 rounded-3xl font-black text-[10px] uppercase tracking-widest flex items-center justify-center gap-2 hover:bg-slate-200 transition-all mt-2">
-    <i data-lucide="printer" class="w-4 h-4"></i> Reimprimir Comanda
-</button>
-
     <button onclick="window.deleteOrder('${p.id}')" class="w-full py-4 text-red-400 font-bold text-[9px] uppercase tracking-[0.3em] mt-4 opacity-50 hover:opacity-100 transition-all">
         Remover Histórico
     </button>
@@ -5424,32 +5419,13 @@ window.updateOrderStatus = async (id, status) => {
         const estavaCancelado = p.status === 'canceled' || p.status === 'Cancelado';
         const alreadyDeducted = p.stockDeducted === true;
 
-// --- CASO A: CONFIRMAR OU CONCLUIR (BAIXAR ESTOQUE) ---
-if ((status === 'confirmed' || status === 'completed') && (!alreadyDeducted || estavaCancelado)) {
-    // 1. Processa o estoque primeiro
-    await window.processarBaixaSilenciosa(id, p);
-    orderUpdate.stockDeducted = true;
 
-    // 2. Dispara a notificação de WhatsApp personalizada (Loja ou Restaurante)
-    // Chamamos a função que criamos anteriormente
-    if (status === 'confirmed' && typeof window.sendConfirmationWhatsApp === 'function') {
-        window.sendConfirmationWhatsApp(p);
-    }
+        // --- CASO A: CONFIRMAR OU CONCLUIR (BAIXAR ESTOQUE) ---
+        if ((status === 'confirmed' || status === 'completed') && (!alreadyDeducted || estavaCancelado)) {
+            await window.processarBaixaSilenciosa(id, p);
+            orderUpdate.stockDeducted = true;
+        }
 
-    // 3. Gatilho de Impressão de Comanda
-    // O setTimeout evita que o alerta de impressão bloqueie a abertura do WhatsApp
-    if (status === 'confirmed') {
-        setTimeout(() => {
-            if (confirm("Pedido confirmado com sucesso! Deseja imprimir a comanda na impressora térmica?")) {
-                if (typeof window.printOrder === 'function') {
-                    window.printOrder(p);
-                } else {
-                    console.error("Função printOrder não encontrada.");
-                }
-            }
-        }, 1000); // Aguarda 1 segundo para não conflitar com o popup do Zap
-    }
-}
         // --- CASO B: CANCELAR (ESTORNAR ESTOQUE) ---
         if (status === 'canceled' && alreadyDeducted) {
             console.log("Estornando estoque de forma agrupada...");
@@ -7147,87 +7123,5 @@ window.sendConfirmationWhatsApp = function(p) {
     window.open(`https://wa.me/55${phone}?text=${encodeURIComponent(msg)}`, '_blank');
 };
     </script>
-
-<div id="printSection" style="display: none;"></div>
-
-<style>
-/* Estilos específicos para a hora da impressão */
-@media print {
-    body * { visibility: hidden; }
-    #printSection, #printSection * { visibility: visible; }
-    #printSection {
-        position: absolute;
-        left: 0;
-        top: 0;
-        width: 100%;
-        max-width: 58mm; /* Ajuste para 80mm se sua impressora for grande */
-        font-family: 'Courier New', monospace;
-        color: black;
-        padding: 0;
-        margin: 0;
-    }
-    @page { margin: 0; }
-}
-</style>
-
-window.printOrder = function(p) {
-    const printSection = document.getElementById('printSection');
-    if (!printSection) return;
-
-    const dataPedido = new Date().toLocaleString('pt-BR');
-    
-    // Formata os itens para a térmica
-    const itensHtml = p.items.map(i => {
-        let extras = '';
-        if (i.escolhas && i.escolhas.length > 0) {
-            extras = i.escolhas.map(e => `<div style="font-size: 10px; margin-left: 10px;">- ${e.nome}</div>`).join('');
-        }
-        return `
-            <div style="margin-bottom: 5px; border-bottom: 1px dotted #ccc; padding-bottom: 3px;">
-                <b>${i.qty}x ${i.name.toUpperCase()}</b>
-                ${extras}
-                ${i.observacao ? `<div style="font-size: 10px; font-style: italic;">OBS: ${i.observacao}</div>` : ''}
-            </div>
-        `;
-    }).join('');
-
-    // Monta o layout do Cupom
-    printSection.innerHTML = `
-        <div style="width: 58mm; padding: 5px; font-family: monospace;">
-            <div style="text-align: center; font-weight: bold; font-size: 14px; margin-bottom: 5px;">
-                ${storeConfig.name.toUpperCase()}<br>
-                #${p.id.slice(-5).toUpperCase()}
-            </div>
-            <div style="font-size: 10px; text-align: center; margin-bottom: 10px;">
-                ${dataPedido}
-            </div>
-            
-            <div style="border-top: 1px dashed #000; padding: 5px 0; font-size: 11px;">
-                <b>CLIENTE:</b> ${p.customer.name}<br>
-                <b>TEL:</b> ${p.customer.phone}<br>
-                <b>TIPO:</b> ${p.deliveryMethod === 'delivery' ? 'ENTREGA 🛵' : 'RETIRADA 🥡'}
-                ${p.address ? `<br><b>END:</b> ${p.address}` : ''}
-            </div>
-
-            <div style="border-top: 1px dashed #000; padding: 5px 0;">
-                <b>ITENS:</b><br>
-                ${itensHtml}
-            </div>
-
-            <div style="border-top: 1px dashed #000; padding: 5px 0; text-align: right;">
-                <b>TOTAL: R$ ${p.total.toFixed(2).replace('.', ',')}</b><br>
-                <small>Pagamento: ${p.paymentMethod}</small>
-            </div>
-            
-            <div style="text-align: center; margin-top: 15px; font-size: 10px;">
-                IMPRESSO VIA VITRINE ONLINE
-            </div>
-        </div>
-    `;
-
-    // Dispara a impressão
-    window.print();
-};
-
 </body>
 </html>
