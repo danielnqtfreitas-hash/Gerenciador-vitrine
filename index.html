@@ -7146,29 +7146,6 @@ window.sendConfirmationWhatsApp = function(p) {
     const phone = p.customer.phone.replace(/\D/g, '');
     window.open(`https://wa.me/55${phone}?text=${encodeURIComponent(msg)}`, '_blank');
 };
-    </script>
-
-<div id="printSection" style="display: none;"></div>
-
-<style>
-/* Estilos específicos para a hora da impressão */
-@media print {
-    body * { visibility: hidden; }
-    #printSection, #printSection * { visibility: visible; }
-    #printSection {
-        position: absolute;
-        left: 0;
-        top: 0;
-        width: 100%;
-        max-width: 58mm; /* Ajuste para 80mm se sua impressora for grande */
-        font-family: 'Courier New', monospace;
-        color: black;
-        padding: 0;
-        margin: 0;
-    }
-    @page { margin: 0; }
-}
-</style>
 
 window.printOrder = function(p) {
     const printSection = document.getElementById('printSection');
@@ -7227,5 +7204,27 @@ window.printOrder = function(p) {
 };
 
 </script>
+<div id="printSection" style="display: none;"></div>
+
+    <style>
+    /* Estilos específicos para a hora da impressão */
+    @media print {
+        body * { visibility: hidden; }
+        #printSection, #printSection * { visibility: visible; }
+        #printSection {
+            position: absolute;
+            left: 0;
+            top: 0;
+            width: 100%;
+            max-width: 58mm;
+            font-family: 'Courier New', monospace;
+            color: black;
+            padding: 0;
+            margin: 0;
+        }
+        @page { margin: 0; }
+    }
+    </style>
+
 </body>
 </html>
