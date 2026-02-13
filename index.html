@@ -3864,10 +3864,12 @@ if (tabName === 'finance') {
     }
 
     // --- CLIENTES ---
-    if (tabName === 'customers') {
-     window.loadSavedCustomers(); 
+if (tabName === 'customers') {
+    // Usamos o .then() para garantir que a renderização só ocorra após os dados chegarem
+    window.loadSavedCustomers().then(() => {
         window.renderCustomerRanking();
-    }
+    });
+}
 
     // --- BADGE ---
     if (tabName === 'orders') {
@@ -4277,6 +4279,10 @@ async function initAnalyticsInsights() {
 
    
        window.openOrderModal = (id) => {
+        if (window.notificacaoAudio) {
+        window.notificacaoAudio.pause();
+        window.notificacaoAudio.currentTime = 0;
+    }
     const p = ordersCache[id];
     if (!p) return;
 
@@ -5803,12 +5809,29 @@ window.updateFinanceChart = (filterStart, filterEnd, rangeType) => {
     let labels = [];
     let dataMap = {};
 
+    // 1. FILTRAGEM TOTAL (Pega do cache de memória, ignorando o limite da tela)
     const orders = Object.values(ordersCache).filter(o => {
         let t = o.createdAt?.toMillis ? o.createdAt.toMillis() : (typeof o.createdAt === 'number' ? o.createdAt : 0);
+        // Filtra pelo período selecionado e ignora os cancelados para o financeiro
         return t >= filterStart && t <= filterEnd && o.status !== 'canceled';
     });
 
-    // 1. Configurar Labels e Agrupamento
+    // 2. ATUALIZAÇÃO DOS CARDS DE RESUMO (OS NÚMEROS NO TOPO)
+    const totalFaturamento = orders.reduce((sum, o) => sum + (Number(o.total) || 0), 0);
+    const totalPedidos = orders.length;
+
+    // Atualiza os elementos de texto com os valores REAIS do banco
+    const elFaturamento = document.getElementById('totalSales'); 
+    const elQuantidade = document.getElementById('countCompleted'); 
+
+    if (elFaturamento) {
+        elFaturamento.innerText = `R$ ${totalFaturamento.toFixed(2).replace('.', ',')}`;
+    }
+    if (elQuantidade) {
+        elQuantidade.innerText = totalPedidos;
+    }
+
+    // 3. CONFIGURAÇÃO DO GRÁFICO (AGRUPAMENTO POR HORA, DIA OU SEMANA)
     if (rangeType === 'today' || rangeType === 'yesterday') {
         labels = Array.from({length: 24}, (_, i) => `${i}h`);
         orders.forEach(o => {
@@ -5829,7 +5852,7 @@ window.updateFinanceChart = (filterStart, filterEnd, rangeType) => {
             if(dataMap[label] !== undefined) dataMap[label] += (Number(o.total) || 0);
         });
     } else {
-        // Mês ou Customizado (Por Dia)
+        // Mês ou Período Customizado
         const start = new Date(filterStart);
         const end = new Date(filterEnd === Infinity ? Date.now() : filterEnd);
         for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
@@ -5848,10 +5871,10 @@ window.updateFinanceChart = (filterStart, filterEnd, rangeType) => {
         ? labels.map((_, i) => dataMap[i] || 0)
         : labels.map(l => dataMap[l] || 0);
 
-    // 2. Criar/Atualizar o Gráfico
-    if (financeChartInstance) financeChartInstance.destroy();
+    // 4. RENDERIZAÇÃO DO GRÁFICO
+    if (window.financeChartInstance) window.financeChartInstance.destroy();
 
-    financeChartInstance = new Chart(ctx, {
+    window.financeChartInstance = new Chart(ctx, {
         type: 'line',
         data: {
             labels: labels,
@@ -5872,7 +5895,18 @@ window.updateFinanceChart = (filterStart, filterEnd, rangeType) => {
         options: {
             responsive: true,
             maintainAspectRatio: false,
-            plugins: { legend: { display: false }, tooltip: { mode: 'index', intersect: false } },
+            plugins: { 
+                legend: { display: false }, 
+                tooltip: { 
+                    mode: 'index', 
+                    intersect: false,
+                    callbacks: {
+                        label: function(context) {
+                            return 'R$ ' + context.parsed.y.toFixed(2).replace('.', ',');
+                        }
+                    }
+                } 
+            },
             scales: {
                 x: { grid: { display: false }, ticks: { font: { size: 9, weight: 'bold' }, color: '#94a3b8', maxRotation: 0 } },
                 y: { beginAtZero: true, grid: { color: '#f1f5f9' }, ticks: { display: false } }
@@ -6391,23 +6425,18 @@ window.processarBaixaSilenciosa = async (orderId, orderData) => {
 
 // --- LÓGICA DE CLIENTES & RANKING ---
 window.renderCustomerRanking = async () => {
-    // 1. Garante que os clientes salvos no banco estão carregados
+    // 1. Garante carga dos dados
     if (Object.keys(savedCustomers).length === 0) await window.loadSavedCustomers();
 
     const customerStats = {};
     
-    // 2. Primeiro, incluímos TODOS os clientes que você já cadastrou no banco
+    // 2. Mapeia todos os clientes salvos
     Object.values(savedCustomers).forEach(c => {
         const phone = c.phone.replace(/\D/g, '');
-        customerStats[phone] = {
-            ...c,
-            orderCount: 0,
-            totalSpent: 0,
-            isGuest: false
-        };
+        customerStats[phone] = { ...c, orderCount: 0, totalSpent: 0, isGuest: false };
     });
 
-    // 3. Depois, somamos os dados dos pedidos
+    // 3. Soma dados dos pedidos (ignora cancelados)
     const orders = Object.values(ordersCache);
     orders.forEach(order => {
         if (order.status !== 'canceled') {
@@ -6426,11 +6455,35 @@ window.renderCustomerRanking = async () => {
         }
     });
 
-    // 4. Ordenação: Quem gastou mais fica no topo (Cima para Baixo)
     const ranking = Object.values(customerStats).sort((a, b) => b.totalSpent - a.totalSpent);
-    const tbody = document.getElementById('customerTableBody');
-    tbody.innerHTML = ""; // Limpa antes de renderizar
 
+    // --- PARTE CRUCIAL: ATUALIZA OS CONTADORES NO TOPO ---
+    // Aqui calculamos o total REAL da memória
+    const qtdTotalReal = ranking.length; 
+    const qtdFieisReal = ranking.filter(c => c.orderCount > 1).length;
+
+    // Tentamos encontrar os IDs mais comuns para esses cards. 
+    // Se o seu ID for diferente, ajuste entre as aspas abaixo:
+    const idsPossiveisTotal = ['totalCustomersCount', 'totalClientesTxt', 'customerCount'];
+    const idsPossiveisFieis = ['loyalCustomersCount', 'clientesFieisTxt', 'loyalCount'];
+
+    idsPossiveisTotal.forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.innerText = qtdTotalReal;
+    });
+
+    idsPossiveisFieis.forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.innerText = qtdFieisReal;
+    });
+    // ----------------------------------------------------
+
+    const tbody = document.getElementById('customerTableBody');
+    if (!tbody) return;
+    
+    tbody.innerHTML = ""; 
+
+    // Renderiza o ranking completo na tabela
     ranking.forEach((c, index) => {
         const isTop1 = index === 0 && c.totalSpent > 0;
         const phoneRaw = c.phone.replace(/\D/g, '');
@@ -6457,20 +6510,16 @@ window.renderCustomerRanking = async () => {
                 <td class="px-4 py-4 text-right">
                     <span class="font-black text-slate-900 text-xs">R$ ${c.totalSpent.toFixed(2).replace('.',',')}</span>
                 </td>
-                <td class="px-4 py-4">
-    <div class="flex items-center justify-center gap-1">
-        <button onclick="window.openCustomerDetails('${phoneRaw}')" class="p-2 text-slate-400 hover:text-primary-600 hover:bg-primary-50 rounded-lg transition-all" title="Ver Detalhes">
-            <i data-lucide="eye" class="w-4 h-4"></i>
-        </button>
-        <button onclick="window.editCustomer('${phoneRaw}')" class="p-2 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all" title="Editar Dados">
-            <i data-lucide="pencil" class="w-4 h-4"></i>
-        </button>
-        
-        <button onclick="window.deleteCustomerPermanent('${phoneRaw}')" class="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all" title="Excluir Cliente">
-            <i data-lucide="trash-2" class="w-4 h-4"></i>
-        </button>
-    </div>
-</td>
+                <td class="px-4 py-4 text-center">
+                    <div class="flex items-center justify-center gap-1">
+                        <button onclick="window.openCustomerDetails('${phoneRaw}')" class="p-2 text-slate-400 hover:text-primary-600 hover:bg-primary-50 rounded-lg transition-all">
+                            <i data-lucide="eye" class="w-4 h-4"></i>
+                        </button>
+                        <button onclick="window.deleteCustomerPermanent('${phoneRaw}')" class="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all">
+                            <i data-lucide="trash-2" class="w-4 h-4"></i>
+                        </button>
+                    </div>
+                </td>
             </tr>
         `;
         tbody.insertAdjacentHTML('beforeend', row);
@@ -6479,6 +6528,25 @@ window.renderCustomerRanking = async () => {
     if (window.lucide) lucide.createIcons();
 };
 
+window.loadCustomersData = async () => {
+    // Só faz a leitura no Firebase se o cache estiver vazio (Economia de leituras)
+    if (Object.keys(savedCustomers).length === 0) {
+        console.log("Buscando base de clientes...");
+        try {
+            const q = query(collection(db, "customers"));
+            const querySnapshot = await getDocs(q);
+            
+            querySnapshot.forEach((doc) => {
+                const data = doc.data();
+                // Limpa o telefone para usar como chave única no cache
+                const phone = data.phone.replace(/\D/g, '');
+                savedCustomers[phone] = { id: doc.id, ...data };
+            });
+        } catch (error) {
+            console.error("Erro ao carregar clientes:", error);
+        }
+    }
+};
 
 // Função para abrir os detalhes (Ficha)
 window.openCustomerDetails = (phone) => {
