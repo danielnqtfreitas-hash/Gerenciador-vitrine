@@ -668,22 +668,43 @@ tailwind.config = {
 
          <div id="content-area" class="flex-1 overflow-y-auto bg-slate-50 p-4 md:p-8">
             
-            <div id="view-orders" class="animate-fade-in space-y-6">
-                <div class="flex items-center gap-2 px-3 py-1 bg-green-100 text-green-700 rounded-full text-[10px] font-bold border border-green-200 w-fit animate-pulse">
-                    <span class="w-2 h-2 bg-green-500 rounded-full"></span> Radar Ativo
-                </div>
-      <div class="w-full mb-6"> <div class="relative group">
-        <i data-lucide="search" class="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 w-4 h-4 transition-colors group-focus-within:text-primary-500"></i>
+    <div id="view-orders">
+        
+        <div class="flex items-center gap-3 bg-white p-2 px-4 rounded-2xl border border-slate-100 shadow-sm w-fit mb-6">
+            <span id="statusLojaTextoPedidos" class="text-[10px] font-black uppercase tracking-widest transition-colors duration-300">
+                CARREGANDO...
+            </span>
+            <button id="btnToggleLoja" onclick="window.toggleLojaStatus()" 
+                class="relative inline-flex h-7 w-12 items-center rounded-full transition-colors duration-300 focus:outline-none bg-slate-200">
+                <span id="switchDot" class="inline-block h-5 w-5 rounded-full bg-white shadow-md transition-transform duration-300" style="transform: translateX(4px);"></span>
+            </button>
+        </div>
 
-        <input 
-            id="orderSearchInput"
-            oninput="window.renderFilteredOrders()"
-            type="text" 
-            placeholder="Buscar por nome, ID ou telefone..."
-            class="w-full pl-11 pr-4 py-3 rounded-2xl border border-slate-200/60 bg-slate-100/40 focus:bg-white focus:border-primary-400 focus:ring-4 focus:ring-primary-500/10 outline-none transition-all duration-300 placeholder:text-slate-400 text-sm font-medium"
-        >
-    </div>
-</div>
+        <div class="w-full mb-6"> 
+            <div class="relative group">
+                <i data-lucide="search" class="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 w-4 h-4 transition-colors group-focus-within:text-primary-500"></i>
+                <input 
+                    id="orderSearchInput"
+                    oninput="window.renderFilteredOrders()"
+                    type="text" 
+                    placeholder="Buscar por nome, ID ou telefone..."
+                    class="w-full pl-11 pr-4 py-3 rounded-2xl border border-slate-200/60 bg-white focus:border-primary-400 focus:ring-4 focus:ring-primary-500/10 outline-none transition-all duration-300 placeholder:text-slate-400 text-sm font-medium shadow-sm"
+                >
+            </div>
+        </div>
+
+        <div id="ordersCardsContainer" class="grid grid-cols-1 gap-1">
+            <p class="text-center text-slate-400 py-10 italic text-sm">Carregando pedidos...</p>
+        </div>
+
+        <div class="flex justify-center py-6">
+            <button id="btnLoadMore" onclick="window.loadMoreOrders()" 
+                    class="bg-white border border-slate-200 text-slate-600 px-6 py-2.5 rounded-xl text-xs font-bold shadow-sm hover:bg-slate-50 transition-all hidden">
+                Ver mais
+            </button>
+        </div>
+   
+    </div> <div id="view-dashboard" class="hidden">
 
                 <div id="ordersCardsContainer" class="grid grid-cols-1 gap-1">
     <p class="text-center text-slate-400 py-10 italic text-sm">Carregando pedidos...</p>
@@ -708,6 +729,10 @@ tailwind.config = {
             <div class="p-4 bg-primary-50 text-primary-600 rounded-2xl shadow-inner"><i data-lucide="store" class="w-8 h-8"></i></div>
             <div>
                 <h3 class="font-bold text-xl text-slate-800">Status da Loja</h3>
+                <div class="flex items-center gap-3 bg-white p-2 px-4 rounded-2xl border border-slate-100 shadow-sm">
+    <span id="statusLojaText" class="text-[10px] font-black uppercase tracking-widest text-slate-400">Carregando...</span>
+    
+</div> 
                 <div class="flex flex-col mt-1">
     <div class="flex items-center gap-2">
         <span class="text-sm text-slate-500">Plano Atual:</span>
@@ -1543,7 +1568,7 @@ tailwind.config = {
         const storage = getStorage(app);
         const messaging = getMessaging(app);
 
-        let currentStoreId = null;
+        
         let allProducts = [], allCategories = [], allBanners = [], deliveryAreas = [];
         let currentProductImages = []; 
         let imageQueue = [];
@@ -1573,7 +1598,9 @@ let customEnd = null;
 let isFirstLoad = true;
 let currentFinanceRange = 'today';
      let currentOrderTab = 'pending_whatsapp'; // Aba inicial (Recebidos)
-
+let lojaEstaAberta = false;
+let carregouPrimeiraVez = false;
+let currentStoreId = null;  // Começa vazio, o login vai preencher
         let variationsMatrix = [];
       let needsPublish = false;
 let cachedPublicPlans = null; 
@@ -1584,7 +1611,32 @@ const PLAN_DISPLAY_NAMES = {
     'gold_mensal': 'Plano Gold'
 };
 
-        // Destrava o áudio no primeiro clique do lojista (necessário p/ navegadores)
+
+// 1. Função que controla o visual do Switch (Definir no topo do script)
+window.updateLojaVisual = (isOpen) => {
+    const btn = document.getElementById('btnToggleLoja');
+    const dot = document.getElementById('switchDot');
+    const text = document.getElementById('statusLojaText');
+    
+    if (!btn || !dot || !text) return;
+
+    if (isOpen) {
+        // Status Aberto
+        btn.style.backgroundColor = "#10b981"; // emerald-500
+        dot.style.transform = "translateX(24px)";
+        text.innerText = "Loja Aberta";
+        text.style.color = "#10b981";
+    } else {
+        // Status Pausado
+        btn.style.backgroundColor = "#e2e8f0"; // slate-200
+        dot.style.transform = "translateX(4px)";
+        text.innerText = "Loja Pausada";
+        text.style.color = "#ef4444"; // rose-500
+    }
+};
+
+
+    // Destrava o áudio no primeiro clique do lojista (necessário p/ navegadores)
 document.addEventListener('click', () => {
     const audio = document.getElementById('notifSound');
     if (audio) {
@@ -1594,32 +1646,6 @@ document.addEventListener('click', () => {
 
   
 // 1. Forçamos o login a ser LOCAL (não apaga quando fecha a aba)
-setPersistence(auth, browserLocalPersistence)
-    .then(() => {
-        // O observador agora roda "dentro" da garantia de persistência
-        return onAuthStateChanged(auth, (user) => {
-            const authScreen = document.getElementById('auth-screen');
-            const mainContent = document.getElementById('main-content');
-
-            if (user) {
-                console.log("Sessão recuperada com sucesso:", user.uid);
-                currentStoreId = user.uid;
-                
-                // Garante a troca de telas
-                if (authScreen) authScreen.classList.add('hidden');
-                if (mainContent) mainContent.classList.remove('hidden');
-                
-                CarregarDadosPainel();
-            } else {
-                console.log("Nenhum usuário logado.");
-                if (authScreen) authScreen.classList.remove('hidden');
-                if (mainContent) mainContent.classList.add('hidden');
-            }
-        });
-    })
-    .catch((error) => {
-        console.error("Erro ao configurar persistência:", error);
-    });
 
 // 2. Escuta de mensagens (mantido igual)
 onMessage(messaging, (payload) => {
@@ -1640,6 +1666,7 @@ async function CarregarDadosPainel() {
         
         if (!configSnap.exists()) return;
         storeConfig = configSnap.data();
+        window.updateLojaVisual(storeConfig.isOpen);
         const serverLastUpdate = storeConfig.lastUpdate?.toString() || "0";
 
         // 2. CARREGAMENTO INTELIGENTE (Custo zero se nada mudou no banco)
@@ -2391,139 +2418,161 @@ async function requestNotificationPermission() {
 }
         
 
-        // --- INIT DATA & AUTH PERSISTENCE ---
+
+// --- INIT DATA & AUTH PERSISTENCE ---
 
 setPersistence(auth, browserLocalPersistence)
     .then(() => {
         return onAuthStateChanged(auth, async (user) => {
             const authScreen = document.getElementById('auth-screen');
-            
-            if(user) {
-                if(authScreen) authScreen.classList.add('hidden');
-                document.getElementById('userEmailDisplay').textContent = user.email;
+            const mainContent = document.getElementById('main-content');
+
+            if (user) {
+                // Mostra o painel imediatamente
+                if (authScreen) authScreen.classList.add('hidden');
+                if (mainContent) mainContent.classList.remove('hidden');
                 
+                const emailDisplay = document.getElementById('userEmailDisplay');
+                if (emailDisplay) emailDisplay.textContent = user.email;
+
                 try {
+                    // 1. Identifica a loja do usuário (Dinâmico para Marketplace)
                     let dirDoc = await getDoc(doc(db, "admin_directory", user.uid));
-                    if(!dirDoc.exists()){
+                    
+                    if (!dirDoc.exists()) {
                         const snap = await getDocs(query(collection(db, "stores_registry"), where("ownerEmail", "==", user.email)));
-                        if(snap.empty) return handleLogout();
+                        if (snap.empty) return handleLogout();
                         currentStoreId = snap.docs[0].data().slug;
                     } else { 
                         currentStoreId = dirDoc.data().storeId; 
                     }
 
                     if (currentStoreId) {
-                        fetchPublicPlansEagerly();
-                        initStoreData(); 
-                        initAnalyticsChart();
-                        initAnalyticsInsights();
-                        initOrderListener(currentStoreId);
-                        loadMagicCategoriesFeedback();
-                        changeTab('orders');   
-                      const pending = localStorage.getItem(`pending_publish_${currentStoreId}`);
-if (pending === 'true') {
-    needsPublish = true;
-}
-window.renderPublishButton();
+                        console.log("Loja ativa:", currentStoreId);
 
-                        // --- Lógica do Tutorial ---
-                        const tutorialFeito = localStorage.getItem('tutorial_concluido_' + user.uid);
-
-                        if (!tutorialFeito) {
-                            setTimeout(() => {
-                                if (window.innerWidth < 768) {
-                                    const sidebar = document.getElementById('mobileSidebar');
-                                    if (sidebar && sidebar.classList.contains('sidebar-hidden')) {
-                                        window.toggleMobileSidebar();
-                                    }
-                                }
-                                
-                                if (typeof window.startTutorial === 'function') {
-                                    window.startTutorial();
-                                    localStorage.setItem('tutorial_concluido_' + user.uid, 'true');
-                                }
-                            }, 3000);
+                        // 2. Monitor de Status (Sempre ativo em segundo plano)
+                        monitorarStatusLoja(currentStoreId);
+                        
+                        // 3. CARGA INICIAL (Só acontece UMA VEZ ao logar)
+                        if (!carregouPrimeiraVez) {
+                            fetchPublicPlansEagerly();
+                            initStoreData(); 
+                            initAnalyticsChart();
+                            initAnalyticsInsights();
+                            initOrderListener(currentStoreId);
+                            loadMagicCategoriesFeedback();
+                            
+                            // Define a aba inicial e trava
+                            changeTab('orders'); 
+                            carregouPrimeiraVez = true; 
                         }
 
-                        setTimeout(requestNotificationPermission, 5000);
-                    } // <-- FECHA o if (currentStoreId)
-                } catch (e) { // <-- Agora o catch funciona porque o try foi fechado corretamente
-                    console.error("Erro ao carregar loja:", e);
-                }
+                        // 4. Verificações de UI persistentes
+                        const pending = localStorage.getItem(`pending_publish_${currentStoreId}`);
+                        if (pending === 'true') { needsPublish = true; }
+                        if (typeof window.renderPublishButton === 'function') {
+                            window.renderPublishButton();
+                        }
+                    }
 
-            } else { 
-                if(authScreen) authScreen.classList.remove('hidden'); 
-                lucide.createIcons(); 
+                } catch (error) {
+                    console.error("Erro no fluxo de login:", error);
+                }
+            } else {
+                console.log("Nenhum usuário logado.");
+                carregouPrimeiraVez = false; // Reseta se deslogar
+                if (authScreen) authScreen.classList.remove('hidden');
+                if (mainContent) mainContent.classList.add('hidden');
             }
         });
     })
-    .catch((error) => {
-        console.error("Erro ao configurar persistência:", error);
-    });
+    .catch((error) => console.error("Erro de persistência:", error));
 
 // --- LISTENER DE PEDIDOS (VERSÃO BLINDADA CONTRA NOTIFICAÇÃO FANTASMA) ---
+// --- LISTENER DE PEDIDOS (CORREÇÃO: VARIÁVEL listOrder REMOVIDA) ---
 window.initOrderListener = (storeId) => {
+    if (!storeId) return;
+
     const q = query(
         collection(db, `stores/${storeId}/orders`),
         orderBy("createdAt", "desc"),
-        limit(ordersLimit) // Limite inicial de 20
+        limit(ordersLimit || 20)
     );
 
     const audio = document.getElementById('notifSound');
 
     onSnapshot(q, (snapshot) => {
-        // 1. ATUALIZAÇÃO DO GPS DE PAGINAÇÃO
-        // Só atualizamos o lastVisibleOrder no primeiro carregamento ou se a lista mudar,
-        // mas apenas para os documentos do "topo" da lista.
+        console.log(`✅ Pedidos atualizados: ${snapshot.docs.length} documentos.`);
+
         if (snapshot.docs.length > 0 && isFirstLoad) {
             lastVisibleOrder = snapshot.docs[snapshot.docs.length - 1];
         }
 
-        // 2. ESCUTA INDIVIDUAL DE MUDANÇAS (O segredo para não apagar o "Ver Mais")
         snapshot.docChanges().forEach((change) => {
             const orderData = change.doc.data();
             const orderId = change.doc.id;
 
             if (change.type === "added" || change.type === "modified") {
-                // Atualiza ou Adiciona no Cache
-                ordersCache[orderId] = { id: orderId, ...orderData };
+                ordersCache[orderId] = { 
+                    id: orderId, 
+                    customer: orderData.customer || { name: "Cliente", phone: "" },
+                    total: orderData.total || 0,
+                    status: orderData.status || "pending_whatsapp",
+                    ...orderData 
+                };
 
-                // PROCESSAMENTO DE ESTOQUE (Regra de Ouro)
+                // Sincronização de Estoque
                 if (orderData.stockDeducted !== true && orderData.status !== 'canceled') {
-                    console.log(`🤖 Sincronizando estoque: ${orderId}`);
-                    window.processarBaixaSilenciosa(orderId, orderData);
+                    if (typeof window.processarBaixaSilenciosa === 'function') {
+                        window.processarBaixaSilenciosa(orderId, orderData);
+                    }
                 }
 
-                // NOTIFICAÇÃO SONORA (Apenas para novos reais)
+                // Notificação Sonora
                 if (change.type === "added" && !isFirstLoad) {
                     const now = Date.now();
                     const orderTime = orderData.createdAt?.toMillis ? orderData.createdAt.toMillis() : now;
-                    if (now - orderTime < 120000) { // 2 minutos
+                    if (now - orderTime < 120000) {
                         if (audio) {
                             audio.currentTime = 0;
-                            audio.play().catch(e => console.warn("Áudio bloqueado. Clique na tela uma vez."));
+                            audio.play().catch(() => {});
                         }
-                        showToast("🔔 Novo pedido recebido!");
+                        if (typeof showToast === 'function') showToast("🔔 Novo pedido recebido!");
                     }
                 }
             }
 
-            if (change.type === "removed") {
-                // Remove do cache apenas se o pedido for realmente excluído do banco
-                delete ordersCache[orderId];
-            }
+            if (change.type === "removed") delete ordersCache[orderId];
         });
 
         isFirstLoad = false; 
 
-        // 3. ATUALIZAÇÃO DA UI
-        window.renderFilteredOrders(); 
-        
-        // 4. FINANCEIRO INDEPENDENTE
-        window.initFinanceDashboard(); 
+        // --- CORREÇÃO DO TRAVAMENTO AQUI ---
+        if (typeof window.renderFilteredOrders === 'function') {
+            window.renderFilteredOrders(); 
+        }
+
+        // Se o container de pedidos do Dashboard existir e estiver vazio, limpa o "Carregando"
+        const dashContainer = document.getElementById("ordersCardsContainer");
+        if (dashContainer) {
+            const totalNoCache = Object.keys(ordersCache).length;
+            if (totalNoCache === 0) {
+                dashContainer.innerHTML = `<p class="text-center text-slate-400 py-10 italic text-sm">Nenhum pedido encontrado.</p>`;
+            }
+        }
+
+        if (typeof window.initFinanceDashboard === 'function') {
+            window.initFinanceDashboard(); 
+        }
+
+    }, (error) => {
+        console.error("Erro no Listener:", error);
+        const container = document.getElementById("ordersCardsContainer");
+        if (container) {
+            container.innerHTML = `<p class="text-center text-red-400 py-10 text-xs">Erro ao carregar: ${error.code}</p>`;
+        }
     });
 };
-
     // --- LISTENER A: IDENTIDADE, LIMITES E STATUS ---
     async function initStoreData() {
       window.renderPublishButton();
@@ -4136,66 +4185,87 @@ window.markAsDirty();
 
         lucide.createIcons();
 
-        // --- NOVO SISTEMA DE MÉTRICAS (CORREÇÃO DE LEITURA DO BALDE) ---
+// --- NOVO SISTEMA DE MÉTRICAS (CORREÇÃO DE LEITURA E VARIÁVEIS) ---
+// --- SISTEMA DE MÉTRICAS ATUALIZADO (VERSÃO ANTI-ERRO) ---
 async function initAnalyticsInsights() {
-    if (!currentStoreId) return;
+    // 1. Identificação da loja (Tenta pegar de todas as fontes possíveis)
+    const idLojaAnalytics = (typeof currentStoreId !== 'undefined' && currentStoreId) ? currentStoreId : STORE_ID;
 
-    // Referência ao documento único que a Vitrine agora preenche (product_views)
-    const docRef = doc(db, `stores/${currentStoreId}/analytics`, "product_views");
-  const snapCheck = await getDoc(docRef);
-    if (!snapCheck.exists()) {
-        await setDoc(docRef, { stats: {}, searches: {}, lastUpdate: Timestamp.now() });
+    if (!idLojaAnalytics) {
+        console.warn("Analytics: ID da loja ainda não definido. A aguardar...");
+        return;
     }
-    
-    onSnapshot(docRef, (snap) => {
-        // Se o documento não existir, mantemos as mensagens de "Aguardando..." que você já tem
-        if (!snap.exists()) {
-            console.log("Nenhum dado de analytics encontrado para esta loja.");
-            return;
-        }
 
-        const data = snap.data();
+    try {
+        // Caminho exato no Firestore: stores/ID/analytics/product_views
+        const docRef = doc(db, "stores", idLojaAnalytics, "analytics", "product_views");
         
-        // --- 1. PROCESSAR PRODUTOS POPULARES (Lendo do Mapa 'stats') ---
-        const stats = data.stats || {};
-        const ranking = Object.keys(stats).map(id => ({
-            name: stats[id].name || "Produto",
-            views: stats[id].views || 0
-        })).sort((a, b) => b.views - a.views).slice(0, 5);
+        // snapshot em tempo real
+        onSnapshot(docRef, (snap) => {
+            if (!snap.exists()) {
+                console.log("Analytics: O documento 'product_views' ainda não existe.");
+                return;
+            }
 
-        const listProd = document.getElementById('topProductsList');
-        if (ranking.length > 0) {
-            listProd.innerHTML = ranking.map(p => `
-                <div class="flex items-center justify-between p-3 bg-slate-50 rounded-2xl border border-slate-100">
-                    <span class="text-xs font-bold text-slate-700 truncate pr-2">${p.name}</span>
-                    <span class="text-[10px] font-black bg-primary-100 text-primary-700 px-2 py-1 rounded-lg">
-                        ${p.views} views
-                    </span>
-                </div>`).join('');
-        }
+            const data = snap.data();
+            console.log("Dados recebidos do Firebase:", data);
 
-        // --- 2. PROCESSAR BUSCAS FALHAS (Lendo do Mapa 'searches') ---
-        const searches = data.searches || {};
-        const listSearch = document.getElementById('failedSearchesList');
-        
-        const searchRanking = Object.entries(searches)
-            .sort((a, b) => b[1] - a[1])
-            .slice(0, 5);
+            // --- 1. ATUALIZAR PRODUTOS POPULARES ---
+            const stats = data.stats || {};
+            const ranking = Object.keys(stats).map(id => ({
+                name: stats[id].name || "Produto",
+                views: stats[id].views || 0
+            })).sort((a, b) => b.views - a.views).slice(0, 5);
 
-        if (searchRanking.length > 0) {
-            listSearch.innerHTML = searchRanking.map(([term, count]) => `
-                <div class="flex items-center justify-between p-3 bg-amber-50/50 rounded-2xl border border-amber-100">
-                    <span class="text-xs font-bold text-amber-800 uppercase tracking-tight italic">"${term}"</span>
-                    <div class="flex items-center gap-2">
-                        <span class="text-[9px] font-bold text-amber-600 uppercase">Perdido ${count}x</span>
-                        <i data-lucide="alert-circle" class="w-3 h-3 text-amber-400"></i>
-                    </div>
-                </div>`).join('');
-            lucide.createIcons();
-        } else {
-            listSearch.innerHTML = `<p class="text-xs text-slate-400 italic py-4">Nenhuma busca perdida registrada.</p>`;
-        }
-    });
+            const listProd = document.getElementById('topProductsList');
+            // PROTEÇÃO: Só altera se o elemento existir no HTML
+            if (listProd) {
+                if (ranking.length > 0) {
+                    listProd.innerHTML = ranking.map(p => `
+                        <div class="flex items-center justify-between p-3 bg-slate-50 rounded-2xl border border-slate-100 animate-fade-in">
+                            <span class="text-xs font-bold text-slate-700 truncate pr-2">${p.name}</span>
+                            <span class="text-[10px] font-black bg-purple-100 text-purple-700 px-2 py-1 rounded-lg">
+                                ${p.views} views
+                            </span>
+                        </div>`).join('');
+                } else {
+                    listProd.innerHTML = `<p class="text-xs text-slate-400 italic py-4 text-center">Nenhum produto visto ainda.</p>`;
+                }
+            }
+
+            // --- 2. ATUALIZAR BUSCAS PERDIDAS ---
+            const searches = data.searches || {};
+            const listSearch = document.getElementById('failedSearchesList');
+            
+            if (listSearch) {
+                const searchRanking = Object.entries(searches)
+                    .sort((a, b) => b[1] - a[1])
+                    .slice(0, 5);
+
+                if (searchRanking.length > 0) {
+                    listSearch.innerHTML = searchRanking.map(([term, count]) => `
+                        <div class="flex items-center justify-between p-3 bg-amber-50/50 rounded-2xl border border-amber-100 animate-fade-in">
+                            <span class="text-xs font-bold text-amber-800 italic uppercase tracking-tight">"${term}"</span>
+                            <div class="flex items-center gap-2">
+                                <span class="text-[9px] font-bold text-amber-600 uppercase">Perdido ${count}x</span>
+                                <i data-lucide="alert-circle" class="w-3 h-3 text-amber-400"></i>
+                            </div>
+                        </div>`).join('');
+                    
+                    // Atualiza ícones do Lucide se a biblioteca estiver disponível
+                    if (window.lucide) lucide.createIcons();
+                } else {
+                    listSearch.innerHTML = `<p class="text-xs text-slate-400 italic py-4 text-center">Nenhuma busca perdida.</p>`;
+                }
+            }
+        }, (error) => {
+            // Se o erro 400 persistir, o motivo aparecerá aqui (ex: permissão negada)
+            console.error("Erro no Listener do Analytics:", error);
+        });
+
+    } catch (err) {
+        console.error("Erro ao inicializar Insights do Dashboard:", err);
+    }
 }
 
         // Adicione o window. para garantir que o botão no HTML ache a função
@@ -7271,6 +7341,65 @@ window.printOrder = function(p) {
     window.print();
 };
 
+
+function monitorarStatusLoja(storeId) {
+    if (!storeId) return;
+    const docRef = doc(db, "stores", storeId, "config", "store");
+    
+    onSnapshot(docRef, (docSnap) => {
+        if (docSnap.exists()) {
+            const data = docSnap.data();
+            lojaEstaAberta = (data.status === 'active');
+            
+            // Toda vez que o banco mudar, mandamos pintar o botão
+            atualizarVisualBotao();
+        }
+    });
+}
+// Criamos uma função separada para o visual para podermos chamar 
+// sempre que você trocar de aba no painel
+function atualizarVisualBotao() {
+    const btn = document.getElementById('btnToggleLoja');
+    const dot = document.getElementById('switchDot');
+    const texto = document.getElementById('statusLojaTextoPedidos');
+
+    if (!btn || !dot) return;
+
+    if (lojaEstaAberta) {
+        btn.classList.remove('bg-slate-200');
+        btn.classList.add('bg-green-500');
+        dot.style.transform = 'translateX(24px)';
+        if (texto) {
+            texto.innerText = "ABERTO";
+            texto.className = "text-[10px] font-black uppercase tracking-widest text-green-600";
+        }
+    } else {
+        btn.classList.remove('bg-green-500');
+        btn.classList.add('bg-slate-200');
+        dot.style.transform = 'translateX(4px)';
+        if (texto) {
+            texto.innerText = "FECHADO";
+            texto.className = "text-[10px] font-black uppercase tracking-widest text-red-500";
+        }
+    }
+}
+
+window.toggleLojaStatus = async () => {
+    if (!currentStoreId) return;
+    
+    // Inverte o status: se está aberta (active), vira fechada (closed)
+    const novoStatus = lojaEstaAberta ? 'closed' : 'active';
+
+    try {
+        const storeRef = doc(db, "stores", currentStoreId, "config", "store");
+        await updateDoc(storeRef, {
+            status: novoStatus
+        });
+        console.log("Comando enviado ao Firebase:", novoStatus);
+    } catch (error) {
+        console.error("Erro ao mudar status:", error);
+    }
+};
 </script>
 <div id="printSection" style="display: none;"></div>
 
