@@ -5074,29 +5074,43 @@ window.setOrderTab = (id) => {
 
      // Função para Atualização Rápida de Status
 window.quickUpdateStatus = async (orderId, newStatus) => {
-    const msg = newStatus === 'confirmed' ? "Aceitar este pedido e mover para 'Preparando'?" : "Deseja realmente cancelar este pedido?";
+    const msg = newStatus === 'confirmed' ? "Aceitar este pedido?" : "Deseja cancelar este pedido?";
     if (!confirm(msg)) return;
 
     try {
+        // --- PARAR O ÁUDIO ---
+        const audio = document.getElementById('notifSound');
+        if (audio) {
+            audio.pause();
+            audio.currentTime = 0;
+        }
+        // ---------------------
+
         const orderRef = doc(db, "stores", currentStoreId, "orders", orderId);
         await updateDoc(orderRef, { status: newStatus });
-        // O cache e a tela atualizarão automaticamente devido ao onSnapshot
     } catch (error) {
-        console.error("Erro ao atualizar:", error);
-        alert("Erro ao atualizar pedido.");
+        console.error("Erro ao atualizar status:", error);
+        alert("Erro ao processar.");
     }
 };
 
 // Função para Exclusão Rápida
 window.quickDeleteOrder = async (orderId) => {
-    if (!confirm("⚠️ ATENÇÃO: Deseja excluir este pedido permanentemente? Esta ação não pode ser desfeita.")) return;
+    if (!confirm("Excluir permanentemente?")) return;
 
     try {
+        // --- PARAR O ÁUDIO ---
+        const audio = document.getElementById('notifSound');
+        if (audio) {
+            audio.pause();
+            audio.currentTime = 0;
+        }
+        // ---------------------
+
         const orderRef = doc(db, "stores", currentStoreId, "orders", orderId);
         await deleteDoc(orderRef);
     } catch (error) {
         console.error("Erro ao excluir:", error);
-        alert("Erro ao excluir pedido.");
     }
 };
 
