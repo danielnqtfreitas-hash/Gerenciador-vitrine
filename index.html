@@ -221,6 +221,35 @@ tailwind.config = {
     }
 </style>
 
+<style>
+@media print {
+    /* Define o tamanho da página para rolo térmico */
+    @page {
+        margin: 0;
+        size: auto; /* Deixa a altura livre para o conteúdo */
+    }
+
+    body {
+        margin: 0;
+        padding: 0;
+    }
+
+    /* Esconde tudo, exceto a seção de impressão */
+    body * { visibility: hidden; }
+    #printSection, #printSection * { visibility: visible; }
+
+    #printSection {
+        position: absolute;
+        left: 0;
+        top: 0;
+        width: 58mm; /* Ou 80mm dependendo da sua impressora */
+        margin: 0;
+        padding: 5px;
+        background: white;
+    }
+}
+</style>
+
     </style>
 </head>
 <body class="text-slate-800 antialiased h-screen overflow-y-auto flex bg-slate-50">
@@ -774,12 +803,18 @@ tailwind.config = {
             <p class="text-center text-slate-400 py-10 italic text-sm">Carregando pedidos...</p>
         </div>
 
-        <div class="flex justify-center py-6">
-            <button id="btnLoadMore" onclick="window.loadMoreOrders()" 
-                    class="bg-white border border-slate-200 text-slate-600 px-6 py-2.5 rounded-xl text-xs font-bold shadow-sm hover:bg-slate-50 transition-all hidden">
-                Ver mais
-            </button>
-        </div>
+        <div class="relative py-12 flex justify-center">
+    <div class="absolute inset-0 flex items-center" aria-hidden="true">
+        <div class="w-full border-t border-slate-100"></div>
+    </div>
+    
+    <button id="btnLoadMore" onclick="window.loadMoreOrders()" 
+            class="relative bg-white border border-slate-200 text-slate-500 px-8 py-3 rounded-2xl text-[10px] font-black uppercase tracking-[0.2em] shadow-sm hover:shadow-md hover:border-primary-200 hover:text-primary-600 active:scale-95 transition-all hidden flex items-center gap-2 group">
+        
+        <i data-lucide="plus" class="w-3 h-3 group-hover:rotate-90 transition-transform duration-300"></i>
+        Carregar pedidos antigos
+    </button>
+</div>
    
     </div> <div id="view-dashboard" class="hidden">
 
@@ -4367,10 +4402,11 @@ async function initAnalyticsInsights() {
 
    
        window.openOrderModal = (id) => {
-        if (window.notificacaoAudio) {
-        window.notificacaoAudio.pause();
-        window.notificacaoAudio.currentTime = 0;
-    }
+       if (typeof audio !== 'undefined' && audio) {
+    audio.pause();
+    audio.currentTime = 0;
+    console.log("🔔 Som interrompido pelo processamento do pedido.");
+}
     const p = ordersCache[id];
     if (!p) return;
 
@@ -4474,73 +4510,93 @@ async function initAnalyticsInsights() {
                 </div>
                 <div class="absolute top-0 right-0 w-32 h-32 bg-primary-500/20 blur-[60px] rounded-full"></div>
             </div>
-<div class="space-y-3">
-    <button id="btnActionMain" class="w-full py-5 bg-primary-600 text-white rounded-3xl font-black text-[11px] uppercase tracking-[0.2em] shadow-xl shadow-primary-200 active:scale-95 transition-all flex items-center justify-center gap-3">
-        <i data-lucide="${p.status === 'pending_whatsapp' ? 'send' : 'package-check'}" class="w-4 h-4"></i>
-        ${p.status === 'pending_whatsapp' ? 'Confirmar Pedido' : 'Concluir Entrega'}
-    </button>
-
-    ${p.status !== 'pending_whatsapp' ? `
-    <button onclick="window.notifyShipping('${p.id}', ${JSON.stringify(p.customer).replace(/"/g, '&quot;')})" 
-            class="w-full py-4.5 bg-amber-500 text-white rounded-3xl font-black text-[11px] uppercase tracking-[0.2em] shadow-xl shadow-amber-100 active:scale-95 transition-all flex items-center justify-center gap-3">
-        <i data-lucide="truck" class="w-4 h-4"></i>
-        Saiu para Entrega
-    </button>
-    ` : ''}
-
-    <div class="grid grid-cols-2 gap-3">
-        <button onclick="window.editExistingOrder('${p.id}')" class="py-4.5 bg-white border border-slate-200 text-slate-700 rounded-3xl font-black text-[10px] uppercase tracking-widest flex items-center justify-center gap-2 hover:bg-slate-50 transition-all">
-            <i data-lucide="edit-3" class="w-4 h-4 text-primary-500"></i> Editar
+<div class="space-y-6">
+    <div class="space-y-3">
+        <h4 class="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] ml-2">Ação Principal</h4>
+        <button id="btnActionMain" class="w-full py-5 bg-primary-600 text-white rounded-[2rem] font-black text-[11px] uppercase tracking-[0.2em] shadow-xl shadow-primary-200 active:scale-95 transition-all flex items-center justify-center gap-3">
+            <i data-lucide="${p.status === 'pending_whatsapp' ? 'send' : 'package-check'}" class="w-5 h-5"></i>
+            ${p.status === 'pending_whatsapp' ? 'Confirmar e Iniciar Preparo' : 'Finalizar e Concluir'}
         </button>
-        <button id="btnStatusToggle" class="py-4.5 bg-white border border-slate-200 text-slate-700 rounded-3xl font-black text-[10px] uppercase tracking-widest flex items-center justify-center gap-2 hover:bg-slate-50 transition-all">
-            <i data-lucide="layers" class="w-4 h-4 text-amber-500"></i> Status
+
+        ${p.status !== 'pending_whatsapp' && p.status !== 'completed' && p.status !== 'canceled' ? `
+        <button onclick="window.notifyShipping('${p.id}', ${JSON.stringify(p.customer).replace(/"/g, '&quot;')})" 
+                class="w-full py-4.5 bg-amber-500 text-white rounded-[2rem] font-black text-[11px] uppercase tracking-[0.2em] shadow-xl shadow-amber-100 active:scale-95 transition-all flex items-center justify-center gap-3">
+            <i data-lucide="truck" class="w-5 h-5"></i>
+            Despachar / Sair para Entrega
         </button>
+        ` : ''}
     </div>
 
-    <a href="https://wa.me/55${p.customer.phone.replace(/\D/g,'')}" target="_blank" 
-       class="w-full py-5 bg-emerald-500 text-white rounded-3xl font-black text-[11px] uppercase tracking-[0.2em] shadow-xl shadow-emerald-100 flex justify-center items-center gap-3 active:scale-95 transition-all">
-        <i data-lucide="message-circle" class="w-5 h-5"></i> Abrir no WhatsApp
-    </a>
+    <div class="space-y-3">
+        <h4 class="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] ml-2">Gestão e Contato</h4>
+        <div class="grid grid-cols-2 gap-3">
+            <a href="https://wa.me/55${p.customer.phone.replace(/\D/g,'')}" target="_blank" 
+               class="flex flex-col items-center justify-center p-4 bg-emerald-50 border border-emerald-100 text-emerald-700 rounded-3xl hover:bg-emerald-100 transition-all group">
+                <i data-lucide="message-circle" class="w-6 h-6 mb-2 group-hover:scale-110 transition-transform"></i>
+                <span class="text-[10px] font-black uppercase tracking-tight">WhatsApp</span>
+            </a>
 
-    <button onclick="window.printOrder(${JSON.stringify(p).replace(/"/g, '&quot;')})" 
-    class="w-full py-4 bg-slate-100 text-slate-600 rounded-3xl font-black text-[10px] uppercase tracking-widest flex items-center justify-center gap-2 hover:bg-slate-200 transition-all mt-2">
-    <i data-lucide="printer" class="w-4 h-4"></i> Reimprimir Comanda
-</button>
+            <button onclick="window.printOrder(${JSON.stringify(p).replace(/"/g, '&quot;')})" 
+                    class="flex flex-col items-center justify-center p-4 bg-slate-50 border border-slate-200 text-slate-700 rounded-3xl hover:bg-slate-100 transition-all group">
+                <i data-lucide="printer" class="w-6 h-6 mb-2 group-hover:scale-110 transition-transform"></i>
+                <span class="text-[10px] font-black uppercase tracking-tight">Imprimir</span>
+            </button>
 
-    <button onclick="window.deleteOrder('${p.id}')" class="w-full py-4 text-red-400 font-bold text-[9px] uppercase tracking-[0.3em] mt-4 opacity-50 hover:opacity-100 transition-all">
-        Remover Histórico
+            <button onclick="window.editExistingOrder('${p.id}')" 
+                    class="flex flex-col items-center justify-center p-4 bg-white border border-slate-200 text-slate-600 rounded-3xl hover:bg-slate-50 transition-all group">
+                <i data-lucide="edit-3" class="w-6 h-6 mb-2 text-primary-500 group-hover:rotate-12 transition-transform"></i>
+                <span class="text-[10px] font-black uppercase tracking-tight">Editar</span>
+            </button>
+
+            <button id="btnStatusToggle" 
+                    class="flex flex-col items-center justify-center p-4 bg-white border border-slate-200 text-slate-600 rounded-3xl hover:bg-slate-50 transition-all group">
+                <i data-lucide="layers" class="w-6 h-6 mb-2 text-amber-500 group-hover:scale-110 transition-transform"></i>
+                <span class="text-[10px] font-black uppercase tracking-tight">Fluxo</span>
+            </button>
+        </div>
+    </div>
+
+    <button onclick="window.quickDeleteOrder('${p.id}')" class="w-full py-4 text-rose-400 font-bold text-[9px] uppercase tracking-[0.3em] mt-2 opacity-40 hover:opacity-100 hover:text-rose-600 transition-all flex items-center justify-center gap-2">
+        <i data-lucide="trash-2" class="w-3 h-3"></i> Remover do Histórico
     </button>
 </div>
-        `;
+`;
 
-        document.getElementById('btnActionMain').onclick = () => window.updateOrderStatus(p.id, p.status === 'pending_whatsapp' ? 'confirmed' : 'completed');
-        
-        document.getElementById('btnStatusToggle').onclick = () => {
-            modalContent.innerHTML = `
-                <div class="py-6 animate-fade-in">
-                    <div class="text-center mb-8">
-                        <h4 class="text-lg font-black text-slate-800">Mudar Fluxo</h4>
-                        <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Atualize o progresso do pedido</p>
-                    </div>
-                    <div class="space-y-3">
-                        <button onclick="window.updateOrderStatus('${p.id}', 'confirmed')" class="w-full p-6 bg-amber-50 border border-amber-100 rounded-[2rem] font-black text-amber-700 text-left flex justify-between items-center text-xs uppercase tracking-widest group">
-                            Preparando Itens <i data-lucide="arrow-right" class="w-4 h-4 transition-transform group-hover:translate-x-1"></i>
-                        </button>
-                        <button onclick="window.updateOrderStatus('${p.id}', 'completed')" class="w-full p-6 bg-emerald-50 border border-emerald-100 rounded-[2rem] font-black text-emerald-700 text-left flex justify-between items-center text-xs uppercase tracking-widest group">
-                            Pedido Entregue <i data-lucide="check" class="w-4 h-4"></i>
-                        </button>
-                        <button onclick="window.updateOrderStatus('${p.id}', 'canceled')" class="w-full p-6 bg-rose-50 border border-rose-100 rounded-[2rem] font-black text-rose-700 text-left flex justify-between items-center text-xs uppercase tracking-widest group">
-                            Cancelar Pedido <i data-lucide="trash-2" class="w-4 h-4"></i>
-                        </button>
-                    </div>
-                    <button onclick="window.openOrderModal('${p.id}')" class="w-full py-8 text-slate-400 text-[10px] font-black uppercase tracking-[0.4em] text-center">Voltar</button>
-                </div>
-            `;
-            lucide.createIcons();
-        };
+// Lógica de clique mantida e otimizada
+document.getElementById('btnActionMain').onclick = () => window.updateOrderStatus(p.id, p.status === 'pending_whatsapp' ? 'confirmed' : 'completed');
 
-        lucide.createIcons();
-    };
+document.getElementById('btnStatusToggle').onclick = () => {
+    modalContent.innerHTML = `
+        <div class="py-6 animate-fade-in text-center">
+            <div class="w-16 h-16 bg-amber-50 text-amber-500 rounded-full flex items-center justify-center mx-auto mb-4">
+                <i data-lucide="git-pull-request" class="w-8 h-8"></i>
+            </div>
+            <h4 class="text-xl font-black text-slate-800 tracking-tighter">Alterar Status</h4>
+            <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-8">Escolha a nova etapa do pedido</p>
+            
+            <div class="grid grid-cols-1 gap-3">
+                <button onclick="window.updateOrderStatus('${p.id}', 'confirmed')" class="flex items-center justify-between p-5 bg-amber-50 border border-amber-100 rounded-2xl text-amber-700 group">
+                    <span class="font-black text-xs uppercase tracking-widest">Mover para Preparo</span>
+                    <i data-lucide="chevron-right" class="w-5 h-5 group-hover:translate-x-1 transition-transform"></i>
+                </button>
+                <button onclick="window.updateOrderStatus('${p.id}', 'completed')" class="flex items-center justify-between p-5 bg-emerald-50 border border-emerald-100 rounded-2xl text-emerald-700 group">
+                    <span class="font-black text-xs uppercase tracking-widest">Marcar como Entregue</span>
+                    <i data-lucide="check" class="w-5 h-5 group-hover:scale-125 transition-transform"></i>
+                </button>
+                <button onclick="window.updateOrderStatus('${p.id}', 'canceled')" class="flex items-center justify-between p-5 bg-rose-50 border border-rose-100 rounded-2xl text-rose-700 group">
+                    <span class="font-black text-xs uppercase tracking-widest">Cancelar Pedido</span>
+                    <i data-lucide="x" class="w-5 h-5 group-hover:rotate-90 transition-transform"></i>
+                </button>
+            </div>
+            
+            <button onclick="window.openOrderModal('${p.id}')" class="mt-8 text-slate-400 text-[10px] font-black uppercase tracking-[0.4em]">Voltar ao Detalhe</button>
+        </div>
+    `;
+    lucide.createIcons();
+};
+
+lucide.createIcons();
+};
 
     renderMain();
     modal.classList.remove('hidden');
@@ -5072,47 +5128,88 @@ window.setOrderTab = (id) => {
     window.renderFilteredOrders(); 
 };
 
-     // Função para Atualização Rápida de Status
-window.quickUpdateStatus = async (orderId, newStatus) => {
+   window.quickUpdateStatus = async (orderId, newStatus) => {
+    // 1. Confirmação inicial
     const msg = newStatus === 'confirmed' ? "Aceitar este pedido?" : "Cancelar este pedido?";
     if (!confirm(msg)) return;
 
     try {
-        // PARAR O ÁUDIO (Usando o nome correto da variável global)
-        if (window.orderNotificationAudio) {
-            window.orderNotificationAudio.pause();
-            window.orderNotificationAudio.currentTime = 0;
-            console.log("Áudio interrompido via ação rápida.");
+        // 2. PARAR O ÁUDIO PELO ID (Garante que o som de loop pare na hora)
+        const somNotificacao = document.getElementById('notifSound');
+        if (somNotificacao) {
+            somNotificacao.pause();
+            somNotificacao.currentTime = 0;
+            console.log("🔔 Som interrompido via ID notifSound.");
         }
 
-        const orderRef = doc(db, "stores", currentStoreId, "orders", orderId);
-        await updateDoc(orderRef, { status: newStatus });
+        // 3. DISPARAR A FUNÇÃO MESTRE
+        // Esta função já cuida de: Estorno/Baixa de estoque, WhatsApp e Impressão de comanda
+        await window.updateOrderStatus(orderId, newStatus);
+
+        // 4. LIMPEZA DE CACHE E SINCRONIZAÇÃO
+        console.log("♻️ Sincronizando interface e limpando Shadow Stock...");
+        localStorage.removeItem(`products_${currentStoreId}`);
+        localStorage.removeItem(`orders_${currentStoreId}`); // Limpa cache de pedidos também
         
+        // Limpa variáveis globais de memória
+        window.cachedProducts = null;
+        window.allProducts = null;
+        
+        // 5. RECARGA DOS DADOS (Busca do Firebase o estoque atualizado)
+        if (typeof window.loadProducts === 'function') {
+            await window.loadProducts(); 
+        }
+
+        // 6. REDESENHA AS LISTAS NA TELA
+        if (typeof window.renderOrders === 'function') window.renderOrders();
+        if (typeof window.renderProducts === 'function') window.renderProducts();
+
+        if (typeof window.mostrarToast === 'function') {
+            window.mostrarToast("Pedido processado com sucesso!", "success");
+        }
+
     } catch (error) {
-        console.error("Erro ao atualizar status:", error);
+        console.error("Erro na ação rápida:", error);
+        if (typeof window.mostrarToast === 'function') {
+            window.mostrarToast("Erro ao processar. Tente abrir o pedido.", "error");
+        }
     }
 };
 
-// Função para Exclusão Rápida
 window.quickDeleteOrder = async (orderId) => {
-    if (!confirm("Excluir permanentemente?")) return;
+    if (!confirm("Excluir permanentemente? O estoque será devolvido se necessário.")) return;
 
     try {
-        // PARAR O ÁUDIO (Usando o nome correto da variável global)
-        if (window.orderNotificationAudio) {
-            window.orderNotificationAudio.pause();
-            window.orderNotificationAudio.currentTime = 0;
-            console.log("Áudio interrompido via ação rápida.");
+        // PARAR O ÁUDIO PELO ID
+        const somNotificacao = document.getElementById('notifSound');
+        if (somNotificacao) {
+            somNotificacao.pause();
+            somNotificacao.currentTime = 0;
         }
-        // ---------------------
 
         const orderRef = doc(db, "stores", currentStoreId, "orders", orderId);
+        
+        // Verifica no ordersCache se precisa estornar antes de deletar
+        const p = ordersCache[orderId];
+        if (p && p.stockDeducted === true) {
+            console.log("Revertendo estoque antes da exclusão...");
+            await window.updateOrderStatus(orderId, 'canceled');
+        }
+
+        // Deleta o documento
         await deleteDoc(orderRef);
+
+        // Limpeza e recarga
+        localStorage.removeItem(`products_${currentStoreId}`);
+        window.cachedProducts = null;
+        if (typeof window.loadProducts === 'function') await window.loadProducts();
+        if (typeof window.renderOrders === 'function') window.renderOrders();
+        if (typeof window.renderProducts === 'function') window.renderProducts();
+
     } catch (error) {
         console.error("Erro ao excluir:", error);
     }
 };
-
 
         // --- FUNÇÕES DO MODAL DE PEDIDO MANUAL ---
 window.openManualOrderModal = async () => {
@@ -5589,7 +5686,53 @@ if (payment === "parcelado") {
     }
 };
 
+// Função para gerenciar o estoque (servirá para abater ou estornar)
+async function gerenciarEstoquePedido(pedido, acao) {
+    console.log(`${acao === 'estornar' ? 'Estornando' : 'Abatendo'} estoque...`);
+    
+    const itemsByProduct = pedido.items.reduce((acc, item) => {
+        if (!acc[item.id]) acc[item.id] = [];
+        acc[item.id].push(item);
+        return acc;
+    }, {});
 
+    const stockPromises = Object.keys(itemsByProduct).map(async (productId) => {
+        const productRef = doc(db, `stores/${currentStoreId}/products`, productId);
+        const snap = await getDoc(productRef);
+
+        if (snap.exists()) {
+            const prodData = snap.data();
+            const itemsToProcess = itemsByProduct[productId];
+            let updatePayload = {};
+            const fator = acao === 'estornar' ? 1 : -1;
+
+            if (prodData.variations && prodData.variations.length > 0) {
+                let novasVariacoes = [...prodData.variations];
+                itemsToProcess.forEach(itemPedido => {
+                    const skuPedido = itemPedido.variationDetails?.sku || itemPedido.sku;
+                    novasVariacoes = novasVariacoes.map(v => {
+                        if (v.sku === skuPedido) {
+                            return { ...v, stock: Math.max(0, (Number(v.stock) || 0) + (Number(itemPedido.qty) * fator)) };
+                        }
+                        return v;
+                    });
+                });
+                updatePayload.variations = novasVariacoes;
+                updatePayload.stock = novasVariacoes.reduce((sum, v) => sum + (v.active !== false ? (Number(v.stock) || 0) : 0), 0);
+            } else {
+                const totalQty = itemsToProcess.reduce((sum, i) => sum + Number(i.qty), 0);
+                updatePayload.stock = Math.max(0, (Number(prodData.stock) || 0) + (totalQty * fator));
+            }
+
+            // Se estornou e o estoque subiu, garante que o produto está ativo
+            if (acao === 'estornar' && updatePayload.stock > 0) updatePayload.status = 'active';
+            
+            return updateDoc(productRef, updatePayload);
+        }
+    });
+
+    await Promise.all(stockPromises);
+}
 // FUNÇÃO PARA ATUALIZAR STATUS E BAIXAR ESTOQUE (COM RECIBO PIX)
 
 window.updateOrderStatus = async (id, status) => {
@@ -7404,6 +7547,9 @@ window.printOrder = function(p) {
     const printSection = document.getElementById('printSection');
     if (!printSection) return;
 
+    // Garante que o elemento esteja visível para o sistema de impressão
+    printSection.style.display = 'block';
+
     const dataPedido = new Date().toLocaleString('pt-BR');
     
     const itensHtml = p.items.map(i => {
@@ -7411,9 +7557,13 @@ window.printOrder = function(p) {
         if (i.escolhas && i.escolhas.length > 0) {
             extras = i.escolhas.map(e => `<div style="font-size: 10px; margin-left: 10px;">- ${e.nome}</div>`).join('');
         }
+        // Se houver variação (tamanho/cor)
+        const varDesc = i.variationDetails ? `<div style="font-size: 10px; color: #666;">Var: ${i.variationDetails.color || ''} ${i.variationDetails.size || ''}</div>` : '';
+
         return `
-            <div style="margin-bottom: 5px; border-bottom: 1px dotted #ccc; padding-bottom: 3px;">
+            <div style="margin-bottom: 5px; border-bottom: 1px dotted #ccc; padding-bottom: 3px; font-family: monospace;">
                 <b>${i.qty}x ${i.name.toUpperCase()}</b>
+                ${varDesc}
                 ${extras}
                 ${i.observacao ? `<div style="font-size: 10px; font-style: italic;">OBS: ${i.observacao}</div>` : ''}
             </div>
@@ -7421,7 +7571,7 @@ window.printOrder = function(p) {
     }).join('');
 
     printSection.innerHTML = `
-        <div style="width: 58mm; padding: 5px; font-family: monospace;">
+        <div style="width: 58mm; padding: 5px; font-family: monospace; color: #000; background: #fff;">
             <div style="text-align: center; font-weight: bold; font-size: 14px; margin-bottom: 5px;">
                 ${(window.storeConfig?.name || 'VITRINE').toUpperCase()}<br>
                 #${p.id.slice(-5).toUpperCase()}
@@ -7434,17 +7584,17 @@ window.printOrder = function(p) {
                 <b>CLIENTE:</b> ${p.customer.name}<br>
                 <b>TEL:</b> ${p.customer.phone}<br>
                 <b>TIPO:</b> ${p.deliveryMethod === 'delivery' ? 'ENTREGA 🛵' : 'RETIRADA 🥡'}
-                ${p.address ? `<br><b>END:</b> ${p.address}` : ''}
+                ${p.customer.address ? `<br><b>END:</b> ${p.customer.address}` : ''}
             </div>
 
-            <div style="border-top: 1px dashed #000; padding: 5px 0;">
+            <div style="border-top: 1px dashed #000; padding: 5px 0; font-size: 11px;">
                 <b>ITENS:</b><br>
                 ${itensHtml}
             </div>
 
-            <div style="border-top: 1px dashed #000; padding: 5px 0; text-align: right;">
+            <div style="border-top: 1px dashed #000; padding: 5px 0; text-align: right; font-size: 11px;">
                 <b>TOTAL: R$ ${p.total.toFixed(2).replace('.', ',')}</b><br>
-                <small>Pagamento: ${p.paymentMethod}</small>
+                <small>Pagamento: ${typeof p.paymentMethod === 'object' ? p.paymentMethod.type : p.paymentMethod}</small>
             </div>
             
             <div style="text-align: center; margin-top: 15px; font-size: 10px;">
@@ -7453,9 +7603,13 @@ window.printOrder = function(p) {
         </div>
     `;
 
-    window.print();
+    // O SEGREDO: Aguarda 500ms para o navegador processar o HTML antes de imprimir
+    setTimeout(() => {
+        window.print();
+        // Opcional: esconde novamente após imprimir
+        printSection.style.display = 'none';
+    }, 500);
 };
-
 
 function monitorarStatusLoja(storeId) {
     if (!storeId) return;
