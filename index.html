@@ -223,29 +223,44 @@ tailwind.config = {
 
 <style>
 @media print {
-    /* Define o tamanho da página para rolo térmico */
+    /* 1. Esconde absolutamente tudo que está no body */
+    body > * {
+        display: none !important;
+    }
+
+    /* 2. Exibe apenas a seção de impressão e garante que ela seja a única coisa existente */
+    #printSection, #printSection * {
+        display: block !important;
+        visibility: visible !important;
+    }
+
+    /* 3. Ajuste de página para rolo contínuo */
     @page {
         margin: 0;
-        size: auto; /* Deixa a altura livre para o conteúdo */
+        size: auto;
     }
 
+    /* 4. Reseta o body para não ter scroll ou margens que geram páginas extras */
     body {
-        margin: 0;
-        padding: 0;
+        margin: 0 !important;
+        padding: 0 !important;
+        overflow: hidden;
+        width: 58mm; /* Trava a largura no padrão da impressora */
     }
-
-    /* Esconde tudo, exceto a seção de impressão */
-    body * { visibility: hidden; }
-    #printSection, #printSection * { visibility: visible; }
 
     #printSection {
+        display: block !important;
         position: absolute;
         left: 0;
         top: 0;
-        width: 58mm; /* Ou 80mm dependendo da sua impressora */
-        margin: 0;
-        padding: 5px;
+        width: 58mm;
+        padding: 8px;
         background: white;
+    }
+
+    /* Remove links e URLs que o navegador insere automaticamente no rodapé */
+    a[href]:after {
+        content: none !important;
     }
 }
 </style>
@@ -7542,73 +7557,76 @@ window.sendConfirmationWhatsApp = function(p) {
     const phone = p.customer.phone.replace(/\D/g, '');
     window.open(`https://wa.me/55${phone}?text=${encodeURIComponent(msg)}`, '_blank');
 };
-
 window.printOrder = function(p) {
     const printSection = document.getElementById('printSection');
     if (!printSection) return;
 
-    // Garante que o elemento esteja visível para o sistema de impressão
+    // 1. Limpa e prepara a seção
+    printSection.innerHTML = ""; 
     printSection.style.display = 'block';
 
     const dataPedido = new Date().toLocaleString('pt-BR');
-    
     const itensHtml = p.items.map(i => {
         let extras = '';
         if (i.escolhas && i.escolhas.length > 0) {
             extras = i.escolhas.map(e => `<div style="font-size: 10px; margin-left: 10px;">- ${e.nome}</div>`).join('');
         }
-        // Se houver variação (tamanho/cor)
-        const varDesc = i.variationDetails ? `<div style="font-size: 10px; color: #666;">Var: ${i.variationDetails.color || ''} ${i.variationDetails.size || ''}</div>` : '';
+        const varDesc = i.variationDetails ? `<div style="font-size: 10px; color: #333;">VAR: ${i.variationDetails.color || ''} ${i.variationDetails.size || ''}</div>` : '';
 
         return `
-            <div style="margin-bottom: 5px; border-bottom: 1px dotted #ccc; padding-bottom: 3px; font-family: monospace;">
-                <b>${i.qty}x ${i.name.toUpperCase()}</b>
+            <div style="margin-bottom: 6px; border-bottom: 1px dotted #000; padding-bottom: 4px; font-family: 'Courier New', Courier, monospace;">
+                <b style="font-size: 12px;">${i.qty}x ${i.name.toUpperCase()}</b>
                 ${varDesc}
                 ${extras}
-                ${i.observacao ? `<div style="font-size: 10px; font-style: italic;">OBS: ${i.observacao}</div>` : ''}
+                ${i.observacao ? `<div style="font-size: 10px; margin-top: 2px;"><b>OBS:</b> ${i.observacao}</div>` : ''}
             </div>
         `;
     }).join('');
 
+    // 2. Monta o conteúdo com cores sólidas (Preto no Branco)
     printSection.innerHTML = `
-        <div style="width: 58mm; padding: 5px; font-family: monospace; color: #000; background: #fff;">
-            <div style="text-align: center; font-weight: bold; font-size: 14px; margin-bottom: 5px;">
-                ${(window.storeConfig?.name || 'VITRINE').toUpperCase()}<br>
-                #${p.id.slice(-5).toUpperCase()}
+        <div style="width: 58mm; max-width: 100%; padding: 10px; background: #fff; color: #000; font-family: monospace;">
+            <div style="text-align: center; font-weight: bold; font-size: 16px; margin-bottom: 5px;">
+                ${(window.storeConfig?.name || 'VITRINE').toUpperCase()}
             </div>
-            <div style="font-size: 10px; text-align: center; margin-bottom: 10px;">
+            <div style="text-align: center; font-size: 12px; margin-bottom: 10px; border-bottom: 1px dashed #000; padding-bottom: 5px;">
+                PEDIDO #${p.id.slice(-5).toUpperCase()}<br>
                 ${dataPedido}
             </div>
             
-            <div style="border-top: 1px dashed #000; padding: 5px 0; font-size: 11px;">
+            <div style="font-size: 11px; margin-bottom: 10px;">
                 <b>CLIENTE:</b> ${p.customer.name}<br>
                 <b>TEL:</b> ${p.customer.phone}<br>
-                <b>TIPO:</b> ${p.deliveryMethod === 'delivery' ? 'ENTREGA 🛵' : 'RETIRADA 🥡'}
-                ${p.customer.address ? `<br><b>END:</b> ${p.customer.address}` : ''}
+                <b>ENTREGA:</b> ${p.deliveryMethod === 'delivery' ? 'SIM 🛵' : 'NÃO (Retirada) 🥡'}<br>
+                ${p.customer.address ? `<b>END:</b> ${p.customer.address}` : ''}
             </div>
 
-            <div style="border-top: 1px dashed #000; padding: 5px 0; font-size: 11px;">
-                <b>ITENS:</b><br>
+            <div style="margin-bottom: 10px;">
                 ${itensHtml}
             </div>
 
-            <div style="border-top: 1px dashed #000; padding: 5px 0; text-align: right; font-size: 11px;">
+            <div style="text-align: right; font-size: 12px; border-top: 1px dashed #000; padding-top: 5px;">
                 <b>TOTAL: R$ ${p.total.toFixed(2).replace('.', ',')}</b><br>
-                <small>Pagamento: ${typeof p.paymentMethod === 'object' ? p.paymentMethod.type : p.paymentMethod}</small>
+                <span style="font-size: 10px;">PAGTO: ${typeof p.paymentMethod === 'object' ? p.paymentMethod.type : p.paymentMethod}</span>
             </div>
             
-            <div style="text-align: center; margin-top: 15px; font-size: 10px;">
-                IMPRESSO VIA VITRINE ONLINE
+            <div style="text-align: center; margin-top: 20px; font-size: 9px; opacity: 0.7;">
+                ------------------------------<br>
+                OBRIGADO PELA PREFERÊNCIA!
             </div>
         </div>
     `;
 
-    // O SEGREDO: Aguarda 500ms para o navegador processar o HTML antes de imprimir
+    // 3. O PULO DO GATO PARA CELULAR:
+    // Força o navegador a redesenhar o elemento e espera um pouco mais
     setTimeout(() => {
         window.print();
-        // Opcional: esconde novamente após imprimir
-        printSection.style.display = 'none';
-    }, 500);
+        
+        // No celular, após fechar a tela de print, voltamos ao normal
+        setTimeout(() => {
+            printSection.style.display = 'none';
+        }, 1000);
+    }, 800); // Aumentamos para 800ms para dar tempo do celular processar
 };
 
 function monitorarStatusLoja(storeId) {
