@@ -8,9 +8,12 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <script src="https://unpkg.com/lucide@latest"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.js"></script>
     <script src="https://unpkg.com/imask"></script>
+    
     <link rel="manifest" href="manifest.json">
 <meta name="theme-color" content="#8b5cf6">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -62,6 +65,33 @@ tailwind.config = {
             }
         }
     }
+}
+
+/* Estilo para a barra de rolagem interna do modal */
+.custom-scroll::-webkit-scrollbar {
+    width: 4px;
+}
+.custom-scroll::-webkit-scrollbar-track {
+    background: transparent;
+}
+.custom-scroll::-webkit-scrollbar-thumb {
+    background: #E2E8F0;
+    border-radius: 10px;
+}
+
+/* Animação suave para as barras de progresso */
+[id^="bar-"] {
+    transition: width 1.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+/* Efeito Glassmorphism no Card Dark */
+#view-metas .bg-slate-900 {
+    background: linear-gradient(145deg, #0f172a, #1e293b);
+}
+
+/* Ajuste de sombra para cards brancos */
+#view-metas .bg-white {
+    box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.02), 0 8px 10px -6px rgba(0, 0, 0, 0.02);
 }
 
     </script>
@@ -621,6 +651,10 @@ tailwind.config = {
         <i data-lucide="settings" class="w-5 h-5 mr-3"></i> Configurações
     </button>
 
+    <button id="nav-metas" onclick="changeTab('metas')" class="sidebar-link w-full flex items-center px-6 py-3 text-sm font-medium text-slate-600">
+    <i data-lucide="target" class="w-5 h-5 mr-3"></i> Metas
+</button>
+
      <button id="nav-finance" onclick="changeTab('finance')" class="sidebar-link w-full flex items-center px-6 py-3 text-sm font-medium text-slate-600">
     <i data-lucide="dollar-sign" class="w-5 h-5 mr-3"></i> Financeiro
 </button>
@@ -630,6 +664,8 @@ tailwind.config = {
             
         </nav>
         
+
+
         <div class="p-6 border-t bg-slate-50">
             <button onclick="handleLogout()" class="w-full flex items-center justify-center gap-2 py-4 text-red-600 bg-red-50 rounded-xl font-bold"><i data-lucide="log-out" class="w-5 h-5"></i> Encerrar Sessão</button>
         </div>
@@ -1271,6 +1307,86 @@ tailwind.config = {
     </div>
 </div>
 
+<section id="view-metas" class="hidden animate-fade-in p-4 lg:p-10 bg-[#F8FAFC]">
+    <div class="max-w-7xl mx-auto space-y-10">
+        
+        <div class="flex justify-between items-center px-2">
+            <div>
+                <h2 class="text-4xl font-black text-slate-900 tracking-tighter">Performance</h2>
+                <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">Sincronizado em tempo real</p>
+            </div>
+            <button onclick="window.openEditGoalsModal()" class="flex items-center gap-3 px-6 py-4 bg-white border border-slate-200 text-slate-700 rounded-[2rem] font-black text-[11px] uppercase tracking-widest hover:text-primary-600 shadow-sm transition-all">
+                <i data-lucide="settings-2" class="w-5 h-5"></i> Planejamento
+            </button>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+    
+    <div class="bg-white p-6 rounded-[3rem] border border-slate-50 shadow-sm">
+        <div class="flex justify-between items-start mb-6">
+            <div class="p-3 bg-indigo-50 text-indigo-600 rounded-2xl"><i data-lucide="zap" class="w-6 h-6"></i></div>
+            <span id="pct-daily" class="text-xl font-black text-indigo-600 italic">0%</span>
+        </div>
+        <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">
+            Vendas Hoje 
+            <span class="goal-type-label text-[8px] opacity-40 lowercase block italic leading-none mt-1"></span>
+        </p>
+        <h4 id="val-daily" class="text-2xl font-black text-slate-900 tracking-tighter mb-2">R$ 0,00</h4>
+        <p class="text-[9px] font-bold text-slate-400 mb-4">Meta: <span id="target-daily" class="text-slate-600">R$ 0,00</span></p>
+        <div class="h-3 bg-slate-50 rounded-full overflow-hidden p-0.5 border border-slate-100">
+            <div id="bar-daily" class="h-full bg-indigo-500 rounded-full transition-all duration-1000" style="width: 0%"></div>
+        </div>
+    </div>
+
+    <div class="bg-white p-6 rounded-[3rem] border border-slate-50 shadow-sm">
+        <div class="flex justify-between items-start mb-6">
+            <div class="p-3 bg-amber-50 text-amber-600 rounded-2xl"><i data-lucide="trending-up" class="w-6 h-6"></i></div>
+            <span id="pct-weekly" class="text-xl font-black text-amber-600 italic">0%</span>
+        </div>
+        <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">
+            Total Semana
+            <span class="goal-type-label text-[8px] opacity-40 lowercase block italic leading-none mt-1"></span>
+        </p>
+        <h4 id="val-weekly" class="text-2xl font-black text-slate-900 tracking-tighter mb-2">R$ 0,00</h4>
+        <p class="text-[9px] font-bold text-slate-400 mb-4">Meta: <span id="target-weekly" class="text-slate-600">R$ 0,00</span></p>
+        <div class="h-3 bg-slate-50 rounded-full overflow-hidden p-0.5 border border-slate-100">
+            <div id="bar-weekly" class="h-full bg-amber-500 rounded-full transition-all duration-1000" style="width: 0%"></div>
+        </div>
+    </div>
+
+    <div class="bg-white p-6 rounded-[3rem] border border-slate-50 shadow-sm">
+        <div class="flex justify-between items-start mb-6">
+            <div class="p-3 bg-emerald-50 text-emerald-600 rounded-2xl"><i data-lucide="package" class="w-6 h-6"></i></div>
+            <span id="pct-orders" class="text-xl font-black text-emerald-600 italic">0%</span>
+        </div>
+        <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Pedidos (Mês)</p>
+        <h4 id="val-orders" class="text-2xl font-black text-slate-900 tracking-tighter mb-2">0 Pedidos</h4>
+        <p class="text-[9px] font-bold text-slate-400 mb-4">Meta: <span id="target-orders" class="text-slate-600">0</span></p>
+        <div class="h-3 bg-slate-50 rounded-full overflow-hidden p-0.5 border border-slate-100">
+            <div id="bar-orders" class="h-full bg-emerald-500 rounded-full transition-all duration-1000" style="width: 0%"></div>
+        </div>
+    </div>
+
+    <div class="bg-slate-900 p-6 rounded-[3rem] shadow-xl relative overflow-hidden">
+        <div class="relative z-10 text-white">
+            <div class="flex justify-between items-start mb-6">
+                <div class="p-3 bg-white/10 rounded-2xl backdrop-blur-md"><i data-lucide="trophy" class="w-6 h-6 text-primary-500"></i></div>
+                <span id="pct-monthly" class="text-xl font-black text-primary-400 italic">0%</span>
+            </div>
+            <p class="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1">
+                Objetivo Mensal
+                <span class="goal-type-label text-[8px] opacity-50 lowercase block italic leading-none mt-1"></span>
+            </p>
+            <h4 id="val-monthly" class="text-2xl font-black text-white tracking-tighter mb-2">R$ 0,00</h4>
+            <p class="text-[9px] font-bold text-slate-500 mb-4">Meta: <span id="target-monthly" class="text-primary-400">R$ 0,00</span></p>
+            <div class="h-3 bg-white/10 rounded-full overflow-hidden p-0.5 border border-white/10">
+                <div id="bar-monthly" class="h-full bg-primary-500 rounded-full transition-all duration-1000" style="width: 0%"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+</section>
       
     <!-- MODAL RECORTE -->
     <div id="cropModal" class="modal-overlay fixed inset-0 z-[200] flex items-center justify-center p-4 hidden">
@@ -2530,6 +2646,7 @@ setPersistence(auth, browserLocalPersistence)
 
                         // 2. Monitor de Status (Sempre ativo em segundo plano)
                         monitorarStatusLoja(currentStoreId);
+                        window.loadSavedGoals(); // Adicione esta linha aqui
                         await solicitarPermissaoNotificacao(currentStoreId);
                         
                         // 3. CARGA INICIAL (Só acontece UMA VEZ ao logar)
@@ -2540,6 +2657,7 @@ setPersistence(auth, browserLocalPersistence)
                             initAnalyticsInsights();
                             initOrderListener(currentStoreId);
                             loadMagicCategoriesFeedback();
+                            
                             
                             // Define a aba inicial e trava
                             changeTab('orders'); 
@@ -3889,7 +4007,7 @@ window.handleBannerSubmit = async (e) => {
     }
 
     // --- REMOVER TODAS AS ABAS ---
-    const tabs = ['orders','dashboard','banners','products','categories','config','finance','customers'];
+    const tabs = ['orders','dashboard','banners','products','categories','config','finance','customers','metas'];
     const fab = document.getElementById('fabAddOrder');
 
     tabs.forEach(tab => {
@@ -3993,10 +4111,14 @@ if (tabName === 'finance') {
         activeBtn.classList.remove('text-slate-600','font-medium');
     }
 
-    if (fab) {
-        if (tabName === 'orders') fab.classList.remove('hidden');
-        else fab.classList.add('hidden');
+if (fab) {
+    const showFabIn = ['orders', 'metas', 'dashboard'];
+    if (showFabIn.includes(tabName)) {
+        fab.classList.remove('hidden');
+    } else {
+        fab.classList.add('hidden');
     }
+}
 
     // --- CLIENTES ---
 if (tabName === 'customers') {
@@ -4006,6 +4128,18 @@ if (tabName === 'customers') {
     });
 }
 
+// --- METAS ---
+if (tabName === 'metas') {
+    // Feedback visual opcional antes de calcular
+    const dailyEl = document.getElementById('val-daily');
+    if (dailyEl) dailyEl.textContent = "Atualizando...";
+
+    // Chama a função de cálculo que criamos nos passos anteriores
+    if (typeof window.calculateGoals === 'function') {
+        window.calculateGoals();
+    }
+}
+
     // --- BADGE ---
     if (tabName === 'orders') {
         document.getElementById('menuBadge')?.classList.add('hidden');
@@ -4013,16 +4147,41 @@ if (tabName === 'customers') {
     }
 
     // --- TITULO ---
-    const titles = { 
-        orders:'Pedidos',
-        dashboard:'Dashboard',
-        banners:'Banners',
-        products:'Produtos',
-        categories:'Categorias',
-        config:'Configurações',
-        finance:'Financeiro',
-        customers:'Clientes'
-    };
+   const titles = { 
+    orders: 'Pedidos', 
+    dashboard: 'Dashboard', 
+    banners: 'Banners', 
+    products: 'Produtos', 
+    categories: 'Categorias', 
+    config: 'Configurações', 
+    finance: 'Financeiro', 
+    customers: 'Clientes', 
+    metas: 'Metas de Vendas' 
+};
+
+const titleElement = document.getElementById('page-title');
+if (titleElement) {
+    titleElement.innerText = titles[tabName] || 'Painel';
+}
+
+// 2. Verificação extra dentro da sua função calculateGoals
+const updateUI = (id, current, target, isQty = false) => {
+    const valEl = document.getElementById(`val-${id}`);
+    if (!valEl) return; // Se o elemento não existe (aba de metas não carregada), ele para aqui e não dá erro.
+
+    const targetEl = document.getElementById(`target-${id}`);
+    const pctEl = document.getElementById(`pct-${id}`);
+    const barEl = document.getElementById(`bar-${id}`);
+
+    const formatBRL = (v) => v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+
+    valEl.innerText = isQty ? `${current} Pedidos` : formatBRL(current);
+    if (targetEl) targetEl.innerText = isQty ? target : formatBRL(target);
+    
+    const percent = target > 0 ? Math.min((current / target) * 100, 100) : 0;
+    if (pctEl) pctEl.innerText = `${Math.floor(percent)}%`;
+    if (barEl) barEl.style.width = `${percent}%`;
+};
     document.getElementById('page-title').innerText = titles[tabName] || 'Painel';
 
     // --- MOBILE ---
@@ -7636,13 +7795,40 @@ function monitorarStatusLoja(storeId) {
     onSnapshot(docRef, (docSnap) => {
         if (docSnap.exists()) {
             const data = docSnap.data();
-            lojaEstaAberta = (data.status === 'active');
+            window.storeConfig = data; 
             
-            // Toda vez que o banco mudar, mandamos pintar o botão
-            atualizarVisualBotao();
+            // --- NOVA LÓGICA DE COR INFALÍVEL ---
+            const corLojista = data.primaryColor || data.themeColor || window.primaryColor || '#EA1D2C';
+            
+            // Criamos ou atualizamos um bloco de CSS dinâmico no HEAD
+            let dynamicStyle = document.getElementById('dynamic-theme-style');
+            if (!dynamicStyle) {
+                dynamicStyle = document.createElement('style');
+                dynamicStyle.id = 'dynamic-theme-style';
+                document.head.appendChild(dynamicStyle);
+            }
+            
+            // Esta regra força a cor no botão e em qualquer outro elemento que use 'bg-primary'
+            dynamicStyle.innerHTML = `
+                #fabAddOrder { 
+                    background-color: ${corLojista} !important; 
+                    color: #white !important;
+                    box-shadow: 0 10px 15px -3px ${corLojista}66 !important;
+                }
+                .text-primary { color: ${corLojista} !important; }
+                .bg-primary { background-color: ${corLojista} !important; }
+                .border-primary { border-color: ${corLojista} !important; }
+            `;
+            // ------------------------------------
+
+            lojaEstaAberta = (data.status === 'active');
+            if (data.goals && typeof window.calculateGoals === 'function') window.calculateGoals();
+            if (typeof atualizarVisualBotao === 'function') atualizarVisualBotao();
         }
     });
 }
+
+
 // Criamos uma função separada para o visual para podermos chamar 
 // sempre que você trocar de aba no painel
 function atualizarVisualBotao() {
@@ -7670,6 +7856,208 @@ function atualizarVisualBotao() {
         }
     }
 }
+
+// --- SISTEMA DE METAS AVANÇADO ---
+
+// 1. Função para abrir o modal de Planejamento Detalhado
+window.openEditGoalsModal = () => {
+    const g = window.storeConfig?.goals || {};
+    const dailyValues = g.dailyValues || { 0:0, 1:0, 2:0, 3:0, 4:0, 5:0, 6:0 };
+    const goalMethod = g.method || 'revenue'; // Padrão é faturamento
+    
+    const diasNome = ["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sáb"];
+
+    Swal.fire({
+        title: '<div class="pt-4"><h4 class="text-2xl font-black text-slate-800 tracking-tighter uppercase">Configurar Metas</h4></div>',
+        html: `
+            <div class="space-y-6 pt-6 text-left max-h-[65vh] overflow-y-auto px-2 custom-scroll">
+                
+                <div class="bg-slate-100 p-1.5 rounded-2xl flex gap-1 border border-slate-200">
+                    <button onclick="window.setGoalMethod('revenue')" id="btn-meth-revenue" 
+                        class="flex-1 py-3 rounded-xl font-black text-[10px] uppercase tracking-widest transition-all ${goalMethod === 'revenue' ? 'bg-white shadow-sm text-indigo-600' : 'text-slate-400 hover:text-slate-600'}">
+                        Faturamento
+                    </button>
+                    <button onclick="window.setGoalMethod('profit')" id="btn-meth-profit" 
+                        class="flex-1 py-3 rounded-xl font-black text-[10px] uppercase tracking-widest transition-all ${goalMethod === 'profit' ? 'bg-white shadow-sm text-indigo-600' : 'text-slate-400 hover:text-slate-600'}">
+                        Lucro Real
+                    </button>
+                    <input type="hidden" id="sw-goal-method" value="${goalMethod}">
+                </div>
+
+                <div>
+                    <label class="text-[11px] font-black text-indigo-600 uppercase tracking-widest ml-2 italic">Valores por Dia (R$)</label>
+                    <div class="grid grid-cols-1 gap-2 mt-3">
+                        ${diasNome.map((dia, i) => `
+                            <div class="flex items-center gap-3 bg-slate-50 p-3 rounded-2xl border border-slate-100">
+                                <span class="w-12 text-[10px] font-black text-slate-400 uppercase">${dia}</span>
+                                <div class="relative flex-1">
+                                    <span class="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 font-bold text-xs">R$</span>
+                                    <input id="goal-day-${i}" type="number" step="0.01" class="w-full bg-white border-none rounded-xl py-2 pl-8 pr-3 font-bold text-sm shadow-sm" value="${dailyValues[i]}">
+                                </div>
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>
+
+                <div class="bg-indigo-900 p-6 rounded-[2.5rem] shadow-xl text-white">
+                    <label class="text-[11px] font-black uppercase tracking-widest text-indigo-200 ml-2">Meta Mensal Total (R$)</label>
+                    <input id="sw-monthly-value" type="number" step="0.01" class="w-full bg-white/10 border-none rounded-2xl py-4 px-6 font-black text-3xl text-white mt-2" value="${g.monthly || 0}">
+                </div>
+
+                <div class="bg-slate-900 p-6 rounded-[2.5rem] shadow-xl text-white">
+                    <label class="text-[11px] font-black uppercase tracking-widest text-primary-400 ml-2">Meta de Pedidos (Qtd)</label>
+                    <input id="sw-monthly-orders" type="number" class="w-full bg-white/10 border-none rounded-2xl py-4 px-6 font-black text-3xl text-white mt-2" value="${g.monthlyOrders || 0}">
+                </div>
+            </div>
+        `,
+        showCancelButton: true,
+        confirmButtonText: 'Salvar Planejamento',
+        buttonsStyling: false,
+        customClass: {
+            popup: 'rounded-[3.5rem] p-4',
+            confirmButton: 'w-full mb-2 py-5 px-8 rounded-3xl bg-slate-900 text-white font-black uppercase text-xs tracking-widest shadow-xl',
+            cancelButton: 'w-full py-4 text-slate-400 font-bold uppercase text-[10px]'
+        }
+    }).then(async (result) => {
+        if (result.isConfirmed) {
+            const method = document.getElementById('sw-goal-method').value;
+            const daily = {};
+            let totalWeekly = 0;
+            for(let i=0; i<7; i++) {
+                const val = parseFloat(document.getElementById(`goal-day-${i}`).value) || 0;
+                daily[i] = val;
+                totalWeekly += val;
+            }
+
+            const finalGoals = {
+                method: method,
+                dailyValues: daily,
+                weekly: totalWeekly,
+                monthly: parseFloat(document.getElementById('sw-monthly-value').value) || 0,
+                monthlyOrders: parseInt(document.getElementById('sw-monthly-orders').value) || 0
+            };
+
+            const storeRef = doc(db, "stores", currentStoreId, "config", "store");
+            await updateDoc(storeRef, { goals: finalGoals });
+            window.storeConfig.goals = finalGoals;
+            window.calculateGoals();
+        }
+    });
+};
+
+// Auxiliar para trocar a cor dos botões no modal
+window.setGoalMethod = (method) => {
+    document.getElementById('sw-goal-method').value = method;
+    const isRev = method === 'revenue';
+    document.getElementById('btn-meth-revenue').className = `flex-1 py-3 rounded-xl font-black text-[10px] uppercase tracking-widest transition-all ${isRev ? 'bg-white shadow-sm text-indigo-600' : 'text-slate-400'}`;
+    document.getElementById('btn-meth-profit').className = `flex-1 py-3 rounded-xl font-black text-[10px] uppercase tracking-widest transition-all ${!isRev ? 'bg-white shadow-sm text-indigo-600' : 'text-slate-400'}`;
+};
+
+// 2. Função de Cálculo e Atualização dos 4 Cards
+window.calculateGoals = () => {
+    const g = window.storeConfig?.goals || {};
+    const method = g.method || 'revenue'; // 'revenue' ou 'profit'
+    const dailyValues = g.dailyValues || {};
+    
+    const allOrders = Object.values(ordersCache || {}).filter(o => o.status !== 'canceled' && o.status !== 'Cancelado');
+
+    const now = new Date();
+    const todayIndex = now.getDay();
+    const todayStr = now.toLocaleDateString('pt-BR');
+    
+    let stats = { daily: 0, weekly: 0, monthly: 0, ordersQty: 0 };
+
+    allOrders.forEach(order => {
+        const date = order.createdAt?.toDate ? order.createdAt.toDate() : new Date(order.createdAt);
+        
+        // --- DECISÃO CIRÚRGICA DO VALOR ---
+        // Se a meta for de lucro, usamos o campo 'profit'. 
+        // Se não existir o campo profit no pedido, usamos o total (fallback)
+        const valorCalculado = (method === 'profit') ? (order.profit || 0) : order.total;
+
+        if (date.toLocaleDateString('pt-BR') === todayStr) stats.daily += valorCalculado;
+        if (date.getMonth() === now.getMonth() && date.getFullYear() === now.getFullYear()) {
+            stats.monthly += valorCalculado;
+            stats.ordersQty++;
+        }
+        if ((now - date) / (1000 * 3600 * 24) <= 7) stats.weekly += valorCalculado;
+    });
+
+    // Atualiza os subtítulos dos cards para o lojista saber o que está vendo
+    const labels = {
+        'revenue': 'Faturamento Bruto',
+        'profit': 'Lucro Líquido'
+    };
+    
+    document.querySelectorAll('.goal-type-label').forEach(el => {
+        el.innerText = labels[method];
+    });
+
+    // Funções de UI (Mantendo seus IDs originais)
+    const formatBRL = (v) => v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+    const update = (id, current, target, isQty = false) => {
+        const valEl = document.getElementById(`val-${id}`);
+        const targetEl = document.getElementById(`target-${id}`);
+        const pctEl = document.getElementById(`pct-${id}`);
+        const barEl = document.getElementById(`bar-${id}`);
+
+        if (valEl) valEl.innerText = isQty ? `${current} Pedidos` : formatBRL(current);
+        if (targetEl) targetEl.innerText = isQty ? target : formatBRL(target);
+        
+        const percent = target > 0 ? Math.min((current / target) * 100, 100) : 0;
+        if (pctEl) pctEl.innerText = `${Math.floor(percent)}%`;
+        if (barEl) barEl.style.width = `${percent}%`;
+    };
+
+    update('daily', stats.daily, dailyValues[todayIndex] || 0);
+    update('weekly', stats.weekly, g.weekly || 0);
+    update('monthly', stats.monthly, g.monthly || 0);
+    update('orders', stats.ordersQty, g.monthlyOrders || 0, true);
+
+    if (typeof lucide !== 'undefined') lucide.createIcons();
+};
+
+// 3. Efeito de Confete
+window.dispararConfetes = () => {
+    if (typeof confetti === 'undefined') return;
+    const duration = 3 * 1000;
+    const end = Date.now() + duration;
+
+    (function frame() {
+        confetti({ particleCount: 3, angle: 60, spread: 55, origin: { x: 0 }, colors: ['#4F46E5', '#EA1D2C'] });
+        confetti({ particleCount: 3, angle: 120, spread: 55, origin: { x: 1 }, colors: ['#4F46E5', '#EA1D2C'] });
+        if (Date.now() < end) requestAnimationFrame(frame);
+    }());
+};
+
+// FUNÇÃO PARA CARREGAR METAS DO FIREBASE
+window.loadSavedGoals = async () => {
+    try {
+        // 1. Verifica se temos o ID da loja
+        const storeId = window.currentStoreId;
+        if (!storeId) return;
+
+        // 2. Referência para o documento de configuração
+        const storeRef = doc(db, "stores", storeId, "config", "store");
+        const docSnap = await getDoc(storeRef);
+
+        if (docSnap.exists()) {
+            const data = docSnap.data();
+            
+            // 3. Se existirem metas salvas, alimenta o config global
+            if (data.goals) {
+                window.storeConfig = window.storeConfig || {};
+                window.storeConfig.goals = data.goals;
+                
+                // 4. Dispara o cálculo para preencher os cards na tela
+                console.log("Metas carregadas com sucesso!");
+                window.calculateGoals();
+            }
+        }
+    } catch (error) {
+        console.error("Erro ao carregar metas salvas:", error);
+    }
+};
 
 window.toggleLojaStatus = async () => {
     if (!currentStoreId) return;
