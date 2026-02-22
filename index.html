@@ -26,22 +26,33 @@
 
  <script>
   if ('serviceWorker' in navigator) {
-    window.addEventListener('load', () => {
-      // Registramos apenas o sw.js na raiz
-      navigator.serviceWorker.register('./sw.js', { scope: './' })
-        .then(reg => {
-          console.log('✅ PWA e Notificações integrados com sucesso!', reg.scope);
+    window.addEventListener('load', async () => {
+      try {
+        // 1. Registra o arquivo com o nome exato do seu GitHub
+        const reg = await navigator.serviceWorker.register('./firebase-messaging-sw.js');
+        console.log('✅ Service Worker (Messaging) registrado:', reg.scope);
+
+        // 2. Vincula o Firebase ao Service Worker registrado
+        if (typeof firebase !== 'undefined') {
+          const messaging = firebase.messaging();
           
-          // Se estiver usando a versão compat do Firebase no index:
-          if (typeof firebase !== 'undefined') {
-              const messaging = firebase.messaging();
-              // Avisa o Firebase para "pegar carona" no registro do sw.js
-              if (typeof messaging.useServiceWorker === 'function') {
-                  messaging.useServiceWorker(reg);
-              }
+          // O segredo está aqui: avisar ao Firebase para usar este 'reg'
+          if (typeof messaging.useServiceWorker === 'function') {
+            messaging.useServiceWorker(reg);
           }
-        })
-        .catch(err => console.error('❌ Erro crítico no Service Worker:', err));
+          
+          // 3. Tenta obter o token novamente para garantir a conexão
+          const token = await messaging.getToken({ 
+            vapidKey: 'BKk5Dr9AJ8fY0QAelaAvSPK7D9csG5dwdW45VhG0C-oeipeKD2kErkExPHQRp0eAYhm797-k5lLn3OO7-TRfZVw' 
+          });
+          
+          if (token) {
+            console.log("Token Ativo e Vinculado:", token);
+          }
+        }
+      } catch (err) {
+        console.error('❌ Falha ao vincular Notificações:', err);
+      }
     });
   }
 </script>
