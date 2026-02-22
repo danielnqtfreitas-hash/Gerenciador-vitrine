@@ -418,13 +418,13 @@ tailwind.config = {
                     </div>
 
                     <div class="flex flex-col md:flex-row gap-3">
-                        <button onclick="window.closeManualOrderModal()" class="flex-1 py-4 text-slate-400 font-bold hover:text-slate-600 uppercase text-[10px] tracking-widest">
-                            Cancelar
-                        </button>
-                        <button onclick="window.finishManualOrder()" class="flex-[2] bg-primary-600 text-white py-4 rounded-2xl font-bold shadow-xl hover:bg-primary-700 uppercase tracking-widest text-xs transition-all flex items-center justify-center gap-2">
-                            <i data-lucide="check-circle" class="w-4 h-4"></i> Finalizar Pedido
-                        </button>
-                    </div>
+    <button onclick="window.closeManualOrderModal()" class="flex-1 py-4 text-slate-400 font-bold hover:text-slate-600 uppercase text-[10px] tracking-widest">
+        Cancelar
+    </button>
+    <button id="btn-finish-manual-order" onclick="window.finishManualOrder()" class="flex-[2] bg-primary-600 text-white py-4 rounded-2xl font-bold shadow-xl hover:bg-primary-700 uppercase tracking-widest text-xs transition-all flex items-center justify-center gap-2">
+        <i data-lucide="check-circle" class="w-4 h-4"></i> Finalizar Pedido
+    </button>
+</div>
                 </div>
             </div>
         </div>
@@ -1385,7 +1385,27 @@ tailwind.config = {
         </div>
     </div>
 </div>
+<div class="bg-white p-8 rounded-[3rem] border border-slate-50 shadow-sm">
+    <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
+        <div>
+            <h5 class="text-xl font-black text-slate-900 tracking-tighter italic uppercase">Consistência Semanal</h5>
+            <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1 label-tipo-meta">Faturamento Bruto</p>
+        </div>
+        <div class="flex items-center gap-4 bg-slate-50 px-4 py-2 rounded-2xl border border-slate-100">
+            <div class="flex items-center gap-2">
+                <span class="w-3 h-3 bg-emerald-500 rounded-full shadow-[0_0_8px_rgba(16,185,129,0.4)]"></span>
+                <span class="text-[9px] font-black text-slate-500 uppercase">Meta Batida</span>
+            </div>
+            <div class="flex items-center gap-2">
+                <span class="w-3 h-3 bg-slate-200 rounded-full"></span>
+                <span class="text-[9px] font-black text-slate-500 uppercase">Abaixo da Meta</span>
+            </div>
+        </div>
+    </div>
 
+    <div id="weekly-heatmap" class="grid grid-cols-7 gap-3 md:gap-4">
+        </div>
+</div>
 </section>
       
     <!-- MODAL RECORTE -->
@@ -7807,6 +7827,16 @@ function monitorarStatusLoja(storeId) {
                 dynamicStyle.id = 'dynamic-theme-style';
                 document.head.appendChild(dynamicStyle);
             }
+
+         
+const btnFinalizarManual = document.getElementById('btn-finish-manual-order');
+if (btnFinalizarManual) {
+    btnFinalizarManual.style.setProperty('background-color', corLojista, 'important');
+    btnFinalizarManual.style.setProperty('color', '#FFFFFF', 'important');
+    // Adiciona o hover via JS para manter a elegância
+    btnFinalizarManual.onmouseover = () => btnFinalizarManual.style.filter = 'brightness(0.9)';
+    btnFinalizarManual.onmouseout = () => btnFinalizarManual.style.filter = 'brightness(1)';
+}
             
             // Esta regra força a cor no botão e em qualquer outro elemento que use 'bg-primary'
             dynamicStyle.innerHTML = `
@@ -8015,6 +8045,54 @@ window.calculateGoals = () => {
     update('orders', stats.ordersQty, g.monthlyOrders || 0, true);
 
     if (typeof lucide !== 'undefined') lucide.createIcons();
+
+    // --- LÓGICA DO MAPA DE CALOR SEMANAL ---
+const heatmapContainer = document.getElementById('weekly-heatmap');
+if (heatmapContainer) {
+    const diasSemana = ["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sáb"];
+    const hojeIndex = new Date().getDay();
+    
+    // Objeto para acumular vendas reais de cada dia da semana atual
+    let vendasPorDia = {0:0, 1:0, 2:0, 3:0, 4:0, 5:0, 6:0};
+    
+    // Filtramos apenas as ordens da SEMANA ATUAL
+    allOrders.forEach(order => {
+        const date = order.createdAt?.toDate ? order.createdAt.toDate() : new Date(order.createdAt);
+        if ((now - date) / (1000 * 3600 * 24) <= 7) {
+            const diaSemanaIndex = date.getDay();
+            const valor = (method === 'profit') ? (order.profit || 0) : order.total;
+            vendasPorDia[diaSemanaIndex] += valor;
+        }
+    });
+
+    heatmapContainer.innerHTML = diasSemana.map((dia, i) => {
+        const metaDia = dailyValues[i] || 0;
+        const realDia = vendasPorDia[i] || 0;
+        const bateuMeta = metaDia > 0 && realDia >= metaDia;
+        const isHoje = i === hojeIndex;
+
+        return `
+            <div class="flex flex-col items-center gap-3 group">
+                <span class="text-[10px] font-black ${isHoje ? 'text-indigo-600' : 'text-slate-400'} uppercase tracking-tighter">${dia}</span>
+                <div class="relative w-full aspect-square md:aspect-auto md:h-20 rounded-2xl flex flex-col items-center justify-center transition-all duration-500 border-2
+                    ${bateuMeta ? 'bg-emerald-50 border-emerald-200 shadow-[0_10px_20px_-5px_rgba(16,185,129,0.1)]' : 'bg-slate-50 border-slate-100'}
+                    ${isHoje ? 'ring-2 ring-indigo-500 ring-offset-2' : ''}">
+                    
+                    <i data-lucide="${bateuMeta ? 'check-circle' : 'circle'}" 
+                       class="w-5 h-5 ${bateuMeta ? 'text-emerald-500' : 'text-slate-200'} mb-1"></i>
+                    
+                    <p class="text-[9px] font-black ${bateuMeta ? 'text-emerald-700' : 'text-slate-400'}">
+                        ${Math.floor(metaDia > 0 ? (realDia/metaDia)*100 : 0)}%
+                    </p>
+
+                    <div class="absolute bottom-full mb-2 hidden group-hover:block bg-slate-900 text-white text-[8px] font-bold px-2 py-1 rounded shadow-xl whitespace-nowrap z-50">
+                        Real: ${formatBRL(realDia)} / Meta: ${formatBRL(metaDia)}
+                    </div>
+                </div>
+            </div>
+        `;
+    }).join('');
+}
 };
 
 // 3. Efeito de Confete
