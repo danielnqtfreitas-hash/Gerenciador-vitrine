@@ -1,31 +1,8215 @@
-importScripts('https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js');
-importScripts('https://www.gstatic.com/firebasejs/10.7.1/firebase-messaging-compat.js');
+ <!DOCTYPE html>
+<html lang="pt-PT">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Painel do Lojista | Vitrine Online</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.js"></script>
+    <script src="https://unpkg.com/imask"></script>
+    
+    <link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#8b5cf6">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 
-firebase.initializeApp({
-    apiKey: "AIzaSyAdwsGBTApwOwqr37qCv72gdPRbipsZG0Q", 
-    authDomain: "meuestoque-1badc.firebaseapp.com", 
-    projectId: "meuestoque-1badc", 
-    storageBucket: "meuestoque-1badc.firebasestorage.app", 
-    messagingSenderId: "730003067834", 
-    appId: "1:730003067834:web:b205f1ea59053345960383" 
+    <script src="https://unpkg.com/html5-qrcode"></script>
+ 
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/driver.js@1.0.1/dist/driver.css"/>
+<script src="https://cdn.jsdelivr.net/npm/driver.js@1.0.1/dist/driver.js.iife.js"></script>
+
+ <script>
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+      // Registramos apenas o sw.js na raiz
+      navigator.serviceWorker.register('./sw.js', { scope: './' })
+        .then(reg => {
+          console.log('✅ PWA e Notificações integrados com sucesso!', reg.scope);
+          
+          // Se estiver usando a versão compat do Firebase no index:
+          if (typeof firebase !== 'undefined') {
+              const messaging = firebase.messaging();
+              // Avisa o Firebase para "pegar carona" no registro do sw.js
+              if (typeof messaging.useServiceWorker === 'function') {
+                  messaging.useServiceWorker(reg);
+              }
+          }
+        })
+        .catch(err => console.error('❌ Erro crítico no Service Worker:', err));
+    });
+  }
+</script>
+
+    
+    <script>
+        // Localize onde está o tailwind.config e substitua por este:
+tailwind.config = {
+    theme: {
+        extend: {
+            fontFamily: { sans: ['Inter', 'sans-serif'] },
+            colors: {
+                slate: { 50: '#f8fafc', 100: '#f1f5f9', 800: '#1e293b', 900: '#0f172a' },
+                // Agora o Tailwind lerá as cores das variáveis do navegador
+                primary: {
+                    50: 'var(--brand-color-soft)',
+                    500: 'var(--brand-color)',
+                    600: 'var(--brand-color-dark)',
+                    700: 'var(--brand-color-darker)',
+                }
+            }
+        }
+    }
+}
+
+/* Estilo para a barra de rolagem interna do modal */
+.custom-scroll::-webkit-scrollbar {
+    width: 4px;
+}
+.custom-scroll::-webkit-scrollbar-track {
+    background: transparent;
+}
+.custom-scroll::-webkit-scrollbar-thumb {
+    background: #E2E8F0;
+    border-radius: 10px;
+}
+
+/* Animação suave para as barras de progresso */
+[id^="bar-"] {
+    transition: width 1.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+/* Efeito Glassmorphism no Card Dark */
+#view-metas .bg-slate-900 {
+    background: linear-gradient(145deg, #0f172a, #1e293b);
+}
+
+/* Ajuste de sombra para cards brancos */
+#view-metas .bg-white {
+    box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.02), 0 8px 10px -6px rgba(0, 0, 0, 0.02);
+}
+
+    </script>
+    <style>
+
+     :root {
+    --brand-color: #8b5cf6; /* Roxo padrão */
+    --brand-color-soft: #f5f3ff;
+    --brand-color-dark: #7c3aed;
+    --brand-color-darker: #6d28d9;
+}
+
+/* Ajuste esta classe que usava theme() fixo para usar as variáveis */
+.sidebar-link.active { 
+    background-color: var(--brand-color-soft) !important; 
+    color: var(--brand-color-darker) !important; 
+    border-right-color: var(--brand-color) !important; 
+    font-weight: 600;
+}
+
+        body { font-family: 'Inter', sans-serif; background-color: #f8fafc; }
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+        
+        .sidebar-link { transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1); border-right: 4px solid transparent; }
+        .sidebar-link.active { 
+            background-color: theme('colors.primary.50'); 
+            color: theme('colors.primary.700'); 
+            border-right-color: theme('colors.primary.600'); 
+            font-weight: 600;
+        }
+        .sidebar-link:hover:not(.active) { background-color: theme('colors.slate.50'); color: theme('colors.slate.800'); }
+        
+        #mobileSidebar { transition: transform 0.3s ease-in-out; }
+        .sidebar-hidden { transform: translateX(-100%); }
+        .sidebar-visible { transform: translateX(0); }
+
+        .modal-overlay { background-color: rgba(15, 23, 42, 0.7); backdrop-filter: blur(8px); }
+        
+        .auth-card-container { 
+            max-height: 95vh; 
+            display: flex;
+            flex-direction: column;
+        }
+        .auth-card-content { 
+            overflow-y: auto; 
+            flex: 1;
+            scrollbar-width: thin;
+        }
+
+        .plan-card {
+            border: 2px solid #e2e8f0;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            cursor: pointer;
+            background: #fff;
+            position: relative;
+            overflow: hidden;
+        }
+        .plan-card:hover { border-color: #cbd5e1; transform: translateY(-2px); }
+        .plan-card.selected {
+            border-color: #7c3aed;
+            background-color: #faf9ff;
+            box-shadow: 0 10px 30px -10px rgba(124, 58, 237, 0.3);
+        }
+        
+        .plan-card.selected .selection-indicator { background-color: #7c3aed; color: white; border-color: #7c3aed; }
+        .selection-indicator { width: 24px; height: 24px; border: 2px solid #e2e8f0; border-radius: 50%; display: flex; align-items: center; justify-content: center; background: #fff; transition: all 0.2s; }
+
+        .toggle-switch { width: 44px; height: 24px; position: relative; display: inline-block; }
+        .toggle-switch input { opacity: 0; width: 0; height: 0; }
+        .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #cbd5e1; transition: .4s; border-radius: 34px; }
+        .slider:before { position: absolute; content: ""; height: 18px; width: 18px; left: 3px; bottom: 3px; background-color: white; transition: .4s; border-radius: 50%; }
+        input:checked + .slider { background-color: #22c55e; }
+        input:checked + .slider:before { transform: translateX(20px); }
+
+        .input-pro { @apply w-full border border-slate-200 rounded-xl p-3 outline-none focus:ring-2 focus:ring-primary-500 bg-slate-50/50 transition-all; }
+
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        .animate-fade-in { animation: fadeIn 0.4s ease-out forwards; }
+
+        .category-group.collapsed .category-content { display: none; }
+        .category-group.collapsed .chevron-icon { transform: rotate(-90deg); }
+        
+        button:disabled { opacity: 0.5; cursor: not-allowed; filter: grayscale(1); }
+
+        .range-btn { @apply px-4 py-1.5 rounded-lg text-xs font-bold transition-all; }
+        .range-btn.active { @apply bg-white text-primary-600 shadow-sm border border-slate-100; }
+        .range-btn.inactive { @apply text-slate-400 hover:text-slate-600; }
+
+        .crop-container {
+            max-width: 100%;
+            height: 400px;
+            background-color: #f1f5f9;
+            border-radius: 1rem;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .variation-matrix-table { width: 100%; border-collapse: separate; border-spacing: 0 8px; }
+        .variation-matrix-table th { @apply text-[10px] uppercase font-black text-slate-400 px-4 py-2 text-left; }
+        .variation-matrix-table td { @apply bg-white border-y border-slate-100 px-4 py-3 text-sm first:rounded-l-xl first:border-l last:rounded-r-xl last:border-r; }
+   
+    /* Tooltip com estilo cinza (Apple-like) */
+.tooltip {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  cursor: default;
+}
+
+.tooltip-icon {
+  background: #e2e8f0;
+  color: #475569;
+  font-size: 10px;
+  width: 16px;
+  height: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  font-weight: bold;
+  transition: background 0.2s;
+}
+
+.tooltip-icon:hover {
+  background: #cbd5e1;
+}
+
+.tooltip-box {
+  position: absolute;
+  top: -8px;
+  left: 50%;
+  transform: translate(-50%, -100%);
+  background: #1f2937;
+  color: white;
+  padding: 8px 10px;
+  border-radius: 8px;
+  font-size: 10px;
+  width: max-content;
+  max-width: 200px;
+  text-align: center;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity .2s ease;
+  z-index: 50;
+}
+
+.tooltip:hover .tooltip-box {
+  opacity: 1;
+}
+     <style>
+    /* Força os inputs de variação a mostrarem maiúsculo visualmente */
+    #variationContainer input {
+        text-transform: uppercase;
+    }
+</style>
+
+<style>
+@media print {
+    /* 1. Esconde absolutamente tudo que está no body */
+    body > * {
+        display: none !important;
+    }
+
+    /* 2. Exibe apenas a seção de impressão e garante que ela seja a única coisa existente */
+    #printSection, #printSection * {
+        display: block !important;
+        visibility: visible !important;
+    }
+
+    /* 3. Ajuste de página para rolo contínuo */
+    @page {
+        margin: 0;
+        size: auto;
+    }
+
+    /* 4. Reseta o body para não ter scroll ou margens que geram páginas extras */
+    body {
+        margin: 0 !important;
+        padding: 0 !important;
+        overflow: hidden;
+        width: 58mm; /* Trava a largura no padrão da impressora */
+    }
+
+    #printSection {
+        display: block !important;
+        position: absolute;
+        left: 0;
+        top: 0;
+        width: 58mm;
+        padding: 8px;
+        background: white;
+    }
+
+    /* Remove links e URLs que o navegador insere automaticamente no rodapé */
+    a[href]:after {
+        content: none !important;
+    }
+}
+</style>
+
+    </style>
+</head>
+<body class="text-slate-800 antialiased h-screen overflow-y-auto flex bg-slate-50">
+    
+   <!-- MODAL: Pedido Manual -->
+  
+    <div id="manualOrderModal" class="modal-overlay fixed inset-0 z-[150] flex items-center justify-center p-4 hidden">
+    <div class="bg-white rounded-[2.5rem] shadow-2xl w-full max-w-2xl auth-card-container overflow-hidden">
+        
+        <div class="bg-slate-900 p-6 flex items-center justify-between flex-shrink-0">
+            <div class="flex items-center gap-3">
+                <div class="bg-primary-500/20 p-2 rounded-xl">
+                    <i data-lucide="shopping-cart" class="w-6 h-6 text-primary-400"></i>
+                </div>
+                <h3 class="text-xl font-bold text-white">Venda Presencial / Manual</h3>
+            </div>
+            <button onclick="window.closeManualOrderModal()" class="p-2 text-slate-400 hover:text-white transition-colors">
+                <i data-lucide="x" class="w-6 h-6"></i>
+            </button>
+        </div>
+
+        <div class="auth-card-content p-8 overflow-y-auto">
+            <div class="space-y-8">
+                
+                <div class="space-y-4">
+                    <h4 class="text-[11px] font-black uppercase text-slate-400 tracking-widest border-b border-slate-100 pb-2">Informações do Cliente</h4>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div class="mb-3">
+    <label class="block text-[10px] font-bold text-slate-500 uppercase mb-1">Cliente</label>
+    <div class="flex gap-2">
+        <input type="text" id="manualOrderCustName" 
+               class="flex-1 p-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm" 
+               placeholder="Nome do cliente">
+        
+        <button type="button" onclick="window.openCustomerSelector()" 
+                class="p-2.5 bg-primary-50 text-primary-600 rounded-xl hover:bg-primary-100 transition-all shadow-sm"
+                title="Selecionar dos contatos">
+            <i data-lucide="users" class="w-5 h-5"></i>
+        </button>
+    </div>
+</div>
+
+<div class="mb-4">
+    <label class="block text-[10px] font-bold text-slate-500 uppercase mb-1">Total Final (Opcional)</label>
+    <div class="relative">
+        <span class="absolute left-3 top-2.5 text-slate-400 text-sm font-bold">R$</span>
+        <input type="number" id="manualOrderTotalOverride" step="0.01" 
+               class="w-full p-2.5 pl-10 bg-amber-50 border border-amber-200 rounded-xl text-sm font-black text-amber-900" 
+               placeholder="0,00">
+    </div>
+    <p class="text-[9px] text-amber-600 mt-1 font-medium">
+        ⚠️ Se preencher aqui, este valor será o total, ignorando a soma dos itens.
+    </p>
+</div>
+
+                        <div class="space-y-1">
+                            <label class="text-[10px] font-bold text-slate-500 uppercase ml-1">WhatsApp</label>
+                            <input id="manualPhone" type="text" placeholder="(00) 00000-0000" class="input-pro">
+                        </div>
+                        <div class="md:col-span-2 space-y-1">
+                            <label class="text-[10px] font-bold text-slate-500 uppercase ml-1">Endereço (Opcional)</label>
+                            <input id="manualAddress" type="text" placeholder="Rua, número, bairro..." class="input-pro">
+                        </div>
+                        <div class="md:col-span-2 space-y-1">
+                            <label class="text-[10px] font-bold text-slate-500 uppercase ml-1">Forma de Pagamento</label>
+                            <select id="manualPayment" class="input-pro bg-white" onchange="window.handlePaymentChange()">
+                                <option value="">Selecione...</option>
+                                <option value="pix">PIX</option>
+                                <option value="dinheiro">Dinheiro</option>
+                                <option value="cartao_credito">Cartão</option>
+                             <option value="fiado">A Prazo</option>
+                             <option value="parcelado">Parcelado</option>
+                            </select>
+                         
+<div id="paymentDetails" class="hidden mt-3 space-y-3">
+    
+    <div id="fiadoField" class="hidden">
+        <label class="text-[10px] font-bold text-slate-500 uppercase">Data para receber</label>
+        <input id="fiadoDueDate" type="date" class="input-pro">
+    </div>
+
+    <div id="parceladoField" class="hidden">
+        <label class="text-[10px] font-bold text-slate-500 uppercase">Número de parcelas</label>
+        <input id="parcelasQtd" type="number" min="1" max="12" class="input-pro" placeholder="Ex: 3">
+    </div>
+
+</div>
+
+                        </div>
+                    </div>
+                </div>
+
+                <div class="space-y-4">
+                    <h4 class="text-[11px] font-black uppercase text-slate-400 tracking-widest border-b border-slate-100 pb-2">Adicionar Itens</h4>
+                    <div class="flex gap-2">
+                        <div class="relative flex-1">
+                            <i data-lucide="search" class="absolute left-4 top-3.5 text-slate-400 w-5 h-5"></i>
+                            <input id="manualProductSearch" oninput="window.renderManualProductSearch()" type="text" placeholder="Nome ou código..." class="w-full pl-12 p-3.5 rounded-2xl border border-slate-200 bg-slate-50/50 focus:bg-white focus:ring-2 focus:ring-primary-500 outline-none transition-all">
+                        </div>
+                        <button onclick="window.startBarcodeScanner()" class="bg-slate-900 text-white p-3.5 rounded-2xl hover:bg-slate-800 transition-all shadow-lg">
+                            <i data-lucide="camera" class="w-6 h-6"></i>
+                        </button>
+                    </div>
+                    <div id="scanner-container" class="hidden overflow-hidden rounded-2xl border-2 border-primary-500 bg-black relative mt-2">
+                        <div id="reader" class="w-full"></div>
+                        <button onclick="window.stopBarcodeScanner()" class="absolute top-2 right-2 bg-red-600 text-white px-4 py-1 rounded-full text-[10px] font-bold z-20">FECHAR X</button>
+                    </div>
+                    <div id="manualSearchResults" class="grid grid-cols-1 gap-2 max-h-48 overflow-y-auto pr-2 mt-2"></div>
+                </div>
+
+                <div class="space-y-4">
+                    <h4 class="text-[11px] font-black uppercase text-slate-400 tracking-widest border-b border-slate-100 pb-2">Carrinho</h4>
+                    <div id="manualOrderItems" class="space-y-3 min-h-[50px]">
+                        </div>
+                </div>
+
+                <div class="pt-6 border-t border-slate-100">
+                    <div class="flex justify-between items-center mb-6 p-4 bg-primary-50 rounded-2xl border border-primary-100">
+                        <span class="text-primary-700 font-bold uppercase text-xs tracking-widest">Valor Total</span>
+                        <span id="manualTotal" class="text-2xl font-black text-primary-800">R$ 0,00</span>
+                    </div>
+
+                    <div class="flex flex-col md:flex-row gap-3">
+    <button onclick="window.closeManualOrderModal()" class="flex-1 py-4 text-slate-400 font-bold hover:text-slate-600 uppercase text-[10px] tracking-widest">
+        Cancelar
+    </button>
+    <button id="btn-finish-manual-order" onclick="window.finishManualOrder()" class="flex-[2] bg-primary-600 text-white py-4 rounded-2xl font-bold shadow-xl hover:bg-primary-700 uppercase tracking-widest text-xs transition-all flex items-center justify-center gap-2">
+        <i data-lucide="check-circle" class="w-4 h-4"></i> Finalizar Pedido
+    </button>
+</div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+    <div id="toast-container" class="fixed top-5 right-5 z-[999] flex flex-col gap-2 pointer-events-none"></div>
+    <!-- LOGIN / REGISTER SCREEN -->
+    <div id="auth-screen" class="fixed inset-0 z-[200] bg-slate-900 flex items-center justify-center p-4">
+        <!-- LOGIN CARD -->
+        <div id="login-card" class="bg-white w-full max-w-md p-8 rounded-3xl shadow-2xl relative overflow-hidden animate-fade-in">
+            <div class="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-primary-500 to-indigo-600"></div>
+            <div class="mb-8 text-center">
+                <div class="bg-primary-50 w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                    <i data-lucide="store" class="w-8 h-8 text-primary-600"></i>
+                </div>
+                <h2 class="text-2xl font-bold text-slate-800">Painel do Lojista</h2>
+                <p class="text-slate-500 text-sm mt-1">Gestão inteligente da sua vitrine.</p>
+            </div>
+            <form onsubmit="handleLogin(event)" class="space-y-4">
+                <div>
+                    <label class="block text-xs font-bold uppercase text-slate-500 mb-1">E-mail de acesso</label>
+                    <input type="email" id="loginEmail" class="w-full border border-slate-300 rounded-xl p-3 focus:ring-2 focus:ring-primary-500 outline-none transition-all" placeholder="exemplo@loja.com" required>
+                </div>
+                <div>
+                    <label class="block text-xs font-bold uppercase text-slate-500 mb-1">Palavra-passe</label>
+                    <div class="relative">
+                        <input type="password" id="loginPass" class="w-full border border-slate-300 rounded-xl p-3 pr-10 focus:ring-2 focus:ring-primary-500 outline-none transition-all" placeholder="••••••" required>
+                        <button type="button" onclick="togglePasswordVisibility('loginPass', 'eyeIconLogin')" class="absolute right-3 top-3.5 text-slate-400 hover:text-slate-600">
+                            <i id="eyeIconLogin" data-lucide="eye" class="w-5 h-5"></i>
+                        </button>
+                    </div>
+                </div>
+                <div class="flex items-center gap-2 py-1">
+                    <input type="checkbox" id="rememberMe" class="w-4 h-4 rounded border-slate-300 text-primary-600 focus:ring-primary-500 cursor-pointer">
+                    <label for="rememberMe" class="text-sm text-slate-600 cursor-pointer select-none font-medium">Manter sessão iniciada</label>
+                </div>
+                <div id="loginError" class="hidden p-3 bg-red-50 text-red-600 text-xs font-bold rounded-lg text-center border border-red-100"></div>
+                <button type="submit" id="btnLogin" class="w-full bg-slate-900 hover:bg-slate-800 text-white font-bold py-4 rounded-xl shadow-lg transition-all flex justify-center items-center gap-2 text-sm uppercase tracking-wider">
+                    Aceder ao Painel <i data-lucide="arrow-right" class="w-4 h-4"></i>
+                </button>
+            </form>
+            <div class="mt-8 pt-6 border-t border-slate-100 text-center">
+                <p class="text-sm text-slate-500">Ainda não vende connosco? <br>
+                <button onclick="toggleAuthView('register')" class="text-primary-600 font-bold hover:underline mt-1">Torne-se um Parceiro</button></p>
+            </div>
+        </div>
+
+        <!-- REGISTER CARD -->
+        <div id="register-card" class="bg-white w-full max-w-2xl rounded-3xl shadow-2xl relative overflow-hidden hidden animate-fade-in auth-card-container">
+            <div class="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-green-500 to-teal-600"></div>
+            <div class="auth-card-content p-6 md:p-10">
+                <div id="regHeader" class="mb-8 text-center">
+                    <h2 class="text-3xl font-extrabold text-slate-900 tracking-tight">Cresça com a Vitrine Online</h2>
+                    <p class="text-slate-500 text-sm mt-1">Crie a sua vitrine profissional em minutos.</p>
+                </div>
+                
+                <form id="preRegForm" onsubmit="handlePreRegister(event)" class="space-y-6">
+                    <div id="reg-step-1" class="space-y-6">
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+                            <div class="space-y-1.5"><label class="block text-[11px] font-bold uppercase text-slate-500 tracking-wider ml-1">Seu Nome</label><input type="text" id="regOwner" placeholder="Nome Completo" required class="w-full border border-slate-200 rounded-xl p-3.5 outline-none focus:ring-2 focus:ring-green-500 transition-all bg-slate-50/30"></div>
+                            <div class="space-y-1.5"><label class="block text-[11px] font-bold uppercase text-slate-500 tracking-wider ml-1">E-mail Profissional</label><input type="email" id="regEmail" placeholder="exemplo@email.com" required class="w-full border border-slate-200 rounded-xl p-3.5 outline-none focus:ring-2 focus:ring-green-500 transition-all bg-slate-50/30"></div>
+                            <div class="space-y-1.5"><label class="block text-[11px] font-bold uppercase text-slate-500 tracking-wider ml-1">Nome da Loja</label><input type="text" id="regStoreName" placeholder="Ex: Boutique da Maria" required class="w-full border border-slate-200 rounded-xl p-3.5 outline-none focus:ring-2 focus:ring-green-500 transition-all bg-slate-50/30"></div>
+                            <div class="space-y-1.5"><label class="block text-[11px] font-bold uppercase text-slate-500 tracking-wider ml-1">WhatsApp de Contato</label><input type="text" id="regPhone" placeholder="Ex: 5511999999999" required class="w-full border border-slate-200 rounded-xl p-3.5 outline-none focus:ring-2 focus:ring-green-500 transition-all bg-slate-50/30"></div>
+                        </div>
+                        <button type="button" onclick="goToRegStep(2)" class="w-full bg-slate-900 text-white font-bold py-4.5 rounded-2xl shadow-xl flex justify-center items-center gap-2 uppercase tracking-widest text-xs hover:bg-slate-800 transition-all h-14">
+                            Escolher Plano de Assinatura <i data-lucide="chevron-right" class="w-4 h-4"></i>
+                        </button>
+                    </div>
+
+                    <div id="reg-step-2" class="space-y-8 hidden animate-fade-in pb-12">
+                        <div id="plansGridSelection" class="grid grid-cols-1 md:grid-cols-2 gap-6 min-h-[300px] flex items-center justify-center"></div>
+                        <input type="hidden" id="selectedPlanId" required>
+                        <div class="flex flex-col md:flex-row gap-4 pt-6">
+                            <button type="button" onclick="goToRegStep(1)" class="w-full md:w-1/3 text-slate-400 font-bold py-4 rounded-2xl hover:bg-slate-50 transition-all uppercase tracking-widest text-[10px] flex items-center justify-center gap-2">
+                                <i data-lucide="arrow-left" class="w-3 h-3"></i> Voltar
+                            </button>
+                            <div class="mb-6 flex items-start gap-3 bg-slate-50 p-4 rounded-xl border border-slate-100">
+    <input type="checkbox" id="regAcceptTerms" class="mt-1 w-4 h-4 text-primary-600 rounded border-gray-300 focus:ring-primary-500" required>
+    <label for="regAcceptTerms" class="text-[11px] text-slate-500 leading-tight cursor-pointer">
+    Li e estou de acordo com os 
+    <button type="button" onclick="openLegalModal('terms')" class="text-primary-600 font-bold hover:underline">Termos de Serviço</button> 
+    e a 
+    <button type="button" onclick="openLegalModal('privacy')" class="text-primary-600 font-bold hover:underline">Política de Privacidade</button> 
+    da plataforma Vitrine Online.
+    </label>
+                                
+                            </div>
+                            <button type="submit" id="btnReg" disabled class="w-full md:w-2/3 bg-green-600 hover:bg-green-700 text-white font-bold py-4 rounded-2xl shadow-xl transition-all uppercase tracking-widest text-xs h-14 disabled:opacity-50 disabled:cursor-not-allowed">
+                                Finalizar Pedido <i data-lucide="check-circle" class="w-5 h-5 ml-2"></i>
+                            </button>
+                        </div>
+                    </div>
+                </form>
+
+           <!-- MODAL BANNER -->
+    
+    <div id="legalModal" class="modal-overlay fixed inset-0 z-[300] flex items-center justify-center p-4 hidden">
+    <div class="bg-white rounded-[2rem] shadow-2xl w-full max-w-2xl auth-card-container overflow-hidden animate-fade-in">
+        <div class="bg-slate-900 p-6 flex items-center justify-between">
+            <div class="flex items-center gap-3">
+                <div class="bg-primary-500/20 p-2 rounded-xl"><i data-lucide="shield-check" class="w-6 h-6 text-primary-400"></i></div>
+                <h3 class="text-xl font-bold text-white" id="legalModalTitle">Termos de Uso</h3>
+            </div>
+            <button onclick="closeLegalModal()" class="p-2 text-slate-400 hover:text-white transition-colors"><i data-lucide="x" class="w-6 h-6"></i></button>
+        </div>
+        <div class="auth-card-content p-8 text-sm text-slate-600 leading-relaxed" id="legalModalContent">
+            </div>
+        <div class="p-6 border-t border-slate-100 flex justify-end">
+            <button onclick="closeLegalModal()" class="bg-slate-900 text-white px-8 py-3 rounded-xl font-bold uppercase text-xs tracking-widest">Entendido</button>
+        </div>
+    </div>
+</div>
+              
+                <div id="regSuccess" class="hidden text-center py-10">
+                    <div class="bg-green-50 w-24 h-24 rounded-[2rem] flex items-center justify-center mx-auto mb-8 shadow-inner rotate-3"><i data-lucide="party-popper" class="w-12 h-12 text-green-500"></i></div>
+                    <h3 class="font-bold text-slate-900 text-3xl tracking-tight">Solicitação Recebida!</h3>
+                    <p class="text-slate-500 mt-4 px-6 leading-relaxed max-w-sm mx-auto">Nossa equipe entrará em contato via WhatsApp/E-mail para liberar seu acesso.</p>
+                    <button onclick="toggleAuthView('login')" class="mt-10 bg-slate-900 text-white px-10 py-4.5 rounded-2xl font-bold hover:bg-slate-800 transition-all text-sm uppercase tracking-widest shadow-lg">Entendido</button>
+                </div>
+            </div>
+            <div class="p-5 bg-slate-50/50 border-t border-slate-100 text-center" id="regFooter">
+                <button onclick="toggleAuthView('login')" class="text-[10px] text-slate-400 font-bold hover:text-slate-900 uppercase tracking-[0.2em] transition-colors">Já possui uma vitrine ativa?</button>
+            </div>
+        </div>
+    </div>
+
+  <div id="orderDetailModal" class="modal-overlay fixed inset-0 z-[150] flex items-center justify-center p-4 hidden">
+    <div class="bg-white rounded-[2.5rem] shadow-2xl w-full max-w-2xl auth-card-container overflow-hidden">
+        <div class="bg-slate-900 p-6 flex justify-between items-center">
+            <h3 class="text-xl font-bold text-white"> <span id="modalOrderId" class="text-primary-400">#...</span></h3>
+            <button onclick="document.getElementById('orderDetailModal').classList.add('hidden')" class="p-2 text-slate-400 hover:text-white transition-colors">
+                <i data-lucide="x" class="w-6 h-6"></i>
+            </button>
+        </div>
+        <div class="auth-card-content p-8 space-y-6">
+            <div class="grid md:grid-cols-2 gap-4">
+                <div class="p-4 bg-slate-50 rounded-2xl border border-slate-100">
+                    <p class="text-[10px] font-black text-slate-400 uppercase mb-2">Cliente</p>
+                    <p id="modalCustomerName" class="font-bold text-slate-800"></p>
+                    <a id="modalCustomerPhone" href="#" target="_blank" class="text-green-600 text-xs font-bold flex items-center gap-1 mt-1 underline"></a>
+                </div>
+                <div class="p-4 bg-slate-50 rounded-2xl border border-slate-100">
+                    <p class="text-[10px] font-black text-slate-400 uppercase mb-2">Pagamento / Entrega</p>
+                    <p id="modalPayment" class="text-xs font-bold text-slate-700"></p>
+                    <p id="modalAddress" class="text-[10px] text-slate-500 mt-1"></p>
+                </div>
+            </div>
+            <div class="border rounded-2xl overflow-hidden">
+                <table class="w-full text-sm text-left">
+                    <thead class="bg-slate-50 border-b"><tr class="text-[10px] uppercase text-slate-400 font-black"><th class="px-4 py-2">Item</th><th class="px-4 py-2 text-center">Qtd</th><th class="px-4 py-2 text-right">Preço</th></tr></thead>
+                    <tbody id="modalItemsList" class="divide-y divide-slate-100"></tbody>
+                </table>
+            </div>
+            <div class="flex justify-between items-center p-4 bg-primary-50 rounded-2xl border border-primary-100 font-bold">
+                <span class="text-primary-700 text-sm">TOTAL DO PEDIDO</span>
+                <span id="modalTotal" class="text-xl text-primary-800">R$ 0,00</span>
+            </div>
+            <div class="grid grid-cols-2 gap-3">
+                <a id="btnActionWhatsapp" href="#" target="_blank" class="py-4 bg-green-500 text-white rounded-2xl font-bold flex justify-center items-center gap-2 shadow-lg"><i data-lucide="message-circle" class="w-5 h-5"></i> WhatsApp</a>
+                <button id="btnActionMain" class="py-4 bg-blue-600 text-white rounded-2xl font-bold flex justify-center shadow-lg">Confirmar</button>
+                <button id="btnActionEdit" class="py-4 border border-slate-200 text-slate-600 rounded-2xl font-bold text-xs uppercase">Status</button>
+                <button id="btnActionDelete" class="py-4 border border-red-100 text-red-500 rounded-2xl font-bold text-xs uppercase">Excluir</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+   <div id="imageViewerModal" class="hidden fixed inset-0 z-[300] bg-black/90 flex items-center justify-center p-4" onclick="this.classList.add('hidden')">
+    <button class="absolute top-6 right-6 text-white bg-white/10 rounded-full p-2">
+        <i data-lucide="x" class="w-8 h-8"></i>
+    </button>
+    <img id="expandedImage" src="" class="max-w-full max-h-[90vh] rounded-lg shadow-2xl object-contain animate-zoom-in">
+</div>
+
+<style>
+.animate-zoom-in { animation: zoomIn 0.2s ease-out; }
+@keyframes zoomIn { from { transform: scale(0.8); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+</style>
+
+    
+    <!-- TELA DE SUSPENSÃO -->
+    <div id="suspended-screen" class="fixed inset-0 z-[200] bg-slate-900 flex flex-col items-center justify-center p-4 hidden text-center text-white">
+        <i data-lucide="lock" class="w-16 h-16 text-red-500 mb-6 animate-pulse"></i>
+        <h1 class="text-3xl font-bold mb-2">Acesso Suspenso</h1>
+        <p class="text-slate-400 mb-8 max-w-xs">O acesso administrativo foi temporariamente suspenso. Por favor, contacte o suporte.</p>
+        <button onclick="handleLogout()" class="bg-slate-700 hover:bg-slate-600 px-8 py-3 rounded-xl font-bold transition-colors">Sair da Conta</button>
+    </div>
+
+    <!-- SIDEBAR -->
+    <div id="mobileOverlay" onclick="toggleMobileSidebar()" class="fixed inset-0 bg-black/60 z-[140] hidden md:hidden backdrop-blur-sm"></div>
+    <aside id="mobileSidebar" class="fixed inset-y-0 left-0 w-72 bg-white z-[150] shadow-2xl flex flex-col md:hidden sidebar-hidden">
+        <div class="h-16 flex items-center px-6 border-b justify-between">
+            <div class="flex items-center gap-3 truncate">
+                <img id="sidebarStoreLogoMobile" src="" class="w-8 h-8 rounded-full object-cover border border-slate-200 hidden" alt="Logo">
+                <span class="text-lg font-bold text-slate-800 truncate" id="sidebarStoreNameMobile">Menu</span>
+            </div>
+            <button onclick="toggleMobileSidebar()"><i data-lucide="x" class="w-6 h-6 text-slate-400"></i></button>
+        </div>
+        <nav class="flex-1 overflow-y-auto py-6 space-y-1">
+    <button id="nav-orders" onclick="changeTab('orders')" class="w-full flex items-center gap-3 px-6 py-4 text-primary font-bold bg-primary/5 border-l-4 border-primary">
+    <i data-lucide="bell-ring" class="w-5 h-5"></i>
+    <span>Pedidos</span>
+    <span id="menuBadgeMobile" class="ml-auto bg-red-500 text-white text-[10px] px-2 py-0.5 rounded-full animate-pulse hidden">NOVO</span>
+    </button>
+
+    <button id="nav-dashboard" onclick="changeTab('dashboard')" class="sidebar-link w-full flex items-center px-6 py-3 text-sm font-medium text-slate-600">
+        <i data-lucide="bar-chart-2" class="w-5 h-5 mr-3"></i> Dashboard
+    </button>
+
+    <button id="nav-banners" onclick="changeTab('banners')" class="sidebar-link w-full flex items-center px-6 py-3 text-sm font-medium text-slate-600">
+        <i data-lucide="layout" class="w-5 h-5 mr-3"></i> Banners de Destaque
+    </button>
+
+    <button id="nav-products" onclick="changeTab('products')" class="sidebar-link w-full flex items-center px-6 py-3 text-sm font-medium text-slate-600">
+        <i data-lucide="package" class="w-5 h-5 mr-3"></i> Produtos
+    </button>
+
+    <button id="nav-categories" onclick="changeTab('categories')" class="sidebar-link w-full flex items-center px-6 py-3 text-sm font-medium text-slate-600">
+        <i data-lucide="layers" class="w-5 h-5 mr-3"></i> Categorias
+    </button>
+
+    <button id="nav-config" onclick="changeTab('config')" class="sidebar-link w-full flex items-center px-6 py-3 text-sm font-medium text-slate-600">
+        <i data-lucide="settings" class="w-5 h-5 mr-3"></i> Configurações
+    </button>
+
+    <button id="nav-metas" onclick="changeTab('metas')" class="sidebar-link w-full flex items-center px-6 py-3 text-sm font-medium text-slate-600">
+    <i data-lucide="target" class="w-5 h-5 mr-3"></i> Metas
+</button>
+
+     <button id="nav-finance" onclick="changeTab('finance')" class="sidebar-link w-full flex items-center px-6 py-3 text-sm font-medium text-slate-600">
+    <i data-lucide="dollar-sign" class="w-5 h-5 mr-3"></i> Financeiro
+</button>
+         <button id="nav-customers" onclick="changeTab('customers')" class="sidebar-link w-full flex items-center px-6 py-3 text-sm font-medium text-slate-600">
+    <i data-lucide="users" class="w-5 h-5 mr-3"></i> Clientes
+         </button>
+            
+        </nav>
+        
+
+
+        <div class="p-6 border-t bg-slate-50">
+            <button onclick="handleLogout()" class="w-full flex items-center justify-center gap-2 py-4 text-red-600 bg-red-50 rounded-xl font-bold"><i data-lucide="log-out" class="w-5 h-5"></i> Encerrar Sessão</button>
+        </div>
+    </aside>
+
+    <aside class="hidden md:flex flex-col w-64 bg-white border-r border-slate-200 h-full shadow-lg z-10 relative">
+        <div class="h-16 flex items-center px-6 border-b border-primary-600/10 justify-between">
+            <div class="flex items-center gap-3 truncate">
+                <img id="sidebarStoreLogo" src="" class="w-9 h-9 rounded-full object-cover border border-slate-200 hidden" alt="Logo">
+                <span class="text-lg font-bold text-slate-800 truncate" id="sidebarStoreName">Carregando...</span>
+            </div>
+        </div>
+        <nav class="flex-1 overflow-y-auto py-4">
+    <button id="nav-orders" onclick="changeTab('orders')" class="w-full flex items-center gap-3 px-6 py-4 ...">
+        <i data-lucide="bell-ring" class="w-5 h-5"></i>
+        <span>Pedidos</span>
+    </button>
+    <button id="nav-dashboard" onclick="changeTab('dashboard')" class="w-full flex items-center px-6 py-4 ...">Dashboard</button>
+    <button id="nav-banners" onclick="changeTab('banners')" class="w-full flex items-center px-6 py-4 ...">Banners de Destaque</button>
+    <button id="nav-products" onclick="changeTab('products')" class="w-full flex items-center px-6 py-4 ...">Produtos</button>
+    <button id="nav-categories" onclick="changeTab('categories')" class="w-full flex items-center px-6 py-4 ...">Categorias</button>
+    <button id="nav-config" onclick="changeTab('config')" class="w-full flex items-center px-6 py-4 ...">Configurações</button>
+    <button id="nav-finance" onclick="changeTab('finance')" class="w-full flex items-center px-6 py-4 text-slate-600 font-medium"><i data-lucide="dollar-sign" class="w-5 h-5 mr-3"></i> Financeiro</button>
+    <button id="nav-customers" onclick="changeTab('customers')" class="sidebar-link w-full flex items-center px-6 py-3 text-sm font-medium text-slate-600">
+    <i data-lucide="users" class="w-5 h-5 mr-3"></i> Clientes </button>           
+        </nav>
+
+        <div class="p-4 border-t border-slate-100 bg-slate-50/50">
+            <div class="flex items-center gap-2 mb-4 px-2">
+                <div class="w-8 h-8 rounded-full bg-primary-100 flex items-center justify-center text-primary-600 font-bold text-[10px]">AD</div>
+                <div class="overflow-hidden leading-tight"><p class="text-[10px] font-bold text-slate-700 truncate" id="userEmailDisplay">...</p></div>
+            </div>
+            <button onclick="handleLogout()" class="w-full flex items-center justify-center gap-2 py-2.5 text-red-600 bg-red-50 hover:bg-red-100 rounded-xl font-bold transition-all"><i data-lucide="log-out" class="w-4 h-4"></i> Sair do Painel</button>
+        </div>
+    </aside>
+
+   <main class="flex-1 flex flex-col h-screen relative"> 
+    
+    <header class="h-16 bg-white border-b flex items-center justify-between px-4 md:px-8 flex-shrink-0 z-50 shadow-sm relative">
+        
+        <div class="flex items-center gap-3">
+            <button onclick="toggleMobileSidebar()" class="md:hidden p-2 text-slate-600 hover:bg-slate-100 rounded-lg">
+                <i data-lucide="menu" class="w-6 h-6"></i>
+            </button>
+            <h2 id="page-title" class="text-lg md:text-xl font-bold text-slate-800">Dashboard</h2>
+        </div>
+
+        <div class="flex items-center gap-2 md:gap-4">
+            <div id="publishStatusContainer" class="flex items-center gap-2"></div>
+
+            <div class="relative z-[100]">
+                <button id="storeMenuBtn" onclick="toggleStoreMenu(event)" class="text-[10px] md:text-xs font-bold text-blue-600 bg-blue-50 h-9 px-4 rounded-full border border-blue-100 flex items-center gap-2 transition-all">
+                    <i data-lucide="external-link" class="w-3.5 h-3.5"></i> 
+                    <span class="hidden sm:inline">Ver Loja</span> 
+                    <i data-lucide="chevron-down" class="w-3 h-3"></i>
+                </button>
+                
+                <div id="storeDropdown" class="hidden absolute top-full right-0 mt-2 w-64 md:w-72 bg-white border border-slate-100 rounded-2xl shadow-[0_10px_40px_rgba(0,0,0,0.15)] z-[110] animate-fade-in">
+                    <div class="p-4 bg-slate-50 border-b rounded-t-2xl">
+                        <p class="text-[10px] text-slate-500 uppercase font-bold mb-1 tracking-wider">Endereço da Vitrine:</p>
+                        <p id="urlDisplay" class="text-[10px] text-slate-800 font-mono break-all select-all bg-white p-2 rounded-lg border">...</p>
+                    </div>
+                    <div class="p-1.5">
+                        <button onclick="copyStoreLink()" class="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-slate-600 hover:bg-slate-50 rounded-xl text-left transition-colors"><i data-lucide="copy" class="w-4 h-4"></i> Copiar Link</button>
+                        <button onclick="openStoreLink()" class="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-slate-600 hover:bg-slate-50 rounded-xl text-left transition-colors"><i data-lucide="eye" class="w-4 h-4"></i> Visualizar Online</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </header>
+  
+
+
+
+         <div id="content-area" class="flex-1 overflow-y-auto bg-slate-50 p-4 md:p-8">
+            
+<div id="view-dashboard" class="max-w-6xl mx-auto space-y-6 hidden animate-fade-in">
+    <div class="bg-white rounded-3xl border border-slate-200 p-8 flex flex-col md:flex-row items-center justify-between shadow-sm gap-6">
+        <div class="flex items-center gap-5">
+            <div class="p-4 bg-primary-50 text-primary-600 rounded-2xl shadow-inner"><i data-lucide="store" class="w-8 h-8"></i></div>
+            <div>
+                <h3 class="font-bold text-xl text-slate-800">Status da Loja</h3>
+                <div class="flex items-center gap-3 bg-white p-2 px-4 rounded-2xl border border-slate-100 shadow-sm">
+    <span id="statusLojaText" class="text-[10px] font-black uppercase tracking-widest text-slate-400">Carregando...</span>
+    
+</div> 
+                <div class="flex flex-col mt-1">
+    <div class="flex items-center gap-2">
+        <span class="text-sm text-slate-500">Plano Atual:</span>
+        <span id="currentPlanBadge" class="text-xs font-bold bg-slate-100 px-2 py-0.5 rounded border uppercase">Carregando...</span>
+    </div>
+    
+    <div id="planInfoContainer" class="mt-1.5">
+        <span id="planStatusText" class="text-[10px] font-black uppercase tracking-wider">Verificando acesso...</span>
+    </div>
+       </div>
+            </div>
+        </div>
+    </div> 
+
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 w-full">
+        <div class="bg-white p-6 border border-slate-100 rounded-3xl shadow-sm"><p class="text-xs font-bold text-slate-400 uppercase tracking-widest mb-2">Produtos</p><h3 class="text-4xl font-bold text-slate-800"><span id="dash-total-products">0</span><span id="dash-limit-products" class="text-lg text-slate-400 font-medium"> / 0</span></h3> </div>
+        <div class="bg-white p-6 border border-slate-100 rounded-3xl shadow-sm"><p class="text-xs font-bold text-slate-400 uppercase tracking-widest mb-2">Banners</p><h3 class="text-4xl font-bold text-primary-600"><span id="dash-total-banners">0</span><span id="dash-limit-banners" class="text-lg text-slate-400 font-medium"> / 0</span></h3></div>
+        <div class="bg-white p-6 border border-slate-100 rounded-3xl shadow-sm"><p class="text-xs font-bold text-slate-400 uppercase tracking-widest mb-2">Categorias</p><h3 class="text-4xl font-bold text-slate-800" id="dash-total-cats">0</h3></div>
+        <div class="bg-white p-5 border border-slate-100 rounded-3xl shadow-sm"><p class="text-xs font-bold text-slate-400 uppercase tracking-widest mb-2">Visitas</p><h3 class="text-4xl font-bold text-slate-800" id="dash-total-visits">0</h3></div>
+    </div>
+        
+    <div class="bg-white p-6 md:p-8 border border-slate-200 rounded-3xl shadow-sm">
+        <div class="flex justify-between items-center mb-8">
+            <h3 class="text-xl font-bold text-slate-800">Tráfego da Vitrine</h3>
+            <div class="flex bg-slate-100 p-1 rounded-xl">
+                <button onclick="updateAnalyticsRange('day')" id="range-day" class="range-btn active">Hoje</button>
+                <button onclick="updateAnalyticsRange('week')" id="range-week" class="range-btn inactive">Semana</button>
+            </div>
+        </div>
+        <div class="relative h-64 w-full"><canvas id="analyticsChart"></canvas></div>
+    </div> 
+         
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div class="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm">
+            <h3 class="text-sm font-black text-slate-400 uppercase mb-4 flex items-center gap-2">
+                <i data-lucide="trending-up" class="w-4 h-4 text-primary-500"></i> Mais Vistos (Cliques)
+            </h3>
+            <div id="topProductsList" class="space-y-3">
+                <p class="text-xs text-slate-400 italic">Aguardando dados...</p>
+            </div>
+        </div>
+
+        <div class="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm">
+            <h3 class="text-sm font-black text-slate-400 uppercase mb-4 flex items-center gap-2">
+                <i data-lucide="search-x" class="w-4 h-4 text-amber-500"></i> Buscas Perdidas
+            </h3>
+            <div id="failedSearchesList" class="space-y-3">
+                <p class="text-xs text-slate-400 italic">Nenhum termo perdido ainda.</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div class="bg-white p-6 rounded-[2.5rem] border border-slate-200 shadow-sm">
+            <h3 class="text-sm font-black text-slate-400 uppercase mb-6 tracking-widest flex items-center gap-2">
+                <i data-lucide="trophy" class="w-4 h-4 text-yellow-500"></i> Produtos Campeões
+            </h3>
+            <div id="topSoldProducts" class="space-y-4">
+                <p class="text-xs text-slate-400 italic">Aguardando vendas...</p>
+            </div>
+        </div>
+
+        <div class="bg-white p-6 rounded-[2.5rem] border border-slate-200 shadow-sm">
+            <h3 class="text-sm font-black text-slate-400 uppercase mb-6 tracking-widest flex items-center gap-2">
+                <i data-lucide="pie-chart" class="w-4 h-4 text-primary-500"></i> Categorias Lucrativas
+            </h3>
+            <div id="topSoldCategories" class="space-y-4">
+                <p class="text-xs text-slate-400 italic">Analisando faturamento...</p>
+            </div>
+        </div>
+    </div>
+</div> 
+
+    <div id="view-orders">
+        
+        <div class="flex items-center gap-3 bg-white p-2 px-4 rounded-2xl border border-slate-100 shadow-sm w-fit mb-6">
+            <span id="statusLojaTextoPedidos" class="text-[10px] font-black uppercase tracking-widest transition-colors duration-300">
+                CARREGANDO...
+            </span>
+            <button id="btnToggleLoja" onclick="window.toggleLojaStatus()" 
+                class="relative inline-flex h-7 w-12 items-center rounded-full transition-colors duration-300 focus:outline-none bg-slate-200">
+                <span id="switchDot" class="inline-block h-5 w-5 rounded-full bg-white shadow-md transition-transform duration-300" style="transform: translateX(4px);"></span>
+            </button>
+        </div>
+
+        <div class="w-full mb-6"> 
+            <div class="relative group">
+                <i data-lucide="search" class="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 w-4 h-4 transition-colors group-focus-within:text-primary-500"></i>
+                <input 
+                    id="orderSearchInput"
+                    oninput="window.renderFilteredOrders()"
+                    type="text" 
+                    placeholder="Buscar por nome, ID ou telefone..."
+                    class="w-full pl-11 pr-4 py-3 rounded-2xl border border-slate-200/60 bg-white focus:border-primary-400 focus:ring-4 focus:ring-primary-500/10 outline-none transition-all duration-300 placeholder:text-slate-400 text-sm font-medium shadow-sm"
+                >
+            </div>
+        </div>
+
+        <div id="ordersCardsContainer" class="grid grid-cols-1 gap-1">
+            <p class="text-center text-slate-400 py-10 italic text-sm">Carregando pedidos...</p>
+        </div>
+
+        <div class="relative py-12 flex justify-center">
+    <div class="absolute inset-0 flex items-center" aria-hidden="true">
+        <div class="w-full border-t border-slate-100"></div>
+    </div>
+    
+    <button id="btnLoadMore" onclick="window.loadMoreOrders()" 
+            class="relative bg-white border border-slate-200 text-slate-500 px-8 py-3 rounded-2xl text-[10px] font-black uppercase tracking-[0.2em] shadow-sm hover:shadow-md hover:border-primary-200 hover:text-primary-600 active:scale-95 transition-all hidden flex items-center gap-2 group">
+        
+        <i data-lucide="plus" class="w-3 h-3 group-hover:rotate-90 transition-transform duration-300"></i>
+        Carregar pedidos antigos
+    </button>
+</div>
+   
+    </div> <div id="view-dashboard" class="hidden">
+
+                <div id="ordersCardsContainer" class="grid grid-cols-1 gap-1">
+    <p class="text-center text-slate-400 py-10 italic text-sm">Carregando pedidos...</p>
+                </div>
+             <div class="flex justify-center py-6">
+    <button id="btnLoadMore" onclick="window.loadMoreOrders()" 
+            class="bg-white border border-slate-200 text-slate-600 px-6 py-2.5 rounded-xl text-xs font-bold shadow-sm hover:bg-slate-50 transition-all hidden">
+        Ver mais
+    </button>
+             </div>
+            
+            </div>
+             <button 
+    id="fabAddOrder"
+    onclick="window.openManualOrderModal()"
+    class="fixed bottom-6 right-6 bg-primary-600 text-white w-14 h-14 rounded-full shadow-lg flex items-center justify-center active:scale-95 transition-all z-40">
+    <i data-lucide="plus" class="w-6 h-6"></i>
+           </button>
+
+           
+<div id="view-finance" class="max-w-6xl mx-auto space-y-6 hidden animate-fade-in pb-20 text-left">
+    
+    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 px-2">
+        <div class="text-left">
+            <h3 class="text-xl font-black text-slate-800 tracking-tight">Painel Financeiro</h3>
+            <p id="fin-label-periodo" class="text-[10px] font-black text-primary-500 uppercase tracking-widest">RESUMO: HOJE</p>
+        </div>
+        
+        <div class="flex bg-slate-200/50 p-1 rounded-xl border border-slate-200">
+            <button onclick="updateFinanceRange('today')" id="fin-range-today" class="px-3 py-1.5 rounded-lg text-[10px] font-black transition-all">HOJE</button>
+            <button onclick="updateFinanceRange('yesterday')" id="fin-range-yesterday" class="px-3 py-1.5 rounded-lg text-[10px] font-black transition-all">ONTEM</button>
+            <button onclick="updateFinanceRange('week')" id="fin-range-week" class="px-3 py-1.5 rounded-lg text-[10px] font-black transition-all">7D</button>
+            <button onclick="updateFinanceRange('month')" id="fin-range-month" class="px-3 py-1.5 rounded-lg text-[10px] font-black transition-all">MÊS</button>
+            <button onclick="document.getElementById('modalCustomDate').classList.remove('hidden')" class="px-2 py-1.5 text-slate-500"><i data-lucide="calendar" class="w-3.5 h-3.5"></i></button>
+        </div>
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div class="bg-slate-900 p-8 rounded-[2rem] text-white shadow-lg flex flex-col items-start justify-center relative overflow-hidden">
+            <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Faturamento Bruto</p>
+            <h2 class="text-4xl font-black" id="fin-rev-day">R$ 0,00</h2>
+            <div class="flex items-center gap-2 mt-2 text-primary-400">
+                <i data-lucide="trending-up" class="w-4 h-4"></i>
+                <span class="text-[10px] font-bold uppercase" id="fin-orders-day">0 pedidos</span>
+            </div>
+            <div class="absolute right-6 top-1/2 -translate-y-1/2 opacity-10">
+                <i data-lucide="bar-chart-3" class="w-16 h-16 text-white"></i>
+            </div>
+        </div>
+
+        <div class="bg-white p-8 rounded-[2rem] border border-slate-200 shadow-sm flex flex-col items-start justify-center">
+            <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Lucro Real Líquido</p>
+            <h2 class="text-4xl font-black text-emerald-600" id="fin-profit-real">R$ 0,00</h2>
+            <p class="text-[10px] text-slate-400 font-bold mt-1 uppercase tracking-tighter">Faturamento - Custos de Aquisição</p>
+        </div>
+    </div>
+
+    <div class="bg-white p-6 rounded-[2.5rem] border border-slate-200 shadow-sm text-left">
+        <div class="flex items-center justify-between mb-6">
+            <div class="flex items-center gap-3">
+                <div class="w-8 h-8 rounded-lg bg-primary-50 text-primary-600 flex items-center justify-center">
+                    <i data-lucide="line-chart" class="w-4 h-4"></i>
+                </div>
+                <h4 class="text-xs font-black text-slate-800 uppercase tracking-widest">Evolução de Faturamento</h4>
+            </div>
+            <span id="chart-info-label" class="text-[9px] font-black text-slate-400 uppercase bg-slate-50 px-2 py-1 rounded-md">Vendas em R$</span>
+        </div>
+        <div class="h-48 w-full relative">
+            <canvas id="financePerformanceChart"></canvas>
+        </div>
+    </div>
+
+    <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <div class="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm text-left">
+            <div class="w-8 h-8 rounded-lg bg-emerald-100 text-emerald-600 flex items-center justify-center mb-4">
+                <i data-lucide="qr-code" class="w-4 h-4"></i>
+            </div>
+            <p class="text-[9px] font-black text-slate-400 uppercase mb-1">Via PIX</p>
+            <h4 class="text-xl font-black text-slate-800" id="fin-rev-pix">R$ 0,00</h4>
+            <div class="mt-3 pt-3 border-t border-slate-50">
+                <p class="text-[9px] font-bold text-emerald-400 uppercase">Lucro: <span id="fin-profit-pix" class="text-emerald-600">R$ 0,00</span></p>
+            </div>
+        </div>
+
+        <div class="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm text-left">
+            <div class="w-8 h-8 rounded-lg bg-blue-100 text-blue-600 flex items-center justify-center mb-4">
+                <i data-lucide="credit-card" class="w-4 h-4"></i>
+            </div>
+            <p class="text-[9px] font-black text-slate-400 uppercase mb-1">Via Cartão</p>
+            <h4 class="text-xl font-black text-slate-800" id="fin-rev-card">R$ 0,00</h4>
+            <div class="mt-3 pt-3 border-t border-slate-50">
+                <p class="text-[9px] font-bold text-blue-400 uppercase">Lucro: <span id="fin-profit-card" class="text-blue-600">R$ 0,00</span></p>
+            </div>
+        </div>
+
+        <div class="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm text-left">
+            <div class="w-8 h-8 rounded-lg bg-amber-100 text-amber-600 flex items-center justify-center mb-4">
+                <i data-lucide="banknote" class="w-4 h-4"></i>
+            </div>
+            <p class="text-[9px] font-black text-slate-400 uppercase mb-1">Dinheiro / Outros</p>
+            <h4 class="text-xl font-black text-slate-800" id="fin-rev-cash">R$ 0,00</h4>
+            <div class="mt-3 pt-3 border-t border-slate-50">
+                <p class="text-[9px] font-bold text-amber-400 uppercase">Lucro: <span id="fin-profit-cash" class="text-amber-600">R$ 0,00</span></p>
+            </div>
+        </div>
+    </div>
+
+    <div class="bg-white p-8 rounded-[2.5rem] border border-slate-200 shadow-sm text-left">
+        <div class="flex items-center gap-3 mb-6">
+            <div class="w-8 h-8 rounded-lg bg-slate-100 text-slate-500 flex items-center justify-center">
+                <i data-lucide="box" class="w-4 h-4"></i>
+            </div>
+            <h4 class="text-xs font-black text-slate-800 uppercase tracking-widest">Patrimônio e Inventário</h4>
+        </div>
+        
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-8">
+            <div>
+                <p class="text-[9px] font-black text-slate-400 uppercase mb-1 tracking-tighter">Total em Venda (Gôndola)</p>
+                <p class="text-2xl font-black text-slate-900" id="fin-stock-value">R$ 0,00</p>
+            </div>
+            <div>
+                <p class="text-[9px] font-black text-slate-400 uppercase mb-1 tracking-tighter">Investimento (Custo)</p>
+                <p class="text-2xl font-black text-slate-500" id="fin-stock-cost">R$ 0,00</p>
+            </div>
+            <div>
+                <p class="text-[9px] font-black text-emerald-500 uppercase mb-1 tracking-tighter">Lucro Estimado (Projetado)</p>
+                <p class="text-2xl font-black text-emerald-600" id="fin-profit-potential">R$ 0,00</p>
+            </div>
+        </div>
+        
+        <div class="mt-8 pt-4 border-t border-slate-50 flex justify-between items-center">
+            <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Peças disponíveis no catálogo</p>
+            <span id="fin-stock-count" class="bg-slate-100 px-3 py-1 rounded-full text-[10px] font-black text-slate-600">0 UNIDADES</span>
+        </div>
+    </div>
+</div>
+
+
+            <div id="view-banners" class="max-w-6xl mx-auto space-y-6 hidden animate-fade-in">
+                <div class="flex justify-between items-center">
+                    <h3 class="text-2xl font-bold text-slate-800">Banners de Destaque</h3>
+                    <button onclick="window.openBannerModal()" class="bg-primary-600 text-white px-5 py-2.5 rounded-2xl font-bold flex items-center gap-2 shadow-lg"><i data-lucide="plus" class="w-5 h-5"></i> Novo</button>
+                </div>
+                <div id="bannersList" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"></div>
+                <div id="emptyBannersMsg" class="hidden text-center py-24 text-slate-400 italic">Nenhum banner ativo.</div>
+            </div>
+
+            <div id="view-products" class="max-w-6xl mx-auto space-y-6 hidden animate-fade-in">
+                <div class="flex flex-col md:flex-row justify-between items-center gap-4">
+                    <div class="relative w-full md:w-96"><i data-lucide="search" class="absolute left-4 top-3.5 text-slate-400 w-4 h-4"></i><input type="text" id="productSearch" onkeyup="renderProductList()" placeholder="Pesquisar catálogo..." class="w-full pl-12 border rounded-2xl p-3.5 outline-none bg-white"></div>
+                    <button onclick="openProductModal()" class="w-full md:w-auto bg-slate-900 text-white px-8 py-3.5 rounded-2xl font-bold flex justify-center items-center gap-2 shadow-lg uppercase text-sm"><i data-lucide="plus" class="w-5 h-5"></i> Novo Produto</button>
+                </div>
+                <div id="productListGrouped" class="space-y-4 pb-12"></div>
+            </div>
+
+            <div id="view-categories" class="max-w-4xl mx-auto space-y-6 hidden animate-fade-in">
+                <div class="bg-white p-6 md:p-8 border border-slate-100 rounded-3xl shadow-sm">
+                    <h3 class="font-bold text-xl mb-4 text-slate-800" id="catFormTitle">Departamentos</h3>
+                    <form onsubmit="handleCategorySubmit(event)" class="flex flex-col sm:flex-row gap-3">
+                        <input type="text" id="catInputName" class="flex-1 border rounded-2xl px-5 py-3 outline-none bg-slate-50" placeholder="Ex: Calçados" required>
+                        <input type="hidden" id="editingCategoryId">
+                        <button type="submit" id="btnCatSubmit" class="bg-primary-600 text-white px-8 py-3 rounded-2xl font-bold uppercase text-xs tracking-widest">Salvar</button>
+                    </form>
+                </div>
+                <div id="categoryList" class="bg-white rounded-3xl border border-slate-200 divide-y overflow-hidden shadow-xl"></div>
+                <div class="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm mt-6">
+    <h3 class="text-sm font-black text-slate-400 uppercase mb-6 tracking-widest">Categorias Inteligentes (Automáticas)</h3>
+            </div>
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div class="flex items-center justify-between p-4 bg-slate-50 rounded-2xl border border-slate-100">
+            <div class="flex items-center gap-3">
+                <div class="p-2 bg-blue-100 text-blue-600 rounded-lg"><i data-lucide="sparkles" class="w-5 h-5"></i></div>
+                <div><p class="text-xs font-bold text-slate-700">Setor "Novidades"</p><p class="text-[9px] text-slate-400 uppercase">Últimos 15 dias</p></div>
+            </div>
+            <label class="toggle-switch"><input type="checkbox" id="magicNew" onchange="toggleMagicCategory('showNew', this.checked)"><span class="slider"></span></label>
+        </div>
+        <div class="flex items-center justify-between p-4 bg-slate-50 rounded-2xl border border-slate-100">
+            <div class="flex items-center gap-3">
+                <div class="p-2 bg-orange-100 text-orange-600 rounded-lg"><i data-lucide="flame" class="w-5 h-5"></i></div>
+                <div><p class="text-xs font-bold text-slate-700">Setor "Mais Vendidos"</p><p class="text-[9px] text-slate-400 uppercase">Top 10 Vistos</p></div>
+            </div>
+            <label class="toggle-switch"><input type="checkbox" id="magicTop" onchange="toggleMagicCategory('showTop', this.checked)"><span class="slider"></span></label>
+             </div>
+           </div>
+            </div>
+
+          <div id="view-customers" class="max-w-6xl mx-auto space-y-4 hidden animate-fade-in">
+    <div class="flex items-center justify-between bg-white p-4 md:p-6 rounded-[2rem] border border-slate-200 shadow-sm">
+        <div class="flex items-center gap-3">
+            <div class="w-10 h-10 md:w-12 md:h-12 bg-slate-900 text-white rounded-2xl flex items-center justify-center shadow-lg shrink-0">
+                <i data-lucide="users" class="w-5 h-5 md:w-6 md:h-6"></i>
+            </div>
+            <div class="min-w-0">
+                <h3 class="text-base md:text-lg font-bold text-slate-800 leading-tight">Meus Clientes</h3>
+                <p class="text-[9px] md:text-[10px] text-slate-400 uppercase font-black tracking-widest mt-1">Ranking Geral</p>
+            </div>
+        </div>
+        
+        <button onclick="window.openCustomerModal()" class="bg-primary-600 text-white px-4 py-2 md:px-5 md:py-2.5 rounded-xl font-bold flex items-center gap-2 shadow-lg active:scale-95 text-[9px] md:text-[10px] uppercase tracking-widest">
+            <i data-lucide="user-plus" class="w-3.5 h-3.5 md:w-4 md:h-4"></i> <span>Novo</span>
+        </button>
+    </div>
+
+    <div class="bg-white rounded-[2rem] border border-slate-200 shadow-sm overflow-hidden">
+        <div class="overflow-x-auto">
+            <table class="w-full text-left border-collapse table-fixed min-w-[600px]">
+                <thead>
+                    <tr class="bg-slate-50/50 text-[9px] md:text-[10px] uppercase text-slate-400 border-b border-slate-100">
+                        <th class="w-16 px-4 py-4 font-black text-center">Rank</th>
+                        <th class="w-auto px-4 py-4 font-black">Cliente</th>
+                        <th class="w-24 px-4 py-4 font-black text-center">Pedidos</th>
+                        <th class="w-32 px-4 py-4 font-black text-right">Total Gasto</th>
+                        <th class="w-28 px-4 py-4 font-black text-center">Ações</th>
+                    </tr>
+                </thead>
+                <tbody id="customerTableBody">
+                    </tbody>
+            </table>
+        </div>
+    </div>
+     </div>
+
+          <div id="customerModal" class="modal-overlay fixed inset-0 z-[150] flex items-center justify-center p-4 hidden">
+    <div class="bg-white rounded-[2.5rem] shadow-2xl w-full max-w-lg auth-card-container overflow-hidden">
+        <div class="bg-slate-900 p-6 flex items-center justify-between">
+            <div class="flex items-center gap-3">
+                <div class="bg-primary-500/20 p-2 rounded-xl"><i data-lucide="user-plus" class="w-6 h-6 text-primary-400"></i></div>
+                <h3 class="text-xl font-bold text-white">Cadastrar Cliente</h3>
+            </div>
+            <button onclick="window.closeCustomerModal()" class="p-2 text-slate-400 hover:text-white transition-colors"><i data-lucide="x" class="w-6 h-6"></i></button>
+        </div>
+
+        <div class="auth-card-content p-8">
+            <form id="customerForm" onsubmit="window.handleCustomerSubmit(event)" class="space-y-4">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div class="md:col-span-2">
+                        <label class="text-[10px] font-bold text-slate-500 uppercase ml-1">Nome Completo</label>
+                        <input type="text" id="custName" required class="input-pro" placeholder="Ex: Maria Oliveira">
+                    </div>
+                    <div>
+                        <label class="text-[10px] font-bold text-slate-500 uppercase ml-1">WhatsApp</label>
+                        <input type="text" id="custPhone" required class="input-pro" placeholder="(00) 00000-0000">
+                    </div>
+                    <div>
+                        <label class="text-[10px] font-bold text-slate-500 uppercase ml-1">CPF (Opcional)</label>
+                        <input type="text" id="custCpf" class="input-pro" placeholder="000.000.000-00">
+                    </div>
+                    <div class="md:col-span-2">
+                        <label class="text-[10px] font-bold text-slate-500 uppercase ml-1">Endereço de Entrega</label>
+                        <textarea id="custAddress" class="input-pro" rows="2" placeholder="Rua, número, bairro..."></textarea>
+                    </div>
+                </div>
+                <button type="submit" class="w-full bg-primary-600 text-white py-4 rounded-2xl font-bold shadow-xl hover:bg-primary-700 uppercase tracking-widest text-xs mt-4">
+                    Salvar Cliente
+                </button>
+            </form>
+        </div>
+    </div>
+</div>
+
+ <div id="customerDetailsModal" class="modal-overlay fixed inset-0 z-[150] flex items-center justify-center p-4 hidden">
+    <div class="bg-white rounded-[2.5rem] shadow-2xl w-full max-w-lg auth-card-container overflow-hidden">
+        <div class="bg-slate-900 p-6 flex items-center justify-between">
+            <h3 class="text-xl font-bold text-white">Ficha do Cliente</h3>
+            <button onclick="document.getElementById('customerDetailsModal').classList.add('hidden')" class="text-slate-400 hover:text-white"><i data-lucide="x" class="w-6 h-6"></i></button>
+        </div>
+        <div class="auth-card-content p-8 space-y-6">
+            <div class="flex items-center gap-4 border-b border-slate-100 pb-6">
+                <div id="detCustInitial" class="w-16 h-16 bg-primary-100 text-primary-600 rounded-2xl flex items-center justify-center text-2xl font-black">?</div>
+                <div>
+                    <h4 id="detCustName" class="text-xl font-bold text-slate-800">Nome do Cliente</h4>
+                    <p id="detCustPhone" class="text-sm text-green-600 font-bold font-mono"></p>
+                </div>
+            </div>
+            <div class="grid grid-cols-2 gap-4 text-xs">
+                <div class="bg-slate-50 p-4 rounded-2xl border border-slate-100">
+                    <p class="text-[9px] font-black text-slate-400 uppercase mb-1">CPF</p>
+                    <p id="detCustCpf" class="font-bold text-slate-700">---</p>
+                </div>
+                <div class="bg-slate-50 p-4 rounded-2xl border border-slate-100">
+                    <p class="text-[9px] font-black text-slate-400 uppercase mb-1">Pedidos</p>
+                    <p id="detCustOrders" class="font-bold text-slate-700">0</p>
+                </div>
+                <div class="col-span-2 bg-slate-50 p-4 rounded-2xl border border-slate-100">
+                    <p class="text-[9px] font-black text-slate-400 uppercase mb-1">Endereço Principal</p>
+                    <p id="detCustAddress" class="font-bold text-slate-700 leading-tight">Não informado</p>
+                </div>
+            </div>
+            <div class="flex justify-between items-center p-4 bg-primary-50 rounded-2xl border border-primary-100">
+                <span class="text-primary-700 font-bold text-[10px] uppercase">Volume de Compras</span>
+                <span id="detCustTotal" class="text-lg font-black text-primary-800">R$ 0,00</span>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+            <div id="view-config" class="max-w-4xl mx-auto space-y-8 hidden animate-fade-in">
+                <div class="bg-white rounded-3xl border border-slate-200 p-8 shadow-sm">
+                    <h3 class="text-xl font-bold text-slate-800 mb-6 flex items-center gap-3"><i data-lucide="shield-check" class="text-yellow-600"></i> Segurança</h3>
+                    <form onsubmit="handleUpdatePassword(event)" class="space-y-5 max-w-sm">
+                        <input type="password" id="newPass" required placeholder="Nova Senha" class="input-pro">
+                        <input type="password" id="confirmNewPass" required placeholder="Confirme a Senha" class="input-pro">
+                        <button type="submit" class="w-full bg-slate-900 text-white font-bold py-4 rounded-2xl uppercase tracking-wider">Atualizar Senha</button>
+                    </form>
+                </div>
+
+                 <div class="bg-white rounded-3xl border border-slate-200 p-8 shadow-sm overflow-hidden relative">
+    <div class="absolute top-0 left-0 w-full h-1.5 bg-gradient-to-r from-emerald-400 to-teal-500"></div>
+    
+    <div class="flex items-center justify-between mb-8">
+        <div>
+            <h3 class="text-xl font-bold text-slate-800 flex items-center gap-3">
+                <i data-lucide="qr-code" class="text-emerald-600 w-6 h-6"></i> 
+                Configurações de Recebimento
+            </h3>
+            <p class="text-xs text-slate-500 mt-1 font-medium">Estes dados serão exibidos para o cliente no fechamento do pedido.</p>
+        </div>
+        <div class="hidden md:block">
+            <span class="px-3 py-1 bg-emerald-50 text-emerald-700 text-[10px] font-black uppercase rounded-full border border-emerald-100">
+                Pagamento Instantâneo
+            </span>
+        </div>
+    </div>
+    
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div class="space-y-2">
+            <label class="flex items-center gap-2 text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">
+                <i data-lucide="key" class="w-3 h-3"></i> Chave PIX
+            </label>
+            <div class="relative group">
+                <input type="text" id="cfgPixKey" placeholder="E-mail, CPF ou Aleatória" 
+                       class="w-full bg-slate-50 border border-slate-200 rounded-2xl p-4 text-sm outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 focus:bg-white transition-all">
+            </div>
+        </div>
+
+        <div class="space-y-2">
+            <label class="flex items-center gap-2 text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">
+                <i data-lucide="user" class="w-3 h-3"></i> Nome do Titular
+            </label>
+            <input type="text" id="cfgPixName" placeholder="Nome completo" 
+                   class="w-full bg-slate-50 border border-slate-200 rounded-2xl p-4 text-sm outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 focus:bg-white transition-all">
+        </div>
+
+        <div class="space-y-2">
+            <label class="flex items-center gap-2 text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">
+                <i data-lucide="landmark" class="w-3 h-3"></i> Instituição Bancária
+            </label>
+            <input type="text" id="cfgPixBank" placeholder="Ex: Nubank, Inter..." 
+                   class="w-full bg-slate-50 border border-slate-200 rounded-2xl p-4 text-sm outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 focus:bg-white transition-all">
+        </div>
+    </div>
+
+    <div class="mt-8 p-4 bg-amber-50 rounded-2xl border border-amber-100 flex items-start gap-3">
+        <i data-lucide="info" class="w-5 h-5 text-amber-500 shrink-0 mt-0.5"></i>
+        <p class="text-[11px] text-amber-800 leading-relaxed">
+            <b>Dica:</b> Certifique-se de que a chave está correta. O sistema enviará estes dados automaticamente via WhatsApp assim que você confirmar o pedido na tela de pedidos.
+        </p>
+    </div>
+</div>
+
+                                <form id="storeConfigForm" onsubmit="saveStoreConfig(event)" class="space-y-8 pb-12">
+                    <div class="bg-white rounded-3xl border border-slate-200 p-8 shadow-sm">
+                        <h3 class="text-xl font-bold text-slate-800 mb-6 flex items-center gap-3"><i data-lucide="info" class="text-blue-600"></i> Identidade</h3>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div><label class="block text-xs font-bold text-slate-400 mb-1.5 uppercase">Nome da Loja</label><input type="text" id="confStoreName" class="input-pro"></div>
+                            <div class="mb-4">
+    <label class="block text-sm font-medium text-gray-700 mb-1">Tipo de Negócio</label>
+    <select id="configTipoNegocio" class="w-full p-2 border rounded-lg focus:ring-2 focus:ring-purple-500 outline-none">
+        <option value="varejo">Loja (Varejo, Roupas, Acessórios)</option>
+        <option value="restaurante">Restaurante / Delivery (Açaí, Pizza, Lanches)</option>
+    </select>
+    <p class="text-xs text-gray-500 mt-1">Isso mudará a forma como você cadastra seus produtos e gerencia o estoque.</p>
+</div>
+                            <div><label class="block text-xs font-bold text-slate-400 mb-1.5 uppercase">WhatsApp Público</label><input type="text" id="confWhatsapp" class="input-pro"></div>
+                        </div>
+                    </div>
+
+                    <div class="bg-white rounded-3xl border border-slate-200 p-8 shadow-sm">
+                        <h3 class="text-xl font-bold text-slate-800 mb-6 flex items-center gap-3"><i data-lucide="palette" class="text-purple-600"></i> Visual da Vitrine</h3>
+                        <div class="flex flex-col md:flex-row gap-8 items-start">
+                            <div class="relative w-32 h-32 rounded-3xl bg-slate-100 border-2 border-dashed border-slate-300 flex items-center justify-center overflow-hidden group">
+                                <img id="logoPreviewImg" src="" class="absolute inset-0 w-full h-full object-cover hidden">
+                                <i id="logoPlaceholderIcon" data-lucide="image-plus" class="w-8 h-8 text-slate-400 group-hover:text-primary-500 transition-colors"></i>
+                                <input type="file" accept="image/*" class="absolute inset-0 opacity-0 cursor-pointer" onchange="handleLogoSelect(this.files)">
+                            </div>
+                            <div class="flex-1 space-y-4 w-full">
+                                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                    <div>
+                                        <label class="block text-xs font-bold text-slate-400 mb-1.5 uppercase">Cor Principal</label>
+                                        <input type="color" id="confColorPrimary" class="w-full h-12 rounded-xl cursor-pointer border-4 border-white shadow-sm">
+                                    </div>
+                                    <div>
+                                        <label class="block text-xs font-bold text-slate-400 mb-1.5 uppercase">Texto do Rodapé</label>
+                                        <input type="text" id="confFooter" class="input-pro" placeholder="© 2026 Minha Loja">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="bg-white rounded-3xl border border-slate-200 p-8 shadow-sm">
+                        <h3 class="text-xl font-bold text-slate-800 mb-6 flex items-center gap-3"><i data-lucide="truck" class="text-green-600"></i> Taxas de Entrega</h3>
+                        <div class="flex flex-col sm:flex-row gap-2 mb-4">
+                            <input type="text" id="areaName" placeholder="Cidade ou Bairro" class="input-pro">
+                            <input type="number" id="areaFee" placeholder="R$ 0,00" class="input-pro sm:w-32">
+                            <button type="button" onclick="addDeliveryArea()" class="bg-slate-900 text-white px-6 py-3 rounded-xl font-bold hover:bg-slate-800 transition-colors">Adicionar</button>
+                        </div>
+                        <div id="deliveryAreasList" class="divide-y border rounded-2xl overflow-hidden bg-slate-50">
+                            </div>
+                    </div>
+
+                    <button type="submit" id="btnSaveConfig" class="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-5 rounded-3xl shadow-xl uppercase tracking-widest transition-all">
+                        Guardar Todas as Alterações
+                    </button>
+            </form>       
+            </div>
+         </div>
+     
+     <div id="modalCustomDate" class="modal-overlay fixed inset-0 z-[200] flex items-center justify-center p-4 hidden">
+    <div class="bg-white rounded-[2rem] shadow-2xl w-full max-w-xs p-6 animate-fade-in">
+        <h4 class="text-sm font-black text-slate-800 uppercase mb-4 tracking-widest">Filtrar Período</h4>
+        <div class="space-y-4">
+            <div>
+                <label class="text-[10px] font-bold text-slate-400 uppercase ml-1">Data Inicial</label>
+                <input type="date" id="customDateStart" class="w-full border border-slate-200 rounded-xl p-3 outline-none focus:ring-2 focus:ring-primary-500 bg-slate-50/50">
+            </div>
+            <div>
+                <label class="text-[10px] font-bold text-slate-400 uppercase ml-1">Data Final</label>
+                <input type="date" id="customDateEnd" class="w-full border border-slate-200 rounded-xl p-3 outline-none focus:ring-2 focus:ring-primary-500 bg-slate-50/50">
+            </div>
+            <div class="flex gap-2 pt-2">
+                <button onclick="document.getElementById('modalCustomDate').classList.add('hidden')" class="flex-1 py-3 text-slate-400 text-[10px] font-black uppercase">Fechar</button>
+                <button onclick="applyCustomDate()" class="flex-1 bg-slate-900 text-white py-3 rounded-xl text-[10px] font-black uppercase shadow-lg">Filtrar</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<section id="view-metas" class="hidden animate-fade-in p-4 lg:p-10 bg-[#F8FAFC]">
+    <div class="max-w-7xl mx-auto space-y-10">
+        
+        <div class="flex justify-between items-center px-2">
+            <div>
+                <h2 class="text-4xl font-black text-slate-900 tracking-tighter">Performance</h2>
+                <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">Sincronizado em tempo real</p>
+            </div>
+            <button onclick="window.openEditGoalsModal()" class="flex items-center gap-3 px-6 py-4 bg-white border border-slate-200 text-slate-700 rounded-[2rem] font-black text-[11px] uppercase tracking-widest hover:text-primary-600 shadow-sm transition-all">
+                <i data-lucide="settings-2" class="w-5 h-5"></i> Planejamento
+            </button>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+    
+    <div class="bg-white p-6 rounded-[3rem] border border-slate-50 shadow-sm">
+        <div class="flex justify-between items-start mb-6">
+            <div class="p-3 bg-indigo-50 text-indigo-600 rounded-2xl"><i data-lucide="zap" class="w-6 h-6"></i></div>
+            <span id="pct-daily" class="text-xl font-black text-indigo-600 italic">0%</span>
+        </div>
+        <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">
+            Vendas Hoje 
+            <span class="goal-type-label text-[8px] opacity-40 lowercase block italic leading-none mt-1"></span>
+        </p>
+        <h4 id="val-daily" class="text-2xl font-black text-slate-900 tracking-tighter mb-2">R$ 0,00</h4>
+        <p class="text-[9px] font-bold text-slate-400 mb-4">Meta: <span id="target-daily" class="text-slate-600">R$ 0,00</span></p>
+        <div class="h-3 bg-slate-50 rounded-full overflow-hidden p-0.5 border border-slate-100">
+            <div id="bar-daily" class="h-full bg-indigo-500 rounded-full transition-all duration-1000" style="width: 0%"></div>
+        </div>
+    </div>
+
+    <div class="bg-white p-6 rounded-[3rem] border border-slate-50 shadow-sm">
+        <div class="flex justify-between items-start mb-6">
+            <div class="p-3 bg-amber-50 text-amber-600 rounded-2xl"><i data-lucide="trending-up" class="w-6 h-6"></i></div>
+            <span id="pct-weekly" class="text-xl font-black text-amber-600 italic">0%</span>
+        </div>
+        <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">
+            Total Semana
+            <span class="goal-type-label text-[8px] opacity-40 lowercase block italic leading-none mt-1"></span>
+        </p>
+        <h4 id="val-weekly" class="text-2xl font-black text-slate-900 tracking-tighter mb-2">R$ 0,00</h4>
+        <p class="text-[9px] font-bold text-slate-400 mb-4">Meta: <span id="target-weekly" class="text-slate-600">R$ 0,00</span></p>
+        <div class="h-3 bg-slate-50 rounded-full overflow-hidden p-0.5 border border-slate-100">
+            <div id="bar-weekly" class="h-full bg-amber-500 rounded-full transition-all duration-1000" style="width: 0%"></div>
+        </div>
+    </div>
+
+    <div class="bg-white p-6 rounded-[3rem] border border-slate-50 shadow-sm">
+        <div class="flex justify-between items-start mb-6">
+            <div class="p-3 bg-emerald-50 text-emerald-600 rounded-2xl"><i data-lucide="package" class="w-6 h-6"></i></div>
+            <span id="pct-orders" class="text-xl font-black text-emerald-600 italic">0%</span>
+        </div>
+        <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Pedidos (Mês)</p>
+        <h4 id="val-orders" class="text-2xl font-black text-slate-900 tracking-tighter mb-2">0 Pedidos</h4>
+        <p class="text-[9px] font-bold text-slate-400 mb-4">Meta: <span id="target-orders" class="text-slate-600">0</span></p>
+        <div class="h-3 bg-slate-50 rounded-full overflow-hidden p-0.5 border border-slate-100">
+            <div id="bar-orders" class="h-full bg-emerald-500 rounded-full transition-all duration-1000" style="width: 0%"></div>
+        </div>
+    </div>
+
+    <div class="bg-slate-900 p-6 rounded-[3rem] shadow-xl relative overflow-hidden">
+        <div class="relative z-10 text-white">
+            <div class="flex justify-between items-start mb-6">
+                <div class="p-3 bg-white/10 rounded-2xl backdrop-blur-md"><i data-lucide="trophy" class="w-6 h-6 text-primary-500"></i></div>
+                <span id="pct-monthly" class="text-xl font-black text-primary-400 italic">0%</span>
+            </div>
+            <p class="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1">
+                Objetivo Mensal
+                <span class="goal-type-label text-[8px] opacity-50 lowercase block italic leading-none mt-1"></span>
+            </p>
+            <h4 id="val-monthly" class="text-2xl font-black text-white tracking-tighter mb-2">R$ 0,00</h4>
+            <p class="text-[9px] font-bold text-slate-500 mb-4">Meta: <span id="target-monthly" class="text-primary-400">R$ 0,00</span></p>
+            <div class="h-3 bg-white/10 rounded-full overflow-hidden p-0.5 border border-white/10">
+                <div id="bar-monthly" class="h-full bg-primary-500 rounded-full transition-all duration-1000" style="width: 0%"></div>
+            </div>
+        </div>
+    </div>
+</div>
+<div class="bg-white p-8 rounded-[3rem] border border-slate-50 shadow-sm">
+    <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
+        <div>
+            <h5 class="text-xl font-black text-slate-900 tracking-tighter italic uppercase">Consistência Semanal</h5>
+            <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1 label-tipo-meta">Faturamento Bruto</p>
+        </div>
+        <div class="flex items-center gap-4 bg-slate-50 px-4 py-2 rounded-2xl border border-slate-100">
+            <div class="flex items-center gap-2">
+                <span class="w-3 h-3 bg-emerald-500 rounded-full shadow-[0_0_8px_rgba(16,185,129,0.4)]"></span>
+                <span class="text-[9px] font-black text-slate-500 uppercase">Meta Batida</span>
+            </div>
+            <div class="flex items-center gap-2">
+                <span class="w-3 h-3 bg-slate-200 rounded-full"></span>
+                <span class="text-[9px] font-black text-slate-500 uppercase">Abaixo da Meta</span>
+            </div>
+        </div>
+    </div>
+
+    <div id="weekly-heatmap" class="grid grid-cols-7 gap-3 md:gap-4">
+        </div>
+</div>
+</section>
+      
+    <!-- MODAL RECORTE -->
+    <div id="cropModal" class="modal-overlay fixed inset-0 z-[200] flex items-center justify-center p-4 hidden">
+        <div class="bg-white rounded-[2.5rem] shadow-2xl w-full max-w-xl overflow-hidden animate-fade-in">
+            <div class="bg-slate-900 p-6 flex items-center justify-between">
+                <div class="flex items-center gap-3"><div class="bg-primary-500/20 p-2 rounded-xl"><i data-lucide="crop" class="w-6 h-6 text-primary-400"></i></div><h3 class="text-xl font-bold text-white">Ajustar Imagem</h3></div>
+                <button onclick="closeCropModal()" class="p-2 text-slate-400 hover:text-white transition-colors"><i data-lucide="x" class="w-6 h-6"></i></button>
+            </div>
+            <div class="p-6 space-y-6">
+                <div class="crop-container"><img id="imageToCrop" class="max-w-full"></div>
+                <div class="flex gap-4">
+                    <button onclick="closeCropModal()" class="flex-1 py-4 text-slate-400 font-bold hover:text-slate-600 text-sm uppercase">Cancelar</button>
+                    <button onclick="confirmCrop()" class="flex-[2] bg-primary-600 text-white py-4 rounded-2xl font-bold shadow-xl hover:bg-primary-700 uppercase tracking-widest text-xs transition-all">Confirmar Recorte</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    </main>
+
+
+
+        <div id="bannerModal" class="modal-overlay fixed inset-0 z-[150] flex items-center justify-center p-4 hidden">
+        <div class="bg-white rounded-[2.5rem] shadow-2xl w-full max-w-xl auth-card-container p-8">
+            <div class="auth-card-content">
+                <h3 class="text-2xl font-bold mb-6 text-slate-800 tracking-tight">Design de Banner Premium</h3>
+                <form id="bannerForm" onsubmit="handleBannerSubmit(event)" class="space-y-6">
+                    <input type="hidden" id="bannerId">
+                    
+                    <div id="bannerPreview" class="h-52 rounded-[2.5rem] flex items-center justify-between p-8 text-white shadow-2xl relative overflow-hidden transition-all duration-500">
+                        <div class="relative z-10 w-1/2 space-y-3">
+                            <span id="prevTag" class="inline-block px-3 py-1 rounded-full bg-black/20 backdrop-blur-md border border-white/10 text-[9px] font-black uppercase tracking-[0.2em]">Tag</span>
+                            <h3 id="prevTitle" class="font-display font-bold text-3xl leading-none uppercase tracking-tighter">Título</h3>
+                            <p id="prevSubtitle" class="text-[10px] opacity-70 leading-tight font-medium uppercase tracking-wide">Subtítulo</p>
+                            <div id="prevBtn" class="inline-block mt-2 px-5 py-2 border border-white/30 rounded-full text-[9px] font-black uppercase tracking-widest backdrop-blur-sm shadow-lg">Botão</div>
+                        </div>
+                        <div id="bannerPreviewImgContainer" class="w-36 h-36 rounded-[2rem] bg-white/10 overflow-hidden border border-white/20 shadow-2xl hidden rotate-3">
+                            <img id="prevImg" src="" class="w-full h-full object-cover">
+                        </div>
+                        <div class="absolute -top-10 -left-10 w-40 h-40 bg-white/10 rounded-full blur-[80px]"></div>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div class="space-y-3">
+                            <input type="text" id="bannerTag" placeholder="Tag (Ex: Oferta)" oninput="updateBannerPreview()" class="input-pro">
+                            <input type="text" id="bannerTitle" placeholder="Título Principal" oninput="updateBannerPreview()" required class="input-pro">
+                            <input type="text" id="bannerSubtitle" placeholder="Subtítulo (Chamada)" oninput="updateBannerPreview()" class="input-pro">
+                            <input type="text" id="bannerBtnText" placeholder="Texto do Botão" oninput="updateBannerPreview()" class="input-pro">
+                        </div>
+                        <div class="space-y-3">
+                            <div class="bg-slate-50 p-4 rounded-2xl border border-slate-200">
+                                <input type="file" id="bannerImageInput" accept="image/*" class="hidden" onchange="handleBannerImageSelect(this.files)">
+                                <button type="button" onclick="document.getElementById('bannerImageInput').click()" class="w-full bg-white border-2 border-dashed border-slate-200 py-3 rounded-xl text-xs font-bold text-slate-500 hover:border-primary-500 transition-all flex items-center justify-center gap-2">
+                                    <i data-lucide="image" class="w-4 h-4"></i> Carregar Foto
+                                </button>
+                                <button type="button" id="btnRemoveBannerImg" onclick="removeBannerImage()" class="hidden w-full mt-2 text-red-500 text-[10px] font-bold uppercase">Remover Foto</button>
+                            </div>
+                            <div class="grid grid-cols-2 gap-3">
+                                <input type="color" id="bannerColor1" oninput="updateBannerPreview()" value="#8b5cf6" class="w-full h-12 rounded-xl cursor-pointer">
+                                <input type="color" id="bannerColor2" oninput="updateBannerPreview()" value="#6d28d9" class="w-full h-12 rounded-xl cursor-pointer">
+                            </div>
+                            <div class="space-y-1">
+                                <label class="text-[10px] font-bold text-slate-500 uppercase ml-1">Destino do Banner</label>
+                                <select id="bannerTarget" class="input-pro bg-white relative z-10"></select>
+                            </div>
+                        </div>
+                    </div> <div class="flex justify-end gap-4 pt-4">
+                        <button type="button" onclick="document.getElementById('bannerModal').classList.add('hidden')" class="px-6 py-3 text-slate-400 font-bold uppercase text-[10px]">Cancelar</button>
+                        <button type="submit" id="btnSaveBanner" class="bg-slate-900 text-white px-10 py-4 rounded-2xl font-bold uppercase text-[10px] tracking-widest shadow-xl">Publicar</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+        </div>
+
+    <!-- MODAL PRODUTO -->
+    
+                  <div id="productModal" class="modal-overlay fixed inset-0 z-[150] flex items-center justify-center p-4 hidden">
+    <div class="bg-white rounded-[2.5rem] shadow-2xl w-full max-w-4xl auth-card-container overflow-hidden border border-slate-100 relative">
+        
+        <div id="imageLoading" class="absolute inset-0 bg-white/95 flex items-center justify-center hidden z-[200] backdrop-blur-sm">
+            <div class="text-center">
+                <div class="relative mb-4 flex justify-center">
+                    <div class="absolute inset-0 bg-primary-500/20 rounded-full blur-xl animate-pulse"></div>
+                    <div class="relative bg-white p-4 rounded-3xl shadow-lg border border-primary-100 animate-bounce">
+                        <i data-lucide="upload-cloud" class="w-10 h-10 text-primary-600"></i>
+                    </div>
+                </div>
+                <h4 id="loadingText" class="text-sm font-black text-slate-800 uppercase tracking-widest">Processando...</h4>
+                <p id="loadingSubText" class="text-[10px] text-slate-400 font-bold mt-1 uppercase tracking-tighter">Sua vitrine está sendo atualizada</p>
+            </div>
+        </div>
+
+        <div class="bg-slate-900 p-6 flex items-center justify-between relative overflow-hidden">
+            <div class="relative z-10 flex items-center gap-4">
+                <div class="bg-primary-500/20 p-3 rounded-2xl backdrop-blur-md border border-white/10">
+                    <i data-lucide="package" class="w-6 h-6 text-primary-400"></i>
+                </div>
+                <div>
+                    <h3 class="text-xl font-black text-white tracking-tighter" id="prodModalTitle">Novo Produto</h3>
+                    <p class="text-[10px] text-slate-400 font-bold uppercase tracking-widest opacity-70">Gestão de Inventário</p>
+                </div>
+            </div>
+            <button onclick="document.getElementById('productModal').classList.add('hidden')" class="relative z-10 p-2 text-slate-400 hover:text-white transition-colors bg-white/5 rounded-xl">
+                <i data-lucide="x" class="w-6 h-6"></i>
+            </button>
+            <div class="absolute top-0 right-0 w-32 h-32 bg-primary-500/10 blur-[50px] rounded-full"></div>
+        </div>
+
+        <div class="auth-card-content p-6 md:p-8 space-y-8">
+            <form id="productForm" onsubmit="handleProductSubmit(event)" class="space-y-8">
+                <input type="hidden" id="prodId">
+
+                <div class="bg-slate-50 rounded-[2rem] p-6 border border-slate-100">
+                    <div class="flex justify-between items-center mb-4">
+                        <div class="flex items-center gap-2">
+                            <i data-lucide="image" class="w-4 h-4 text-slate-400"></i>
+                            <h4 class="text-[11px] font-black uppercase text-slate-500 tracking-widest">Galeria do Produto</h4>
+                        </div>
+                        <span id="photoCount" class="text-[9px] font-black text-primary-600 bg-primary-50 px-3 py-1 rounded-full border border-primary-100">0/4 FOTOS</span>
+                    </div>
+                    
+                    <div class="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-5 gap-3">
+                        <div class="relative aspect-square rounded-2xl border-2 border-dashed border-slate-200 flex flex-col items-center justify-center cursor-pointer hover:border-primary-400 hover:bg-white transition-all group overflow-hidden bg-white/50">
+                            <input type="file" id="prodImageInput" accept="image/*" multiple class="absolute inset-0 opacity-0 cursor-pointer z-10" onchange="processImages(this.files)">
+                            <i data-lucide="plus" class="w-6 h-6 text-slate-300 group-hover:text-primary-500 mb-1"></i>
+                            <span class="text-[8px] text-slate-400 font-black uppercase">Galeria</span>
+                        </div>
+                        <div class="relative aspect-square rounded-2xl border-2 border-slate-200 flex flex-col items-center justify-center cursor-pointer hover:bg-white transition-all group overflow-hidden bg-white/50" onclick="document.getElementById('cameraCaptureInput').click()">
+                            <input type="file" id="cameraCaptureInput" accept="image/*" capture="environment" class="hidden" onchange="processImages(this.files)">
+                            <i data-lucide="camera" class="w-6 h-6 text-slate-400 group-hover:text-primary-600 mb-1"></i>
+                            <span class="text-[8px] text-slate-400 font-black uppercase">Câmera</span>
+                        </div>
+                        <div id="imageGallery" class="col-span-2 md:col-span-3 grid grid-cols-2 md:grid-cols-3 gap-3"></div>
+                    </div>
+                    <p id="photoLimitNotice" class="text-[9px] text-slate-400 font-bold mt-4 uppercase italic tracking-tighter">Selecione imagens nítidas para sua vitrine.</p>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div class="space-y-4">
+                        <div class="bg-white p-5 rounded-3xl border border-slate-100 shadow-sm space-y-4">
+                            <div>
+                                <label class="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Título da Oferta</label>
+                                <input type="text" id="prodName" required placeholder="Ex: iPhone 15 Pro Max" class="w-full mt-2 p-4 bg-slate-50 border-none rounded-2xl text-sm font-bold focus:ring-2 focus:ring-primary-500 outline-none transition-all">
+                            </div>
+                            <div class="grid grid-cols-2 gap-3">
+                                <div>
+                                    <label class="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Referência (SKU)</label>
+                                    <input type="text" id="prodSku" class="w-full mt-2 p-4 bg-slate-50 border-none rounded-2xl text-xs font-mono focus:ring-2 focus:ring-blue-500 outline-none transition-all uppercase">
+                                </div>
+                                <div>
+                                    <label class="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Categoria</label>
+                                    <select id="prodCategory" class="w-full mt-2 p-4 bg-slate-50 border-none rounded-2xl text-xs font-bold focus:ring-2 focus:ring-primary-500 outline-none transition-all"></select>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="flex items-center justify-between p-5 bg-indigo-50/50 rounded-3xl border border-indigo-100">
+                            <div class="flex items-center gap-3">
+                                <div class="w-10 h-10 bg-indigo-100 text-indigo-600 rounded-xl flex items-center justify-center">
+                                    <i data-lucide="star" class="w-5 h-5"></i>
+                                </div>
+                                <div>
+                                    <p class="text-xs font-black text-indigo-900 uppercase leading-none">Destaque VIP</p>
+                                    <p class="text-[9px] text-indigo-500 font-bold uppercase mt-1">Topo da Vitrine</p>
+                                </div>
+                            </div>
+                            <label class="toggle-switch scale-90"><input type="checkbox" id="prodFeatured"><span class="slider"></span></label>
+                        </div>
+                    </div>
+
+                    <div class="bg-slate-900 rounded-[2.5rem] p-6 shadow-xl space-y-5">
+                        <div class="flex items-center gap-2 mb-2">
+                            <i data-lucide="dollar-sign" class="w-4 h-4 text-emerald-400"></i>
+                            <h4 class="text-[10px] font-black uppercase text-slate-400 tracking-widest">Valores de Venda</h4>
+                        </div>
+                        
+          <div class="space-y-4">
+    <div class="flex items-center gap-2 mb-2">
+        <i data-lucide="dollar-sign" class="w-4 h-4 text-primary-500"></i>
+        <h4 class="text-[10px] font-black uppercase text-slate-400 tracking-widest">Valores de Venda</h4>
+    </div>
+    
+    <div class="bg-white/5 p-4 rounded-2xl border border-white/10">
+        <label class="text-[9px] font-black text-slate-400 uppercase">PIX / Dinheiro (Preço Base)</label>
+        <input type="number" step="0.01" id="prodValue" required oninput="calculateInstallmentValue()" class="w-full bg-transparent border-none p-0 text-xl font-black text-white outline-none focus:ring-0" placeholder="0,00">
+    </div>
+
+    <div class="grid grid-cols-2 gap-3">
+        <div class="bg-white/5 p-4 rounded-2xl border border-white/10">
+            <label class="text-[9px] font-black text-slate-400 uppercase">Cartão (Total)</label>
+            <input type="number" step="0.01" id="prodCard" oninput="calculateInstallmentValue()" class="w-full bg-transparent border-none p-0 text-xl font-black text-white outline-none focus:ring-0" placeholder="0,00">
+        </div>
+        <div class="bg-white/5 p-4 rounded-2xl border border-white/10">
+            <label class="text-[9px] font-black text-slate-400 uppercase">Parcelas Máx.</label>
+            <select id="prodMaxInstallments" onchange="calculateInstallmentValue()" class="w-full bg-transparent border-none p-0 text-lg font-black text-white outline-none focus:ring-0 appearance-none cursor-pointer">
+                <option value="1" class="text-slate-900">1x</option>
+                <option value="2" class="text-slate-900">2x</option>
+                <option value="3" class="text-slate-900">3x</option>
+                <option value="4" class="text-slate-900">4x</option>
+                <option value="5" class="text-slate-900">5x</option>
+                <option value="6" class="text-slate-900">6x</option>
+            </select>
+        </div>
+    </div>
+
+    <div id="installmentInfo" class="mt-2 px-4 py-3 bg-primary-500/20 rounded-2xl border border-primary-500/30 hidden">
+        <p class="text-[9px] font-black text-emerald-400 uppercase tracking-widest">Resumo do Cartão</p>
+        <p id="installmentValueLabel" class="text-sm font-black text-white mt-1">R$ 0,00</p>
+    </div>
+</div>
+                        <div class="bg-emerald-500/10 p-4 rounded-3xl border border-emerald-500/20">
+                            <div class="flex justify-between items-center mb-2">
+                                <label class="text-[9px] font-black text-emerald-400 uppercase">Oferta Relâmpago</label>
+                                <div class="flex items-center gap-1">
+                                    <input type="number" id="prodPromoDays" placeholder="7" class="w-8 bg-transparent text-center text-[10px] font-black text-emerald-400 border-none p-0 focus:ring-0">
+                                    <span class="text-[8px] font-black text-emerald-600 uppercase">Dias</span>
+                                </div>
+                            </div>
+                            <input type="number" step="0.01" id="prodPromo" oninput="calculateProfit()" class="w-full bg-transparent border-none p-0 text-2xl font-black text-emerald-400 outline-none focus:ring-0" placeholder="R$ 0,00">
+                        </div>
+
+                        <div class="flex items-center justify-between bg-white/5 px-4 py-3 rounded-2xl border border-white/5">
+                            <span class="text-[9px] font-black text-slate-500 uppercase">Rentabilidade</span>
+                            <input type="text" id="prodProfit" class="bg-transparent border-none text-right text-[10px] font-black uppercase tracking-widest text-emerald-400 outline-none" value="CALCULANDO..." disabled>
+                        </div>
+                    </div>
+                </div>
+
+               <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+    
+    <div id="colunaEstoque" class="md:col-span-1 bg-white p-6 rounded-[2rem] border border-slate-100 shadow-sm space-y-4">
+        <div class="flex items-center gap-2">
+            <i data-lucide="box" class="w-4 h-4 text-slate-400"></i>
+            <h4 class="text-[10px] font-black text-slate-500 uppercase tracking-widest">Estoque Central</h4>
+        </div>
+        <div>
+            <label class="text-[9px] font-black text-slate-400 uppercase ml-1">Custo Unid.</label>
+            <input type="number" step="0.01" id="prodCost" oninput="calculateProfit()" class="w-full mt-1 p-4 bg-slate-50 border-none rounded-2xl text-sm font-bold focus:ring-2 focus:ring-slate-200 outline-none transition-all">
+        </div>
+        <div>
+            <label class="text-[9px] font-black text-slate-400 uppercase ml-1">Qtd Geral</label>
+            <input type="number" id="prodStock" min="0" class="w-full mt-1 p-4 bg-slate-50 border-none rounded-2xl text-sm font-bold focus:ring-2 focus:ring-slate-200 outline-none transition-all">
+        </div>
+        <div class="flex items-center justify-between bg-white/5 px-4 py-3 rounded-2xl border border-white/5">
+            <span class="text-[9px] font-black text-slate-500 uppercase">Rentabilidade</span>
+            <input type="text" id="prodProfit" class="bg-transparent border-none text-right text-[10px] font-black uppercase tracking-widest text-emerald-400 outline-none" value="CALCULANDO..." disabled>
+        </div>
+    </div>
+
+    <div id="containerComplementos" class="hidden md:col-span-3 bg-white p-6 rounded-[2rem] border border-slate-100 shadow-sm space-y-4">
+        <div class="flex items-center justify-between">
+            <div class="flex items-center gap-2">
+                <i data-lucide="list-plus" class="w-4 h-4 text-slate-400"></i>
+                <h4 class="text-[10px] font-black text-slate-500 uppercase tracking-widest">Subcategorias e Adicionais</h4>
+            </div>
+            <button type="button" onclick="addNewComplementGroup()" class="text-[9px] font-black uppercase bg-slate-900 text-white px-4 py-2 rounded-xl hover:bg-slate-800 transition-all">
+    + Novo Grupo
+</button>
+        </div>
+        <div id="complementGroupsArea" class="space-y-4">
+            <p class="text-[10px] text-slate-400 text-center py-4 italic">Nenhum adicional configurado para este produto.</p>
+        </div>
+    </div>
+
+    <div id="colunaGrades" class="md:col-span-2 bg-white p-6 rounded-[2rem] border border-slate-100 shadow-sm space-y-4">
+        <div class="flex items-center gap-2">
+            <i data-lucide="layers" class="w-4 h-4 text-primary-500"></i>
+            <h4 class="text-[10px] font-black text-slate-500 uppercase tracking-widest">Configuração de Grades</h4>
+        </div>
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+                <label class="text-[9px] font-black text-slate-400 uppercase ml-1">Tamanhos (P, M, G...)</label>
+                <input type="text" id="prodSizesInput" oninput="generateVariationMatrix()" class="w-full mt-1 p-4 bg-slate-50 border-none rounded-2xl text-xs font-bold focus:ring-2 focus:ring-primary-500 outline-none transition-all" placeholder="Separe por vírgula">
+            </div>
+            <div>
+                <label class="text-[9px] font-black text-slate-400 uppercase ml-1">Cores (Azul, Preto...)</label>
+                <input type="text" id="prodColorsInput" oninput="generateVariationMatrix()" class="w-full mt-1 p-4 bg-slate-50 border-none rounded-2xl text-xs font-bold focus:ring-2 focus:ring-primary-500 outline-none transition-all" placeholder="Separe por vírgula">
+            </div>
+        </div>
+    </div>
+</div>
+                <div id="variationMatrixContainer" class="hidden animate-fade-in bg-white rounded-[2.5rem] border border-slate-100 shadow-sm overflow-hidden">
+                    <div class="p-6 bg-slate-50/50 border-b border-slate-100">
+                        <h4 class="text-[10px] font-black text-slate-800 uppercase tracking-[0.2em]">Gerenciamento de Grade Individual</h4>
+                    </div>
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left">
+                            <thead class="bg-slate-50">
+                                <tr class="text-[9px] font-black text-slate-400 uppercase">
+                                    <th class="px-6 py-4">Ativo</th>
+                                    <th class="px-6 py-4">Foto</th>
+                                    <th class="px-6 py-4">Variação / SKU</th>
+                                    <th class="px-6 py-4 text-center">Estoque</th>
+                                    <th class="px-6 py-4 text-right">Preço</th>
+                                </tr>
+                            </thead>
+                            <tbody id="variationMatrixBody" class="divide-y divide-slate-50"></tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div class="bg-white p-6 rounded-[2rem] border border-slate-100 shadow-sm">
+                    <label class="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Descrição Detalhada</label>
+                    <textarea id="prodDesc" rows="4" class="w-full mt-3 p-4 bg-slate-50 border-none rounded-2xl text-sm outline-none focus:ring-2 focus:ring-primary-500 transition-all" placeholder="Fale sobre o material, dimensões, cuidados..."></textarea>
+                </div>
+
+                <div class="flex flex-col sm:flex-row items-center justify-between gap-4 pt-6 border-t border-slate-100">
+                    <button type="button" onclick="document.getElementById('productModal').classList.add('hidden')" class="w-full sm:w-auto px-10 py-4 text-slate-400 font-black uppercase text-[10px] tracking-widest hover:text-slate-600 transition-all">Cancelar</button>
+                    <button type="submit" id="btnSaveProd" class="w-full sm:w-auto bg-slate-900 text-white px-16 py-5 rounded-[2rem] font-black uppercase text-[11px] tracking-[0.2em] shadow-2xl hover:bg-black active:scale-95 transition-all flex items-center justify-center gap-3">
+                        <i data-lucide="upload-cloud" class="w-4 h-4"></i> Publicar na Vitrine
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+                  </div>      
+                        
+
+<audio id="notifSound" src="https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3" preload="auto" loop></audio>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged, updatePassword, setPersistence, browserLocalPersistence, browserSessionPersistence } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, doc, getDoc, setDoc, updateDoc, deleteDoc, onSnapshot, collection, addDoc, query, where, getDocs, orderBy, limit, Timestamp, increment, startAfter} from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        import { getStorage, ref, uploadString, getDownloadURL, deleteObject } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-storage.js";
+        // Procure onde começam os imports e adicione este:
+        import { getMessaging, getToken, onMessage } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-messaging.js";
+     
+        
+        const CONFIG = { 
+            apiKey: "AIzaSyAdwsGBTApwOwqr37qCv72gdPRbipsZG0Q", 
+            authDomain: "meuestoque-1badc.firebaseapp.com", 
+            projectId: "meuestoque-1badc", 
+            storageBucket: "meuestoque-1badc.firebasestorage.app", 
+            messagingSenderId: "730003067834", 
+            appId: "1:730003067834:web:b205f1ea59053345960383" 
+        };
+        const app = initializeApp(CONFIG);
+        const db = getFirestore(app);
+        const auth = getAuth(app);
+        const storage = getStorage(app);
+        const messaging = getMessaging(app);
+
+        
+        let allProducts = [], allCategories = [], allBanners = [], deliveryAreas = [];
+        let currentProductImages = []; 
+        let imageQueue = [];
+        let storeConfig = {};      // 🔹 vem do Firestore
+let currentPlan = null;   // 🔹 vem da collection plans
+        let expandedCategories = new Set();
+        let analyticsChartInstance = null; 
+        let analyticsUnsubscribe = null; // Variável para desligar a escuta anterior
+        let cropper = null;
+        let growthChartInstance = null;
+        let currentVariationCropIndex = null;
+        let manualOrder = [];
+       let variationsHistoryCache = new Map();
+        let html5QrCode = null;
+      let isDashboardLoaded = false;
+let isConfigLoaded = false;
+      let productsLoaded = false;
+let categoriesLoaded = false;
+let bannersLoaded = false;
+        let customStart = null;
+      let ordersLimit = 20; // Limite inicial
+let lastVisibleOrder = null; // Guarda o último pedido carregado para saber de onde continuar
+let isLoadingMore = false; // Evita cliques duplos
+let customEnd = null;
+        let lastOrderCount = 0; // Variável global para controle de som
+        let ordersCache = {}; // Guarda os pedidos para o modal de detalhes
+let isFirstLoad = true;
+let currentFinanceRange = 'today';
+     let currentOrderTab = 'pending_whatsapp'; // Aba inicial (Recebidos)
+let lojaEstaAberta = false;
+let carregouPrimeiraVez = false;
+let currentStoreId = null;  // Começa vazio, o login vai preencher
+        let variationsMatrix = [];
+      let needsPublish = false;
+let cachedPublicPlans = null; 
+const PLAN_DISPLAY_NAMES = {
+    'beta_tester': 'Parceiro Beta',
+    'founder': 'Plano Fundador',
+    'pro_mensal': 'Plano Pro',
+    'gold_mensal': 'Plano Gold'
+};
+
+
+
+// Função para ativar as notificações
+async function solicitarPermissaoNotificacao(storeId) {
+    try {
+        const permission = await Notification.requestPermission();
+        
+        if (permission === 'granted') {
+            console.log('Permissão concedida!');
+            
+            // Registra o token do lojista
+            const token = await getToken(messaging, { 
+                vapidKey: 'BKk5Dr9AJ8fY0QAelaAvSPK7D9csG5dwdW45VhG0C-oeipeKD2kErkExPHQRp0eAYhm797-k5lLn3OO7-TRfZVw' 
+            });
+
+            if (token) {
+                console.log("Token gerado:", token);
+                // SALVAR NO FIRESTORE
+                // Vamos salvar esse token no cadastro da loja para saber a quem notificar
+                const tokenRef = doc(db, "stores", storeId, "config", "notifications");
+                await setDoc(tokenRef, { 
+                    fcmToken: token,
+                    updatedAt: new Date() 
+                }, { merge: true });
+            }
+        } else {
+            console.log('Permissão negada para notificações.');
+        }
+    } catch (error) {
+        console.error('Erro ao configurar notificações:', error);
+    }
+}
+
+// 1. Função que controla o visual do Switch (Definir no topo do script)
+window.updateLojaVisual = (isOpen) => {
+    const btn = document.getElementById('btnToggleLoja');
+    const dot = document.getElementById('switchDot');
+    const text = document.getElementById('statusLojaText');
+    
+    if (!btn || !dot || !text) return;
+
+    if (isOpen) {
+        // Status Aberto
+        btn.style.backgroundColor = "#10b981"; // emerald-500
+        dot.style.transform = "translateX(24px)";
+        text.innerText = "Loja Aberta";
+        text.style.color = "#10b981";
+    } else {
+        // Status Pausado
+        btn.style.backgroundColor = "#e2e8f0"; // slate-200
+        dot.style.transform = "translateX(4px)";
+        text.innerText = "Loja Pausada";
+        text.style.color = "#ef4444"; // rose-500
+    }
+};
+
+
+    // Destrava o áudio no primeiro clique do lojista (necessário p/ navegadores)
+document.addEventListener('click', () => {
+    const audio = document.getElementById('notifSound');
+    if (audio) {
+        audio.play().then(() => { audio.pause(); audio.currentTime = 0; }).catch(() => {});
+    }
+}, { once: true });
+
+  
+// 1. Forçamos o login a ser LOCAL (não apaga quando fecha a aba)
+
+// 2. Escuta de mensagens (mantido igual)
+onMessage(messaging, (payload) => {
+    console.log('Mensagem recebida com app aberto:', payload);
+    const audio = document.getElementById('notifSound');
+    if(audio) audio.play().catch(e => console.log("Áudio bloqueado"));
+    if (typeof showToast === 'function') {
+        showToast(`🔔 ${payload.notification.title}: ${payload.notification.body}`);
+    }
 });
 
-const messaging = firebase.messaging();
+// 3. Função de carregar dados (mantida igual)
+async function CarregarDadosPainel() {
+    try {
+        // 1. A ÚNICA LEITURA OBRIGATÓRIA: Pega a configuração e o "Sinalizador de Mudança" (lastUpdate)
+        const configRef = doc(db, `stores/${currentStoreId}/config/store`);
+        const configSnap = await getDoc(configRef); // getDoc puro = 1 leitura única
+        
+        if (!configSnap.exists()) return;
+        storeConfig = configSnap.data();
+        window.updateLojaVisual(storeConfig.isOpen);
+        const serverLastUpdate = storeConfig.lastUpdate?.toString() || "0";
 
-messaging.onBackgroundMessage((payload) => {
-    console.log('[sw.js] Pedido recebido em background:', payload);
+        // 2. CARREGAMENTO INTELIGENTE (Custo zero se nada mudou no banco)
+        // Só baixa do Firebase se o lastUpdate do servidor for diferente do que temos no navegador
+        allProducts = await loadCollectionSmart('products', `prods_${currentStoreId}`, serverLastUpdate);
+        allCategories = await loadCollectionSmart('categories', `cats_${currentStoreId}`, serverLastUpdate);
+        allBanners = await loadCollectionSmart('hero_cards', `banners_${currentStoreId}`, serverLastUpdate);
 
-    const notificationTitle = payload.notification.title || "Novo Pedido!";
-    const notificationOptions = {
-        body: payload.notification.body || "Você tem uma nova venda na sua Vitrine.",
-        icon: '/favicon.png', // Verifique o nome do seu arquivo de ícone
-        badge: '/favicon.png',
-        tag: 'novo-pedido',
-        renotify: true,
-        data: {
-            url: '/painel' // URL para abrir ao clicar
+        // 3. ATUALIZA A INTERFACE (Sem precisar baixar nada novo)
+        renderProductList();
+        renderCategoryList();
+        renderBannerList();
+        updateQuotas();
+        updatePremiumUI();
+
+        // 4. MANTÉM O QUE VOCÊ JÁ TINHA (Sua regra de Categorias Mágicas)
+        await loadMagicCategoriesFeedback(storeConfig);
+
+        console.log("🚀 Painel sincronizado com economia de dados!");
+
+    } catch (error) {
+        console.error("Erro crítico no carregamento:", error);
+        if (typeof showToast === 'function') showToast("Erro ao sincronizar dados", "error");
+    }
+}
+
+// --- FUNÇÃO AUXILIAR PARA ECONOMIA (Blaze Optimization) ---
+async function loadCollectionSmart(collectionName, cacheKey, serverTime) {
+    const localTime = localStorage.getItem(`${cacheKey}_time`);
+    const cachedData = localStorage.getItem(cacheKey);
+
+    // Se o tempo no servidor é o mesmo que temos gravado, usamos o cache (CUSTO ZERO)
+    if (cachedData && localTime === serverTime) {
+        return JSON.parse(cachedData);
+    }
+
+    // Se mudou ou não temos nada, aí sim fazemos a leitura (CUSTO: N Leituras)
+    const snap = await getDocs(collection(db, `stores/${currentStoreId}/${collectionName}`));
+    const data = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+
+    // Grava no cache para a próxima vez
+    localStorage.setItem(cacheKey, JSON.stringify(data));
+    localStorage.setItem(`${cacheKey}_time`, serverTime);
+
+    return data;
+}
+
+
+        // Função para aplicar máscara nos campos de WhatsApp
+function applyPhoneMask(elementId) {
+    const element = document.getElementById(elementId);
+    if (!element) return;
+    
+    IMask(element, {
+        mask: '+{55} (00) 00000-0000'
+    });
+}
+        
+        function getFriendlyPlanName(planId) {
+            if (!planId) return "Sem Plano";
+            if (PLAN_DISPLAY_NAMES[planId]) return PLAN_DISPLAY_NAMES[planId];
+            if (planId.includes('plan_')) return "Plano Premium"; 
+            return planId; 
         }
+
+        // --- SISTEMA DE MATRIZ DE VARIAÇÕES (FIXED: CIRÚRGICO) ---
+        // --- GERAÇÃO AUTOMÁTICA DE MATRIZ COM SKU INTELIGENTE ---
+      window.generateVariationMatrix = () => {
+    const skuPrincipal = (document.getElementById('prodSku').value || 'PROD').toUpperCase();
+    const sizesInput = document.getElementById('prodSizesInput').value;
+    const colorsInput = document.getElementById('prodColorsInput').value;
+    const basePrice = parseFloat(document.getElementById('prodValue').value) || 0;
+    
+    const sizes = sizesInput.split(',').map(s => s.trim().toUpperCase()).filter(s => s !== '');
+    const colors = colorsInput.split(',').map(c => c.trim()).filter(c => c !== '');
+    
+    const container = document.getElementById('variationMatrixContainer');
+    if (sizes.length === 0 && colors.length === 0) {
+        container.classList.add('hidden');
+        return;
+    }
+    
+    container.classList.remove('hidden');
+
+    // --- LÓGICA DE PRESERVAÇÃO COM CACHE HISTÓRICO ---
+    
+    // Alimenta o cache com o que está atualmente na matriz (antes de gerar a nova)
+    variationsMatrix.forEach(v => {
+        const key = `${v.color.trim().toUpperCase()}|${v.size.trim().toUpperCase()}`;
+        variationsHistoryCache.set(key, v);
+    });
+    
+    const newMatrix = [];
+    const loopColors = colors.length > 0 ? colors : ['PADRAO'];
+    const loopSizes = sizes.length > 0 ? sizes : ['UNICO'];
+    
+    loopColors.forEach(color => {
+        loopSizes.forEach(size => {
+            const key = `${color.trim().toUpperCase()}|${size.trim().toUpperCase()}`;
+            
+            // BUSCA: Primeiro no cache histórico (que guarda tudo o que já passou por aqui)
+            if (variationsHistoryCache.has(key)) {
+                newMatrix.push(variationsHistoryCache.get(key));
+            } else {
+                // Se for realmente novo, gera o padrão
+                const cleanColor = color.substring(0, 3).toUpperCase().replace(/[^A-Z0-9]/g, '');
+                const cleanSize = size.replace(/[^A-Z0-9]/g, '');
+                const autoSku = `${skuPrincipal}-${cleanColor}-${cleanSize}`;
+                
+                newMatrix.push({
+                    active: true,
+                    color: color,
+                    size: size,
+                    sku: autoSku,
+                    price: basePrice,
+                    image: null 
+                });
+            }
+        });
+    });
+
+    variationsMatrix = newMatrix;
+    renderMatrixUI();
+};
+
+
+// --- RENDERIZAÇÃO DA TABELA COM COLUNA DE SKU EDITÁVEL ---
+function renderMatrixUI() {
+    const container = document.getElementById('variationMatrixContainer');
+    // Adicionamos uma estrutura de tabela com cabeçalho para os títulos
+    container.innerHTML = `
+        <div class="overflow-x-auto">
+            <table class="w-full text-left border-collapse">
+                <thead>
+                    <tr class="text-[10px] uppercase text-slate-400 border-b border-slate-100">
+                        <th class="p-2 font-bold">Ativo</th>
+                        <th class="p-2 font-bold">Foto</th>
+                        <th class="p-2 font-bold">Ref / SKU</th>
+                        <th class="p-2 font-bold text-center">Qtd Estoque</th>
+                        <th class="p-2 font-bold">Preço de Venda</th>
+                    </tr>
+                </thead>
+                <tbody id="variationMatrixBody"></tbody>
+            </table>
+        </div>
+    `;
+
+    const tbody = document.getElementById('variationMatrixBody');
+    
+    variationsMatrix.forEach((v, idx) => {
+        const tr = document.createElement('tr');
+        tr.className = v.active ? 'border-b border-slate-50' : 'opacity-40 bg-slate-50 border-b border-slate-50';
+        tr.innerHTML = `
+            <td class="p-2">
+                <label class="toggle-switch">
+                    <input type="checkbox" ${v.active ? 'checked' : ''} onchange="updateVariationStatus(${idx}, this.checked)">
+                    <span class="slider"></span>
+                </label>
+            </td>
+            <td class="p-2">
+                <div onclick="document.getElementById('fileVar-${idx}').click()" 
+                     class="w-10 h-10 rounded-lg border-2 border-dashed border-slate-200 flex items-center justify-center cursor-pointer overflow-hidden bg-white hover:border-primary-400 transition-all">
+                    ${v.image 
+                        ? `<img src="${v.image}" class="w-full h-full object-cover">` 
+                        : `<i data-lucide="camera" class="w-4 h-4 text-slate-300"></i>`}
+                    <input type="file" id="fileVar-${idx}" class="hidden" accept="image/*" onchange="uploadVariationImage(${idx}, this.files)">
+                </div>
+            </td>
+            <td class="p-2">
+                <div class="flex flex-col min-w-[100px]">
+                    <span class="font-bold text-slate-800 text-[10px] uppercase">${v.color} / ${v.size}</span>
+                    <input type="text" value="${v.sku || ''}" placeholder="SKU" 
+                           oninput="updateVariationSku(${idx}, this.value)"
+                           class="mt-1 text-[9px] font-mono border-none p-0 focus:ring-0 bg-transparent text-slate-400 uppercase">
+                </div>
+            </td>
+            <td class="p-2">
+                <input type="number" value="${v.stock || 0}" oninput="updateVariationStock(${idx}, this.value)" 
+                       placeholder="0"
+                       class="w-20 mx-auto border border-slate-200 rounded-lg p-2 outline-none focus:ring-1 focus:ring-primary-500 bg-white text-xs font-bold text-center">
+            </td>
+            <td class="p-2">
+                <div class="relative min-w-[110px]">
+                    <span class="absolute left-2 top-2.5 text-[10px] text-slate-400 font-bold">R$</span>
+                    <input type="number" step="0.01" value="${v.price}" oninput="updateVariationPrice(${idx}, this.value)" 
+                           class="w-full border border-slate-200 rounded-lg p-2 pl-7 outline-none focus:ring-1 focus:ring-primary-500 bg-white text-xs font-bold">
+                </div>
+            </td>
+        `;
+        tbody.appendChild(tr);
+    });
+    if (typeof lucide !== 'undefined') lucide.createIcons();
+}
+
+
+// Função auxiliar para salvar o estoque na matriz
+window.updateVariationStock = (idx, value) => {
+    variationsMatrix[idx].stock = parseInt(value) || 0;
+};
+
+
+// --- FUNÇÃO AUXILIAR PARA ATUALIZAR O SKU INDIVIDUAL ---
+window.updateVariationSku = (idx, value) => {
+    // Mantém o SKU sempre padronizado (Maiúsculo e sem espaços)
+    variationsMatrix[idx].sku = value.toUpperCase().trim().replace(/\s+/g, '-');
+};
+
+window.updateVariationStatus = (idx, checked) => { 
+    variationsMatrix[idx].active = checked; 
+    // IMPORTANTE: Redesenha a tabela para aplicar o efeito visual de "desativado" (opacidade)
+    renderMatrixUI(); 
+};
+
+window.updateVariationPrice = (idx, value) => { 
+    variationsMatrix[idx].price = parseFloat(value) || 0; 
+};
+
+        // --- SISTEMA DE RECORTE ---
+        window.processImages = (files) => {
+    if (!files || files.length === 0) return;
+    
+    // 1. Define o limite baseado no plano (4 para carrossel, 1 para simples)
+    const maxPhotos = parseInt(storeConfig.maxPhotosPerProduct) || 4;
+    const currentCount = currentProductImages.length;
+    const availableSlots = maxPhotos - currentCount;
+
+    // 2. Se já estiver lotado antes de começar
+    if (availableSlots <= 0) {
+        showToast(`⚠️ Limite atingido! Seu plano permite apenas ${maxPhotos} foto(s) por produto.`);
+        return;
+    }
+
+    // 3. Se ele tentou selecionar MAIS do que o que resta de espaço
+    if (files.length > availableSlots) {
+        showToast(`Atenção: Apenas ${availableSlots} foto(s) serão processadas para respeitar o limite de ${maxPhotos}.`);
+    }
+
+    // 4. Pega apenas a quantidade que cabe no "espaço vazio"
+    imageQueue = Array.from(files).slice(0, availableSlots);
+    
+    // Inicia o processo
+    loadNextImageInQueue();
+};
+
+        function openCropModal(imageSrc) {
+    const modal = document.getElementById('cropModal');
+    const img = document.getElementById('imageToCrop');
+    img.src = imageSrc;
+    modal.classList.remove('hidden');
+
+    // MUDANÇA AQUI: Em vez de destruir, nós substituímos se já existir
+    if (cropper) {
+        cropper.replace(imageSrc);
+    } else {
+        cropper = new Cropper(img, {
+            aspectRatio: NaN, 
+            viewMode: 2, 
+            autoCropArea: 1, 
+            responsive: true,
+            restore: false, 
+            checkOrientation: false, 
+            modal: true, 
+            guides: true,
+            center: true, 
+            highlight: false, 
+            cropBoxMovable: true, 
+            cropBoxResizable: true,
+        });
+    }
+    lucide.createIcons();
+        }
+
+        window.closeCropModal = () => {
+    document.getElementById('cropModal').classList.add('hidden');
+    if (cropper) cropper.destroy();
+    document.getElementById('prodImageInput').value = '';
+    document.getElementById('cameraCaptureInput').value = '';
+    
+    // ADICIONE ESTA LINHA: Garante que o índice da variação seja resetado ao cancelar
+    currentVariationCropIndex = null;
+};
+
+    window.confirmCrop = () => {
+    if (!cropper) return;
+
+    // 1. Pegamos o recorte do lojista (pode ser 3:4, 16:9, qualquer tamanho)
+    // Não forçamos largura/altura aqui para pegar a proporção que ele escolheu
+    const croppedCanvas = cropper.getCroppedCanvas({
+        imageSmoothingQuality: 'high'
+    });
+
+    // 2. Criamos o "Canvas Final" que será obrigatoriamente 1:1 (quadrado)
+    const finalCanvas = document.createElement('canvas');
+    const size = 800; // Tamanho padrão da sua vitrine
+    finalCanvas.width = size;
+    finalCanvas.height = size;
+    const ctx = finalCanvas.getContext('2d');
+
+    // 3. Pintamos o fundo de branco (para as bordas)
+    ctx.fillStyle = '#FFFFFF';
+    ctx.fillRect(0, 0, size, size);
+
+    // 4. Calculamos como centralizar a imagem recortada dentro do quadrado
+    const ratio = Math.min(size / croppedCanvas.width, size / croppedCanvas.height);
+    const newWidth = croppedCanvas.width * ratio;
+    const newHeight = croppedCanvas.height * ratio;
+    const x = (size - newWidth) / 2;
+    const y = (size - newHeight) / 2;
+
+    // 5. Desenhamos a imagem centralizada com as bordas brancas
+    ctx.drawImage(croppedCanvas, x, y, newWidth, newHeight);
+
+    // 6. Convertemos para o formato final
+    const optimizedDataUrl = finalCanvas.toDataURL('image/jpeg', 0.8);
+
+    // --- LÓGICA DE DESTINO (VARIAÇÃO OU PRINCIPAL) ---
+    if (currentVariationCropIndex !== null) {
+        variationsMatrix[currentVariationCropIndex].image = optimizedDataUrl;
+        renderMatrixUI();
+        currentVariationCropIndex = null;
+        closeCropModal();
+        showToast("✅ Foto da variação processada!");
+    } else {
+        currentProductImages.push(optimizedDataUrl);
+        renderImagePreviews();
+        imageQueue.shift(); 
+        if (imageQueue.length > 0) {
+            loadNextImageInQueue();
+        } else {
+            closeCropModal();
+        }
+    }
+};
+        
+        function loadNextImageInQueue() {
+    if (imageQueue.length === 0) {
+        // Limpa os inputs de arquivo para permitir nova seleção depois
+        document.getElementById('prodImageInput').value = '';
+        document.getElementById('cameraCaptureInput').value = '';
+        return;
+    }
+
+    const file = imageQueue[0];
+    const reader = new FileReader();
+    reader.onload = (e) => { 
+        openCropModal(e.target.result); 
+    };
+    reader.readAsDataURL(file);
+        }
+        
+
+        window.removeImage = (index) => { currentProductImages.splice(index, 1); renderImagePreviews(); };
+        
+
+function renderImagePreviews() {
+    const gallery = document.getElementById('imageGallery');
+    const counter = document.getElementById('photoCount');
+    const notice = document.getElementById('photoLimitNotice');
+    
+    // Se o plano permite carrossel, limite é 4. Caso contrário, apenas 1.
+    const maxPhotos = storeConfig.hasCarousel ? 4 : 1;
+    
+    gallery.innerHTML = '';
+    currentProductImages.forEach((img, idx) => {
+        const div = document.createElement('div');
+        div.className = "relative aspect-square rounded-xl overflow-hidden border border-slate-200 shadow-sm animate-fade-in";
+        div.innerHTML = `
+            <img src="${img}" class="w-full h-full object-cover">
+            <button type="button" onclick="removeImage(${idx})" class="absolute top-1 right-1 bg-red-500 text-white p-1 rounded-lg">
+                <i data-lucide="x" class="w-3 h-3"></i>
+            </button>`;
+        gallery.appendChild(div);
+    });
+
+    if (counter) counter.textContent = `${currentProductImages.length}/${maxPhotos} fotos`;
+
+    if (currentProductImages.length >= maxPhotos) {
+        notice.textContent = "✅ Limite de fotos atingido.";
+        notice.className = "text-[10px] font-bold mt-2 text-amber-600";
+    } else {
+        notice.textContent = `💡 O seu plano permite ${maxPhotos} foto(s).`;
+        notice.className = "text-[10px] font-bold mt-2 text-slate-400";
+    }
+    
+    lucide.createIcons();
+}
+
+        // --- AUTH ---
+        window.handleLogin = async (e) => {
+    e.preventDefault();
+    const email = document.getElementById('loginEmail').value;
+    const pass = document.getElementById('loginPass').value;
+    const rememberMe = document.getElementById('rememberMe').checked;
+    const btn = document.getElementById('btnLogin');
+    
+    btn.disabled = true; 
+    btn.textContent = "Validando...";
+    
+    try {
+        const persistence = rememberMe ? browserLocalPersistence : browserSessionPersistence;
+        await setPersistence(auth, persistence);
+        
+        // 1. Faz o login
+        await signInWithEmailAndPassword(auth, email, pass);
+
+        // 2. 🚀 CIRURGIA: Limpa caches de outras sessões antes de carregar a nova
+        const keys = Object.keys(localStorage);
+        keys.forEach(key => {
+            if (key.includes('cache_')) {
+                localStorage.removeItem(key);
+            }
+        });
+        
+        // Reseta as variáveis de controle de carga para forçar nova leitura
+        productsLoaded = false;
+        categoriesLoaded = false;
+        bannersLoaded = false;
+
+        console.log("Login efetuado e caches antigos limpos.");
+
+    } catch(e) { 
+        btn.disabled = false; 
+        btn.textContent = "Aceder ao Painel";
+        document.getElementById('loginError').textContent = "Credenciais inválidas.";
+        document.getElementById('loginError').classList.remove('hidden');
+    }
+};
+
+
+        window.handleLogout = async () => { await signOut(auth); window.location.reload(); };
+        window.toggleAuthView = (view) => { 
+    document.getElementById('login-card').classList.toggle('hidden', view === 'register'); 
+    document.getElementById('register-card').classList.toggle('hidden', view === 'login'); 
+    
+    if(view === 'register') { 
+        renderPlansInGrid(); 
+        goToRegStep(1); 
+        
+        // Ativa a máscara no campo de pré-cadastro imediatamente
+        setTimeout(() => {
+            applyPhoneMask('regPhone');
+        }, 100); 
+    }
+    lucide.createIcons(); 
+};
+        window.goToRegStep = (step) => { 
+            const s1 = document.getElementById('reg-step-1'); const s2 = document.getElementById('reg-step-2'); 
+            if (step === 2) { 
+                const f = ['regOwner', 'regEmail', 'regStoreName', 'regPhone']; 
+                if(!f.every(id => document.getElementById(id).value.trim() !== "")) { showToast("Preencha todos os campos."); return; }
+                s1.classList.add('hidden'); s2.classList.remove('hidden'); 
+            } else { s1.classList.remove('hidden'); s2.classList.add('hidden'); } 
+            lucide.createIcons(); 
+        };
+        window.togglePasswordVisibility = (i, ic) => { 
+            const el=document.getElementById(i);const icon=document.getElementById(ic);
+            if(el.type==='password'){el.type='text';icon.setAttribute('data-lucide','eye-off');}else{el.type='password';icon.setAttribute('data-lucide','eye');} lucide.createIcons(); 
+        };
+
+        async function fetchPublicPlansEagerly() {
+            try {
+                const q = query(collection(db, "public_plans"));
+                const snap = await getDocs(q);
+                cachedPublicPlans = snap.docs.map(d => ({id: d.id, ...d.data()}));
+                if(!document.getElementById('register-card').classList.contains('hidden')) renderPlansInGrid();
+            } catch(e) {}
+        }
+
+        function renderPlansInGrid() {
+    const grid = document.getElementById('plansGridSelection');
+    if(!cachedPublicPlans) { 
+        grid.innerHTML = `<div class="col-span-full py-12 text-slate-400 text-sm font-bold animate-pulse">CARREGANDO PLANOS...</div>`; 
+        fetchPublicPlansEagerly().then(renderPlansInGrid); 
+        return; 
+    }
+    grid.innerHTML = '';
+    cachedPublicPlans.forEach(p => {
+        // Formata o preço: 29.9 vira "29,90"
+        const formattedPrice = p.price.toFixed(2).replace('.', ',');
+        
+        const featuresList = p.features ? p.features.split('\n').filter(f => f.trim() !== "").map(f => `<li class="flex items-start gap-2 text-[10px] text-slate-600"><i data-lucide="check" class="w-3 h-3 text-green-500 mt-0.5 flex-shrink-0"></i><span>${f.trim()}</span></li>`).join('') : '';
+        const card = document.createElement('div');
+        card.className = `plan-card p-6 rounded-2xl border-2 flex flex-col h-full animate-fade-in`;
+        card.id = `plan-card-${p.id}`;
+        card.onclick = () => selectPlanForReg(p.id);
+        card.innerHTML = `
+            <div class="flex justify-between items-center mb-4">
+                <div class="selection-indicator"><i data-lucide="check" class="w-3 h-3"></i></div>
+                <div class="text-right">
+                    <span class="block text-lg font-extrabold text-slate-900 leading-none">R$ ${formattedPrice}</span>
+                    <span class="text-[9px] text-slate-400 font-bold uppercase">mensal</span>
+                </div>
+            </div>
+            <div class="mb-5"><h4 class="font-bold text-sm text-slate-800 uppercase tracking-wide">${p.name}</h4></div>
+            <div class="space-y-3 mb-6">
+                <div class="flex items-center gap-2 text-[10px] font-bold text-slate-700 bg-slate-50 p-2 rounded-lg border border-slate-100">
+                    <i data-lucide="box" class="w-3.5 h-3.5 text-primary-500"></i>
+                    <span>Até ${p.maxProducts} Produtos</span>
+                </div>
+            </div>
+            <div class="flex-1"><ul class="space-y-2.5">${featuresList}</ul></div>
+        `;
+        grid.appendChild(card);
+    });
+    lucide.createIcons();
+        }
+        
+
+        window.selectPlanForReg = (id) => { 
+            document.querySelectorAll('.plan-card').forEach(c => c.classList.remove('selected')); 
+            document.getElementById(`plan-card-${id}`).classList.add('selected'); 
+            document.getElementById('selectedPlanId').value = id; 
+            document.getElementById('btnReg').disabled = false;
+        };
+
+        window.handlePreRegister = async (e) => {
+    e.preventDefault();
+    
+    // 1. Verifica se aceitou os termos
+    const accepted = document.getElementById('regAcceptTerms').checked;
+    if (!accepted) {
+        showToast("⚠️ Você precisa aceitar os termos para continuar.");
+        return;
+    }
+
+    const planId = document.getElementById('selectedPlanId').value;
+    const btn = document.getElementById('btnReg');
+    
+    // 2. Mantém a limpeza do WhatsApp que já criamos
+    const rawPhone = document.getElementById('regPhone').value.replace(/\D/g, '');
+    
+    btn.disabled = true; 
+    btn.innerHTML = `Processando...`;
+    
+    try {
+        await addDoc(collection(db, "registration_requests"), { 
+            ownerName: document.getElementById('regOwner').value, 
+            email: document.getElementById('regEmail').value, 
+            storeName: document.getElementById('regStoreName').value, 
+            phone: rawPhone,
+            planId: planId, 
+            // 3. Salva que ele aceitou os termos e a data
+            termsAccepted: true,
+            status: 'pending', 
+            requestDate: new Date().toISOString() 
+        });
+        
+        document.getElementById('preRegForm').classList.add('hidden');
+        document.getElementById('regSuccess').classList.remove('hidden'); 
+        lucide.createIcons();
+    } catch(e) { 
+        console.error(e);
+        showToast("Erro ao processar."); 
+        btn.disabled = false; 
+        btn.innerHTML = `Finalizar Pedido <i data-lucide="check-circle" class="w-5 h-5 ml-2"></i>`;
+    }
+};
+        window.openLegalModal = (type) => {
+    const modal = document.getElementById('legalModal');
+    const content = document.getElementById('legalModalContent');
+    const title = document.getElementById('legalModalTitle');
+    
+    const texts = {
+        terms: `
+            <div class="space-y-4 text-[10px] md:text-[11px] leading-relaxed text-slate-700 text-justify">
+                <p class="font-black text-slate-900 border-b border-slate-200 pb-2 text-center text-xs uppercase">Contrato de Licença de Uso de Software - VITRINE PRO</p>
+                
+                <div class="bg-slate-50 p-3 rounded-lg border-l-4 border-primary-500">
+                    <p class="font-bold text-slate-900 uppercase mb-1">1. NATUREZA JURÍDICA E INTERMEDIAÇÃO</p>
+                    <p>A <b>VITRINE ONLINE</b> é uma plataforma tecnológica de Software como Serviço (SaaS). Declaramos que: (a) Não somos fornecedores ou vendedores dos produtos anunciados; (b) Não detemos a posse dos itens cadastrados; (c) A relação de consumo ocorre exclusivamente entre o Lojista e seu cliente final.</p>
+                </div>
+
+                <div>
+                    <p class="font-bold text-slate-900 uppercase">2. PLANOS E RECORRÊNCIA</p>
+                    <p>Ao selecionar um plano, o Lojista adere a um contrato de renovação automática mensal. O valor da mensalidade garante a licença de uso e espaço em servidor conforme os limites do plano escolhido.</p>
+                </div>
+
+                <div>
+                    <p class="font-bold text-slate-900 uppercase">3. PAGAMENTO E INADIMPLÊNCIA</p>
+                    <p>O atraso no pagamento acarretará na suspensão da vitrine após 7 dias do vencimento. Após 30 dias de inadimplência, a VITRINE PRO reserva-se o direito de excluir permanentemente os dados para liberação de espaço em servidor.</p>
+                </div>
+
+                <div>
+                    <p class="font-bold text-slate-900 uppercase">4. CANCELAMENTO</p>
+                    <p>O cancelamento pode ser solicitado a qualquer momento, interrompendo cobranças futuras. Não haverá reembolso de mensalidades já quitadas por se tratar de serviço digital de disponibilidade imediata.</p>
+                </div>
+
+                <div>
+                    <p class="font-bold text-slate-900 uppercase">5. RESPONSABILIDADE TÉCNICA</p>
+                    <p>Trabalhamos para manter o sistema disponível 99% do tempo. A VITRINE PRO não se responsabiliza por lucros cessantes decorrentes de instabilidades de internet ou serviços de infraestrutura de terceiros.</p>
+                </div>
+
+                <div>
+                    <p class="font-bold text-slate-900 uppercase">6. PROPRIEDADE INTELECTUAL</p>
+                    <p>O Lojista detém os direitos sobre suas marcas e fotos. A VITRINE PRO detém os direitos sobre o código-fonte, design da interface e algoritmos da plataforma.</p>
+                </div>
+            </div>`,
+        privacy: `
+            <div class="space-y-4 text-[11px] leading-relaxed text-slate-700 text-justify">
+                <p class="font-black text-slate-900 border-b border-slate-200 pb-2 text-center text-xs uppercase">Política de Privacidade (LGPD) - VITRINE PRO</p>
+                
+                <div>
+                    <p class="font-bold text-slate-800 uppercase">1. COLETA DE DADOS</p>
+                    <p>A VITRINE PRO atua como Controladora dos dados do Lojista e como Operadora dos dados dos clientes finais. Os dados são utilizados estritamente para a execução do serviço contratado.</p>
+                </div>
+
+                <div>
+                    <p class="font-bold text-slate-800 uppercase">2. SEGURANÇA</p>
+                    <p>Garantimos que a VITRINE PRO não comercializa ou compartilha listas de clientes ou dados de faturamento dos lojistas com terceiros.</p>
+                </div>
+
+                <div>
+                    <p class="font-bold text-slate-800 uppercase">3. FINALIDADE</p>
+                    <p>Seus dados são usados para: (a) Autenticação; (b) Suporte técnico; (c) Notificações de assinatura; (d) Melhorias de experiência via analytics anonimizados.</p>
+                </div>
+
+                <div>
+                    <p class="font-bold text-slate-800 uppercase">4. EXCLUSÃO DE DADOS</p>
+                    <p>O Lojista pode solicitar a exclusão de seus dados pessoais a qualquer tempo, ressalvadas as obrigações legais de guarda de registros fiscais.</p>
+                </div>
+            </div>`
     };
 
-    self.registration.showNotification(notificationTitle, notificationOptions);
-});
+    title.textContent = type === 'terms' ? "Termos de Uso - Vitrine Pro" : "Privacidade e Segurança";
+    content.innerHTML = texts[type];
+    modal.classList.remove('hidden');
+    lucide.createIcons();
+};
+        
+
+window.closeLegalModal = () => {
+    document.getElementById('legalModal').classList.add('hidden');
+};
+
+
+        
+        // --- ANALYTICS CHART ---
+        window.initAnalyticsChart = () => {
+            const ctx = document.getElementById('analyticsChart').getContext('2d');
+            const gradient = ctx.createLinearGradient(0, 0, 0, 250);
+            gradient.addColorStop(0, 'rgba(124, 58, 237, 0.2)');
+            gradient.addColorStop(1, 'rgba(124, 58, 237, 0.0)');
+            if (analyticsChartInstance) analyticsChartInstance.destroy();
+            analyticsChartInstance = new Chart(ctx, {
+                type: 'line',
+                data: { labels: [], datasets: [{ label: 'Visitas', data: [], borderColor: '#7c3aed', borderWidth: 3, fill: true, backgroundColor: gradient, tension: 0.4, pointRadius: 4, pointBackgroundColor: '#fff' }] },
+                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { grid: { display: false }, ticks: { font: { size: 10 }, color: '#94a3b8' } }, y: { beginAtZero: true, grid: { borderDash: [5, 5], color: '#f1f5f9' }, ticks: { font: { size: 10 }, color: '#94a3b8', stepSize: 1 } } } }
+            });
+            updateAnalyticsRange('day');
+        };
+
+      window.updateAnalyticsRange = async (range) => {
+    if (!analyticsChartInstance || !currentStoreId) return;
+    
+    if (analyticsUnsubscribe) {
+        analyticsUnsubscribe();
+        analyticsUnsubscribe = null;
+    }
+
+    const loader = document.getElementById('chartLoading');
+    if (loader) loader.classList.remove('hidden');
+    
+    ['day', 'week', 'month'].forEach(r => {
+        const btn = document.getElementById(`range-${r}`);
+        if (btn) { 
+            btn.classList.toggle('active', r === range); 
+            btn.classList.toggle('inactive', r !== range); 
+        }
+    });
+
+    try {
+        if (range === 'day') {
+            const d = new Date();
+            const todayId = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+            const docRef = doc(db, `stores/${currentStoreId}/analytics_history`, todayId);
+
+            analyticsUnsubscribe = onSnapshot(docRef, (docSnap) => {
+                let labels = [], values = [];
+                const allData = docSnap.exists() ? docSnap.data() : {};
+                const hoursMap = allData.hours || {};
+
+                for (let h = 0; h < 24; h++) {
+                    labels.push(`${h}h`);
+                    const v = hoursMap[h] || allData[`hours.${h}`] || allData[h] || 0;
+                    values.push(Number(v));
+                }
+
+                analyticsChartInstance.data.labels = labels;
+                analyticsChartInstance.data.datasets[0].data = values;
+                analyticsChartInstance.update();
+                if (loader) loader.classList.add('hidden');
+            });
+
+        } else {
+            const q = query(
+                collection(db, `stores/${currentStoreId}/analytics_history`), 
+                orderBy('date', 'desc'), 
+                limit(range === 'week' ? 7 : 30)
+            );
+            
+            const snap = await getDocs(q);
+            let labels = [], values = [];
+            const docs = snap.docs.slice().reverse(); 
+            
+            docs.forEach(d => {
+                const item = d.data();
+                let dateLabel = "";
+                if(item.date?.toDate) dateLabel = item.date.toDate().toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' });
+                else if(item.date) dateLabel = new Date(item.date).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' });
+                
+                labels.push(dateLabel);
+                values.push(item.visits || 0);
+            });
+
+            analyticsChartInstance.data.labels = labels;
+            analyticsChartInstance.data.datasets[0].data = values;
+            analyticsChartInstance.update();
+            if (loader) loader.classList.add('hidden');
+        }
+    } catch (err) {
+        console.error(err);
+        if (loader) loader.classList.add('hidden');
+    }
+};
+
+        // Função para ativar notificações
+async function requestNotificationPermission() {
+    try {
+        const permission = await Notification.requestPermission();
+        if (permission === 'granted') {
+            const token = await getToken(messaging, { 
+                vapidKey: 'BKk5Dr9AJ8fY0QAelaAvSPK7D9csG5dwdW45VhG0C-oeipeKD2kErkExPHQRp0eAYhm797-k5lLn3OO7-TRfZVw' 
+            });
+            
+            if (token && currentStoreId) {
+                // Salva o token no cadastro da loja no Firestore
+                const storeRef = doc(db, `stores/${currentStoreId}/config/store`);
+                await updateDoc(storeRef, {
+                    notificationToken: token
+                });
+                console.log("Token de notificação salvo com sucesso!");
+            }
+        } else {
+            console.log("Permissão de notificação negada.");
+        }
+    } catch (error) {
+        console.error("Erro ao obter permissão de Push:", error);
+    }
+}
+        
+
+
+// --- INIT DATA & AUTH PERSISTENCE ---
+
+setPersistence(auth, browserLocalPersistence)
+    .then(() => {
+        return onAuthStateChanged(auth, async (user) => {
+            const authScreen = document.getElementById('auth-screen');
+            const mainContent = document.getElementById('main-content');
+
+            if (user) {
+                // Mostra o painel imediatamente
+                if (authScreen) authScreen.classList.add('hidden');
+                if (mainContent) mainContent.classList.remove('hidden');
+                
+                const emailDisplay = document.getElementById('userEmailDisplay');
+                if (emailDisplay) emailDisplay.textContent = user.email;
+
+                try {
+                    // 1. Identifica a loja do usuário (Dinâmico para Marketplace)
+                    let dirDoc = await getDoc(doc(db, "admin_directory", user.uid));
+                    
+                    if (!dirDoc.exists()) {
+                        const snap = await getDocs(query(collection(db, "stores_registry"), where("ownerEmail", "==", user.email)));
+                        if (snap.empty) return handleLogout();
+                        currentStoreId = snap.docs[0].data().slug;
+                    } else { 
+                        currentStoreId = dirDoc.data().storeId; 
+                    }
+
+                    if (currentStoreId) {
+                        console.log("Loja ativa:", currentStoreId);
+
+                        // 2. Monitor de Status (Sempre ativo em segundo plano)
+                        monitorarStatusLoja(currentStoreId);
+                        window.loadSavedGoals(); // Adicione esta linha aqui
+                        await solicitarPermissaoNotificacao(currentStoreId);
+                        
+                        // 3. CARGA INICIAL (Só acontece UMA VEZ ao logar)
+                        if (!carregouPrimeiraVez) {
+                            fetchPublicPlansEagerly();
+                            initStoreData(); 
+                            initAnalyticsChart();
+                            initAnalyticsInsights();
+                            initOrderListener(currentStoreId);
+                            loadMagicCategoriesFeedback();
+                            
+                            
+                            // Define a aba inicial e trava
+                            changeTab('orders'); 
+                            carregouPrimeiraVez = true; 
+                        }
+
+                        // 4. Verificações de UI persistentes
+                        const pending = localStorage.getItem(`pending_publish_${currentStoreId}`);
+                        if (pending === 'true') { needsPublish = true; }
+                        if (typeof window.renderPublishButton === 'function') {
+                            window.renderPublishButton();
+                        }
+                    }
+
+                } catch (error) {
+                    console.error("Erro no fluxo de login:", error);
+                }
+            } else {
+                console.log("Nenhum usuário logado.");
+                carregouPrimeiraVez = false; // Reseta se deslogar
+                if (authScreen) authScreen.classList.remove('hidden');
+                if (mainContent) mainContent.classList.add('hidden');
+            }
+        });
+    })
+    .catch((error) => console.error("Erro de persistência:", error));
+
+// --- LISTENER DE PEDIDOS (VERSÃO BLINDADA CONTRA NOTIFICAÇÃO FANTASMA) ---
+// --- LISTENER DE PEDIDOS (CORREÇÃO: VARIÁVEL listOrder REMOVIDA) ---
+window.initOrderListener = (storeId) => {
+    if (!storeId) return;
+
+    const q = query(
+        collection(db, `stores/${storeId}/orders`),
+        orderBy("createdAt", "desc"),
+        limit(ordersLimit || 20)
+    );
+
+    const audio = document.getElementById('notifSound');
+
+    onSnapshot(q, (snapshot) => {
+        console.log(`✅ Pedidos atualizados: ${snapshot.docs.length} documentos.`);
+
+        if (snapshot.docs.length > 0 && isFirstLoad) {
+            lastVisibleOrder = snapshot.docs[snapshot.docs.length - 1];
+        }
+
+        snapshot.docChanges().forEach((change) => {
+            const orderData = change.doc.data();
+            const orderId = change.doc.id;
+
+            if (change.type === "added" || change.type === "modified") {
+                ordersCache[orderId] = { 
+                    id: orderId, 
+                    customer: orderData.customer || { name: "Cliente", phone: "" },
+                    total: orderData.total || 0,
+                    status: orderData.status || "pending_whatsapp",
+                    ...orderData 
+                };
+
+                // Sincronização de Estoque
+                if (orderData.stockDeducted !== true && orderData.status !== 'canceled') {
+                    if (typeof window.processarBaixaSilenciosa === 'function') {
+                        window.processarBaixaSilenciosa(orderId, orderData);
+                    }
+                }
+
+                // Notificação Sonora
+                if (change.type === "added" && !isFirstLoad) {
+                    const now = Date.now();
+                    const orderTime = orderData.createdAt?.toMillis ? orderData.createdAt.toMillis() : now;
+                    if (now - orderTime < 120000) {
+                        if (audio) {
+                            audio.currentTime = 0;
+                            audio.play().catch(() => {});
+                        }
+                        if (typeof showToast === 'function') showToast("🔔 Novo pedido recebido!");
+                    }
+                }
+            }
+
+            if (change.type === "removed") delete ordersCache[orderId];
+        });
+
+        isFirstLoad = false; 
+
+        // --- CORREÇÃO DO TRAVAMENTO AQUI ---
+        const listaCompletaDePedidos = Object.values(ordersCache);
+
+        if (typeof window.renderFilteredOrders === 'function') {
+            // Se você usa filtros (Abas), precisa garantir que a lista global foi atualizada
+            window.renderFilteredOrders(); 
+        }
+
+        // Se estiver no Dashboard (Cards de resumo)
+        const dashContainer = document.getElementById("ordersCardsContainer");
+        if (dashContainer) {
+            if (listaCompletaDePedidos.length === 0) {
+                dashContainer.innerHTML = `<p class="text-center text-slate-400 py-10 italic text-sm">Nenhum pedido encontrado.</p>`;
+            } else {
+                // Aqui força a atualização visual do dashboard se houver uma função específica
+                if (typeof window.renderDashboardCards === 'function') {
+                    window.renderDashboardCards(listaCompletaDePedidos);
+                }
+            }
+        }
+
+        if (typeof window.initFinanceDashboard === 'function') {
+            window.initFinanceDashboard(); 
+        }
+
+    }, (error) => {
+        console.error("Erro no Listener:", error);
+        const container = document.getElementById("ordersCardsContainer");
+        if (container) {
+            container.innerHTML = `<p class="text-center text-red-400 py-10 text-xs">Erro ao carregar: ${error.code}</p>`;
+        }
+    });
+};
+    // --- LISTENER A: IDENTIDADE, LIMITES E STATUS ---
+    async function initStoreData() {
+      window.renderPublishButton();
+    if (isConfigLoaded) return; // Se já carregou, para aqui. Economia total!
+
+    const storeRef = doc(db, `stores/${currentStoreId}/config/store`);
+    const d = await getDoc(storeRef); // Custo: 1 leitura apenas
+    
+    if (d.exists()) {
+        const data = d.data();
+
+        if (data.tipoNegocio) {
+            const selectNegocio = document.getElementById('configTipoNegocio');
+            if (selectNegocio) selectNegocio.value = data.tipoNegocio;
+        }
+
+     if (data.primaryColor) {
+            window.applyDynamicColors(data.primaryColor);
+        }
+    // 1. Definição correta do Slug e da URL Profissional
+    const storeSlug = data.slug || currentStoreId; // Garante que temos um identificador
+    window.currentStoreSlug = storeSlug;
+    
+    // Monta a URL sem o "loja." extra após a barra
+    const urlProfissional = `https://loja.vitrineonline.app.br/${storeSlug}`;
+    
+    const urlDisplay = document.getElementById('urlDisplay');
+    if (urlDisplay) urlDisplay.textContent = urlProfissional;
+
+    // AQUI ESTÁ O SEGREDO: Remove o bloqueio do botão
+    const storeBtn = document.getElementById('storeMenuBtn');
+    if (storeBtn) {
+        storeBtn.classList.remove('opacity-50', 'pointer-events-none');
+        storeBtn.classList.add('opacity-100', 'pointer-events-auto');
+    }
+
+        // 2. Trava de Suspensão
+        const suspendedScreen = document.getElementById('suspended-screen');
+        if (data.subscriptionStatus === 'suspended') {
+            if (suspendedScreen) suspendedScreen.classList.remove('hidden');
+            return; 
+        } else {
+            if (suspendedScreen) suspendedScreen.classList.add('hidden');
+        }
+
+        // 3. Sincronização de Limites
+        storeConfig = {
+            ...data,
+            maxProducts: parseInt(data.maxProducts || 0),
+            maxBanners: parseInt(data.maxBanners || 0),
+            hasCarousel: data.hasCarousel === true || data.hasCarousel === "true",
+            hasFinance: data.hasFinance === true,
+            hasMagicCategories: data.hasMagicCategories === true
+        };
+
+        updatePremiumUI(); 
+        updateQuotas(); // Libera/Bloqueia botões de novo produto
+        
+        if (typeof window.loadMagicCategoriesFeedback === "function") {
+            window.loadMagicCategoriesFeedback(data);
+        }
+
+        // 4. Bairros e Identidade (Nome/Logo)
+        deliveryAreas = (data.deliveryAreas && Array.isArray(data.deliveryAreas)) ? data.deliveryAreas : [];
+        if (typeof window.renderDeliveryAreas === "function") window.renderDeliveryAreas();
+
+        const nameSidebar = document.getElementById('sidebarStoreName');
+        if (nameSidebar) nameSidebar.textContent = data.storeName || 'Minha Loja';
+
+        if (data.logoUrl) {
+            const lD = document.getElementById('sidebarStoreLogo'); 
+            const lP = document.getElementById('logoPreviewImg');
+            if (lD) { lD.src = data.logoUrl; lD.classList.remove('hidden'); }
+            if (lP) { lP.src = data.logoUrl; lP.classList.remove('hidden'); }
+        }
+
+        // --- STATUS DO PLANO (BETA VS PAGO) ---
+        const planBadge = document.getElementById('currentPlanBadge');
+        const infoContainer = document.getElementById('planInfoContainer');
+        const statusText = document.getElementById('planStatusText');
+
+        if (planBadge && statusText) {
+            const isBetaConvidado = data.planId === 'beta_tester' || data.planId === 'founder';
+            if (isBetaConvidado) {
+                planBadge.textContent = "PARCEIRO BETA";
+                planBadge.className = "text-[10px] font-bold bg-blue-50 text-blue-600 px-2 py-0.5 rounded border border-blue-100 uppercase";
+                statusText.innerHTML = `<i data-lucide="award" class="inline w-3 h-3 mr-1"></i> Acesso Vitalício (Beta)`;
+                if(infoContainer) infoContainer.className = "mt-1.5 flex items-center gap-2 px-3 py-1 bg-blue-50/50 rounded-lg border border-blue-100 text-blue-700";
+            } else {
+                planBadge.textContent = (data.planId || "PRO").toUpperCase();
+                planBadge.className = "text-[10px] font-bold bg-green-50 text-green-600 px-2 py-0.5 rounded border border-green-100 uppercase";
+                if (data.expiryDate) {
+                    const hoje = new Date();
+                    const dataVenc = data.expiryDate.toDate ? data.expiryDate.toDate() : new Date(data.expiryDate);
+                    const diffDays = Math.ceil((dataVenc - hoje) / (1000 * 60 * 60 * 24));
+                    if (diffDays > 0) {
+                        statusText.innerHTML = `Faltam <span class="font-black">${diffDays} dias</span> para a renovação`;
+                        if(infoContainer) infoContainer.className = "mt-1.5 flex items-center gap-2 px-3 py-1 bg-slate-100 rounded-lg border border-slate-200 text-slate-600";
+                    } else {
+                        statusText.innerHTML = `Assinatura expirada`;
+                        if(infoContainer) infoContainer.className = "mt-1.5 flex items-center gap-2 px-3 py-1 bg-red-50 rounded-lg border border-red-200 text-red-600";
+                    }
+                }
+            }
+            if (typeof lucide !== 'undefined') lucide.createIcons();
+        }
+
+        // 5. Preenchimento dos campos de Configuração (PIX e Dados Gerais)
+        const fields = {
+            'confStoreName': data.storeName || '',
+            'confWhatsapp': data.whatsappNumber || '',
+            'confFooter': data.footerText || '',
+            'confColorPrimary': data.primaryColor || '#8b5cf6',
+            'cfgPixKey': data.pix?.key || '',
+            'cfgPixName': data.pix?.name || '',
+            'cfgPixBank': data.pix?.bank || ''
+        };
+
+        Object.keys(fields).forEach(id => {
+            const el = document.getElementById(id);
+            if (el) el.value = fields[id];
+        });
+
+                updateUIByPlan(); 
+        window.loadMagicCategoriesFeedback(data);
+        
+        isConfigLoaded = true; // Ativa a economia Blaze
+    } // Aqui fecha o if (d.exists())
+} // Aqui fecha a função async function initStoreData()
+
+      // --- FUNÇÕES DE CACHE CIRÚRGICO ---
+
+async function loadProductsCache(force = false) {
+    const cacheKey = `cache_products_${currentStoreId}`;
+    const timeKey = `cache_time_${currentStoreId}`;
+    
+    const localData = localStorage.getItem(cacheKey);
+    const localTime = localStorage.getItem(timeKey);
+    const serverTime = storeConfig.lastUpdate?.toString();
+
+    if (!force && localData && localTime === serverTime) {
+        console.log("⚡ Cache de Disco Validado: Usando localStorage (Custo Zero)");
+        allProducts = JSON.parse(localData);
+        productsLoaded = true;
+        return;   // ⬅ REMOVE renderProductList daqui
+    }
+
+    console.log("🌐 Cache Expirado ou Vazio: Buscando do Firebase...");
+    const q = query(collection(db, `stores/${currentStoreId}/products`));
+    const snap = await getDocs(q);
+
+    allProducts = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+
+    localStorage.setItem(cacheKey, JSON.stringify(allProducts));
+    localStorage.setItem(timeKey, serverTime || Date.now().toString());
+
+    productsLoaded = true;
+    return; // ⬅ REMOVE renderProductList daqui também
+}
+
+async function loadCategoriesCache(force = false) {
+    const cacheKey = `cache_categories_${currentStoreId}`;
+    const timeKey = `cache_time_categories_${currentStoreId}`;
+    
+    const localData = localStorage.getItem(cacheKey);
+    const localTime = localStorage.getItem(timeKey);
+    const serverTime = storeConfig.lastUpdate?.toString();
+
+    if (!force && localData && localTime === serverTime) {
+        console.log("📂 Categorias: Usando cache de disco.");
+        allCategories = JSON.parse(localData);
+        categoriesLoaded = true;
+        return; // ⬅ remove renderCategoryList
+    }
+
+    console.log("🌐 Categorias: Sincronizando com Firebase...");
+    const snap = await getDocs(collection(db, `stores/${currentStoreId}/categories`));
+    allCategories = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+
+    localStorage.setItem(cacheKey, JSON.stringify(allCategories));
+    localStorage.setItem(timeKey, serverTime || Date.now().toString());
+
+    categoriesLoaded = true;
+    return; // ⬅ remove renderCategoryList
+}
+
+     async function loadBannersCache(force = false) {
+    if (!currentStoreId) return;
+    const cacheKey = `cache_banners_${currentStoreId}`;
+    const timeKey = `cache_time_banners_${currentStoreId}`;
+    
+    const localData = localStorage.getItem(cacheKey);
+    const localTime = localStorage.getItem(timeKey);
+    const serverTime = storeConfig.lastUpdate?.toString();
+
+    // Se os dados no cache forem iguais aos do servidor, não gasta leitura do Firebase
+    if (!force && localData && localTime === serverTime) {
+        allBanners = JSON.parse(localData);
+        bannersLoaded = true;
+        return;
+    }
+
+    // Caso contrário, busca no Firebase
+    const snap = await getDocs(collection(db, `stores/${currentStoreId}/hero_cards`));
+    allBanners = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+
+    localStorage.setItem(cacheKey, JSON.stringify(allBanners));
+    localStorage.setItem(timeKey, serverTime || Date.now().toString());
+    bannersLoaded = true;
+}
+
+
+        function updateUIByPlan() {
+    // Define os limites com base no que veio do Super Admin
+    const maxProds = parseInt(storeConfig.maxProducts) || 0;
+    const maxBanners = storeConfig.hasCarousel ? (parseInt(storeConfig.maxBanners) || 0) : 1;
+    const planName = storeConfig.planId || "Plano Ativo";
+
+    // Atualiza o Badge do plano no Dashboard
+    const badge = document.getElementById('currentPlanBadge');
+    if (badge) badge.textContent = planName.toUpperCase();
+
+    // Atualiza os textos de limite (Ex: /50)
+    const limitProdEl = document.getElementById('dash-limit-products');
+    const limitBannerEl = document.getElementById('dash-limit-banners');
+    if (limitProdEl) limitProdEl.textContent = `/${maxProds}`;
+    if (limitBannerEl) limitBannerEl.textContent = `/${maxBanners}`;
+
+    updateQuotas();
+}
+
+function updateQuotas() {
+    // 1. Obtém os limites (garantindo que são números)
+    const maxProds = parseInt(storeConfig.maxProducts) || 0;
+    // Se não tem carrossel, o limite é forçado a 1
+    const maxBanners = storeConfig.hasCarousel ? (parseInt(storeConfig.maxBanners) || 0) : 1;
+
+    // 2. Seletores (adicionamos suporte ao botão mobile se houver)
+    const pBtn = document.querySelector('[onclick="openProductModal()"]');
+    const bBtn = document.querySelector('[onclick="window.openBannerModal()"]');
+
+    // --- LÓGICA DE PRODUTOS ---
+    if (pBtn) {
+        const reachedProd = allProducts.length >= maxProds;
+        pBtn.disabled = reachedProd;
+        pBtn.style.opacity = reachedProd ? "0.5" : "1";
+        pBtn.style.cursor = reachedProd ? "not-allowed" : "pointer";
+        
+        // Feedback visual no texto
+        if (reachedProd) {
+            pBtn.innerHTML = `<i data-lucide="lock" class="w-4 h-4"></i> Limite Atingido`;
+        } else {
+            pBtn.innerHTML = `<i data-lucide="plus" class="w-5 h-5"></i> Novo Produto`;
+        }
+    }
+
+    // --- LÓGICA DE BANNERS ---
+    if (bBtn) {
+        const reachedBanner = allBanners.length >= maxBanners;
+        bBtn.disabled = reachedBanner;
+        bBtn.style.opacity = reachedBanner ? "0.5" : "1";
+        bBtn.style.cursor = reachedBanner ? "not-allowed" : "pointer";
+
+        if (reachedBanner) {
+            bBtn.innerHTML = `<i data-lucide="lock" class="w-4 h-4"></i> Limite`;
+        } else {
+            bBtn.innerHTML = `<i data-lucide="plus" class="w-5 h-5"></i> Novo`;
+        }
+    }
+
+    // MUITO IMPORTANTE: Recria os ícones do Lucide nos botões atualizados
+    if (typeof lucide !== 'undefined') {
+        lucide.createIcons();
+    }
+}
+
+
+
+        // --- GESTÃO DE PRODUTOS ---
+    window.openProductModal = (p = null) => {
+    variationsHistoryCache = new Map();
+    
+    // 1. Identifica o tipo de negócio e os containers
+    const tipoNegocio = document.getElementById('configTipoNegocio')?.value || 'varejo';
+    const areaEstoque = document.getElementById('colunaEstoque');
+    const areaGrades = document.getElementById('colunaGrades');
+    const areaComplementos = document.getElementById('containerComplementos');
+
+    // 2. FORÇA a visibilidade correta (Independente de ser edição ou novo)
+    if (tipoNegocio === 'restaurante') {
+        if(areaEstoque) { areaEstoque.classList.add('hidden'); areaEstoque.style.display = 'none'; }
+        if(areaGrades) { areaGrades.classList.add('hidden'); areaGrades.style.display = 'none'; }
+        if(areaComplementos) { 
+            areaComplementos.classList.remove('hidden'); 
+            areaComplementos.style.display = 'block'; 
+        }
+    } else {
+        if(areaEstoque) { areaEstoque.classList.remove('hidden'); areaEstoque.style.display = 'grid'; }
+        if(areaGrades) { areaGrades.classList.remove('hidden'); areaGrades.style.display = 'block'; }
+        if(areaComplementos) { 
+            areaComplementos.classList.add('hidden'); 
+            areaComplementos.style.display = 'none'; 
+        }
+    }
+    
+    // 3. Preenchimento de categorias
+    const catSelect = document.getElementById('prodCategory');
+    if (catSelect) {
+        catSelect.innerHTML = allCategories.map(c => `<option value="${c.name}">${c.name}</option>`).join('');
+    }
+    
+    if(p) {
+        // --- MODO EDIÇÃO ---
+        document.getElementById('prodModalTitle').textContent = "Editar Produto Existente";
+        document.getElementById('prodId').value = p.id;
+        document.getElementById('prodName').value = p.name || '';
+        document.getElementById('prodSku').value = p.sku || ''; 
+        document.getElementById('prodCategory').value = p.category || ''; 
+        document.getElementById('prodValue').value = p.value || 0;
+        document.getElementById('prodCard').value = p.priceCard || '';
+        document.getElementById('prodMaxInstallments').value = p.maxInstallments || 1;
+        
+        if(window.calculateInstallmentValue) window.calculateInstallmentValue();
+        
+        document.getElementById('prodPromo').value = p.promoValue || ''; 
+        document.getElementById('prodPromoDays').value = p.promoDays || ''; 
+        document.getElementById('prodStock').value = p.stock || 0;
+        document.getElementById('prodCost').value = p.cost || 0;
+        document.getElementById('prodDesc').value = p.description || '';
+        document.getElementById('prodFeatured').checked = !!p.isFeatured; 
+        
+        const sizeInp = document.getElementById('prodSizesInput');
+        const colorInp = document.getElementById('prodColorsInput');
+        if(sizeInp) sizeInp.value = p.sizes ? p.sizes.join(', ') : '';
+        if(colorInp) colorInp.value = p.colors ? p.colors.join(', ') : '';
+        
+        currentProductImages = p.images ? [...p.images] : [];
+        variationsMatrix = p.variations || [];
+        
+        // --- CARREGA COMPLEMENTOS SALVOS ---
+        window.currentProductComplements = p.complements || [];
+
+        const matrixCont = document.getElementById('variationMatrixContainer');
+        if (matrixCont) {
+            // No modo restaurante, mesmo que tenha variações antigas, escondemos
+            if (variationsMatrix.length > 0 && tipoNegocio !== 'restaurante') {
+                matrixCont.classList.remove('hidden');
+                renderMatrixUI();
+            } else {
+                matrixCont.classList.add('hidden');
+            }
+        }
+    } else {
+        // --- MODO NOVO PRODUTO ---
+        document.getElementById('prodModalTitle').textContent = "Adicionar Novo Produto";
+        document.getElementById('productForm').reset(); 
+        document.getElementById('prodId').value = ''; 
+        document.getElementById('prodSku').value = generateSKU();
+        
+        currentProductImages = []; 
+        variationsMatrix = [];
+        window.currentProductComplements = [];
+        
+        const matrixCont = document.getElementById('variationMatrixContainer');
+        if(matrixCont) matrixCont.classList.add('hidden');
+    }
+    
+    // 4. Renderiza as áreas dinâmicas
+    if(typeof renderComplementGroups === "function") renderComplementGroups();
+    renderImagePreviews();
+    
+    document.getElementById('productModal').classList.remove('hidden');
+    if (typeof lucide !== 'undefined') lucide.createIcons();
+};
+
+window.duplicateProduct = function(id) {
+    // 1. Localiza o produto original na sua lista de produtos carregados
+    const p = allProducts.find(item => item.id === id);
+    if (!p) {
+        showToast("❌ Erro ao localizar produto para duplicar.");
+        return;
+    }
+
+    // 2. Abre o modal com os dados do produto
+    window.openProductModal(p);
+
+    // 3. AGORA O SEGREDO: Limpamos o ID e alteramos o título
+    // Isso faz o Firebase entender que é um NOVO cadastro ao clicar em salvar
+    document.getElementById('prodId').value = ""; 
+    document.getElementById('prodName').value = p.name + " (Cópia)";
+    document.getElementById('prodModalTitle').textContent = "Duplicar Produto";
+
+    showToast("✨ Cópia criada! Ajuste o nome e salve.");
+};
+       
+        window.handleProductSubmit = async (e) => {
+    e.preventDefault();
+    const tipoNegocio = document.getElementById('configTipoNegocio')?.value || 'varejo';
+    const complementsData = window.currentProductComplements || [];
+    const id = document.getElementById('prodId').value;
+    const isNew = !id;
+
+    if (isNew && allProducts.length >= (storeConfig.maxProducts || 999)) {
+        showToast(`❌ Limite de produtos atingido.`);
+        return;
+    }
+
+    const btn = document.getElementById('btnSaveProd');
+    const loader = document.getElementById('imageLoading');
+    if(btn) btn.disabled = true;
+    if(loader) loader.classList.remove('hidden');
+
+    try {
+        const finalId = id || 'prod_' + Date.now();
+        const docRef = doc(db, `stores/${currentStoreId}/products`, finalId);
+        
+        // --- 1. BUSCA DADOS ANTIGOS PARA GESTÃO DA LIXEIRA ---
+        const snap = await getDoc(docRef);
+        let trashFiles = [];
+        if (snap.exists()) {
+            trashFiles = snap.data().trashFiles || [];
+        }
+
+        // --- 2. UPLOAD DAS IMAGENS PRINCIPAIS ---
+        const imageUrls = [];
+        for (let i = 0; i < currentProductImages.length; i++) {
+            const img = currentProductImages[i];
+            if (img.startsWith('http')) { 
+                imageUrls.push(img); 
+            } else {
+                const fileRef = ref(storage, `stores/${currentStoreId}/products/${finalId}_main_${i}.jpg`);
+                await uploadString(fileRef, img, 'data_url');
+                imageUrls.push(await getDownloadURL(fileRef));
+            }
+        }
+
+                // --- 3. UPLOAD DAS IMAGENS DE VARIAÇÕES ---
+        const updatedVariations = [];
+        for (let v of variationsMatrix) {
+            let varImageUrl = v.image || null;
+            if (varImageUrl && varImageUrl.startsWith('data:image')) {
+                const varSkuClean = (v.sku || Math.random().toString(36).substring(7)).replace(/[^a-z0-9]/gi, '_');
+                const varRef = ref(storage, `stores/${currentStoreId}/products/vars/${finalId}_${varSkuClean}.jpg`);
+                await uploadString(varRef, varImageUrl, 'data_url');
+                varImageUrl = await getDownloadURL(varRef);
+            }
+            updatedVariations.push({
+                ...v,
+               // ADICIONE .toUpperCase() E .trim() AQUI:
+        color: (v.color || 'PADRAO').trim().toUpperCase(),
+        size: (v.size || 'UNICO').trim().toUpperCase(),    
+                image: varImageUrl,
+                price: parseFloat(v.price) || 0,
+                stock: parseInt(v.stock) || 0, // GARANTE QUE O ESTOQUE DA VARIAÇÃO SEJA SALVO
+                active: v.active !== false
+            });
+        }
+
+       let promoUntil = null;
+const promoDaysInput = document.getElementById('prodPromoDays').value;
+const promoDays = parseInt(promoDaysInput);
+
+if (promoDays > 0) {
+    const dataFinal = new Date();
+    // Adiciona exatamente a quantidade de dias (24h por dia) a partir de AGORA
+    dataFinal.setTime(dataFinal.getTime() + (promoDays * 24 * 60 * 60 * 1000));
+    
+    promoUntil = dataFinal.getTime(); 
+}
+
+     
+        // --- 4. LÓGICA DA LIXEIRA (SOFT DELETE) ---
+        if (snap.exists()) {
+            const oldData = snap.data();
+            const currentVarImages = updatedVariations.map(v => v.image).filter(img => img);
+            
+            if (oldData.variations) {
+                oldData.variations.forEach(oldVar => {
+                    // Se a foto existia antes e não está na matriz nova nem nas fotos principais, vai para a lixeira
+                    if (oldVar.image && !currentVarImages.includes(oldVar.image) && !imageUrls.includes(oldVar.image)) {
+                        trashFiles.push({ url: oldVar.image, deletedAt: Date.now() });
+                    }
+                });
+            }
+        }
+
+        // --- 5. FAXINA AUTOMÁTICA (EXPIRA EM 15 DIAS) ---
+        const QUINZE_DIAS = 15 * 24 * 60 * 60 * 1000;
+        const now = Date.now();
+        const stillInTrash = [];
+        for (const file of trashFiles) {
+            if (now - file.deletedAt > QUINZE_DIAS) {
+                try {
+                    await deleteObject(ref(storage, file.url));
+                } catch (e) { console.warn("Arquivo já removido do Storage"); }
+            } else {
+                stillInTrash.push(file);
+            }
+        }
+
+        // --- 5.5 CÁLCULO DE ESTOQUE TOTAL ---
+        let totalStock = parseInt(document.getElementById('prodStock').value) || 0;
+        if (updatedVariations.length > 0) {
+            totalStock = updatedVariations.reduce((sum, v) => sum + (v.active ? (parseInt(v.stock) || 0) : 0), 0);
+        }
+
+        // --- 6. SALVAMENTO FINAL ---
+const data = {
+    name: document.getElementById('prodName').value,
+    sku: document.getElementById('prodSku').value || '',
+    category: document.getElementById('prodCategory').value,
+    
+    // value agora salva o que você digitar em "PIX / Dinheiro"
+    value: parseFloat(document.getElementById('prodValue').value) || 0, 
+    
+    // promoValue continua igual
+    promoValue: parseFloat(document.getElementById('prodPromo').value) || null,   
+    
+    // Trocamos 'priceCash' por 'priceCard' para salvar o valor do novo campo "No Cartão"
+    priceCard: parseFloat(document.getElementById('prodCard').value) || null, 
+    
+    promoDays: promoDays || null,
+    promoUntil: promoUntil,
+    maxInstallments: parseInt(document.getElementById('prodMaxInstallments').value) || 1,
+installmentValue: (parseFloat(document.getElementById('prodCard').value) / (parseInt(document.getElementById('prodMaxInstallments').value) || 1)) || 0,
+    stock: totalStock, 
+    cost: parseFloat(document.getElementById('prodCost').value) || 0,
+    images: imageUrls,
+    description: document.getElementById('prodDesc').value || '',
+    isFeatured: document.getElementById('prodFeatured').checked,
+    variations: updatedVariations,
+    colors: [...new Set(updatedVariations.map(v => v.color))].filter(c => c && c !== 'PADRAO'),
+    sizes: [...new Set(updatedVariations.map(v => v.size))].filter(s => s && s !== 'UNICO'),
+    trashFiles: stillInTrash,
+    complements: window.currentProductComplements || [],
+   tipoNegocio: tipoNegocio,
+        complements: complementsData,
+        // Se for restaurante, estoque é "infinito" (999999)
+        stock: tipoNegocio === 'restaurante' ? 999999 : (parseInt(document.getElementById('prodStock').value) || 0),
+    status: totalStock > 0 ? 'active' : 'paused', 
+    updatedAt: Date.now(),
+    ...(isNew && { createdAt: Date.now() }) 
+};
+
+        await setDoc(docRef, data, { merge: true });
+      await loadProductsCache(true);
+     renderProductList();
+        window.markAsDirty(); 
+
+        showToast("✅ Produto e variações salvos!");
+        document.getElementById('productModal').classList.add('hidden'); 
+        currentProductImages = []; 
+        variationsMatrix = [];
+        // Limpa o histórico de cache da sessão para o próximo produto
+        if (typeof variationsHistoryCache !== 'undefined') variationsHistoryCache = new Map();
+
+    } catch (err) {
+        console.error("Erro detalhado ao salvar:", err);
+        showToast("❌ Erro ao salvar o produto.");
+    } finally {
+        if(btn) btn.disabled = false;
+        if(loader) loader.classList.add('hidden');
+    }
+};
+            
+       
+               window.deleteProduct = async (id, imageUrls = []) => {
+    if(!confirm("Deseja apagar este produto permanentemente? Suas fotos também serão removidas do servidor.")) return;
+
+    try {
+        const docRef = doc(db, `stores/${currentStoreId}/products`, id);
+        const snap = await getDoc(docRef);
+        const data = snap.exists() ? snap.data() : null;
+
+        // 1. Coleta TODAS as URLs de imagens para deletar (Principais + Variações + Lixeira)
+        let allImagesToDelete = [...imageUrls];
+        
+        if (data) {
+            if (data.variations) {
+                data.variations.forEach(v => { if (v.image) allImagesToDelete.push(v.image); });
+            }
+            if (data.trashFiles) {
+                data.trashFiles.forEach(t => { if (t.url) allImagesToDelete.push(t.url); });
+            }
+        }
+
+        // 2. Apaga o documento no Firestore
+        await deleteDoc(docRef); 
+
+        // 3. Limpeza Física no Storage (Evita desperdício de espaço)
+        const deletePromises = allImagesToDelete.map(url => {
+            if (url && url.includes('firebasestorage')) {
+                const imageRef = ref(storage, url);
+                return deleteObject(imageRef).catch(e => console.warn("Imagem ignorada ou já removida."));
+            }
+        });
+        await Promise.all(deletePromises);
+
+        // 4. Sincroniza vitrine
+        await deleteDoc(docRef); 
+      await loadProductsCache(true);
+     renderProductList();
+// Avisa o botão para ficar colorido
+window.markAsDirty(); 
+showToast("🗑️ Produto e todos os arquivos removidos!");
+
+    } catch (err) {
+        console.error("Erro na exclusão:", err);
+        showToast("❌ Erro ao excluir.");
+    }
+};
+
+
+        window.toggleProductStatus = async (id, currentStatus) => {
+    const newStatus = currentStatus === 'paused' ? 'active' : 'paused';
+
+    try {
+        // 1. Atualiza no Firestore
+        await updateDoc(doc(db, `stores/${currentStoreId}/products`, id), { status: newStatus });
+
+        // 2. Atualiza no array em memória
+        const idx = allProducts.findIndex(p => p.id === id);
+        if (idx !== -1) {
+            allProducts[idx].status = newStatus;
+        }
+
+        // 3. Atualiza o cache local (sem precisar recarregar)
+        localStorage.setItem(
+            `cache_products_${currentStoreId}`,
+            JSON.stringify(allProducts)
+        );
+
+        // 4. Re-renderiza a lista imediatamente
+        renderProductList();
+        updateQuotas(); // opcional, se quiser atualizar contadores
+
+        // 5. Marca edição pendente
+        window.markAsDirty();
+
+        // 6. Feedback visual
+        showToast(newStatus === 'paused' ? "Pausado." : "Ativado.");
+        
+    } catch (e) {
+        console.error(e);
+        showToast("Erro ao mudar status.");
+    }
+};
+        window.toggleCategoryAccordion = (catName) => {
+    // 1. Atualiza o estado no conjunto de categorias expandidas
+    if (expandedCategories.has(catName)) {
+        expandedCategories.delete(catName);
+    } else {
+        expandedCategories.add(catName);
+    }
+
+    // 2. Localiza o grupo pelo ID que criamos no novo render
+    const safeId = catName.replace(/\s+/g, '-');
+    const groupDiv = document.getElementById(`cat-group-${safeId}`);
+    
+    if (groupDiv) {
+        const content = groupDiv.querySelector('.category-content');
+        const icon = groupDiv.querySelector('.chevron-icon');
+
+        // 3. Aplica a animação e alterna a visibilidade
+        if (content) {
+            content.classList.toggle('hidden');
+        }
+        
+        // 4. Gira o ícone do chevron
+        if (icon) {
+            icon.classList.toggle('-rotate-90');
+        }
+    }
+};
+
+       
+       function renderProductList() {
+    const search = document.getElementById('productSearch').value.toLowerCase();
+    const container = document.getElementById('productListGrouped');
+    if (!container) return;
+    container.innerHTML = '';
+    
+    const grouped = {};
+    allCategories.forEach(c => grouped[c.name] = []);
+    grouped["Sem Categoria"] = [];
+    
+    allProducts.forEach(p => {
+        if (p.name.toLowerCase().includes(search) || (p.sku && p.sku.toLowerCase().includes(search))) {
+            if (grouped[p.category]) grouped[p.category].push(p);
+            else grouped["Sem Categoria"].push(p);
+        }
+    });
+    
+    Object.keys(grouped).forEach(catName => {
+        const products = grouped[catName];
+        if (products.length === 0 && catName === "Sem Categoria") return;
+        
+        const isCollapsed = !expandedCategories.has(catName);
+        const safeId = catName.replace(/\s+/g, '-');
+        const hasActive = products.some(p => p.status !== 'paused');
+
+        const groupDiv = document.createElement('div');
+        groupDiv.id = `cat-group-${safeId}`;
+        groupDiv.className = `mb-6 animate-fade-in`;
+        
+        groupDiv.innerHTML = `
+            <div class="flex items-center justify-between mb-3 px-2">
+                <div class="flex items-center gap-3 cursor-pointer" onclick="toggleCategoryAccordion('${catName}')">
+                    <div class="w-8 h-8 rounded-xl bg-white border border-slate-200 flex items-center justify-center shadow-sm">
+                        <i data-lucide="chevron-down" class="chevron-icon w-4 h-4 text-slate-400 transition-transform ${isCollapsed ? '-rotate-90' : ''}"></i>
+                    </div>
+                    <div>
+                        <h4 class="font-black text-slate-800 uppercase tracking-widest text-[11px]">${catName}</h4>
+                        <span class="text-[9px] text-slate-400 font-bold uppercase">${products.length} Itens</span>
+                    </div>
+                </div>
+                <button onclick="bulkToggleStatus('${catName}', '${hasActive ? 'paused' : 'active'}')" 
+                    class="text-[9px] font-black uppercase px-4 py-2 rounded-xl border transition-all ${hasActive ? 'bg-amber-50 text-amber-600 border-amber-100' : 'bg-emerald-50 text-emerald-600 border-emerald-100'}">
+                    ${hasActive ? 'Pausar Setor' : 'Ativar Setor'}
+                </button>
+            </div>
+
+            <div class="category-content space-y-3 ${isCollapsed ? 'hidden' : ''}">
+                ${products.map(p => {
+                    const isPaused = p.status === 'paused';
+                    const valNormal = p.value.toFixed(2).replace('.', ',');
+                    const valPromo = p.promoValue ? p.promoValue.toFixed(2).replace('.', ',') : null;
+                    const valCard = p.priceCard ? p.priceCard.toFixed(2).replace('.', ',') : null;
+                    const stock = Number(p.stock) || 0;
+
+                    return `
+                    <div class="relative bg-white p-4 rounded-[2rem] border border-slate-100 shadow-sm flex flex-col sm:flex-row gap-4 transition-all hover:border-primary-200 ${isPaused ? 'opacity-60 grayscale-[0.8]' : ''}">
+                        
+                        <div class="relative w-20 h-20 shrink-0 mx-auto sm:mx-0">
+                            <img src="${p.images?.[0] || ''}" class="w-full h-full object-cover rounded-2xl border border-slate-50">
+                            <div class="absolute -bottom-2 -right-2 px-2 py-1 rounded-lg border font-black text-[8px] shadow-sm ${stock <= 3 ? 'bg-rose-500 text-white border-rose-600' : 'bg-slate-900 text-white border-slate-800'}">
+                                ${stock} UN
+                            </div>
+                        </div>
+
+                        <div class="flex-1 min-w-0 flex flex-col justify-center">
+                            <div class="flex items-center gap-2 mb-1">
+                                <h5 class="font-black text-slate-800 text-sm truncate uppercase tracking-tight">${p.name}</h5>
+                                ${p.sku ? `<span class="text-[8px] font-mono bg-slate-50 text-slate-400 px-2 py-0.5 rounded-md border border-slate-100">#${p.sku}</span>` : ''}
+                            </div>
+                            
+                            <div class="flex flex-wrap items-center gap-x-4 gap-y-1 mt-1">
+                                <div class="flex flex-col">
+                                    <span class="text-[8px] font-black text-slate-400 uppercase tracking-tighter">PIX/Dinheiro</span>
+                                    <p class="text-xs font-black text-slate-900">
+                                        R$ ${valNormal} 
+                                        ${valPromo ? `<span class="text-emerald-500 ml-1">→ R$ ${valPromo}</span>` : ''}
+                                    </p>
+                                </div>
+                                
+                                ${valCard ? `
+                                <div class="flex flex-col border-l border-slate-100 pl-4">
+                                    <span class="text-[8px] font-black text-slate-400 uppercase tracking-tighter">No Cartão</span>
+                                    <p class="text-xs font-black text-slate-600 italic">R$ ${valCard}</p>
+                                </div>` : ''}
+                            </div>
+                        </div>
+
+                        <div class="flex sm:flex-col justify-center gap-2 border-t sm:border-t-0 sm:border-l border-slate-50 pt-3 sm:pt-0 sm:pl-4">
+                            <button onclick="toggleProductStatus('${p.id}', '${p.status || 'active'}')" 
+                                class="flex-1 sm:flex-initial p-2.5 rounded-xl ${isPaused ? 'bg-emerald-50 text-emerald-600' : 'bg-amber-50 text-amber-600'} hover:scale-110 transition-transform">
+                                <i data-lucide="${isPaused ? 'eye' : 'eye-off'}" class="w-4 h-4 mx-auto"></i>
+                            </button>
+                            
+                            <button onclick='openProductModal(${JSON.stringify(p).replace(/'/g, "&apos;")})' 
+    class="flex-1 sm:flex-initial p-2.5 bg-blue-50 text-blue-600 rounded-xl hover:scale-110 transition-transform">
+    <i data-lucide="pencil" class="w-4 h-4 mx-auto"></i>
+</button>
+
+<button onclick='duplicateProduct("${p.id}")' 
+    class="flex-1 sm:flex-initial p-2.5 bg-indigo-50 text-indigo-600 rounded-xl hover:scale-110 transition-transform" title="Duplicar">
+    <i data-lucide="copy" class="w-4 h-4 mx-auto"></i>
+</button>
+<button onclick='deleteProduct("${p.id}", ${JSON.stringify(p.images || [])})' 
+    class="flex-1 sm:flex-initial p-2.5 bg-rose-50 text-rose-500 rounded-xl hover:scale-110 transition-transform">
+    <i data-lucide="trash-2" class="w-4 h-4 mx-auto"></i>
+</button>
+                        </div>
+                    </div>`;
+                }).join('')}
+            </div>`;
+        container.appendChild(groupDiv);
+    });
+    if (window.lucide) lucide.createIcons();
+       }
+
+      window.handleCategorySubmit = async (e) => {
+    e.preventDefault();
+
+    const nameInput = document.getElementById('catInputName');
+    const name = nameInput.value.trim();
+    // O ID catMagic não existe no seu HTML atual, então usamos uma proteção
+    const catMagicEl = document.getElementById('catMagic');
+    const isMagic = catMagicEl ? catMagicEl.checked : false;
+    const editId = document.getElementById('editingCategoryId').value;
+
+    if (!name) {
+        showToast("Informe o nome da categoria.");
+        return;
+    }
+
+    try {
+        if (editId) {
+            const catRef = doc(db, `stores/${currentStoreId}/categories`, editId);
+            const oldDoc = await getDoc(catRef);
+            const oldName = oldDoc.exists() ? oldDoc.data().name : null;
+
+            await updateDoc(catRef, {
+                name: name,
+                magic: isMagic
+            });
+
+            if (oldName && oldName !== name) {
+                const q = query(
+                    collection(db, `stores/${currentStoreId}/products`),
+                    where("category", "==", oldName)
+                );
+                const snap = await getDocs(q);
+                const updates = snap.docs.map(d =>
+                    updateDoc(doc(db, `stores/${currentStoreId}/products`, d.id), { category: name })
+                );
+                await Promise.all(updates);
+            }
+        } else {
+            await addDoc(collection(db, `stores/${currentStoreId}/categories`), {
+                name: name,
+                status: 'active',
+                magic: isMagic,
+                createdAt: Date.now()
+            });
+        }
+
+        await loadCategoriesCache(true);
+        renderCategoryList(); // Adicionei esta linha para atualizar a lista na hora
+        window.markAsDirty(); 
+        window.cancelCategoryEdit(); 
+        showToast("✅ Categoria salva com sucesso!");
+
+    } catch (err) {
+        console.error("Erro ao salvar:", err);
+        showToast("Erro ao salvar categoria.");
+    }
+};
+        
+window.openEditCategory = (id, name) => {
+    document.getElementById('catFormTitle').textContent = "Editar Departamento";
+    document.getElementById('catInputName').value = name;
+    document.getElementById('editingCategoryId').value = id;
+    document.getElementById('btnCatSubmit').textContent = "Atualizar";
+    document.getElementById('btnCancelEditCat').classList.remove('hidden');
+};
+
+window.cancelCategoryEdit = () => {
+    const title = document.getElementById('catFormTitle');
+    const input = document.getElementById('catInputName');
+    const editId = document.getElementById('editingCategoryId');
+    const btn = document.getElementById('btnCatSubmit');
+
+    if (title) title.textContent = "Departamentos";
+    if (input) input.value = '';
+    if (editId) editId.value = '';
+    if (btn) btn.textContent = "Salvar";
+};
+
+window.deleteCategory = async (id) => {
+    if(!confirm("Tem certeza? Produtos nesta categoria ficarão 'Sem Categoria' até que você os edite.")) return;
+
+    try {
+        // 1. APAGA NO FIREBASE (Obrigatório para segurança)
+        await deleteDoc(doc(db, `stores/${currentStoreId}/categories`, id));
+
+        // 2. ATUALIZA A MEMÓRIA RAM (Faz sumir da tela na hora)
+        // Filtramos o array global de categorias
+        allCategories = allCategories.filter(cat => cat.id !== id);
+
+        // 3. SINCRONIZA O CACHE LOCAL (Para o F5 não trazer de volta)
+        localStorage.setItem(`cache_categories_${currentStoreId}`, JSON.stringify(allCategories));
+
+        // 4. (OPCIONAL) ATUALIZA OS PRODUTOS NA MEMÓRIA
+        // Se um produto tinha essa categoria, mudamos localmente para "Sem Categoria"
+        // Assim você não precisa recarregar os produtos do Firebase!
+        allProducts = allProducts.map(prod => {
+            if (prod.category === id) {
+                return { ...prod, category: "Sem Categoria" };
+            }
+            return prod;
+        });
+        // Salva o cache de produtos atualizado
+        localStorage.setItem(`cache_products_${currentStoreId}`, JSON.stringify(allProducts));
+
+        // 5. ATUALIZA O VISUAL E O BOTÃO DE PUBLICAR
+        renderCategoryList(); // Função que desenha as categorias
+        renderProductList();  // Atualiza os produtos para refletir a falta da categoria
+        window.markAsDirty(); // Ativa o botão de "Publicar"
+
+        showToast("Categoria removida com sucesso!");
+
+    } catch (error) {
+        console.error("Erro ao excluir categoria:", error);
+        showToast("❌ Erro ao excluir categoria.");
+    }
+};
+
+
+function renderCategoryList() {
+    document.getElementById('categoryList').innerHTML = allCategories.map(c => `
+        <div class="flex justify-between items-center p-4 md:p-5 bg-white gap-4">
+            <div class="flex-1 min-w-0"><span class="font-bold text-slate-700 block truncate">${c.name}</span></div>
+            <div class="flex gap-2">
+                <button onclick="openEditCategory('${c.id}', '${c.name}')" class="p-2 text-blue-500 hover:bg-blue-50 rounded-lg"><i data-lucide="pencil" class="w-5 h-5"></i></button>
+                <button onclick="deleteCategory('${c.id}')" class="p-2 text-red-500 hover:bg-red-50 rounded-lg"><i data-lucide="trash-2" class="w-5 h-5"></i></button>
+            </div>
+        </div>`).join('');
+    lucide.createIcons();
+}
+ 
+// --- GESTÃO DE BANNERS PREMIUM ---
+window.currentBannerImageData = null;
+
+// 1. SELEÇÃO E COMPRESSÃO DA IMAGEM
+window.handleBannerImageSelect = (files) => {
+    if (!files || !files.length) return;
+    const file = files[0];
+
+    const reader = new FileReader();
+    reader.onload = (e) => {
+        const img = new Image();
+        img.onload = () => {
+            const canvas = document.createElement('canvas');
+            const MAX_SIZE = 800; // Resolução ideal para o card lateral
+            let width = img.width;
+            let height = img.height;
+
+            if (width > height) {
+                if (width > MAX_SIZE) {
+                    height *= MAX_SIZE / width;
+                    width = MAX_SIZE;
+                }
+            } else {
+                if (height > MAX_SIZE) {
+                    width *= MAX_SIZE / height;
+                    height = MAX_SIZE;
+                }
+            }
+
+            canvas.width = width;
+            canvas.height = height;
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(img, 0, 0, width, height);
+
+            // Exporta como JPEG otimizado (70% qualidade)
+            window.currentBannerImageData = canvas.toDataURL('image/jpeg', 0.7);
+            updateBannerPreview();
+        };
+        img.src = e.target.result;
+    };
+    reader.readAsDataURL(file);
+};
+
+// 2. REMOÇÃO DA IMAGEM
+window.removeBannerImage = () => {
+    window.currentBannerImageData = null;
+    document.getElementById('bannerImageInput').value = '';
+    updateBannerPreview();
+};
+
+// 3. ABERTURA DO MODAL (CARREGA DADOS)
+window.openBannerModal = (b = null) => {
+    const select = document.getElementById('bannerTarget');
+    // Preenche o select com as categorias disponíveis
+    select.innerHTML = '<option value="offers">Todas as Ofertas</option>' + 
+                      allCategories.map(c => `<option value="${c.name}">${c.name}</option>`).join('');
+    
+    if(b) {
+        document.getElementById('bannerId').value = b.id || ''; 
+        document.getElementById('bannerTag').value = b.tag || '';
+        document.getElementById('bannerTitle').value = b.title || ''; 
+        document.getElementById('bannerSubtitle').value = b.subtitle || ''; 
+        document.getElementById('bannerBtnText').value = b.btnText || ''; 
+        document.getElementById('bannerColor1').value = b.color1 || '#8b5cf6';
+        document.getElementById('bannerColor2').value = b.color2 || '#6d28d9'; 
+        document.getElementById('bannerTarget').value = b.target || 'offers';
+        window.currentBannerImageData = b.imageUrl || null;
+    } else { 
+        document.getElementById('bannerForm').reset(); 
+        document.getElementById('bannerId').value = ''; 
+        document.getElementById('bannerColor1').value = '#8b5cf6'; 
+        document.getElementById('bannerColor2').value = '#6d28d9';
+        window.currentBannerImageData = null;
+    }
+
+    updateBannerPreview();
+    document.getElementById('bannerModal').classList.remove('hidden');
+    
+    // Força a renderização dos ícones do Lucide que estão dentro do modal
+    setTimeout(() => lucide.createIcons(), 50);
+};
+
+// 4. PREVIEW EM TEMPO REAL (ESTILO PREMIUM)
+window.updateBannerPreview = () => {
+    const tag = document.getElementById('bannerTag').value || 'TAG';
+    const title = document.getElementById('bannerTitle').value || 'TÍTULO';
+    const subtitle = document.getElementById('bannerSubtitle').value || 'SUBTÍTULO';
+    const btnText = document.getElementById('bannerBtnText').value || 'COMPRAR';
+    const c1 = document.getElementById('bannerColor1').value; 
+    const c2 = document.getElementById('bannerColor2').value;
+
+    const preview = document.getElementById('bannerPreview');
+    const imgContainer = document.getElementById('bannerPreviewImgContainer');
+    const btnRemove = document.getElementById('btnRemoveBannerImg');
+
+    document.getElementById('prevTag').textContent = tag; 
+    document.getElementById('prevTitle').textContent = title;
+    document.getElementById('prevSubtitle').textContent = subtitle;
+    document.getElementById('prevBtn').textContent = btnText;
+    
+    preview.style.background = `linear-gradient(135deg, ${c1}, ${c2})`;
+    
+    if (window.currentBannerImageData) {
+        document.getElementById('prevImg').src = window.currentBannerImageData;
+        imgContainer.classList.remove('hidden');
+        btnRemove.classList.remove('hidden');
+        preview.style.justifyContent = 'space-between';
+        preview.style.textAlign = 'left';
+    } else {
+        imgContainer.classList.add('hidden');
+        btnRemove.classList.add('hidden');
+        preview.style.justifyContent = 'center';
+        preview.style.textAlign = 'center';
+    }
+};
+
+// 5. SALVAMENTO NO FIREBASE (STORAGE + FIRESTORE)
+window.handleBannerSubmit = async (e) => {
+    e.preventDefault();
+    
+    const id = document.getElementById('bannerId').value;
+    const isNew = !id;
+    const maxAllowed = storeConfig.hasCarousel ? (parseInt(storeConfig.maxBanners) || 0) : 1;
+
+    if (isNew && allBanners.length >= maxAllowed) {
+        const msg = storeConfig.hasCarousel 
+            ? `Limite de ${maxAllowed} banners atingido.` 
+            : "O seu plano não permite Carrossel (Limite: 1 banner).";
+        showToast(`❌ ${msg}`);
+        return;
+    }
+
+    const btn = document.getElementById('btnSaveBanner');
+    btn.disabled = true;
+
+    try {
+        const finalId = id || 'banner_' + Date.now();
+        let imageUrl = window.currentBannerImageData;
+
+        if (imageUrl && imageUrl.startsWith('data:image')) {
+            const bannerRef = ref(storage, `stores/${currentStoreId}/banners/${finalId}.jpg`);
+            await uploadString(bannerRef, imageUrl, 'data_url');
+            imageUrl = await getDownloadURL(bannerRef);
+        }
+
+        const data = { 
+            tag: document.getElementById('bannerTag').value, 
+            title: document.getElementById('bannerTitle').value, 
+            subtitle: document.getElementById('bannerSubtitle').value || '',
+            btnText: document.getElementById('bannerBtnText').value || 'Ver Agora',
+            color1: document.getElementById('bannerColor1').value, 
+            color2: document.getElementById('bannerColor2').value, 
+            target: document.getElementById('bannerTarget').value,
+            imageUrl: imageUrl, 
+        };
+
+        await setDoc(doc(db, `stores/${currentStoreId}/hero_cards`, finalId), data, { merge: true });
+        
+        // 1. Atualiza a memória (allBanners)
+        await loadBannersCache(true);
+        
+        // 2. ATUALIZA A TELA (O que estava faltando!)
+        renderBannerList(); 
+        
+        window.markAsDirty();
+        
+        document.getElementById('bannerModal').classList.add('hidden');
+        showToast("✅ Banner publicado!");
+    } catch (err) {
+        console.error(err);
+        showToast("❌ Erro ao publicar banner.");
+    } finally {
+        btn.disabled = false;
+    }
+};
+
+
+
+        window.deleteBanner = async (id) => {
+    if(!confirm("Apagar banner? A imagem também será removida.")) return;
+    
+    try {
+        const bannerDoc = allBanners.find(b => b.id === id);
+        const imageUrl = bannerDoc ? bannerDoc.imageUrl : null;
+
+        // 1. APAGA NO FIREBASE (O que você já faz)
+        await deleteDoc(doc(db, `stores/${currentStoreId}/hero_cards`, id));
+
+        // 2. ATUALIZA A MEMÓRIA RAM (O que faz sumir da tela AGORA)
+        allBanners = allBanners.filter(b => b.id !== id);
+
+        // 3. ATUALIZA O CACHE DO DISCO (O que evita o "fantasma" no F5)
+        localStorage.setItem(`cache_banners_${currentStoreId}`, JSON.stringify(allBanners));
+
+        // 4. LIMPEZA FÍSICA NO STORAGE
+        if (imageUrl && imageUrl.includes('firebasestorage.googleapis.com')) {
+            const bannerImgRef = ref(storage, imageUrl);
+            await deleteObject(bannerImgRef).catch(e => console.warn("Imagem já removida."));
+        }
+
+        // 5. ATUALIZA A INTERFACE E O BOTÃO DE PUBLICAR
+        renderBannerList(); 
+        window.markAsDirty(); 
+
+        showToast("Banner removido com sucesso!");
+    } catch (e) {
+        console.error("Erro ao excluir banner:", e);
+        showToast("❌ Erro ao excluir banner.");
+    }
+};
+
+
+        function renderBannerList() {
+    const listContainer = document.getElementById('bannersList');
+    document.getElementById('emptyBannersMsg').classList.toggle('hidden', allBanners.length > 0);
+    
+    listContainer.innerHTML = allBanners.map(b => {
+        // Layout adaptativo para o card de listagem
+        const hasImg = b.imageUrl;
+        return `
+        <div class="bg-white p-4 rounded-3xl border shadow-sm group">
+            <div class="h-32 rounded-2xl flex items-center ${hasImg ? 'justify-between text-left' : 'justify-center text-center'} p-4 text-white mb-4 shadow-inner relative overflow-hidden" 
+                 style="background:linear-gradient(135deg, ${b.color1}, ${b.color2})">
+                
+                <div class="relative z-10 ${hasImg ? 'w-3/5' : 'w-full'}">
+                    <span class="text-[8px] font-black uppercase opacity-80 block">${b.tag}</span>
+                    <h4 class="font-bold text-xs leading-tight uppercase truncate">${b.title}</h4>
+                </div>
+
+                ${hasImg ? `
+                    <div class="w-16 h-16 rounded-xl overflow-hidden border border-white/20 shadow-lg shrink-0 rotate-3">
+                        <img src="${b.imageUrl}" class="w-full h-full object-cover">
+                    </div>
+                ` : ''}
+            </div>
+            
+            <div class="flex justify-between items-center px-1">
+                <div>
+                    <span class="text-[9px] font-black text-slate-400 uppercase block">Alvo</span>
+                    <span class="text-[10px] font-bold text-slate-600">${b.target === 'offers' ? 'Ofertas' : b.target}</span>
+                </div>
+                <div class="flex gap-1">
+                    <button onclick='openBannerModal(${JSON.stringify(b).replace(/'/g, "&apos;")})' class="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors">
+                        <i data-lucide="pencil" class="w-4 h-4"></i>
+                    </button>
+                    <button onclick="deleteBanner('${b.id}')" class="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors">
+                        <i data-lucide="trash-2" class="w-4 h-4"></i>
+                    </button>
+                </div>
+            </div>
+        </div>`;
+    }).join('');
+    lucide.createIcons();
+        }
+
+        window.handleLogoSelect = (files) => {
+            if (!files || !files.length) return;
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                document.getElementById('logoPreviewImg').src = e.target.result;
+                document.getElementById('logoPreviewImg').classList.remove('hidden');
+                document.getElementById('logoPlaceholderIcon').classList.add('hidden');
+                window.currentLogoData = e.target.result; 
+            };
+            reader.readAsDataURL(files[0]);
+        };
+
+
+    window.changeTab = async (tabName) => { 
+
+    // --- NOVO: VALIDAÇÃO DO FINANCEIRO ---
+    if (tabName === 'products') {
+    await Promise.all([
+        loadProductsCache(),
+        loadCategoriesCache()
+    ]);
+
+    if (typeof window.limparOfertasExpiradas === "function") {
+        window.limparOfertasExpiradas(allProducts);
+    }
+
+    if (typeof renderProductList === "function") {
+        renderProductList();
+    }
+
+    if (typeof updateQuotas === "function") {
+        updateQuotas();
+    }
+}
+
+    if (tabName === 'categories') {
+        await loadCategoriesCache();
+        renderCategoryList(); // Garante que a lista apareça
+    }
+
+    if (tabName === 'banners') {
+        await loadBannersCache();
+        renderBannerList();
+    }
+     
+    if (tabName === 'dashboard' || tabName === 'finance') {
+        await Promise.all([
+            loadProductsCache(),
+            loadCategoriesCache(),
+            loadBannersCache()
+        ]);
+    }
+
+    // --- REMOVER TODAS AS ABAS ---
+    const tabs = ['orders','dashboard','banners','products','categories','config','finance','customers','metas'];
+    const fab = document.getElementById('fabAddOrder');
+
+    tabs.forEach(tab => {
+        const view = document.getElementById(`view-${tab}`);
+        if (view) view.classList.add('hidden');
+
+        const btn = document.getElementById(`nav-${tab}`);
+        if (btn) {
+            btn.classList.remove('text-primary','bg-primary/5','border-r-4','border-primary','font-bold','active');
+            btn.classList.add('text-slate-600','font-medium');
+        }
+    });
+
+    if (tabName === 'dashboard') {
+
+    // --- VISITAS (carrega uma vez) ---
+    if (!window.isDashboardLoaded) {
+        const dashRef = doc(db, `stores/${currentStoreId}/analytics/global`);
+        const d = await getDoc(dashRef);
+        if (d.exists()) {
+            document.getElementById('dash-total-visits').textContent = d.data().totalVisits || 0;
+        }
+        window.isDashboardLoaded = true;
+    }
+
+    // --- INSIGHTS ---
+    setTimeout(() => {
+        if (typeof window.calculateSalesInsights === 'function') {
+            window.calculateSalesInsights();
+        }
+    }, 50);
+
+    // --- PRODUTOS ---
+    const prodCount = window.getCachedProductCount?.() || 0;
+    document.getElementById("dash-total-products").textContent = prodCount;
+
+    // --- BANNERS ---
+    if (window.getCachedBannerCount) {
+        const bannerCount = window.getCachedBannerCount();
+        document.getElementById("dash-total-banners").textContent = bannerCount;
+    }
+
+    // --- CATEGORIAS ---
+    if (window.getCachedCategoryCount) {
+        document.getElementById("dash-total-cats").textContent =
+            window.getCachedCategoryCount();
+    }
+
+    // --- LIMITE DOS PRODUTOS ---
+    if (window.storeLimits?.products !== undefined) {
+        document.getElementById("dash-limit-products").textContent =
+            " / " + window.storeLimits.products;
+    }
+
+    // --- LIMITE DOS BANNERS ---
+    if (window.storeLimits?.banners !== undefined) {
+        document.getElementById("dash-limit-banners").textContent =
+            " / " + window.storeLimits.banners;
+    }
+
+}
+    
+    
+    const activeView = document.getElementById(`view-${tabName}`);
+    if (activeView) activeView.classList.remove('hidden');
+
+    // --- CONFIG ---
+    if (tabName === 'config' && !isConfigLoaded) {
+        if (typeof initStoreData === 'function') {
+            await initStoreData();
+            isConfigLoaded = true;
+        }
+    }
+
+    // --- FINANCEIRO (VERSÃO ATUALIZADA PARA BUSCA NO BANCO) ---
+if (tabName === 'finance') {
+    // 1. Feedback visual imediato para o lojista
+    const revEl = document.getElementById('fin-rev-day');
+    const profitEl = document.getElementById('fin-profit-real');
+    
+    if (revEl) revEl.textContent = "Calculando...";
+    if (profitEl) profitEl.textContent = "Calculando...";
+
+    // 2. Chama a função assíncrona com um pequeno delay para garantir que a aba carregou
+    setTimeout(async () => {
+        if (typeof window.initFinanceDashboard === 'function') {
+            try {
+                await window.initFinanceDashboard();
+            } catch (err) {
+                console.error("Erro ao processar financeiro:", err);
+                if (revEl) revEl.textContent = "Erro ao carregar";
+            }
+        }
+    }, 100);
+     }
+
+    // --- BOTÃO DO MENU ---
+    const activeBtn = document.getElementById(`nav-${tabName}`);
+    if (activeBtn) {
+        activeBtn.classList.add('text-primary','bg-primary/5','border-r-4','border-primary','font-bold','active');
+        activeBtn.classList.remove('text-slate-600','font-medium');
+    }
+
+if (fab) {
+    const showFabIn = ['orders', 'metas', 'dashboard'];
+    if (showFabIn.includes(tabName)) {
+        fab.classList.remove('hidden');
+    } else {
+        fab.classList.add('hidden');
+    }
+}
+
+    // --- CLIENTES ---
+if (tabName === 'customers') {
+    // Usamos o .then() para garantir que a renderização só ocorra após os dados chegarem
+    window.loadSavedCustomers().then(() => {
+        window.renderCustomerRanking();
+    });
+}
+
+// --- METAS ---
+if (tabName === 'metas') {
+    // Feedback visual opcional antes de calcular
+    const dailyEl = document.getElementById('val-daily');
+    if (dailyEl) dailyEl.textContent = "Atualizando...";
+
+    // Chama a função de cálculo que criamos nos passos anteriores
+    if (typeof window.calculateGoals === 'function') {
+        window.calculateGoals();
+    }
+}
+
+    // --- BADGE ---
+    if (tabName === 'orders') {
+        document.getElementById('menuBadge')?.classList.add('hidden');
+        document.getElementById('menuBadgeMobile')?.classList.add('hidden');
+    }
+
+    // --- TITULO ---
+   const titles = { 
+    orders: 'Pedidos', 
+    dashboard: 'Dashboard', 
+    banners: 'Banners', 
+    products: 'Produtos', 
+    categories: 'Categorias', 
+    config: 'Configurações', 
+    finance: 'Financeiro', 
+    customers: 'Clientes', 
+    metas: 'Metas de Vendas' 
+};
+
+const titleElement = document.getElementById('page-title');
+if (titleElement) {
+    titleElement.innerText = titles[tabName] || 'Painel';
+}
+
+// 2. Verificação extra dentro da sua função calculateGoals
+const updateUI = (id, current, target, isQty = false) => {
+    const valEl = document.getElementById(`val-${id}`);
+    if (!valEl) return; // Se o elemento não existe (aba de metas não carregada), ele para aqui e não dá erro.
+
+    const targetEl = document.getElementById(`target-${id}`);
+    const pctEl = document.getElementById(`pct-${id}`);
+    const barEl = document.getElementById(`bar-${id}`);
+
+    const formatBRL = (v) => v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+
+    valEl.innerText = isQty ? `${current} Pedidos` : formatBRL(current);
+    if (targetEl) targetEl.innerText = isQty ? target : formatBRL(target);
+    
+    const percent = target > 0 ? Math.min((current / target) * 100, 100) : 0;
+    if (pctEl) pctEl.innerText = `${Math.floor(percent)}%`;
+    if (barEl) barEl.style.width = `${percent}%`;
+};
+    document.getElementById('page-title').innerText = titles[tabName] || 'Painel';
+
+    // --- MOBILE ---
+    if (typeof toggleMobileSidebar === 'function' &&
+        !document.getElementById('mobileSidebar').classList.contains('sidebar-hidden')) {
+        toggleMobileSidebar();
+    }
+
+    lucide.createIcons();
+};
+
+            
+        window.toggleMobileSidebar = () => { 
+            const sb = document.getElementById('mobileSidebar'); const ov = document.getElementById('mobileOverlay'); 
+            if(sb.classList.contains('sidebar-hidden')){ sb.classList.replace('sidebar-hidden','sidebar-visible'); ov.classList.remove('hidden'); } 
+            else { sb.classList.replace('sidebar-visible','sidebar-hidden'); ov.classList.add('hidden'); } 
+        };
+
+        window.toggleStoreMenu = (e) => { e.stopPropagation(); document.getElementById('storeDropdown').classList.toggle('hidden'); };
+      window.openStoreLink = () => {
+    // Pega o slug puro (ex: sua-loja-teste)
+    const slugDaTela = document.getElementById('urlDisplay')?.textContent.split('/').pop().trim();
+    const storeSlug = (slugDaTela && slugDaTela !== '...') ? slugDaTela : (window.currentStoreSlug || currentStoreId);
+    
+    if (!storeSlug) {
+        showToast("⚠️ Aguarde a sincronização...");
+        return;
+    }
+
+    // Link limpo, sem o "loja." depois da barra
+    const novaUrl = `https://loja.vitrineonline.app.br/${storeSlug}`;
+    window.open(novaUrl, '_blank');
+};
+
+window.copyStoreLink = () => {
+    const slugDaTela = document.getElementById('urlDisplay')?.textContent.split('/').pop().trim();
+    const storeSlug = (slugDaTela && slugDaTela !== '...') ? slugDaTela : (window.currentStoreSlug || currentStoreId);
+    
+    if (!storeSlug) {
+        showToast("Erro: Identificador não encontrado.");
+        return;
+    }
+
+    // Link limpo para o lojista colar no Instagram
+    const linkParaCopiar = `https://loja.vitrineonline.app.br/${storeSlug}`;
+    
+    // Lógica de cópia...
+    navigator.clipboard.writeText(linkParaCopiar).then(() => {
+        showToast("✅ Link da Vitrine copiado!");
+    });
+};
+
+
+// Função auxiliar infalível para copiar no Android/Redmi
+function executaPlanoBCopia(texto) {
+    const input = document.createElement('textarea');
+    input.value = texto;
+    input.style.position = 'fixed';
+    input.style.opacity = '0';
+    document.body.appendChild(input);
+    input.focus();
+    input.select();
+    try {
+        document.execCommand('copy');
+        showToast("✅ Link copiado!");
+    } catch (err) {
+        showToast("❌ Erro ao copiar.");
+    }
+    document.body.removeChild(input);
+}
+    
+        
+        window.showToast = (msg) => {
+            const container = document.getElementById('toast-container');
+            const el = document.createElement('div');
+            el.className = "toast bg-slate-900 text-white px-6 py-4 rounded-2xl shadow-2xl flex items-center gap-3 font-bold text-sm border border-slate-700 animate-fade-in";
+            el.innerHTML = `<i data-lucide="bell" class="w-5 h-5 text-primary-400"></i> ${msg}`;
+            container.appendChild(el);
+            setTimeout(() => el.remove(), 4000);
+            lucide.createIcons();
+        };
+
+        window.addDeliveryArea = async () => { 
+    const nameInput = document.getElementById('areaName');
+    const feeInput = document.getElementById('areaFee');
+    const n = nameInput.value.trim(); 
+    const f = parseFloat(feeInput.value); 
+    
+    if(!n || isNaN(f)) {
+        showToast("⚠️ Digite o nome do bairro e o valor da taxa.");
+        return;
+    }
+
+    try {
+        const storeRef = doc(db, `stores/${currentStoreId}/config/store`);
+
+     
+        // BUSCA DIRETA NO BANCO PARA GARANTIR QUE NÃO VAI SOBRESCREVER NADA
+        const docSnap = await getDoc(storeRef);
+        let currentAreas = [];
+        if (docSnap.exists() && docSnap.data().deliveryAreas) {
+            currentAreas = docSnap.data().deliveryAreas;
+        }
+
+        // Adiciona à lista que veio do banco
+        const updatedAreas = [...currentAreas, { name: n, fee: f }];
+        
+        await updateDoc(storeRef, { 
+            deliveryAreas: updatedAreas,
+           });
+     deliveryAreas = updatedAreas; 
+      window.markAsDirty();
+        
+        // Limpa campos
+        nameInput.value = ''; 
+        feeInput.value = ''; 
+     renderDeliveryAreas();
+        showToast("✅ Bairro salvo!");
+    } catch (e) { 
+        showToast("❌ Erro ao salvar.");
+    }
+         
+};
+
+
+
+        window.removeArea = async (i) => { 
+    if(!confirm("Remover esta taxa de entrega?")) return;
+    
+    deliveryAreas.splice(i, 1); 
+    
+    try {
+        const storeRef = doc(db, `stores/${currentStoreId}/config/store`);
+        await updateDoc(storeRef, { 
+            deliveryAreas: deliveryAreas, 
+              });
+     renderDeliveryAreas();
+      window.markAsDirty();
+        showToast("Bairro removido!");
+        // O renderDeliveryAreas() será chamado automaticamente pelo onSnapshot acima
+    } catch (e) { 
+        showToast("Erro ao excluir."); 
+    }
+};
+
+
+        window.renderDeliveryAreas = () => {
+    const list = document.getElementById('deliveryAreasList');
+    if(!list) return;
+
+    // Se a lista estiver vazia, limpa o container
+    if (!deliveryAreas || deliveryAreas.length === 0) {
+        list.innerHTML = '<div class="p-6 text-center text-slate-400 text-xs italic">Nenhum bairro cadastrado.</div>';
+        return;
+    }
+
+    // Gera o HTML para cada bairro salvo
+    list.innerHTML = deliveryAreas.map((a, i) => `
+        <div class="flex justify-between items-center p-4 bg-white border-b border-slate-100 last:border-0 animate-fade-in">
+            <div class="flex flex-col">
+                <span class="text-slate-700 font-bold text-sm">${a.name}</span>
+                <span class="text-[10px] text-slate-400 uppercase font-black tracking-widest">Entrega Local</span>
+            </div>
+            <div class="flex items-center gap-4">
+                <b class="text-primary-600 font-bold text-sm">R$ ${Number(a.fee).toFixed(2).replace('.',',')}</b>
+                <button type="button" onclick="window.removeArea(${i})" class="text-red-400 hover:text-red-600 hover:bg-red-50 p-2 rounded-xl transition-all">
+                    <i data-lucide="trash-2" class="w-4 h-4"></i>
+                </button>
+            </div>
+        </div>`).join(''); 
+    
+    // Atualiza os ícones (Lixeirinha)
+    if(typeof lucide !== 'undefined') lucide.createIcons();
+}
+
+window.saveStoreConfig = async function (event) {
+    event.preventDefault();
+    const btn = document.getElementById('btnSaveConfig');
+    
+    btn.disabled = true;
+    btn.textContent = "Salvando...";
+
+    try {
+        const storeRef = doc(db, "stores", currentStoreId, "config", "store");
+        
+        // --- Busca os dados atuais antes de salvar ---
+        const docSnap = await getDoc(storeRef);
+        const currentData = docSnap.exists() ? docSnap.data() : {};
+        const tipoNegocio = document.getElementById('configTipoNegocio').value;
+        
+        // Por padrão, mantemos a logo que já está no banco de dados
+        let finalLogoUrl = currentData.logoUrl || "";
+
+        // 1. Processamento da Logomarca (SÓ se houver foto nova no cache)
+        if (window.currentLogoData && window.currentLogoData.startsWith('data:image')) {
+            const logoRef = ref(storage, `stores/${currentStoreId}/config/logo.jpg`);
+            await uploadString(logoRef, window.currentLogoData, 'data_url');
+            finalLogoUrl = await getDownloadURL(logoRef);
+        }
+
+        // 2. Limpeza do WhatsApp
+        const rawWhatsapp = document.getElementById('confWhatsapp').value.replace(/\D/g, '');
+
+        // 3. Preparação dos Dados (Incluindo os novos campos de PIX e Tipo de Negócio)
+        const dataToSave = {
+            storeName: document.getElementById('confStoreName').value,
+            whatsappNumber: rawWhatsapp,
+            footerText: document.getElementById('confFooter').value,
+            primaryColor: document.getElementById('confColorPrimary').value,
+            deliveryAreas: deliveryAreas, 
+            logoUrl: finalLogoUrl,
+            tipoNegocio: tipoNegocio, // <--- ADICIONE ESTA LINHA AQUI
+            // --- NOVOS CAMPOS PIX ---
+            pix: {
+                key: document.getElementById('cfgPixKey').value,
+                name: document.getElementById('cfgPixName').value,
+                bank: document.getElementById('cfgPixBank').value
+            },
+        };
+
+        // 4. Gravação no Firestore (COM merge: true para preservar permissões de plano e abas)
+        await setDoc(storeRef, dataToSave, { merge: true });
+window.markAsDirty(); 
+
+        showToast("✅ Configurações e Dados PIX atualizados!");
+        
+        // Reset do cache de imagem local após salvar
+        window.currentLogoData = null;
+
+    } catch (error) {
+        console.error("Erro ao salvar configurações:", error);
+        showToast("❌ Erro ao salvar configurações.");
+    } finally {
+        btn.disabled = false;
+        btn.textContent = "Guardar Alterações";
+    }
+};
+
+       
+        window.handleUpdatePassword = async (e) => { 
+            e.preventDefault(); 
+            const n = document.getElementById('newPass').value; 
+            if(n !== document.getElementById('confirmNewPass').value) return document.getElementById('passError').classList.remove('hidden'); 
+            try { await updatePassword(auth.currentUser, n); showToast("Senha alterada! 🛡️"); } catch(error) { showToast("Erro: Saia e entre novamente."); }
+        };
+
+        lucide.createIcons();
+
+// --- NOVO SISTEMA DE MÉTRICAS (CORREÇÃO DE LEITURA E VARIÁVEIS) ---
+
+        // --- NOVO SISTEMA DE MÉTRICAS (CORREÇÃO DE LEITURA DO BALDE) ---
+async function initAnalyticsInsights() {
+    if (!currentStoreId) return;
+
+    // Referência ao documento único que a Vitrine agora preenche (product_views)
+    const docRef = doc(db, `stores/${currentStoreId}/analytics`, "product_views");
+  const snapCheck = await getDoc(docRef);
+    if (!snapCheck.exists()) {
+        await setDoc(docRef, { stats: {}, searches: {}, lastUpdate: Timestamp.now() });
+    }
+    
+    onSnapshot(docRef, (snap) => {
+        // Se o documento não existir, mantemos as mensagens de "Aguardando..." que você já tem
+        if (!snap.exists()) {
+            console.log("Nenhum dado de analytics encontrado para esta loja.");
+            return;
+        }
+
+        const data = snap.data();
+        
+        // --- 1. PROCESSAR PRODUTOS POPULARES (Lendo do Mapa 'stats') ---
+        const stats = data.stats || {};
+        const ranking = Object.keys(stats).map(id => ({
+            name: stats[id].name || "Produto",
+            views: stats[id].views || 0
+        })).sort((a, b) => b.views - a.views).slice(0, 5);
+
+        const listProd = document.getElementById('topProductsList');
+        if (ranking.length > 0) {
+            listProd.innerHTML = ranking.map(p => `
+                <div class="flex items-center justify-between p-3 bg-slate-50 rounded-2xl border border-slate-100">
+                    <span class="text-xs font-bold text-slate-700 truncate pr-2">${p.name}</span>
+                    <span class="text-[10px] font-black bg-primary-100 text-primary-700 px-2 py-1 rounded-lg">
+                        ${p.views} views
+                    </span>
+                </div>`).join('');
+        }
+
+        // --- 2. PROCESSAR BUSCAS FALHAS (Lendo do Mapa 'searches') ---
+        const searches = data.searches || {};
+        const listSearch = document.getElementById('failedSearchesList');
+        
+        const searchRanking = Object.entries(searches)
+            .sort((a, b) => b[1] - a[1])
+            .slice(0, 5);
+
+        if (searchRanking.length > 0) {
+            listSearch.innerHTML = searchRanking.map(([term, count]) => `
+                <div class="flex items-center justify-between p-3 bg-amber-50/50 rounded-2xl border border-amber-100">
+                    <span class="text-xs font-bold text-amber-800 uppercase tracking-tight italic">"${term}"</span>
+                    <div class="flex items-center gap-2">
+                        <span class="text-[9px] font-bold text-amber-600 uppercase">Perdido ${count}x</span>
+                        <i data-lucide="alert-circle" class="w-3 h-3 text-amber-400"></i>
+                    </div>
+                </div>`).join('');
+            lucide.createIcons();
+        } else {
+            listSearch.innerHTML = `<p class="text-xs text-slate-400 italic py-4">Nenhuma busca perdida registrada.</p>`;
+        }
+    });
+}
+
+
+        // Adicione o window. para garantir que o botão no HTML ache a função
+  window.toggleMagicCategory = async function(type, isVisible) {
+    if (!currentStoreId) return;
+
+    // 1. SEGURANÇA: Bloqueio se não for plano PRO
+    if (storeConfig.hasMagicCategories !== true) {
+        showToast("💎 Recurso bloqueado: Upgrade seu plano para usar Categorias Mágicas.");
+        const input = document.getElementById(type === 'showNew' ? 'magicNew' : 'magicTop');
+        if (input) input.checked = !isVisible; // Reverte o botão visualmente
+        return;
+    }
+
+    try {
+        const storeRef = doc(db, `stores/${currentStoreId}/config/store`);
+
+        // 2. ATUALIZAÇÃO: Gravamos apenas a mudança necessária
+        await setDoc(storeRef, {
+            magicCategories: {
+                [type]: isVisible
+            },
+          
+        }, { merge: true });
+   window.markAsDirty();
+
+        // 3. FEEDBACK ÚNICO
+        showToast(isVisible ? "Setor automático ativado! ✨" : "Setor removido da vitrine.");
+
+    } catch (error) {
+        console.error("Erro ao salvar:", error);
+        if (error.code !== 'permission-denied') {
+            showToast("Erro ao salvar preferência.");
+        }
+    }
+};
+
+
+    window.bulkToggleStatus = async (categoryName, newStatus) => {
+    const actionText = newStatus === 'paused' ? 'pausar todos os produtos de' : 'ativar todos os produtos de';
+    if(!confirm(`Deseja ${actionText} "${categoryName}"?`)) return;
+
+    // 1. Filtra os produtos da categoria
+    const productsToUpdate = allProducts.filter(p => p.category === categoryName);
+    
+    if(productsToUpdate.length === 0) {
+        showToast("Nenhum produto nesta categoria.");
+        return;
+    }
+
+    showToast("⚙️ Processando lote...");
+
+    try {
+        // 2. Atualiza no Firebase
+        const promises = productsToUpdate.map(p => 
+            updateDoc(doc(db, `stores/${currentStoreId}/products`, p.id), { status: newStatus })
+        );
+        await Promise.all(promises);
+
+        // 3. ATUALIZAÇÃO LOCAL (Crucial para o botão mudar na tela sem F5)
+        allProducts = allProducts.map(p => {
+            if (p.category === categoryName) {
+                return { ...p, status: newStatus };
+            }
+            return p;
+        });
+
+        // 4. Sincroniza o cache do navegador
+        localStorage.setItem(`cache_products_${currentStoreId}`, JSON.stringify(allProducts));
+
+        // 5. Marca para publicar e redesenha a lista
+        window.markAsDirty();
+        renderProductList(); 
+
+        showToast(`✅ Setor "${categoryName}" ${newStatus === 'paused' ? 'pausado' : 'ativado'}!`);
+    } catch (err) {
+        console.error("Erro no lote:", err);
+        showToast("❌ Erro ao processar alteração.");
+    }
+};
+
+   
+       window.openOrderModal = (id) => {
+       if (typeof audio !== 'undefined' && audio) {
+    audio.pause();
+    audio.currentTime = 0;
+    console.log("🔔 Som interrompido pelo processamento do pedido.");
+}
+    const p = ordersCache[id];
+    if (!p) return;
+
+    const getStatusTheme = (s) => {
+        const themes = {
+            'pending_whatsapp': { label: 'Novo Pedido', icon: 'bell', color: 'text-rose-600', bg: 'bg-rose-50', border: 'border-rose-100' },
+            'confirmed': { label: 'Em Preparo', icon: 'package', color: 'text-amber-600', bg: 'bg-amber-50', border: 'border-amber-100' },
+            'completed': { label: 'Entregue', icon: 'check-circle', color: 'text-emerald-600', bg: 'bg-emerald-50', border: 'border-emerald-100' },
+            'canceled': { label: 'Cancelado', icon: 'x-circle', color: 'text-slate-500', bg: 'bg-slate-100', border: 'border-slate-200' },
+            'to_receive': { label: 'A Receber', icon: 'clock', color: 'text-indigo-600', bg: 'bg-indigo-50', border: 'border-indigo-100' }
+        };
+        return themes[s] || { label: s, icon: 'help-circle', color: 'text-slate-400', bg: 'bg-slate-50', border: 'border-slate-100' };
+    };
+
+    const theme = getStatusTheme(p.status);
+    const modal = document.getElementById('orderDetailModal');
+    const modalContent = modal.querySelector('.auth-card-content');
+    let payText = typeof p.paymentMethod === 'string' ? p.paymentMethod : (p.paymentMethod.type || 'Não informado');
+
+    const renderMain = () => {
+        modalContent.innerHTML = `
+            <div class="relative overflow-hidden rounded-3xl ${theme.bg} border ${theme.border} p-6 mb-6">
+                <div class="relative z-10 flex justify-between items-start">
+                    <div>
+                        <div class="flex items-center gap-2 mb-1">
+                            <i data-lucide="${theme.icon}" class="w-4 h-4 ${theme.color}"></i>
+                            <span class="text-[10px] font-black uppercase tracking-[0.2em] ${theme.color}">${theme.label}</span>
+                        </div>
+                        <h2 class="text-2xl font-black text-slate-800 tracking-tighter">#${p.id.toUpperCase().slice(-5)}</h2>
+                        <p class="text-[10px] text-slate-500 font-bold mt-1 uppercase opacity-70">${new Date(p.createdAt?.toDate ? p.createdAt.toDate() : p.createdAt).toLocaleString('pt-BR')}</p>
+                    </div>
+                    <div class="bg-white/60 backdrop-blur-md p-3 rounded-2xl shadow-sm border border-white">
+                        <i data-lucide="shopping-bag" class="w-6 h-6 text-slate-400"></i>
+                    </div>
+                </div>
+                <div class="absolute -right-10 -bottom-10 w-32 h-32 ${theme.color} opacity-5 rounded-full"></div>
+            </div>
+
+            <div class="bg-white rounded-[2rem] border border-slate-100 p-6 shadow-sm mb-6 space-y-4">
+                <div class="flex items-center gap-4">
+                    <div class="w-12 h-12 rounded-2xl bg-slate-50 flex items-center justify-center text-slate-400 border border-slate-100">
+                        <i data-lucide="user" class="w-6 h-6"></i>
+                    </div>
+                    <div class="min-w-0">
+                        <h4 class="text-sm font-black text-slate-800 leading-none mb-1">${p.customer.name}</h4>
+                        <p class="text-xs text-slate-500 font-medium">${p.customer.phone}</p>
+                    </div>
+                </div>
+                
+                <div class="flex items-start gap-4 pt-4 border-t border-slate-50">
+                    <div class="w-5 h-5 mt-0.5 flex items-center justify-center text-slate-300">
+                        <i data-lucide="map-pin" class="w-4 h-4"></i>
+                    </div>
+                    <p class="text-[11px] text-slate-500 leading-relaxed font-medium">${p.customer.address || p.customer.addressString || 'Retirada em mãos / Loja Física'}</p>
+                </div>
+
+                <div class="flex items-center gap-4 pt-4 border-t border-slate-50">
+                    <div class="w-5 h-5 flex items-center justify-center text-slate-300">
+                        <i data-lucide="wallet" class="w-4 h-4"></i>
+                    </div>
+                    <p class="text-[11px] font-black text-slate-700 uppercase tracking-tight">Pagamento: <span class="text-primary-600">${payText}</span></p>
+                </div>
+            </div>
+
+            <div class="space-y-3 mb-8">
+                <h4 class="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] ml-2 mb-4">Itens do Carrinho</h4>
+                ${p.items.map(i => {
+                    const prodRef = allProducts.find(prod => prod.id === i.id);
+                    let foto = (i.variationDetails?.image) || (prodRef?.images?.[0]) || null;
+                    const varDesc = i.variationDetails ? `${i.variationDetails.color} / ${i.variationDetails.size}` : '';
+
+                    return `
+                    <div class="group flex items-center gap-4 p-4 bg-white rounded-3xl border border-slate-100 hover:border-primary-200 transition-all shadow-sm">
+                        <div onclick="window.expandImage('${foto}')" class="w-16 h-16 rounded-2xl overflow-hidden border border-slate-50 bg-slate-50 shrink-0 cursor-zoom-in relative">
+                            ${foto ? `<img src="${foto}" class="w-full h-full object-cover">` : `<div class="w-full h-full flex items-center justify-center text-slate-200"><i data-lucide="image" class="w-6 h-6"></i></div>`}
+                        </div>
+                        <div class="flex-1 min-w-0">
+                            <p class="text-xs font-black text-slate-800 leading-tight mb-1 truncate">${i.name}</p>
+                            <div class="flex flex-wrap items-center gap-2">
+                                <span class="text-[8px] font-black bg-slate-100 text-slate-500 px-2 py-0.5 rounded-full uppercase">${i.sku || 'N/A'}</span>
+                                ${varDesc ? `<span class="text-[9px] font-bold text-primary-500 italic">${varDesc}</span>` : ''}
+                            </div>
+                            <div class="flex justify-between items-end mt-2">
+                                <span class="text-[10px] font-bold text-slate-400">Qtd <span class="text-slate-800">${i.qty}</span></span>
+                                <span class="text-sm font-black text-slate-900 tracking-tighter">R$ ${(i.price * i.qty).toFixed(2).replace('.',',')}</span>
+                            </div>
+                        </div>
+                    </div>`;
+                }).join('')}
+            </div>
+
+            <div class="bg-slate-900 rounded-[2.5rem] p-8 text-white shadow-2xl mb-8 relative overflow-hidden">
+                <div class="relative z-10 flex justify-between items-center">
+                    <div>
+                        <p class="text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em] mb-1">Total à Receber</p>
+                        <h3 class="text-3xl font-black tracking-tighter">R$ ${p.total.toFixed(2).replace('.',',')}</h3>
+                    </div>
+                    <div class="w-12 h-12 bg-white/10 rounded-2xl flex items-center justify-center backdrop-blur-md">
+                        <i data-lucide="check-check" class="w-6 h-6 text-white"></i>
+                    </div>
+                </div>
+                <div class="absolute top-0 right-0 w-32 h-32 bg-primary-500/20 blur-[60px] rounded-full"></div>
+            </div>
+<div class="space-y-6">
+    <div class="space-y-3">
+        <h4 class="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] ml-2">Ação Principal</h4>
+        <button id="btnActionMain" class="w-full py-5 bg-primary-600 text-white rounded-[2rem] font-black text-[11px] uppercase tracking-[0.2em] shadow-xl shadow-primary-200 active:scale-95 transition-all flex items-center justify-center gap-3">
+            <i data-lucide="${p.status === 'pending_whatsapp' ? 'send' : 'package-check'}" class="w-5 h-5"></i>
+            ${p.status === 'pending_whatsapp' ? 'Confirmar e Iniciar Preparo' : 'Finalizar e Concluir'}
+        </button>
+
+        ${p.status !== 'pending_whatsapp' && p.status !== 'completed' && p.status !== 'canceled' ? `
+        <button onclick="window.notifyShipping('${p.id}', ${JSON.stringify(p.customer).replace(/"/g, '&quot;')})" 
+                class="w-full py-4.5 bg-amber-500 text-white rounded-[2rem] font-black text-[11px] uppercase tracking-[0.2em] shadow-xl shadow-amber-100 active:scale-95 transition-all flex items-center justify-center gap-3">
+            <i data-lucide="truck" class="w-5 h-5"></i>
+            Despachar / Sair para Entrega
+        </button>
+        ` : ''}
+    </div>
+
+    <div class="space-y-3">
+        <h4 class="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] ml-2">Gestão e Contato</h4>
+        <div class="grid grid-cols-2 gap-3">
+            <a href="https://wa.me/55${p.customer.phone.replace(/\D/g,'')}" target="_blank" 
+               class="flex flex-col items-center justify-center p-4 bg-emerald-50 border border-emerald-100 text-emerald-700 rounded-3xl hover:bg-emerald-100 transition-all group">
+                <i data-lucide="message-circle" class="w-6 h-6 mb-2 group-hover:scale-110 transition-transform"></i>
+                <span class="text-[10px] font-black uppercase tracking-tight">WhatsApp</span>
+            </a>
+
+            <button onclick="window.printOrder(${JSON.stringify(p).replace(/"/g, '&quot;')})" 
+                    class="flex flex-col items-center justify-center p-4 bg-slate-50 border border-slate-200 text-slate-700 rounded-3xl hover:bg-slate-100 transition-all group">
+                <i data-lucide="printer" class="w-6 h-6 mb-2 group-hover:scale-110 transition-transform"></i>
+                <span class="text-[10px] font-black uppercase tracking-tight">Imprimir</span>
+            </button>
+
+            <button onclick="window.editExistingOrder('${p.id}')" 
+                    class="flex flex-col items-center justify-center p-4 bg-white border border-slate-200 text-slate-600 rounded-3xl hover:bg-slate-50 transition-all group">
+                <i data-lucide="edit-3" class="w-6 h-6 mb-2 text-primary-500 group-hover:rotate-12 transition-transform"></i>
+                <span class="text-[10px] font-black uppercase tracking-tight">Editar</span>
+            </button>
+
+            <button id="btnStatusToggle" 
+                    class="flex flex-col items-center justify-center p-4 bg-white border border-slate-200 text-slate-600 rounded-3xl hover:bg-slate-50 transition-all group">
+                <i data-lucide="layers" class="w-6 h-6 mb-2 text-amber-500 group-hover:scale-110 transition-transform"></i>
+                <span class="text-[10px] font-black uppercase tracking-tight">Fluxo</span>
+            </button>
+        </div>
+    </div>
+
+    <button onclick="window.quickDeleteOrder('${p.id}')" class="w-full py-4 text-rose-400 font-bold text-[9px] uppercase tracking-[0.3em] mt-2 opacity-40 hover:opacity-100 hover:text-rose-600 transition-all flex items-center justify-center gap-2">
+        <i data-lucide="trash-2" class="w-3 h-3"></i> Remover do Histórico
+    </button>
+</div>
+`;
+
+// Lógica de clique mantida e otimizada
+document.getElementById('btnActionMain').onclick = () => window.updateOrderStatus(p.id, p.status === 'pending_whatsapp' ? 'confirmed' : 'completed');
+
+document.getElementById('btnStatusToggle').onclick = () => {
+    modalContent.innerHTML = `
+        <div class="py-6 animate-fade-in text-center">
+            <div class="w-16 h-16 bg-amber-50 text-amber-500 rounded-full flex items-center justify-center mx-auto mb-4">
+                <i data-lucide="git-pull-request" class="w-8 h-8"></i>
+            </div>
+            <h4 class="text-xl font-black text-slate-800 tracking-tighter">Alterar Status</h4>
+            <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-8">Escolha a nova etapa do pedido</p>
+            
+            <div class="grid grid-cols-1 gap-3">
+                <button onclick="window.updateOrderStatus('${p.id}', 'confirmed')" class="flex items-center justify-between p-5 bg-amber-50 border border-amber-100 rounded-2xl text-amber-700 group">
+                    <span class="font-black text-xs uppercase tracking-widest">Mover para Preparo</span>
+                    <i data-lucide="chevron-right" class="w-5 h-5 group-hover:translate-x-1 transition-transform"></i>
+                </button>
+                <button onclick="window.updateOrderStatus('${p.id}', 'completed')" class="flex items-center justify-between p-5 bg-emerald-50 border border-emerald-100 rounded-2xl text-emerald-700 group">
+                    <span class="font-black text-xs uppercase tracking-widest">Marcar como Entregue</span>
+                    <i data-lucide="check" class="w-5 h-5 group-hover:scale-125 transition-transform"></i>
+                </button>
+                <button onclick="window.updateOrderStatus('${p.id}', 'canceled')" class="flex items-center justify-between p-5 bg-rose-50 border border-rose-100 rounded-2xl text-rose-700 group">
+                    <span class="font-black text-xs uppercase tracking-widest">Cancelar Pedido</span>
+                    <i data-lucide="x" class="w-5 h-5 group-hover:rotate-90 transition-transform"></i>
+                </button>
+            </div>
+            
+            <button onclick="window.openOrderModal('${p.id}')" class="mt-8 text-slate-400 text-[10px] font-black uppercase tracking-[0.4em]">Voltar ao Detalhe</button>
+        </div>
+    `;
+    lucide.createIcons();
+};
+
+lucide.createIcons();
+};
+
+    renderMain();
+    modal.classList.remove('hidden');
+};
+                
+
+window.editExistingOrder = async (id) => {
+    const p = ordersCache[id];
+    if (!p) return;
+
+    // 1. FECHA o modal de detalhes e ESPERA o modal manual abrir/carregar
+    document.getElementById('orderDetailModal').classList.add('hidden');
+    
+    // O 'await' aqui é a chave: ele impede que o código continue até o modal estar limpo e pronto
+    await window.openManualOrderModal(); 
+    
+    // 2. Agora sim, preenchemos os dados (sem risco de serem apagados)
+    document.querySelector('#manualOrderModal h3').textContent = "Editando Pedido #" + id.slice(-5).toUpperCase();
+    
+    const btnFinish = document.querySelector('button[onclick="window.finishManualOrder()"]');
+    if (btnFinish) {
+        btnFinish.innerHTML = `<i data-lucide="save" class="w-4 h-4"></i> Salvar Alterações`;
+        btnFinish.setAttribute('onclick', `window.saveOrderEdit('${id}')`);
+    }
+
+    // Preenchendo campos de texto
+    document.getElementById("manualOrderCustName").value = p.customer.name || "";
+    document.getElementById("manualPhone").value = p.customer.phone || "";
+    document.getElementById("manualAddress").value = p.customer.address || p.customer.addressString || "";
+    document.getElementById("manualOrderTotalOverride").value = p.total || "";
+    
+    // Configura o pagamento
+    const payMethod = typeof p.paymentMethod === 'object' ? p.paymentMethod.type : p.paymentMethod;
+    const paySelect = document.getElementById("manualPayment");
+    if (paySelect) {
+        paySelect.value = payMethod || "";
+        // Dispara manualmente a função que mostra campos de PIX/Parcelas
+        window.handlePaymentChange();
+    }
+
+    // 3. RECUPERAÇÃO DOS ITENS
+    // Aqui garantimos que o custo venha atualizado do seu estoque (allProducts)
+    manualOrder = p.items.map(item => {
+        const prodAtual = allProducts.find(prod => prod.id === item.id);
+        return {
+            ...item,
+            cost: prodAtual ? (prodAtual.cost || 0) : (item.cost || 0),
+            price: item.price // Mantém o preço que você já tinha cobrado
+        };
+    });
+
+    // Atualiza a lista visual do carrinho no modal
+    window.renderManualOrderItems();
+    
+    if (window.lucide) lucide.createIcons();
+};
+
+     
+window.saveOrderEdit = async (id) => {
+    const btn = document.querySelector(`button[onclick="window.saveOrderEdit('${id}')"]`);
+    if (btn) btn.disabled = true;
+
+    try {
+        const overrideValue = parseFloat(document.getElementById('manualOrderTotalOverride').value);
+        const totalCalculado = manualOrder.reduce((sum, i) => sum + i.qty * i.price, 0);
+        const totalFinal = !isNaN(overrideValue) && overrideValue > 0 ? overrideValue : totalCalculado;
+
+        const paymentType = document.getElementById("manualPayment").value;
+        const orderRef = doc(db, `stores/${currentStoreId}/orders`, id);
+        
+        const updateData = {
+            "customer.name": document.getElementById("manualOrderCustName").value,
+            "customer.phone": document.getElementById("manualPhone").value,
+            "customer.address": document.getElementById("manualAddress").value,
+            "customer.addressString": document.getElementById("manualAddress").value,
+            paymentMethod: paymentType,
+            items: manualOrder,
+            total: Number(totalFinal.toFixed(2)),
+            updatedAt: Date.now()
+        };
+
+        // Salva as alterações
+        await updateDoc(orderRef, updateData);
+
+        showToast("✅ Alterações salvas!");
+        window.closeManualOrderModal();
+        
+        // Recarrega o financeiro para o lucro novo aparecer
+        if (window.initFinanceDashboard) window.initFinanceDashboard();
+        window.renderFilteredOrders();
+
+    } catch (e) {
+        console.error(e);
+        showToast("❌ Erro ao salvar.");
+    } finally {
+        if (btn) btn.disabled = false;
+    }
+};
+
+        
+window.deleteOrder = async (id) => {
+    // 1. Confirmação de segurança
+    if(!confirm("Tem a certeza que deseja excluir este pedido? O estoque de todas as variações será devolvido automaticamente ao catálogo.")) return;
+    
+    try {
+        const p = ordersCache[id];
+        if(!p) return;
+
+        // 2. VERIFICAÇÃO E ESTORNO DE ESTOQUE AGRUPADO
+        if (p.stockDeducted === true) {
+            console.log("Iniciando estorno de estoque agrupado...");
+            
+            // Agrupa os itens por ID do Produto Pai para evitar conflitos de escrita
+            const itemsByProduct = p.items.reduce((acc, item) => {
+                if (!acc[item.id]) acc[item.id] = [];
+                acc[item.id].push(item);
+                return acc;
+            }, {});
+
+            const restorePromises = Object.keys(itemsByProduct).map(async (productId) => {
+                const productRef = doc(db, `stores/${currentStoreId}/products`, productId);
+                const snap = await getDoc(productRef);
+                
+                if (snap.exists()) {
+                    const prodData = snap.data();
+                    const itemsToRestore = itemsByProduct[productId];
+                    let updatePayload = {};
+
+                    // Se o produto possuir variações (Cores/Tamanhos)
+                    if (prodData.variations && prodData.variations.length > 0) {
+                        let novasVariacoes = [...prodData.variations];
+
+                        // Devolve o estoque para cada variação presente no pedido
+                        itemsToRestore.forEach(itemNoPedido => {
+                            const { color, size, sku } = itemNoPedido.variationDetails || {};
+
+                            novasVariacoes = novasVariacoes.map(v => {
+                                // Match por SKU ou por combinação Cor/Tamanho
+                                const matchSKU = sku && v.sku === sku;
+                                const matchCombo = (v.color || "").trim().toLowerCase() === (color || "").trim().toLowerCase() &&
+                                                   (v.size || "").trim().toLowerCase() === (size || "").trim().toLowerCase();
+                                
+                                if (matchSKU || matchCombo) {
+                                    const estoqueAtualVar = Number(v.stock) || 0;
+                                    return { ...v, stock: estoqueAtualVar + Number(itemNoPedido.qty) };
+                                }
+                                return v;
+                            });
+                        });
+
+                        updatePayload.variations = novasVariacoes;
+                        // Recalcula o estoque total somando todas as variações
+                        updatePayload.stock = novasVariacoes.reduce((sum, v) => sum + (Number(v.stock) || 0), 0);
+                    } 
+                    // Se for um produto simples (sem variações)
+                    else {
+                        const totalQtyToRestore = itemsToRestore.reduce((sum, i) => sum + Number(i.qty), 0);
+                        const estoqueGeralAntigo = Number(prodData.stock) || 0;
+                        updatePayload.stock = estoqueGeralAntigo + totalQtyToRestore;
+                    }
+
+                    // Se o estoque voltou a ser positivo, garante que o produto esteja ativo
+                    if (updatePayload.stock > 0) {
+                        updatePayload.status = 'active';
+                    }
+
+                    return updateDoc(productRef, updatePayload);
+                }
+            });
+            
+            await Promise.all(restorePromises);
+        }
+
+                // 3. EXCLUSÃO DO DOCUMENTO NO FIREBASE
+        await deleteDoc(doc(db, `stores/${currentStoreId}/orders`, id));
+
+        // 🚀 O PULO DO GATO:
+        delete ordersCache[id]; // Apaga do "let" local imediatamente
+
+        // 4. ATUALIZAÇÃO DA INTERFACE (Sem pedir dados ao Firebase)
+        window.renderFilteredOrders(); // Remove o card da tela
+        window.initFinanceDashboard(); // Refaz a conta (que agora começará do zero)
+
+        // Sinaliza para a vitrine pública que houve mudança
+        await updateDoc(doc(db, `stores/${currentStoreId}/config/store`), { lastUpdate: Date.now() });
+
+        showToast("🗑️ Pedido removido!");
+        if (document.getElementById('orderDetailModal')) {
+            document.getElementById('orderDetailModal').classList.add('hidden');
+        }
+
+        // Fecha o modal de detalhes se estiver aberto
+        const modal = document.getElementById('orderDetailModal');
+        if (modal) modal.classList.add('hidden');
+
+    } catch (e) {
+        console.error("Erro ao excluir pedido:", e);
+        showToast("❌ Erro ao processar a exclusão.");
+    }
+};
+
+window.calculateProfit = () => {
+    // 1. Captura os valores dos inputs atualizados
+    const cost = parseFloat(document.getElementById('prodCost').value) || 0;
+    const pix = parseFloat(document.getElementById('prodValue').value) || 0; // Valor Principal
+    const card = parseFloat(document.getElementById('prodCard').value) || 0; // Valor Cartão
+    const promo = parseFloat(document.getElementById('prodPromo').value) || 0;
+
+    // 2. Filtra apenas os preços que foram preenchidos (maiores que zero)
+    // O lucro mínimo deve ser baseado no menor valor que você aceita receber
+    const validPrices = [pix, card, promo].filter(p => p > 0);
+
+    // 3. Define o menor preço de venda como base para o lucro
+    const minPrice = validPrices.length > 0 ? Math.min(...validPrices) : 0;
+
+    // 4. Calcula o lucro líquido por unidade
+    const profit = minPrice - cost;
+
+    // 5. Atualiza o campo visual
+    const profitInput = document.getElementById('prodProfit');
+    
+    if (minPrice === 0) {
+        profitInput.value = "Aguardando preços...";
+        profitInput.classList.remove('text-red-600', 'bg-red-50', 'text-green-700', 'bg-green-50');
+        return;
+    }
+
+    profitInput.value = profit >= 0 
+        ? `Lucro mín: R$ ${profit.toFixed(2).replace('.', ',')}` 
+        : `Prejuízo: R$ ${Math.abs(profit).toFixed(2).replace('.', ',')}`;
+
+    // 6. Alerta visual de prejuízo (vermelho) ou lucro (verde)
+    profitInput.classList.toggle('text-red-600', profit < 0);
+    profitInput.classList.toggle('bg-red-50', profit < 0);
+    profitInput.classList.toggle('text-green-700', profit >= 0);
+    profitInput.classList.toggle('bg-green-50', profit >= 0);
+};
+    
+    function generateSKU() {
+  const storeNameEl = document.getElementById('sidebarStoreName');
+  const storeName = storeNameEl ? storeNameEl.innerText : 'SKU';
+
+  const prefix = storeName
+    .substring(0, 3)
+    .toUpperCase()
+    .replace(/[^A-Z]/g, '');
+
+  const random = Math.random().toString(36).substring(2, 6).toUpperCase();
+  const time = Date.now().toString().slice(-4);
+
+  return `${prefix}-${time}${random}`;
+    }
+      window.updateMagicFeedback = (magics) => {
+    // 1. Cálculo de Novidades (Produtos dos últimos 15 dias)
+    const fifteenDaysAgo = Date.now() - (15 * 24 * 60 * 60 * 1000);
+    const newCount = allProducts.filter(p => {
+        const date = p.createdAt?.toMillis ? p.createdAt.toMillis() : (p.lastUpdate || 0);
+        return date > fifteenDaysAgo;
+    }).length;
+
+    // 2. Selecionar os textos de descrição no HTML para atualizar
+    // Usamos o ID do checkbox para achar o texto que está no mesmo card
+    const inputNew = document.getElementById('magicNew');
+    const inputTop = document.getElementById('magicTop');
+
+    if (inputNew) {
+        // Localiza o parágrafo de descrição (Últimos 15 dias)
+        const descNew = inputNew.closest('.flex').querySelector('p.text-slate-400');
+        if (descNew) {
+            descNew.innerHTML = magics.showNew 
+                ? `<span class="text-blue-600 font-bold">ATIVO: ${newCount} produtos recentes</span>` 
+                : "Últimos 15 dias";
+        }
+    }
+
+    if (inputTop) {
+        // Localiza o parágrafo de descrição (Top 10 Vistos)
+        const descTop = inputTop.closest('.flex').querySelector('p.text-slate-400');
+        if (descTop) {
+            descTop.innerHTML = magics.showTop 
+                ? `<span class="text-orange-600 font-bold">ATIVO: Exibindo os mais vistos</span>` 
+                : "Top 10 Vistos";
+        }
+    }
+};
+
+
+        window.initGrowthChart = () => {
+    const ctx = document.getElementById('growthChart').getContext('2d');
+    
+    // 1. Preparar os dados (Últimos 6 meses)
+    const months = [];
+    const values = [];
+    const now = new Date();
+
+    for (let i = 5; i >= 0; i--) {
+        const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+        const monthName = d.toLocaleString('pt-PT', { month: 'short' }).toUpperCase();
+        months.push(monthName);
+
+        // Soma os pedidos daquele mês específico no ordersCache
+        let monthlySum = 0;
+        Object.values(ordersCache).forEach(order => {
+            const oDate = order.createdAt?.toDate ? order.createdAt.toDate() : new Date(0);
+            if (oDate.getMonth() === d.getMonth() && oDate.getFullYear() === d.getFullYear() && order.status !== 'canceled') {
+                monthlySum += (order.total || 0);
+            }
+        });
+        values.push(monthlySum);
+    }
+
+    // 2. Destruir gráfico anterior se existir (evita sobreposição)
+    if (growthChartInstance) growthChartInstance.destroy();
+
+          // 3. Criar o novo gráfico
+    growthChartInstance = new Chart(ctx, {
+        type: 'bar', 
+        data: {
+            labels: months,
+            datasets: [{
+                label: 'Faturação Mensal',
+                data: values,
+                backgroundColor: '#7c3aed',
+                borderRadius: 12,
+                hoverBackgroundColor: '#4f46e5'
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: { legend: { display: false } },
+            scales: {
+                y: { beginAtZero: true, grid: { display: false }, ticks: { font: { size: 10 } } },
+                x: { grid: { display: false }, ticks: { font: { size: 10 } } }
+            }
+        }
+    });
+};
+
+window.loadMagicCategoriesFeedback = (data) => {
+    if (!data) return;
+
+    // Em vez de ler do banco, usamos o 'data' que a função recebeu
+    const magics = data.magicCategories || {};
+    
+    // Verificação de permissão (Plano Pro/Gold)
+    const hasMagicAccess = data.hasMagicCategories === true;
+
+    const inputNew = document.getElementById('magicNew');
+    const inputTop = document.getElementById('magicTop');
+
+    if (inputNew && inputTop) {
+        // Se não tiver acesso, desativa os botões e aplica visual de bloqueado
+        inputNew.disabled = !hasMagicAccess;
+        inputTop.disabled = !hasMagicAccess;
+        
+        inputNew.closest('.flex').style.opacity = hasMagicAccess ? "1" : "0.5";
+        inputTop.closest('.flex').style.opacity = hasMagicAccess ? "1" : "0.5";
+
+        // Sincroniza os botões com o que está no banco de dados
+        if (hasMagicAccess) {
+            inputNew.checked = !!magics.showNew;
+            inputTop.checked = !!magics.showTop;
+        } else {
+            inputNew.checked = false;
+            inputTop.checked = false;
+        }
+    }
+
+    if (typeof updateMagicFeedback === 'function') {
+        updateMagicFeedback(hasMagicAccess ? magics : {});
+    }
+    
+    // Atualiza os contadores visuais (Ex: "Ativo: 5 produtos")
+    if (typeof updateMagicFeedback === 'function') {
+        updateMagicFeedback(hasMagicAccess ? magics : {});
+    }
+};
+        
+window.renderFilteredOrders = () => {
+    const orders = Object.values(ordersCache);
+    console.log("Renderizando pedidos do cache:", orders.length);
+    
+    const container = document.getElementById("ordersCardsContainer");
+    if (!container) return;
+
+    const search = (document.getElementById("orderSearchInput")?.value || "").toLowerCase();
+    
+    // 1. Definição das Abas com Cores e Status
+    const tabs = [
+        { id: 'pending_whatsapp', label: 'Recebidos', status: ['pending_whatsapp'], color: 'text-red-500', bg: 'bg-red-50' },
+        { id: 'confirmed', label: 'Preparando', status: ['confirmed'], color: 'text-amber-500', bg: 'bg-amber-50' },
+        { id: 'completed', label: 'Entregues', status: ['completed'], color: 'text-emerald-500', bg: 'bg-emerald-50' },
+        { id: 'canceled', label: 'Cancelados', status: ['canceled', 'Cancelado'], color: 'text-slate-400', bg: 'bg-slate-50' },
+        { id: 'to_receive', label: 'A Prazo', status: ['to_receive'], color: 'text-indigo-500', bg: 'bg-indigo-50' }
+    ];
+
+    // 2. Cálculo de contadores em tempo real baseados no Cache
+    const counts = { pending_whatsapp: 0, confirmed: 0, completed: 0, canceled: 0, to_receive: 0 };
+    orders.forEach(o => {
+        const s = o.status;
+        if (s === 'pending_whatsapp') counts.pending_whatsapp++;
+        else if (s === 'confirmed') counts.confirmed++;
+        else if (s === 'completed') counts.completed++;
+        else if (s === 'canceled' || s === 'Cancelado') counts.canceled++;
+        else if (s === 'to_receive') counts.to_receive++;
+    });
+
+    // 3. Renderização das Abas (Menu Superior)
+    let tabsHtml = `
+        <div class="flex w-full bg-white border-b border-slate-100 sticky top-0 z-30 mb-4 overflow-hidden">
+            ${tabs.map(tab => {
+                const isActive = currentOrderTab === tab.id;
+                const count = counts[tab.id] || 0;
+                return `
+                    <button onclick="window.setOrderTab('${tab.id}')" 
+                        class="flex-1 flex flex-col items-center justify-center py-2.5 transition-all relative">
+                        <span class="text-[7.5px] font-black uppercase tracking-tighter ${isActive ? 'text-slate-900' : 'text-slate-400'}">${tab.label}</span>
+                        <div class="mt-0.5 h-3.5 min-w-[14px] flex items-center justify-center rounded-full px-1 ${count > 0 ? tab.bg + ' ' + tab.color : 'opacity-0'}">
+                            <span class="text-[8px] font-black">${count}</span>
+                        </div>
+                        ${isActive ? `<div class="absolute bottom-0 w-full h-0.5 bg-slate-900"></div>` : ''}
+                    </button>
+                `;
+            }).join('')}
+        </div>
+    `;
+
+    // 4. Filtragem por Aba e Busca
+    const activeTab = tabs.find(t => t.id === currentOrderTab);
+    let list = orders.filter(p => activeTab.status.includes(p.status));
+
+    if (search) {
+        list = list.filter(p =>
+            p.customer?.name?.toLowerCase().includes(search) ||
+            p.id.toLowerCase().includes(search) ||
+            (p.customer?.phone || "").toLowerCase().includes(search)
+        );
+    }
+
+    // Ordenação: Mais recentes primeiro
+    list.sort((a, b) => {
+        const timeA = a.createdAt?.toMillis ? a.createdAt.toMillis() : (a.createdAt || 0);
+        const timeB = b.createdAt?.toMillis ? b.createdAt.toMillis() : (b.createdAt || 0);
+        return timeB - timeA;
+    });
+
+    // 5. Agrupamento por Data para exibição
+    const groups = {};
+    list.forEach(p => {
+        const d = p.createdAt?.toDate ? p.createdAt.toDate() : (typeof p.createdAt === 'number' ? new Date(p.createdAt) : new Date());
+        const key = d.toLocaleDateString("pt-BR");
+        if (!groups[key]) groups[key] = [];
+        groups[key].push(p);
+    });
+
+    // 6. Construção do HTML dos Pedidos
+    let ordersHtml = "";
+    Object.keys(groups).forEach(date => {
+        ordersHtml += `<div class="text-[8px] font-black text-slate-400 uppercase tracking-widest mb-2 mt-2 ml-2">${date}</div>`;
+        groups[date].forEach(p => {
+            const dateObj = p.createdAt?.toDate ? p.createdAt.toDate() : (typeof p.createdAt === 'number' ? new Date(p.createdAt) : new Date());
+            const hour = dateObj.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+            
+            const paymentType = typeof p.paymentMethod === 'string' ? p.paymentMethod : (p.paymentMethod?.type || 'PAGAMENTO');
+
+                        ordersHtml += `
+                <div onclick="window.openOrderModal('${p.id}')"
+                     class="bg-white p-4 rounded-2xl border border-slate-100 shadow-sm active:scale-[0.98] transition-all flex flex-col mb-2 cursor-pointer gap-3">
+                    
+                    <div class="flex justify-between items-center">
+                        <div class="space-y-0.5">
+                            <p class="text-[8px] text-slate-400 font-mono">#${p.id.toUpperCase().slice(-5)} • ${hour}</p>
+                            <p class="font-bold text-slate-800 text-xs">${p.customer?.name || 'Cliente'}</p>
+                        </div>
+                        <div class="text-right">
+                            <p class="font-black text-slate-900 text-sm">R$ ${(p.total || 0).toFixed(2).replace(".", ",")}</p>
+                            <span class="text-[7px] font-black text-violet-500 uppercase tracking-widest">${paymentType}</span>
+                        </div>
+                    </div>
+
+                    <div class="flex gap-2 pt-2 border-t border-slate-50">
+                        ${p.status === 'pending_whatsapp' ? `
+                            <button onclick="event.stopPropagation(); window.quickUpdateStatus('${p.id}', 'confirmed')" 
+                                    class="flex-1 bg-green-50 text-green-600 py-2 rounded-xl flex items-center justify-center gap-1 hover:bg-green-100 transition-colors">
+                                <i data-lucide="check" class="w-3.5 h-3.5"></i>
+                                <span class="text-[9px] font-black uppercase">Aceitar</span>
+                            </button>
+                        ` : ''}
+
+                        <button onclick="event.stopPropagation(); window.quickUpdateStatus('${p.id}', 'canceled')" 
+                                class="flex-1 bg-amber-50 text-amber-600 py-2 rounded-xl flex items-center justify-center gap-1 hover:bg-amber-100 transition-colors">
+                            <i data-lucide="x-circle" class="w-3.5 h-3.5"></i>
+                            <span class="text-[9px] font-black uppercase">Cancelar</span>
+                        </button>
+
+                        <button onclick="event.stopPropagation(); window.quickDeleteOrder('${p.id}')" 
+                                class="bg-red-50 text-red-600 px-3 rounded-xl flex items-center justify-center hover:bg-red-100 transition-colors">
+                            <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+                        </button>
+                    </div>
+                </div>`;
+
+        });
+    });
+
+    // Aplicação no Container
+    container.innerHTML = tabsHtml + (list.length === 0 ? 
+        `<div class="py-20 text-center opacity-20"><p class="text-[9px] font-black uppercase">Vazio</p></div>` : 
+        `<div class="pb-20">${ordersHtml}</div>`);
+
+    // 7. Lógica do Botão "Carregar Mais"
+    const btnLoadMore = document.getElementById('btnLoadMore');
+    if (btnLoadMore) {
+        const totalNoCache = Object.keys(ordersCache).length;
+        // Só mostra se houver 20 ou mais pedidos (limite da página) e não estiver em busca
+        if (!search && totalNoCache >= ordersLimit) {
+            btnLoadMore.classList.remove('hidden');
+        } else {
+            btnLoadMore.classList.add('hidden');
+        }
+    }
+
+    if (window.lucide) lucide.createIcons();
+};
+
+window.setOrderTab = (id) => { 
+    currentOrderTab = id; 
+    window.renderFilteredOrders(); 
+};
+
+   window.quickUpdateStatus = async (orderId, newStatus) => {
+    // 1. Confirmação inicial
+    const msg = newStatus === 'confirmed' ? "Aceitar este pedido?" : "Cancelar este pedido?";
+    if (!confirm(msg)) return;
+
+    try {
+        // 2. PARAR O ÁUDIO PELO ID (Garante que o som de loop pare na hora)
+        const somNotificacao = document.getElementById('notifSound');
+        if (somNotificacao) {
+            somNotificacao.pause();
+            somNotificacao.currentTime = 0;
+            console.log("🔔 Som interrompido via ID notifSound.");
+        }
+
+        // 3. DISPARAR A FUNÇÃO MESTRE
+        // Esta função já cuida de: Estorno/Baixa de estoque, WhatsApp e Impressão de comanda
+        await window.updateOrderStatus(orderId, newStatus);
+
+        // 4. LIMPEZA DE CACHE E SINCRONIZAÇÃO
+        console.log("♻️ Sincronizando interface e limpando Shadow Stock...");
+        localStorage.removeItem(`products_${currentStoreId}`);
+        localStorage.removeItem(`orders_${currentStoreId}`); // Limpa cache de pedidos também
+        
+        // Limpa variáveis globais de memória
+        window.cachedProducts = null;
+        window.allProducts = null;
+        
+        // 5. RECARGA DOS DADOS (Busca do Firebase o estoque atualizado)
+        if (typeof window.loadProducts === 'function') {
+            await window.loadProducts(); 
+        }
+
+        // 6. REDESENHA AS LISTAS NA TELA
+        if (typeof window.renderOrders === 'function') window.renderOrders();
+        if (typeof window.renderProducts === 'function') window.renderProducts();
+
+        if (typeof window.mostrarToast === 'function') {
+            window.mostrarToast("Pedido processado com sucesso!", "success");
+        }
+
+    } catch (error) {
+        console.error("Erro na ação rápida:", error);
+        if (typeof window.mostrarToast === 'function') {
+            window.mostrarToast("Erro ao processar. Tente abrir o pedido.", "error");
+        }
+    }
+};
+
+window.quickDeleteOrder = async (orderId) => {
+    if (!confirm("Excluir permanentemente? O estoque será devolvido se necessário.")) return;
+
+    try {
+        // PARAR O ÁUDIO PELO ID
+        const somNotificacao = document.getElementById('notifSound');
+        if (somNotificacao) {
+            somNotificacao.pause();
+            somNotificacao.currentTime = 0;
+        }
+
+        const orderRef = doc(db, "stores", currentStoreId, "orders", orderId);
+        
+        // Verifica no ordersCache se precisa estornar antes de deletar
+        const p = ordersCache[orderId];
+        if (p && p.stockDeducted === true) {
+            console.log("Revertendo estoque antes da exclusão...");
+            await window.updateOrderStatus(orderId, 'canceled');
+        }
+
+        // Deleta o documento
+        await deleteDoc(orderRef);
+
+        // Limpeza e recarga
+        localStorage.removeItem(`products_${currentStoreId}`);
+        window.cachedProducts = null;
+        if (typeof window.loadProducts === 'function') await window.loadProducts();
+        if (typeof window.renderOrders === 'function') window.renderOrders();
+        if (typeof window.renderProducts === 'function') window.renderProducts();
+
+    } catch (error) {
+        console.error("Erro ao excluir:", error);
+    }
+};
+
+        // --- FUNÇÕES DO MODAL DE PEDIDO MANUAL ---
+window.openManualOrderModal = async () => {
+    // 1. Forçamos o carregamento dos dados MAIS RECENTES (estoque real)
+    // O true indica 'forceRefresh', ignorando o cache de disco
+    await loadProductsCache(true); 
+    
+    // 2. Também carregamos os clientes
+    await window.loadSavedCustomers();
+
+    const modal = document.getElementById("manualOrderModal");
+    const fab = document.getElementById("fabAddOrder");
+
+    if (modal) modal.classList.remove("hidden");
+    if (fab) fab.classList.add("hidden");
+
+    // Limpezas de praxe
+    manualOrder = [];
+    window.renderManualOrderItems();
+    
+    // Limpar campos de texto
+    document.getElementById("manualOrderCustName").value = "";
+    document.getElementById("manualPhone").value = "";
+    document.getElementById("manualAddress").value = "";
+    document.getElementById("manualOrderTotalOverride").value = "";
+    document.getElementById("manualProductSearch").value = "";
+    document.getElementById("manualSearchResults").innerHTML = "";
+
+    if(window.lucide) lucide.createIcons();
+};
+
+
+window.closeManualOrderModal = () => {
+    const modal = document.getElementById("manualOrderModal");
+    const fab = document.getElementById("fabAddOrder");
+    
+    // 1. Esconde o Modal
+    if (modal) modal.classList.add("hidden");
+
+    // 2. LIMPEZA DE TODOS OS CAMPOS (Evita lixo no próximo pedido)
+    document.getElementById('manualOrderCustName').value = "";
+    document.getElementById('manualPhone').value = "";
+    document.getElementById('manualAddress').value = "";
+    document.getElementById('manualOrderTotalOverride').value = ""; // Limpa o valor manual
+    document.getElementById('manualProductSearch').value = "";
+    document.getElementById('manualPayment').value = "";
+    
+    // 3. Reseta o carrinho interno e a visualização
+    manualOrder = []; 
+    if (typeof window.renderManualOrderItems === 'function') {
+        window.renderManualOrderItems();
+    }
+    
+    // 4. Lógica do Botão Flutuante (FAB)
+    // Verifica se a aba de pedidos está ativa antes de mostrar o botão de volta
+    const navOrders = document.getElementById('nav-orders');
+    const isOrdersTab = navOrders && navOrders.classList.contains('active');
+
+    if (fab && isOrdersTab) {
+        fab.classList.remove("hidden");
+    }
+
+    // 5. Para o Scanner de Câmera (caso esteja ligado)
+    if (typeof window.stopBarcodeScanner === 'function') {
+        window.stopBarcodeScanner();
+    }
+};
+
+        // --- BUSCA DE PRODUTOS PARA PEDIDO MANUAL ---
+window.renderManualProductSearch = () => {
+    const query = document.getElementById("manualProductSearch").value.toLowerCase();
+    const container = document.getElementById("manualSearchResults");
+    
+    // --- CIRURGIA: Captura o estado do pagamento ---
+    const paymentMethod = document.getElementById("manualPayment").value;
+    const isCash = ['pix', 'dinheiro'].includes(paymentMethod);
+
+    container.innerHTML = "";
+    if (!query) return;
+
+    allProducts.forEach(p => {
+        if (p.variations && p.variations.length > 0) {
+            p.variations.forEach(v => {
+                if (v.active && (p.name.toLowerCase().includes(query) || (v.sku && v.sku.toLowerCase().includes(query)))) {
+                    
+                    // --- PREÇO INTELIGENTE NA BUSCA ---
+                    const basePrice = v.price || p.promoValue || p.value;
+                    const varPrice = (isCash && p.priceCash) ? p.priceCash : basePrice;
+
+                    const fotoExibir = v.image ? v.image : (p.images && p.images.length > 0 ? p.images[0] : null);
+                    const temEstoque = (Number(v.stock) || 0) > 0;
+                    renderItemRow(container, p, `${p.name} (${v.color}/${v.size})`, v.sku, varPrice, v, fotoExibir, temEstoque);
+                }
+            });
+        } 
+        else {
+            if (p.name.toLowerCase().includes(query) || (p.sku && p.sku.toLowerCase().includes(query))) {
+                
+                // --- PREÇO INTELIGENTE NA BUSCA (SIMPLES) ---
+                const basePrice = p.promoValue || p.value;
+// Se for cash (PIX), usa o valor principal/promo. Se for cartão, usa o priceCard.
+const finalPrice = isCash ? basePrice : (p.priceCard || p.value);
+
+                const fotoExibir = (p.images && p.images.length > 0) ? p.images[0] : null;
+                const temEstoque = (Number(p.stock) || 0) > 0;
+                renderItemRow(container, p, p.name, p.sku, finalPrice, null, fotoExibir, temEstoque);
+            }
+        }
+    });
+    lucide.createIcons();
+};
+     
+// Adicionado o parâmetro 'temEstoque' no final
+function renderItemRow(container, product, displayName, sku, price, varData = null, imgUrl = null, temEstoque = true) {
+    const priceFormatted = price.toFixed(2).replace(".", ",");
+    
+    // Escapa os dados da variação
+    const varAttr = varData ? JSON.stringify(varData).replace(/"/g, '&quot;') : 'null';
+    
+    const fotoUrl = imgUrl || (product.images && product.images.length > 0 ? product.images[0] : null);
+    
+    // Pegamos a quantidade para exibir no selo
+    const qtdEstoque = varData ? (Number(varData.stock) || 0) : (Number(product.stock) || 0);
+
+    container.innerHTML += `
+        <div onclick='${temEstoque ? `window.addManualItem("${product.id}", ${varAttr})` : `showToast("⚠️ Item sem estoque disponível!")`}' 
+            class="p-2 bg-white border rounded-2xl shadow-sm flex items-center gap-3 active:scale-95 transition cursor-pointer mb-2 
+            ${temEstoque ? 'hover:border-primary-400' : 'opacity-60 grayscale border-red-100 bg-red-50/30'}">
+            
+            <div class="w-12 h-12 rounded-xl overflow-hidden bg-slate-50 flex-shrink-0 border border-slate-100">
+                ${fotoUrl 
+                    ? `<img src="${fotoUrl}" class="w-full h-full object-cover">` 
+                    : `<div class="w-full h-full flex items-center justify-center text-slate-300"><i data-lucide="image" class="w-5 h-5"></i></div>`
+                }
+            </div>
+
+            <div class="flex-1 min-w-0">
+                <p class="font-bold text-slate-800 text-[11px] truncate leading-tight">${displayName}</p>
+                <div class="flex gap-2 items-center mt-1">
+                    <span class="text-[8px] font-mono bg-slate-100 text-slate-500 px-1.5 py-0.5 rounded uppercase tracking-tighter">SKU: ${sku || 'N/A'}</span>
+                    <span class="text-[11px] font-black ${temEstoque ? 'text-primary-600' : 'text-slate-400'}">R$ ${priceFormatted}</span>
+                </div>
+                <p class="text-[9px] mt-0.5 ${temEstoque ? 'text-slate-400' : 'text-red-600 font-bold'}">
+                    ${temEstoque ? `Estoque: ${qtdEstoque}` : 'PRODUTO ESGOTADO'}
+                </p>
+            </div>
+
+            <div class="${temEstoque ? 'text-primary-500' : 'text-red-300'} pr-2">
+                <i data-lucide="${temEstoque ? 'plus-circle' : 'slash'}" class="w-6 h-6"></i>
+            </div>
+        </div>
+    `;
+}
+
+    // =========================
+// PASSO 5 — SISTEMA DE ITENS DO PEDIDO MANUAL
+
+
+// Função para Exclusão Rápida
+window.quickDeleteOrder = async (orderId) => {
+    if (!confirm("⚠️ ATENÇÃO: Deseja excluir este pedido permanentemente? Esta ação não pode ser desfeita.")) return;
+
+    try {
+        const orderRef = doc(db, "stores", currentStoreId, "orders", orderId);
+        await deleteDoc(orderRef);
+    } catch (error) {
+        console.error("Erro ao excluir:", error);
+        alert("Erro ao excluir pedido.");
+    }
+};
+
+// --- ADICIONAR ITEM AO PEDIDO MANUAL ---
+
+window.addManualItem = (id, varData = null) => {
+    const p = allProducts.find(prod => prod.id === id);
+    if (!p) return;
+
+    // --- CIRURGIA: Lógica de Preço Inteligente CORRIGIDA ---
+    const paymentMethod = document.getElementById("manualPayment").value;
+    const isCashMode = ['pix', 'dinheiro'].includes(paymentMethod);
+
+    let selectedPrice;
+    
+    if (isCashMode) {
+        // Se for PIX/Dinheiro: Prioridade Promoção -> Valor Principal (seu R$ 100 antigo)
+        selectedPrice = p.promoValue || p.value;
+    } else {
+        // Se for Cartão: Prioridade Valor de Cartão (novo campo) -> Valor Principal (fallback)
+        selectedPrice = p.priceCard || p.value;
+    }
+
+    // Se for uma variação e ela tiver um preço específico preenchido na matriz, ele domina
+    if (varData && varData.price > 0) {
+        selectedPrice = varData.price;
+    }
+    // -------------------------------------------------------
+
+    const cartId = varData ? `${id}-${varData.sku}` : id;
+    const existing = manualOrder.find(item => item.cartId === cartId);
+    const fotoItem = (varData && varData.image) ? varData.image : (p.images && p.images.length > 0 ? p.images[0] : null);
+
+    if (existing) {
+        const estoqueMax = varData ? (Number(varData.stock) || 0) : (Number(p.stock) || 0);
+        if (existing.qty + 1 > estoqueMax) {
+            showToast(`⚠️ Estoque insuficiente (${estoqueMax} un.)`);
+            return;
+        }
+        existing.qty++;
+        // Atualiza o preço caso o lojista tenha mudado a forma de pagamento no meio da seleção
+        existing.price = selectedPrice; 
+    } else {
+        manualOrder.push({
+            cartId: cartId,
+            id: id,
+            name: varData ? `${p.name} (${varData.color}/${varData.size})` : p.name,
+            sku: varData ? varData.sku : (p.sku || ''),
+            price: selectedPrice,
+            qty: 1,
+            image: fotoItem,
+            variationDetails: varData
+        });
+    }
+
+    window.renderManualOrderItems();
+};
+
+// --- MOSTRA OS ITENS ADICIONADOS NO PEDIDO ---
+window.renderManualOrderItems = () => {
+    const container = document.getElementById("manualOrderItems");
+    if (!container) return;
+    container.innerHTML = "";
+
+    manualOrder.forEach(item => {
+        // 1. Busca o estoque real para validar o botão de "+"
+        const prodOriginal = allProducts.find(p => p.id === item.id);
+        let estoqueDisponivel = 0;
+
+        if (prodOriginal) {
+            if (item.variationDetails) {
+                const vMatch = prodOriginal.variations?.find(v => v.sku === item.sku);
+                estoqueDisponivel = vMatch ? (Number(vMatch.stock) || 0) : 0;
+            } else {
+                estoqueDisponivel = Number(prodOriginal.stock) || 0;
+            }
+        }
+
+        const subtotal = (item.qty * item.price).toFixed(2).replace('.', ',');
+        const fotoUrl = item.image;
+        
+        // Verifica se atingiu o limite para desabilitar o botão visualmente
+        const noLimite = item.qty >= estoqueDisponivel;
+
+        container.innerHTML += `
+            <div class="p-2 border rounded-2xl bg-white shadow-sm flex items-center gap-3 mb-2 animate-fade-in">
+                
+                <div class="w-12 h-12 rounded-xl overflow-hidden bg-slate-50 flex-shrink-0 border border-slate-100">
+                    ${fotoUrl 
+                        ? `<img src="${fotoUrl}" class="w-full h-full object-cover">` 
+                        : `<div class="w-full h-full flex items-center justify-center text-slate-300"><i data-lucide="image" class="w-5 h-5"></i></div>`
+                    }
+                </div>
+
+                <div class="flex-1 min-w-0">
+                    <p class="font-bold text-slate-800 text-[11px] leading-tight truncate">${item.name}</p>
+                    <p class="text-[8px] font-mono text-slate-400 uppercase">SKU: ${item.sku}</p>
+                    <p class="text-[10px] text-primary-600 font-black mt-0.5">R$ ${subtotal}</p>
+                </div>
+
+                <div class="flex items-center gap-1 bg-slate-50 p-1 rounded-xl border border-slate-100">
+                    <button onclick="window.changeManualQty('${item.cartId}', -1)" 
+                            class="w-7 h-7 flex items-center justify-center bg-white border border-slate-200 rounded-lg text-slate-600 active:scale-90 transition-all">
+                        <i data-lucide="minus" class="w-3 h-3"></i>
+                    </button>
+
+                    <span class="font-bold text-xs min-w-[24px] text-center">${item.qty}</span>
+
+                    <button onclick="window.changeManualQty('${item.cartId}', 1)" 
+                            ${noLimite ? 'disabled' : ''}
+                            class="w-7 h-7 flex items-center justify-center bg-white border border-slate-200 rounded-lg text-slate-600 active:scale-90 transition-all ${noLimite ? 'opacity-30 cursor-not-allowed' : ''}">
+                        <i data-lucide="plus" class="w-3 h-3"></i>
+                    </button>
+                </div>
+
+            </div>
+        `;
+    });
+
+    // Atualiza o total geral do modal
+    window.updateManualTotal();
+    
+    // Recria os ícones do Lucide (importante para o ícone de + e - aparecerem)
+    if (window.lucide) lucide.createIcons();
+};
+
+// --- ALTERAR QUANTIDADE (+/-) ---
+window.changeManualQty = (cartId, diff) => {
+    // 1. Localiza o item no carrinho
+    const itemIndex = manualOrder.findIndex(i => i.cartId === cartId);
+    if (itemIndex === -1) return;
+
+    const item = manualOrder[itemIndex];
+
+    // 2. Verifica o estoque real no catálogo
+    const prodOriginal = allProducts.find(p => p.id === item.id);
+    let estoqueMaximo = 0;
+
+    if (prodOriginal) {
+        if (item.variationDetails) {
+            // Busca o estoque da variação específica (Cor/Tamanho)
+            const vMatch = prodOriginal.variations?.find(v => v.sku === item.sku);
+            estoqueMaximo = vMatch ? (Number(vMatch.stock) || 0) : 0;
+        } else {
+            // Produto simples
+            estoqueMaximo = Number(prodOriginal.stock) || 0;
+        }
+    }
+
+    // 3. Lógica de Aumento/Diminuição
+    const novaQtd = item.qty + diff;
+
+    if (novaQtd > estoqueMaximo && diff > 0) {
+        showToast(`⚠️ Limite de estoque atingido (${estoqueMaximo} un.)`);
+        return;
+    }
+
+    if (novaQtd <= 0) {
+        // Remove o item se chegar a zero
+        manualOrder.splice(itemIndex, 1);
+        showToast("🗑️ Item removido do carrinho");
+    } else {
+        item.qty = novaQtd;
+    }
+
+    // 4. Atualiza a interface
+    window.renderManualOrderItems();
+};
+
+// --- ATUALIZA TOTAL DO PEDIDO ---
+window.updateManualTotal = () => {
+    const total = manualOrder.reduce((sum, i) => sum + i.qty * i.price, 0);
+    document.getElementById("manualTotal").textContent =
+        "R$ " + total.toFixed(2).replace(".", ",");
+};
+
+        // --- FINALIZAR E SALVAR O PEDIDO MANUAL ---
+
+window.finishManualOrder = async () => {
+    if (manualOrder.length === 0) return showToast("⚠️ Carrinho vazio!");
+    const payment = document.getElementById("manualPayment").value;
+ let paymentExtra = {};
+
+if (payment === "fiado") {
+    paymentExtra = {
+        dueDate: document.getElementById("fiadoDueDate").value
+    };
+}
+
+if (payment === "parcelado") {
+    paymentExtra = {
+        parcelas: parseInt(document.getElementById("parcelasQtd").value || 1)
+    };
+}
+    if (!payment) return showToast("⚠️ Escolha o pagamento!");
+
+    const btn = document.querySelector('button[onclick="window.finishManualOrder()"]');
+    if (btn) btn.disabled = true;
+
+    try {
+        // --- LÓGICA DE VALOR TOTAL (AUTOMÁTICO VS MANUAL) ---
+        const overrideInput = document.getElementById('manualOrderTotalOverride');
+        const overrideValue = parseFloat(overrideInput.value);
+        
+        let totalFinal;
+        if (!isNaN(overrideValue) && overrideValue > 0) {
+            totalFinal = overrideValue; // Usa o valor que você digitou no campo amarelo
+        } else {
+            // Soma automática do carrinho
+            totalFinal = manualOrder.reduce((sum, i) => sum + i.qty * i.price, 0);
+        }
+
+        // 1. Cria o documento do pedido
+        const newOrder = {
+            customer: {
+                // ATENÇÃO: Ajustado para os IDs que estão no seu HTML
+                name: document.getElementById("manualOrderCustName")?.value || "Cliente Local",
+                phone: document.getElementById("manualPhone")?.value || "",
+                address: document.getElementById("manualAddress")?.value || ""
+            },
+            paymentMethod: {
+    type: payment,
+    ...paymentExtra
+},
+            items: manualOrder,
+            total: Number(totalFinal.toFixed(2)),
+            status: 
+    payment === "fiado" || payment === "parcelado"
+    ? "to_receive"
+    : "completed",
+            createdAt: new Date(),
+            manual: true,
+            stockDeducted: true
+        };
+
+        await addDoc(collection(db, `stores/${currentStoreId}/orders`), newOrder);
+
+        // 2. LÓGICA DE BAIXA DE ESTOQUE (Mantida a sua lógica original que está ótima)
+        const itemsByProduct = manualOrder.reduce((acc, item) => {
+            if (!acc[item.id]) acc[item.id] = [];
+            acc[item.id].push(item);
+            return acc;
+        }, {});
+
+        const stockPromises = Object.keys(itemsByProduct).map(async (productId) => {
+            const productRef = doc(db, `stores/${currentStoreId}/products`, productId);
+            const snap = await getDoc(productRef);
+            
+            if (snap.exists()) {
+                const prodData = snap.data();
+                const itemsToUpdate = itemsByProduct[productId];
+                let updateData = {};
+
+                if (prodData.variations && prodData.variations.length > 0) {
+                    let novasVariacoes = [...prodData.variations];
+                    itemsToUpdate.forEach(itemCarrinho => {
+                        novasVariacoes = novasVariacoes.map(v => {
+                            const isMatch = v.sku === itemCarrinho.sku || 
+                                           (v.color === itemCarrinho.variationDetails?.color && 
+                                            v.size === itemCarrinho.variationDetails?.size);
+                            if (isMatch) {
+                                const estoqueAtualVar = Number(v.stock) || 0;
+                                return { ...v, stock: Math.max(0, estoqueAtualVar - Number(itemCarrinho.qty)) };
+                            }
+                            return v;
+                        });
+                    });
+                    updateData.variations = novasVariacoes;
+                    updateData.stock = novasVariacoes.reduce((sum, v) => sum + (Number(v.stock) || 0), 0);
+                } else {
+                    const totalQty = itemsToUpdate.reduce((sum, i) => sum + Number(i.qty), 0);
+                    const estoqueGeralAntigo = Number(prodData.stock) || 0;
+                    updateData.stock = Math.max(0, estoqueGeralAntigo - totalQty);
+                }
+                updateData.status = updateData.stock <= 0 ? 'paused' : 'active';
+                return updateDoc(productRef, updateData);
+            }
+        });
+
+        await Promise.all(stockPromises);
+        
+        // 3. ATUALIZAÇÃO DE CACHE E INTERFACE
+        await updateDoc(doc(db, `stores/${currentStoreId}/config/store`), { lastUpdate: Date.now() });
+        await loadProductsCache(true);
+        renderProductList();
+        
+        showToast("✅ Venda finalizada e estoque sincronizado!");
+        
+        // 4. LIMPEZA DOS CAMPOS
+        manualOrder = [];
+        document.getElementById("manualOrderCustName").value = "";
+        document.getElementById("manualPhone").value = "";
+        document.getElementById("manualAddress").value = "";
+        document.getElementById("manualOrderTotalOverride").value = ""; // Limpa campo manual
+        document.getElementById("manualProductSearch").value = "";
+        document.getElementById("manualSearchResults").innerHTML = "";
+        
+        window.renderManualOrderItems();
+        window.closeManualOrderModal();
+
+    } catch (e) {
+        console.error("Erro ao finalizar venda:", e);
+        showToast("❌ Erro ao processar venda.");
+    } finally {
+        if (btn) btn.disabled = false;
+    }
+};
+
+// Função para gerenciar o estoque (servirá para abater ou estornar)
+async function gerenciarEstoquePedido(pedido, acao) {
+    console.log(`${acao === 'estornar' ? 'Estornando' : 'Abatendo'} estoque...`);
+    
+    const itemsByProduct = pedido.items.reduce((acc, item) => {
+        if (!acc[item.id]) acc[item.id] = [];
+        acc[item.id].push(item);
+        return acc;
+    }, {});
+
+    const stockPromises = Object.keys(itemsByProduct).map(async (productId) => {
+        const productRef = doc(db, `stores/${currentStoreId}/products`, productId);
+        const snap = await getDoc(productRef);
+
+        if (snap.exists()) {
+            const prodData = snap.data();
+            const itemsToProcess = itemsByProduct[productId];
+            let updatePayload = {};
+            const fator = acao === 'estornar' ? 1 : -1;
+
+            if (prodData.variations && prodData.variations.length > 0) {
+                let novasVariacoes = [...prodData.variations];
+                itemsToProcess.forEach(itemPedido => {
+                    const skuPedido = itemPedido.variationDetails?.sku || itemPedido.sku;
+                    novasVariacoes = novasVariacoes.map(v => {
+                        if (v.sku === skuPedido) {
+                            return { ...v, stock: Math.max(0, (Number(v.stock) || 0) + (Number(itemPedido.qty) * fator)) };
+                        }
+                        return v;
+                    });
+                });
+                updatePayload.variations = novasVariacoes;
+                updatePayload.stock = novasVariacoes.reduce((sum, v) => sum + (v.active !== false ? (Number(v.stock) || 0) : 0), 0);
+            } else {
+                const totalQty = itemsToProcess.reduce((sum, i) => sum + Number(i.qty), 0);
+                updatePayload.stock = Math.max(0, (Number(prodData.stock) || 0) + (totalQty * fator));
+            }
+
+            // Se estornou e o estoque subiu, garante que o produto está ativo
+            if (acao === 'estornar' && updatePayload.stock > 0) updatePayload.status = 'active';
+            
+            return updateDoc(productRef, updatePayload);
+        }
+    });
+
+    await Promise.all(stockPromises);
+}
+// FUNÇÃO PARA ATUALIZAR STATUS E BAIXAR ESTOQUE (COM RECIBO PIX)
+
+window.updateOrderStatus = async (id, status) => {
+    try {
+        const p = ordersCache[id];
+        if (!p) return;
+
+        // 🚀 CORREÇÃO 1: Referência do documento do pedido
+        const orderRef = doc(db, `stores/${currentStoreId}/orders`, id);
+
+        // 🧹 FAXINA: Limpa reservas fantasmas ao aceitar, cancelar ou concluir
+        if (['confirmed', 'canceled', 'completed'].includes(status)) {
+            console.log("🧹 Faxina de Shadow Stock iniciada...");
+            await window.limparReservasFantasmas(id, p.items);
+        }
+
+        const orderUpdate = { status: status };
+
+        if (status === 'completed' && p.status === 'to_receive') {
+            orderUpdate.paymentMethod = "Dinheiro (Fiado Recebido)";
+        } 
+     
+        const estavaCancelado = p.status === 'canceled' || p.status === 'Cancelado';
+        const alreadyDeducted = p.stockDeducted === true;
+
+// --- CASO A: CONFIRMAR OU CONCLUIR (BAIXAR ESTOQUE) ---
+if ((status === 'confirmed' || status === 'completed') && (!alreadyDeducted || estavaCancelado)) {
+    // 1. Processa o estoque primeiro
+    await window.processarBaixaSilenciosa(id, p);
+    orderUpdate.stockDeducted = true;
+
+    // 2. Dispara a notificação de WhatsApp personalizada (Loja ou Restaurante)
+    // Chamamos a função que criamos anteriormente
+    if (status === 'confirmed' && typeof window.sendConfirmationWhatsApp === 'function') {
+        window.sendConfirmationWhatsApp(p);
+    }
+
+    // 3. Gatilho de Impressão de Comanda
+    // O setTimeout evita que o alerta de impressão bloqueie a abertura do WhatsApp
+    if (status === 'confirmed') {
+        setTimeout(() => {
+            if (confirm("Pedido confirmado com sucesso! Deseja imprimir a comanda na impressora térmica?")) {
+                if (typeof window.printOrder === 'function') {
+                    window.printOrder(p);
+                } else {
+                    console.error("Função printOrder não encontrada.");
+                }
+            }
+        }, 1000); // Aguarda 1 segundo para não conflitar com o popup do Zap
+    }
+}
+        // --- CASO B: CANCELAR (ESTORNAR ESTOQUE) ---
+        if (status === 'canceled' && alreadyDeducted) {
+            console.log("Estornando estoque de forma agrupada...");
+            
+            const itemsByProduct = p.items.reduce((acc, item) => {
+                if (!acc[item.id]) acc[item.id] = [];
+                acc[item.id].push(item);
+                return acc;
+            }, {});
+
+            const stockPromises = Object.keys(itemsByProduct).map(async (productId) => {
+                const productRef = doc(db, `stores/${currentStoreId}/products`, productId);
+                const snap = await getDoc(productRef);
+
+                if (snap.exists()) {
+                    const prodData = snap.data();
+                    const itemsToRestore = itemsByProduct[productId];
+                    let updatePayload = {};
+
+                    if (prodData.variations && prodData.variations.length > 0) {
+                        let novasVariacoes = [...prodData.variations];
+                        itemsToRestore.forEach(itemPedido => {
+                            const { sku } = itemPedido.variationDetails || {};
+                            novasVariacoes = novasVariacoes.map(v => {
+                                if (v.sku === sku) {
+                                    return { ...v, stock: (Number(v.stock) || 0) + Number(itemPedido.qty) };
+                                }
+                                return v;
+                            });
+                        });
+                        updatePayload.variations = novasVariacoes;
+                        updatePayload.stock = novasVariacoes.reduce((sum, v) => sum + (v.active !== false ? (Number(v.stock) || 0) : 0), 0);
+                    } else {
+                        const totalQty = itemsToRestore.reduce((sum, i) => sum + Number(i.qty), 0);
+                        updatePayload.stock = (Number(prodData.stock) || 0) + totalQty;
+                    }
+
+                    if (updatePayload.stock > 0) updatePayload.status = 'active';
+                    return updateDoc(productRef, updatePayload);
+                }
+            });
+
+            await Promise.all(stockPromises);
+            orderUpdate.stockDeducted = false;
+        }
+
+        // --- SALVAR NO FIREBASE ---
+        await updateDoc(orderRef, orderUpdate);
+
+        // 🚀 SINCRONIA IMEDIATA COM A VITRINE
+        await updateDoc(doc(db, `stores/${currentStoreId}/config/store`), { lastUpdate: Date.now() });
+
+        // --- NOTIFICAÇÃO VIA WHATSAPP (RECIBO PIX) ---
+        if (status === 'confirmed') {
+    // 1. Identifica o modo atual do sistema
+    const tipoNegocio = storeConfig.tipoNegocio || 'varejo'; 
+
+    // 2. Formata os itens (se adapta a Adicionais ou Variações)
+    const itemsText = p.items.map(i => {
+        let detalhes = '';
+        
+        // Se for Restaurante e tiver Adicionais/Complementos
+        if (tipoNegocio === 'restaurante' && i.escolhas && i.escolhas.length > 0) {
+            detalhes = i.escolhas.map(e => `\n   └ _${e.nome}_`).join('');
+        } 
+        // Se for Loja e tiver Grades (Cor/Tamanho)
+        else if (i.variationDetails) {
+            detalhes = ` (${i.variationDetails.color}/${i.variationDetails.size})`;
+        }
+        
+        return `✅ *${i.qty}x ${i.name.toUpperCase()}*${detalhes}`;
+    }).join('\n\n');
+
+    // 3. Bloco de PIX (comum aos dois)
+    const pixInfo = storeConfig.pix || {};
+    let pixBlock = "";
+    if (p.paymentMethod.toLowerCase().includes('pix') && pixInfo.key) {
+        pixBlock = `\n\n━━━━━━━━━━━━━━━\n🔹 *PAGAMENTO PIX*\n*Chave:* \`${pixInfo.key}\`\n*Titular:* ${pixInfo.name}\n━━━━━━━━━━━━━━━\n_Envie o comprovante para iniciarmos o preparo!_`;
+    }
+
+    // 4. Construção da Mensagem baseada no Tipo de Negócio
+    let msg = "";
+    const firstName = p.customer.name.split(' ')[0];
+
+    if (tipoNegocio === 'restaurante') {
+        msg = `👨‍🍳 *PEDIDO NA COZINHA!* 👨‍🍳\n\n` +
+              `Olá, *${firstName}*! O Chef já recebeu seu pedido e o fogão já está aceso! 🔥\n\n` +
+              `🆔 *PEDIDO:* #${p.id.slice(-5).toUpperCase()}\n\n` +
+              `📋 *RESUMO DO PEDIDO:*\n${itemsText}\n\n` +
+              `💰 *TOTAL:* R$ ${p.total.toFixed(2).replace('.', ',')}` +
+              `${pixBlock}\n\n` +
+              `🛵 *STATUS:* Preparando com capricho. Avisaremos quando o motoboy sair!`;
+    } else {
+        msg = `🛍️ *PEDIDO CONFIRMADO!* 🛍️\n\n` +
+              `Olá, *${p.customer.name}*! Seu pedido foi confirmado e já estamos separando seus produtos.\n\n` +
+              `🆔 *PEDIDO:* #${p.id.slice(-5).toUpperCase()}\n\n` +
+              `📋 *ITENS:*\n${itemsText}\n\n` +
+              `💰 *TOTAL:* R$ ${p.total.toFixed(2).replace('.', ',')}` +
+              `${pixBlock}\n\n` +
+              `⏳ Avisaremos você assim que o pedido for enviado!`;
+    }
+    
+    // 5. Envio
+    const phone = p.customer.phone.replace(/\D/g, '');
+    window.open(`https://wa.me/55${phone}?text=${encodeURIComponent(msg)}`, '_blank');
+}
+        // --- ATUALIZAÇÃO DA UI ---
+        await loadProductsCache(true); 
+        renderProductList();
+        if (window.initFinanceDashboard) window.initFinanceDashboard();
+        
+        showToast(`Pedido ${status} e estoque atualizado! ✅`);
+        document.getElementById('orderDetailModal').classList.add('hidden');
+
+    } catch (e) {
+        console.error("Erro no updateOrderStatus:", e);
+        showToast("❌ Erro ao processar alteração.");
+    }
+};
+        
+                                                
+// --- SCANNER CORRIGIDO PARA TODOS OS FORMATOS (EAN-13, ETC) ---
+window.startBarcodeScanner = () => {
+    const container = document.getElementById('scanner-container');
+    container.classList.remove('hidden');
+    
+    // Inicializa o leitor
+    html5QrCode = new Html5Qrcode("reader");
+    
+    // --- CONFIGURAÇÃO CIRÚRGICA PARA MÚLTIPLOS FORMATOS ---
+    const config = { 
+        fps: 15, 
+        qrbox: { width: 250, height: 150 },
+        // Esta é a lista que permite a leitura de 13 dígitos (EAN_13) e outros padrões
+        formatsToSupport: [ 
+            Html5QrcodeSupportedFormats.EAN_13, 
+            Html5QrcodeSupportedFormats.EAN_8, 
+            Html5QrcodeSupportedFormats.CODE_128, 
+            Html5QrcodeSupportedFormats.CODE_39, 
+            Html5QrcodeSupportedFormats.UPC_A, 
+            Html5QrcodeSupportedFormats.UPC_E,
+            Html5QrcodeSupportedFormats.QR_CODE 
+        ]
+    };
+
+    html5QrCode.start({ facingMode: "environment" }, config, (decodedText) => {
+        const query = decodedText.toUpperCase().trim();
+        document.getElementById('manualProductSearch').value = query;
+        
+        // Mantém a sua função de renderizar a busca visual
+        window.renderManualProductSearch(); 
+        
+        let itemEncontrado = null;
+        let variacaoEncontrada = null;
+
+        // Mantém a sua lógica de busca no array allProducts
+        allProducts.forEach(p => {
+            if (p.sku && p.sku.toUpperCase() === query) {
+                itemEncontrado = p;
+            }
+            if (p.variations) {
+                const vMatch = p.variations.find(v => v.sku && v.sku.toUpperCase() === query);
+                if (vMatch) {
+                    itemEncontrado = p;
+                    variacaoEncontrada = vMatch;
+                }
+            }
+        });
+
+        if (itemEncontrado) {
+            // Mantém a sua função de adição ao carrinho manual
+            window.addManualItem(itemEncontrado.id, variacaoEncontrada);
+            
+            const nomeExibir = variacaoEncontrada 
+                ? `${itemEncontrado.name} (${variacaoEncontrada.color}/${variacaoEncontrada.size})` 
+                : itemEncontrado.name;
+                
+            showToast(`✅ ${nomeExibir} adicionado!`);
+        } else {
+            showToast("⚠️ Código não reconhecido no catálogo.");
+        }
+
+        window.stopBarcodeScanner(); 
+    }).catch((err) => {
+        console.error("Erro na câmera:", err);
+        showToast("❌ Erro ao abrir câmera.");
+    });
+};
+
+window.stopBarcodeScanner = () => {
+    if (html5QrCode) {
+        html5QrCode.stop().then(() => {
+            document.getElementById('scanner-container').classList.add('hidden');
+        });
+    } else {
+        document.getElementById('scanner-container').classList.add('hidden');
+    }
+};
+
+window.applyCustomDate = () => {
+    const start = document.getElementById('customDateStart').value;
+    const end = document.getElementById('customDateEnd').value;
+    
+    if(!start || !end) return showToast("Selecione ambas as datas.");
+    
+    // Converte para meia-noite do dia inicial e último segundo do dia final
+    customStart = new Date(start + "T00:00:00").getTime();
+    customEnd = new Date(end + "T23:59:59").getTime();
+    
+    document.getElementById('modalCustomDate').classList.add('hidden');
+    updateFinanceRange('custom');
+};
+
+window.initFinanceDashboard = async () => {
+    const now = new Date();
+    const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+    
+    let filterStart = todayStart;
+    let filterEnd = new Date(now.getTime() + 86400000); // Amanhã
+    let label = "HOJE";
+
+    // --- MANTENDO SEUS FILTROS ORIGINAIS ---
+    if (currentFinanceRange === 'yesterday') {
+        filterStart = new Date(todayStart.getTime() - (24 * 60 * 60 * 1000));
+        filterEnd = todayStart;
+        label = "ONTEM";
+    } else if (currentFinanceRange === 'week') {
+        filterStart = new Date(now.getTime() - (7 * 24 * 60 * 60 * 1000));
+        label = "ÚLTIMOS 7 DIAS";
+    } else if (currentFinanceRange === 'month') {
+        filterStart = monthStart;
+        label = "ESTE MÊS";
+    } else if (currentFinanceRange === 'custom') {
+        filterStart = new Date(customStart);
+        filterEnd = new Date(customEnd);
+        label = "PERÍODO PERSONALIZADO";
+    }
+
+    let metrics = {
+        totalRev: 0, totalProfit: 0, orders: 0,
+        pixRev: 0, pixProfit: 0,
+        cardRev: 0, cardProfit: 0,
+        cashRev: 0, cashProfit: 0
+    };
+
+    try {
+        // --- BUSCA INDEPENDENTE (A solução para os 32 pedidos) ---
+        const q = query(
+            collection(db, `stores/${currentStoreId}/orders`),
+            where("createdAt", ">=", filterStart),
+            where("createdAt", "<=", filterEnd)
+        );
+
+        const querySnapshot = await getDocs(q);
+        
+        querySnapshot.forEach(doc => {
+            const order = doc.data();
+
+            // 1. Filtro básico de Cancelamento (Sua lógica)
+            if (order.status === 'canceled' || order.status === 'Cancelado') return;
+
+            // --- IDENTIFICAÇÃO DO MÉTODO DE PAGAMENTO (Sua lógica) ---
+            let payType = "";
+            if (typeof order.paymentMethod === "string") {
+                payType = order.paymentMethod.toLowerCase();
+            } else if (typeof order.paymentMethod === "object" && order.paymentMethod !== null) {
+                payType = (order.paymentMethod.type || "").toLowerCase();
+            }
+
+            // --- REGRA DE OURO: SÓ SOMA SE NÃO FOR FIADO ATIVO (Sua lógica) ---
+            if (order.status === 'to_receive' || payType === "fiado" || payType === "parcelado") {
+                return; 
+            }
+
+            const totalOrder = Number(order.total) || 0;
+            metrics.totalRev += totalOrder;
+            metrics.orders++;
+
+            // Calcular Lucro (Sua lógica)
+            let orderProfit = 0;
+            if (order.items && Array.isArray(order.items)) {
+                order.items.forEach(item => {
+                    const qty = Number(item.qty) || 0;
+                    const price = Number(item.price) || 0;
+                    const prod = allProducts.find(p => p.id === item.id);
+                    const cost = prod ? (Number(prod.cost) || 0) : 0;
+                    orderProfit += (price - cost) * qty;
+                });
+            }
+            metrics.totalProfit += orderProfit;
+
+            // Distribuir por método (Sua lógica)
+            if (payType.includes("pix")) {
+                metrics.pixRev += totalOrder;
+                metrics.pixProfit += orderProfit;
+            } else if (payType.includes("cartao") || payType.includes("crédito") || payType.includes("debito")) {
+                metrics.cardRev += totalOrder;
+                metrics.cardProfit += orderProfit;
+            } else {
+                metrics.cashRev += totalOrder;
+                metrics.cashProfit += orderProfit;
+            }
+        });
+
+        // 4. Patrimônio em Estoque (Sua lógica - inalterada)
+        let stockValue = 0, stockCost = 0, totalItems = 0;
+        allProducts.forEach(p => {
+            const qty = Number(p.stock) || 0;
+            const price = Number(p.value) || 0;
+            const cost = Number(p.cost) || 0;
+            stockValue += price * qty;
+            stockCost += cost * qty;
+            totalItems += qty;
+        });
+
+        // 5. Atualizar UI (Sua lógica - inalterada)
+        const setTxt = (id, val) => {
+            const el = document.getElementById(id);
+            if(el) el.textContent = typeof val === 'number' ? `R$ ${val.toFixed(2).replace('.',',')}` : val;
+        };
+
+        document.getElementById('fin-label-periodo').textContent = `FILTRO: ${label}`;
+        setTxt('fin-rev-day', metrics.totalRev);
+        setTxt('fin-profit-real', metrics.totalProfit);
+        setTxt('fin-orders-day', `${metrics.orders} pedidos no período`);
+        setTxt('fin-rev-pix', metrics.pixRev);
+        setTxt('fin-profit-pix', metrics.pixProfit);
+        setTxt('fin-rev-card', metrics.cardRev);
+        setTxt('fin-profit-card', metrics.cardProfit);
+        setTxt('fin-rev-cash', metrics.cashRev);
+        setTxt('fin-profit-cash', metrics.cashProfit);
+        setTxt('fin-stock-value', stockValue);
+        setTxt('fin-stock-cost', stockCost);
+        setTxt('fin-profit-potential', stockValue - stockCost);
+        setTxt('fin-stock-count', `${totalItems} unidades disponíveis`);
+
+        window.updateFinanceChart(filterStart.getTime(), filterEnd.getTime(), currentFinanceRange);
+        if (window.lucide) lucide.createIcons();
+
+    } catch (e) {
+        console.error("Erro no cálculo financeiro:", e);
+    }
+};
+        
+let financeChartInstance = null;
+
+window.updateFinanceChart = (filterStart, filterEnd, rangeType) => {
+    const ctx = document.getElementById('financePerformanceChart').getContext('2d');
+    
+    let labels = [];
+    let dataMap = {};
+
+    // 1. FILTRAGEM TOTAL (Pega do cache de memória, ignorando o limite da tela)
+    const orders = Object.values(ordersCache).filter(o => {
+        let t = o.createdAt?.toMillis ? o.createdAt.toMillis() : (typeof o.createdAt === 'number' ? o.createdAt : 0);
+        // Filtra pelo período selecionado e ignora os cancelados para o financeiro
+        return t >= filterStart && t <= filterEnd && o.status !== 'canceled';
+    });
+
+    // 2. ATUALIZAÇÃO DOS CARDS DE RESUMO (OS NÚMEROS NO TOPO)
+    const totalFaturamento = orders.reduce((sum, o) => sum + (Number(o.total) || 0), 0);
+    const totalPedidos = orders.length;
+
+    // Atualiza os elementos de texto com os valores REAIS do banco
+    const elFaturamento = document.getElementById('totalSales'); 
+    const elQuantidade = document.getElementById('countCompleted'); 
+
+    if (elFaturamento) {
+        elFaturamento.innerText = `R$ ${totalFaturamento.toFixed(2).replace('.', ',')}`;
+    }
+    if (elQuantidade) {
+        elQuantidade.innerText = totalPedidos;
+    }
+
+    // 3. CONFIGURAÇÃO DO GRÁFICO (AGRUPAMENTO POR HORA, DIA OU SEMANA)
+    if (rangeType === 'today' || rangeType === 'yesterday') {
+        labels = Array.from({length: 24}, (_, i) => `${i}h`);
+        orders.forEach(o => {
+            const h = new Date(o.createdAt?.toDate ? o.createdAt.toDate() : o.createdAt).getHours();
+            dataMap[h] = (dataMap[h] || 0) + (Number(o.total) || 0);
+        });
+    } else if (rangeType === 'week') {
+        for (let i = 6; i >= 0; i--) {
+            const d = new Date();
+            d.setDate(d.getDate() - i);
+            const label = d.toLocaleDateString('pt-BR', { weekday: 'short' }).toUpperCase();
+            labels.push(label);
+            dataMap[label] = 0;
+        }
+        orders.forEach(o => {
+            const label = new Date(o.createdAt?.toDate ? o.createdAt.toDate() : o.createdAt)
+                           .toLocaleDateString('pt-BR', { weekday: 'short' }).toUpperCase();
+            if(dataMap[label] !== undefined) dataMap[label] += (Number(o.total) || 0);
+        });
+    } else {
+        // Mês ou Período Customizado
+        const start = new Date(filterStart);
+        const end = new Date(filterEnd === Infinity ? Date.now() : filterEnd);
+        for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
+            const label = d.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' });
+            labels.push(label);
+            dataMap[label] = 0;
+        }
+        orders.forEach(o => {
+            const label = new Date(o.createdAt?.toDate ? o.createdAt.toDate() : o.createdAt)
+                           .toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' });
+            if(dataMap[label] !== undefined) dataMap[label] += (Number(o.total) || 0);
+        });
+    }
+
+    const values = rangeType === 'today' || rangeType === 'yesterday' 
+        ? labels.map((_, i) => dataMap[i] || 0)
+        : labels.map(l => dataMap[l] || 0);
+
+    // 4. RENDERIZAÇÃO DO GRÁFICO
+    if (window.financeChartInstance) window.financeChartInstance.destroy();
+
+    window.financeChartInstance = new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: labels,
+            datasets: [{
+                data: values,
+                borderColor: '#8b5cf6',
+                backgroundColor: 'rgba(139, 92, 246, 0.05)',
+                borderWidth: 3,
+                fill: true,
+                tension: 0.4,
+                pointRadius: 0,
+                pointHoverRadius: 5,
+                pointHoverBackgroundColor: '#8b5cf6',
+                pointHoverBorderColor: '#fff',
+                pointHoverBorderWidth: 2
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: { 
+                legend: { display: false }, 
+                tooltip: { 
+                    mode: 'index', 
+                    intersect: false,
+                    callbacks: {
+                        label: function(context) {
+                            return 'R$ ' + context.parsed.y.toFixed(2).replace('.', ',');
+                        }
+                    }
+                } 
+            },
+            scales: {
+                x: { grid: { display: false }, ticks: { font: { size: 9, weight: 'bold' }, color: '#94a3b8', maxRotation: 0 } },
+                y: { beginAtZero: true, grid: { color: '#f1f5f9' }, ticks: { display: false } }
+            }
+        }
+    });
+};
+
+
+        window.updatePremiumUI = () => {
+    if (!storeConfig) return;
+
+    // Ajuste Visual na Sidebar (Financeiro)
+    const navFinance = document.getElementById('nav-finance');
+    if (navFinance) {
+        if (storeConfig.hasFinance !== true) {
+            navFinance.innerHTML = `<i data-lucide="lock" class="w-5 h-5 mr-3"></i> <span class="opacity-50">Financeiro (PRO)</span>`;
+            navFinance.classList.add('cursor-not-allowed');
+        } else {
+            navFinance.innerHTML = `<i data-lucide="dollar-sign" class="w-5 h-5 mr-3"></i> Financeiro`;
+            navFinance.classList.remove('cursor-not-allowed');
+        }
+    }
+    lucide.createIcons();
+};
+window.expandImage = (url) => {
+    const modal = document.getElementById('imageViewerModal');
+    const img = document.getElementById('expandedImage');
+    if (!url) return;
+    img.src = url;
+    modal.classList.remove('hidden');
+    if (typeof lucide !== 'undefined') lucide.createIcons();
+};
+
+        window.uploadVariationImage = async (idx, files) => {
+    if (!files[0]) return;
+    
+    // 1. Marca qual índice da variação estamos editando
+    currentVariationCropIndex = idx;
+    
+    const reader = new FileReader();
+    reader.onload = (e) => {
+        // 2. Em vez de salvar direto, abre o modal de recorte existente
+        openCropModal(e.target.result);
+        
+        // Limpa o input para permitir selecionar o mesmo arquivo se errar
+        document.getElementById(`fileVar-${idx}`).value = '';
+    };
+    reader.readAsDataURL(files[0]);
+};
+
+
+window.calculateSalesInsights = () => {
+    const productSales = {}; 
+    const categorySales = {}; 
+
+    // 1. Validar se temos pedidos no cache
+    const orders = Object.values(ordersCache);
+    if (orders.length === 0) return;
+
+    orders.forEach(order => {
+        // Consideramos pedidos Concluídos, Confirmados e os Manuais (Venda de Balcão)
+        if (['completed', 'confirmed'].includes(order.status) || order.manual === true) {
+            
+            order.items.forEach(item => {
+                const qty = Number(item.qty) || 0;
+                const revenue = (Number(item.price) || 0) * qty;
+                const itemName = item.name || "Produto sem nome";
+
+                // --- Ranking de Produtos ---
+                if (!productSales[itemName]) {
+                    productSales[itemName] = { qty: 0, revenue: 0 };
+                }
+                productSales[itemName].qty += qty;
+                productSales[itemName].revenue += revenue;
+
+                // --- Ranking de Categorias ---
+                // Tenta pegar a categoria salva no item do pedido, senão busca no catálogo atual
+                const prodOriginal = allProducts.find(p => p.id === item.id);
+                const catName = item.category || (prodOriginal ? prodOriginal.category : "Geral");
+
+                if (!categorySales[catName]) {
+                    categorySales[catName] = { qty: 0, revenue: 0 };
+                }
+                categorySales[catName].qty += qty;
+                categorySales[catName].revenue += revenue;
+            });
+        }
+    });
+
+    // 2. Renderizar Produtos Campeões (Ordenado por Qtd Vendida)
+    const topProds = Object.entries(productSales)
+        .sort((a, b) => b[1].qty - a[1].qty)
+        .slice(0, 5);
+
+    const prodContainer = document.getElementById('topSoldProducts');
+    if (prodContainer) {
+        prodContainer.innerHTML = topProds.length ? topProds.map(([name, data]) => `
+            <div class="flex items-center justify-between p-3 bg-slate-50 rounded-2xl border border-slate-100 animate-fade-in">
+                <div class="flex flex-col">
+                    <span class="text-xs font-bold text-slate-800 truncate w-40">${name}</span>
+                    <span class="text-[9px] text-slate-400 font-black uppercase">${data.qty} unidades vendidas</span>
+                </div>
+                <span class="text-[10px] font-black text-green-600">R$ ${data.revenue.toFixed(2).replace('.',',')}</span>
+            </div>
+        `).join('') : '<p class="text-xs text-slate-400 italic">Aguardando primeiras vendas...</p>';
+    }
+
+    // 3. Renderizar Categorias Lucrativas (Ordenado por Faturamento R$)
+    const topCats = Object.entries(categorySales)
+        .sort((a, b) => b[1].revenue - a[1].revenue)
+        .slice(0, 5);
+
+    const catContainer = document.getElementById('topSoldCategories');
+    if (catContainer) {
+        const maxRevenue = topCats.length > 0 ? topCats[0][1].revenue : 1;
+
+        catContainer.innerHTML = topCats.length ? topCats.map(([name, data]) => {
+            const percentage = (data.revenue / maxRevenue) * 100;
+            return `
+            <div class="space-y-1 animate-fade-in">
+                <div class="flex justify-between text-[11px] font-bold px-1">
+                    <span class="text-slate-700 uppercase">${name}</span>
+                    <span class="text-slate-900">R$ ${data.revenue.toFixed(2).replace('.',',')}</span>
+                </div>
+                <div class="w-full bg-slate-100 h-2 rounded-full overflow-hidden">
+                    <div class="bg-primary-500 h-full rounded-full transition-all duration-1000" style="width: ${percentage}%"></div>
+                </div>
+            </div>`;
+        }).join('') : '<p class="text-xs text-slate-400 italic">Sem dados de categorias.</p>';
+    }
+
+    if (window.lucide) lucide.createIcons();
+};
+
+     window.startTutorial = () => {
+    const driver = window.driver.js.driver;
+
+    const driverObj = driver({
+        showProgress: true,
+        allowClose: false, // <--- ESTA LINHA impede que o tutorial feche ao clicar fora
+        nextBtnText: 'Próximo',
+        prevBtnText: 'Anterior',
+        doneBtnText: 'Finalizar Guia',
+        steps: [
+            { 
+                element: '#nav-orders', 
+                popover: { 
+                    title: '📦 Pedidos em Tempo Real', 
+                    description: 'O seu radar! Novos pedidos do WhatsApp aparecem aqui. Clique para ver detalhes e confirmar.', 
+                    side: "right", align: 'start' 
+                } 
+            },
+            { 
+                element: '#nav-dashboard', 
+                popover: { 
+                    title: '📊 Dashboard', 
+                    description: 'Veja quem anda a visitar a sua loja e quais são os produtos que mais despertam interesse.', 
+                    side: "right", align: 'start' 
+                } 
+            },
+            { 
+                element: '#nav-banners', 
+                popover: { 
+                    title: '🖼️ Vitrine Visual', 
+                    description: 'Configure os banners rotativos aqui para dar aquele aspeto profissional à sua loja.', 
+                    side: "right", align: 'start' 
+                } 
+            },
+            { 
+                element: '#nav-products', 
+                popover: { 
+                    title: '🏷️ Gestão de Stock', 
+                    description: 'Cadastre os seus produtos e variações. O sistema avisa quando o stock estiver a acabar!', 
+                    side: "right", align: 'start' 
+                } 
+            },
+            { 
+                element: '#nav-categories', 
+                popover: { 
+                    title: '📂 Categorias Inteligentes', 
+                    description: 'Organize os seus setores. Ative as categorias mágicas para mostrar novidades automaticamente.', 
+                    side: "right", align: 'start' 
+                } 
+            },
+            { 
+                element: '#nav-finance', 
+                popover: { 
+                    title: '💰 Financeiro', 
+                    description: 'Controle o seu faturamento e veja quanto dinheiro tem parado em stock hoje.', 
+                    side: "right", align: 'start' 
+                } 
+            },
+            { 
+                element: '#nav-config', 
+                popover: { 
+                    title: '⚙️ Configurações e PIX', 
+                    description: 'Importante: Defina o seu PIX aqui para que os clientes saibam como lhe pagar!', 
+                    side: "right", align: 'start' 
+                } 
+            },
+            { 
+                element: '#fabAddOrder', 
+                popover: { 
+                    title: '➕ Venda Manual', 
+                    description: 'Vendeu na loja física? Registe aqui para manter o stock sincronizado com o site.', 
+                    side: "left", align: 'start' 
+                } 
+            },
+            { 
+                element: '#storeMenuBtn', 
+                popover: { 
+                    title: '🚀 Seu Link de Vendas', 
+                    description: 'Este é o seu tesouro! Copie este link e coloque na Bio do seu Instagram agora mesmo.', 
+                    side: "bottom", align: 'end' 
+                } 
+            }
+        ]
+    });
+
+    driverObj.drive();
+};
+
+      window.publicarAlteracoes = async () => {
+    const btn = document.getElementById('btnPublicar');
+    if (btn) btn.disabled = true; // Proteção contra múltiplos cliques (evita cobrança dupla)
+
+    try {
+        const agora = Date.now();
+        const storeRef = doc(db, `stores/${currentStoreId}/config/store`);
+        
+        // 1. Atualiza o servidor (Custo: 1 escrita)
+        await updateDoc(storeRef, { lastUpdate: agora });
+
+        // 2. ESTRATÉGIA BLAZE: Atualiza os carimbos de tempo locais 
+        // Isso evita que o seu próprio Painel peça os dados ao servidor no próximo F5
+        const timestampStr = agora.toString();
+        localStorage.setItem(`prods_${currentStoreId}_time`, timestampStr);
+        localStorage.setItem(`cats_${currentStoreId}_time`, timestampStr);
+        localStorage.setItem(`banners_${currentStoreId}_time`, timestampStr);
+
+        // 3. Limpa o sinalizador de "pendente"
+        needsPublish = false; 
+        localStorage.removeItem(`pending_publish_${currentStoreId}`);
+        
+        window.renderPublishButton(); 
+        showToast("🚀 Vitrine e Cache sincronizados!");
+
+    } catch (error) {
+        console.error("Erro na publicação:", error);
+        showToast("❌ Erro ao publicar.");
+    } finally {
+        if (btn) btn.disabled = false;
+    }
+};
+
+      window.renderPublishButton = () => {
+    const container = document.getElementById('publishStatusContainer');
+    if (!container) return;
+
+    // Pega a cor primária da loja (ou roxo padrão se não houver)
+    const brandColor = storeConfig.primaryColor || '#8b5cf6';
+
+    if (!needsPublish) {
+        // ESTADO: TUDO SINCRONIZADO (Discreto)
+        container.innerHTML = `
+            <div class="flex items-center gap-2 px-3 py-1.5 rounded-full bg-slate-100 border border-slate-200 text-slate-400 cursor-default">
+                <i data-lucide="check-circle-2" class="w-3.5 h-3.5"></i>
+                <span class="text-[10px] font-bold uppercase tracking-widest">Loja Atualizada</span>
+            </div>
+        `;
+    } else {
+        // ESTADO: HÁ ALTERAÇÕES (Chamativo com a cor da marca)
+        container.innerHTML = `
+            <button onclick="publicarAlteracoes()" 
+                style="background-color: ${brandColor}"
+                class="flex items-center gap-2 px-3 py-1.5 md:px-5 md:py-2 text-white rounded-full shadow-lg transition-all active:scale-95 animate-pulse">
+                <i data-lucide="cloud-upload" class="w-4 h-4"></i>
+                <span class="text-[10px] md:text-xs font-black uppercase tracking-widest">Publicar Alterações</span>
+            </button>
+        `;
+    }
+    if (window.lucide) lucide.createIcons();
+};
+
+// Função para avisar que algo mudou
+window.markAsDirty = () => {
+    needsPublish = true;
+
+    // Marca no navegador que existem alterações pendentes
+    localStorage.setItem(`pending_publish_${currentStoreId}`, 'true');
+
+    window.renderPublishButton();
+};
+
+
+window.loadMoreOrders = async () => {
+    if (!lastVisibleOrder || isLoadingMore) return;
+    
+    isLoadingMore = true;
+    const btn = document.getElementById('btnLoadMore');
+    if(btn) btn.innerHTML = "Carregando...";
+
+    try {
+        const nextQ = query(
+            collection(db, `stores/${currentStoreId}/orders`),
+            orderBy("createdAt", "desc"),
+            startAfter(lastVisibleOrder),
+            limit(20)
+        );
+
+        const snapshot = await getDocs(nextQ);
+        if (snapshot.empty) {
+            showToast("Fim do histórico.");
+            if(btn) btn.classList.add('hidden');
+            return;
+        }
+
+        lastVisibleOrder = snapshot.docs[snapshot.docs.length - 1];
+
+        snapshot.forEach(doc => {
+            ordersCache[doc.id] = { id: doc.id, ...doc.data() };
+        });
+
+        window.renderFilteredOrders();
+    } catch (e) {
+        showToast("Erro ao carregar mais pedidos.");
+    } finally {
+        isLoadingMore = false;
+        if(btn) btn.innerHTML = "Ver pedidos antigos";
+    }
+};
+async function loadSmart(collectionName, storageKey) {
+    const serverTime = storeConfig.lastUpdate?.toString();
+    const localTime = localStorage.getItem(`${storageKey}_time`);
+    const cachedData = localStorage.getItem(storageKey);
+
+    // 1. Se o tempo for igual e tivermos cache, usamos o cache (CUSTO ZERO)
+    if (cachedData && localTime === serverTime) {
+        console.log(`⚡ [${collectionName}] Carregado do Cache Local`);
+        return JSON.parse(cachedData);
+    }
+
+    // 2. Se mudou ou não tem cache, busca no servidor (CUSTO: N leituras)
+    console.log(`🌐 [${collectionName}] Sincronizando com o Servidor...`);
+    const snap = await getDocs(collection(db, `stores/${currentStoreId}/${collectionName}`));
+    const data = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+
+    // 3. Salva no cache para a próxima vez
+    localStorage.setItem(storageKey, JSON.stringify(data));
+    localStorage.setItem(`${storageKey}_time`, serverTime);
+
+    return data;
+}
+
+     window.limparReservasFantasmas = async (orderId, items) => {
+    try {
+        const shortId = orderId.toUpperCase().slice(-5); 
+        console.log("🔍 Limpando reservas para o prefixo:", shortId);
+
+        // Referência da coleção
+        const reservesRef = collection(db, `stores/${currentStoreId}/stock_reserves`);
+        
+        // 1. Buscamos as reservas que existem lá agora
+        const snap = await getDocs(reservesRef);
+        
+        if (snap.empty) return;
+
+        // 2. Filtramos apenas as que pertencem a este pedido
+        const docsParaDeletar = snap.docs.filter(doc => doc.id.includes(shortId));
+
+        if (docsParaDeletar.length === 0) {
+            console.log("Nenhuma reserva fantasma encontrada para deletar.");
+            return;
+        }
+
+        // 3. Deletamos um por um (mais garantido para passar pelas suas regras atuais)
+        for (const docSnapshot of docsParaDeletar) {
+            try {
+                await deleteDoc(docSnapshot.ref);
+                console.log("🗑️ Reserva removida:", docSnapshot.id);
+            } catch (err) {
+                console.warn("⚠️ Falha ao deletar reserva individual (verifique as regras):", docSnapshot.id);
+            }
+        }
+
+        console.log(`✅ Processo de limpeza para ${shortId} finalizado.`);
+        
+    } catch (e) {
+        console.error("❌ Erro geral na faxina:", e);
+    }
+};
+
+
+window.processarBaixaSilenciosa = async (orderId, orderData) => {
+    try {
+        // 1. Validação de dados de entrada
+        const items = orderData.items || [];
+        if (items.length === 0) {
+            console.warn("⚠️ Pedido sem itens. Abortando baixa.");
+            return;
+        }
+
+        // 2. AGRUPAMENTO CIRÚRGICO: Organiza itens por ID de produto pai 
+        // para evitar múltiplas leituras/escritas no mesmo documento
+        const itemsByProduct = items.reduce((acc, item) => {
+            if (!acc[item.id]) acc[item.id] = [];
+            acc[item.id].push(item);
+            return acc;
+        }, {});
+
+        // 3. Processamento em Lote (Promises)
+        const stockPromises = Object.keys(itemsByProduct).map(async (productId) => {
+            const productRef = doc(db, `stores/${currentStoreId}/products`, productId);
+            const snap = await getDoc(productRef);
+
+            if (snap.exists()) {
+                const prodData = snap.data();
+                const itemsToUpdate = itemsByProduct[productId];
+                let updatePayload = {};
+
+                // CENÁRIO A: Produto com Variações (Cores/Tamanhos)
+                if (prodData.variations && prodData.variations.length > 0) {
+                    let novasVariacoes = [...prodData.variations];
+                    
+                    itemsToUpdate.forEach(itemPedido => {
+                        // Busca pelo SKU da variação ou combinação Cor/Tamanho
+                        const { sku } = itemPedido.variationDetails || {};
+                        novasVariacoes = novasVariacoes.map(v => {
+                            if (v.sku === sku) {
+                                const estoqueAtualVar = Number(v.stock) || 0;
+                                return { ...v, stock: Math.max(0, estoqueAtualVar - Number(itemPedido.qty)) };
+                            }
+                            return v;
+                        });
+                    });
+                    
+                    updatePayload.variations = novasVariacoes;
+                    // Recalcula estoque total somando apenas variações ativas
+                    updatePayload.stock = novasVariacoes.reduce((sum, v) => sum + (v.active !== false ? (Number(v.stock) || 0) : 0), 0);
+                } 
+                // CENÁRIO B: Produto Simples
+                else {
+                    const totalQty = itemsToUpdate.reduce((sum, i) => sum + Number(i.qty), 0);
+                    const estoqueGeralAntigo = Number(prodData.stock) || 0;
+                    updatePayload.stock = Math.max(0, estoqueGeralAntigo - totalQty);
+                }
+
+                // Atualiza status baseado no novo estoque
+                updatePayload.status = updatePayload.stock <= 0 ? 'paused' : 'active';
+                updatePayload.lastStockUpdate = Date.now();
+
+                return updateDoc(productRef, updatePayload);
+            }
+        });
+
+        // Executa todas as baixas de estoque real
+        await Promise.all(stockPromises);
+
+        // 🚀 4. LIMPEZA DOS FANTASMAS (SHADOW STOCK)
+        // Chamamos a função usando o shortId (ex: UHFV8) para bater com a vitrine
+        await window.limparReservasFantasmas(orderId, items);
+
+        // 5. MARCAÇÃO DE SUCESSO E SINCRONIA
+        // Evita que o listener processe o mesmo pedido novamente
+        await updateDoc(doc(db, `stores/${currentStoreId}/orders`, orderId), { 
+            stockDeducted: true,
+            processedAt: Date.now()
+        });
+        
+        // Sinaliza para a vitrine pública atualizar os dados
+        await updateDoc(doc(db, `stores/${currentStoreId}/config/store`), { 
+            lastUpdate: Date.now() 
+        });
+        
+        console.log(`✅ Sincronia completa para pedido ${orderId}`);
+
+        // 6. ATUALIZAÇÃO DA UI DO LOJISTA (Sem F5)
+        await loadProductsCache(true); // Força refresh do cache local
+        renderProductList();           // Redesenha a lista de produtos
+        if (window.initFinanceDashboard) window.initFinanceDashboard(); // Atualiza métricas
+
+    } catch (e) {
+        console.error("❌ Erro crítico na sincronia de estoque:", e);
+    }
+};
+
+     window.limparOfertasExpiradas = async (produtos) => {
+    const agora = Date.now();
+    const expirados = produtos.filter(p => p.promoUntil && p.promoUntil < agora && p.promoUntil !== null);
+
+    if (expirados.length === 0) return;
+
+    try {
+        const promises = expirados.map(async (p) => {
+            const docRef = doc(db, `stores/${currentStoreId}/products`, p.id);
+            return updateDoc(docRef, {
+                promoValue: null,
+                promoDays: null,
+                promoUntil: null
+            });
+        });
+
+        await Promise.all(promises);
+        
+        // Sincroniza a vitrine e o painel após a limpeza
+        await updateDoc(doc(db, `stores/${currentStoreId}/config/store`), { lastUpdate: Date.now() });
+        await loadProductsCache(true);
+        renderProductList();
+        
+        console.log("🧹 Faxina Automática: Ofertas expiradas foram removidas do banco.");
+    } catch (e) {
+        console.error("Erro na faxina de ofertas:", e);
+    }
+};
+
+// --- LÓGICA DE CLIENTES & RANKING ---
+window.renderCustomerRanking = async () => {
+    // 1. Garante carga dos dados
+    if (Object.keys(savedCustomers).length === 0) await window.loadSavedCustomers();
+
+    const customerStats = {};
+    
+    // 2. Mapeia todos os clientes salvos
+    Object.values(savedCustomers).forEach(c => {
+        const phone = c.phone.replace(/\D/g, '');
+        customerStats[phone] = { ...c, orderCount: 0, totalSpent: 0, isGuest: false };
+    });
+
+    // 3. Soma dados dos pedidos (ignora cancelados)
+    const orders = Object.values(ordersCache);
+    orders.forEach(order => {
+        if (order.status !== 'canceled') {
+            const phone = order.customer.phone.replace(/\D/g, '');
+            if (!customerStats[phone]) {
+                customerStats[phone] = {
+                    name: order.customer.name,
+                    phone: order.customer.phone,
+                    orderCount: 0,
+                    totalSpent: 0,
+                    isGuest: true
+                };
+            }
+            customerStats[phone].orderCount++;
+            customerStats[phone].totalSpent += (Number(order.total) || 0);
+        }
+    });
+
+    const ranking = Object.values(customerStats).sort((a, b) => b.totalSpent - a.totalSpent);
+
+    // --- PARTE CRUCIAL: ATUALIZA OS CONTADORES NO TOPO ---
+    // Aqui calculamos o total REAL da memória
+    const qtdTotalReal = ranking.length; 
+    const qtdFieisReal = ranking.filter(c => c.orderCount > 1).length;
+
+    // Tentamos encontrar os IDs mais comuns para esses cards. 
+    // Se o seu ID for diferente, ajuste entre as aspas abaixo:
+    const idsPossiveisTotal = ['totalCustomersCount', 'totalClientesTxt', 'customerCount'];
+    const idsPossiveisFieis = ['loyalCustomersCount', 'clientesFieisTxt', 'loyalCount'];
+
+    idsPossiveisTotal.forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.innerText = qtdTotalReal;
+    });
+
+    idsPossiveisFieis.forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.innerText = qtdFieisReal;
+    });
+    // ----------------------------------------------------
+
+    const tbody = document.getElementById('customerTableBody');
+    if (!tbody) return;
+    
+    tbody.innerHTML = ""; 
+
+    // Renderiza o ranking completo na tabela
+    ranking.forEach((c, index) => {
+        const isTop1 = index === 0 && c.totalSpent > 0;
+        const phoneRaw = c.phone.replace(/\D/g, '');
+        
+        const row = `
+            <tr class="hover:bg-slate-50/50 transition-colors border-b border-slate-50 last:border-0">
+                <td class="px-4 py-4 text-center">
+                    <span class="inline-flex items-center justify-center w-7 h-7 rounded-full text-[10px] font-black border ${isTop1 ? 'bg-yellow-100 text-yellow-700 border-yellow-200' : 'bg-slate-100 text-slate-500 border-slate-200'}">
+                        ${index + 1}º
+                    </span>
+                </td>
+                <td class="px-4 py-4">
+                    <div class="flex flex-col min-w-0">
+                        <div class="flex items-center gap-1">
+                            <span class="font-bold text-slate-800 text-xs truncate">${c.name}</span>
+                            ${!c.isGuest ? '<i data-lucide="check-circle" class="w-3 h-3 text-blue-500 shrink-0"></i>' : ''}
+                        </div>
+                        <span class="text-[9px] text-slate-400 font-mono tracking-tighter">${c.phone}</span>
+                    </div>
+                </td>
+                <td class="px-4 py-4 text-center">
+                    <span class="text-xs font-bold text-slate-600">${c.orderCount}</span>
+                </td>
+                <td class="px-4 py-4 text-right">
+                    <span class="font-black text-slate-900 text-xs">R$ ${c.totalSpent.toFixed(2).replace('.',',')}</span>
+                </td>
+                <td class="px-4 py-4 text-center">
+                    <div class="flex items-center justify-center gap-1">
+                        <button onclick="window.openCustomerDetails('${phoneRaw}')" class="p-2 text-slate-400 hover:text-primary-600 hover:bg-primary-50 rounded-lg transition-all">
+                            <i data-lucide="eye" class="w-4 h-4"></i>
+                        </button>
+                        <button onclick="window.deleteCustomerPermanent('${phoneRaw}')" class="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all">
+                            <i data-lucide="trash-2" class="w-4 h-4"></i>
+                        </button>
+                    </div>
+                </td>
+            </tr>
+        `;
+        tbody.insertAdjacentHTML('beforeend', row);
+    });
+
+    if (window.lucide) lucide.createIcons();
+};
+
+window.loadCustomersData = async () => {
+    // Só faz a leitura no Firebase se o cache estiver vazio (Economia de leituras)
+    if (Object.keys(savedCustomers).length === 0) {
+        console.log("Buscando base de clientes...");
+        try {
+            const q = query(collection(db, "customers"));
+            const querySnapshot = await getDocs(q);
+            
+            querySnapshot.forEach((doc) => {
+                const data = doc.data();
+                // Limpa o telefone para usar como chave única no cache
+                const phone = data.phone.replace(/\D/g, '');
+                savedCustomers[phone] = { id: doc.id, ...data };
+            });
+        } catch (error) {
+            console.error("Erro ao carregar clientes:", error);
+        }
+    }
+};
+
+// Função para abrir os detalhes (Ficha)
+window.openCustomerDetails = (phone) => {
+    // Busca no ranking processado para pegar os totais
+    const stats = Object.values(ordersCache).reduce((acc, order) => {
+        if(order.customer.phone.replace(/\D/g, '') === phone && order.status !== 'canceled') {
+            acc.total += (order.total || 0);
+            acc.count++;
+        }
+        return acc;
+    }, {total: 0, count: 0});
+
+    const cust = savedCustomers[phone] || { name: "Cliente s/ Cadastro", phone: phone };
+
+    document.getElementById('detCustName').textContent = cust.name;
+    document.getElementById('detCustPhone').textContent = cust.phone;
+    document.getElementById('detCustCpf').textContent = cust.cpf || '---';
+    document.getElementById('detCustAddress').textContent = cust.address || 'Não informado';
+    document.getElementById('detCustOrders').textContent = stats.count;
+    document.getElementById('detCustTotal').textContent = `R$ ${stats.total.toFixed(2).replace('.',',')}`;
+    document.getElementById('detCustInitial').textContent = cust.name.charAt(0).toUpperCase();
+
+    document.getElementById('customerDetailsModal').classList.remove('hidden');
+    if (window.lucide) lucide.createIcons();
+};
+
+
+// --- GESTÃO DE CLIENTES (CRM) ---
+let savedCustomers = {}; // Cache dos clientes cadastrados no banco
+
+window.openCustomerModal = () => {
+    document.getElementById('customerForm').reset();
+    document.getElementById('customerModal').classList.remove('hidden');
+    applyPhoneMask('custPhone');
+};
+
+window.closeCustomerModal = () => {
+    document.getElementById('customerModal').classList.add('hidden');
+};
+
+// Salvar Cliente no Firestore
+// Função para carregar dados no modal para edição
+window.editCustomer = (phone) => {
+    // 1. Tenta buscar no cadastro oficial
+    let c = savedCustomers[phone];
+
+    // 2. Se não achou (é um convidado), tenta buscar nos pedidos para não deixar o modal em branco
+    if (!c) {
+        const orderMatch = Object.values(ordersCache).find(o => o.customer.phone.replace(/\D/g, '') === phone);
+        if (orderMatch) {
+            c = {
+                name: orderMatch.customer.name,
+                phone: orderMatch.customer.phone,
+                address: orderMatch.customer.addressString || ''
+            };
+        }
+    }
+
+    // 3. Se ainda assim não houver dados, avisa o erro
+    if (!c) {
+        showToast("⚠️ Dados do cliente não encontrados.");
+        return;
+    }
+
+    // 4. Preenche o modal
+    document.getElementById('custName').value = c.name || '';
+    document.getElementById('custPhone').value = c.phone || '';
+    document.getElementById('custCpf').value = c.cpf || '';
+    document.getElementById('custAddress').value = c.address || '';
+    
+    // 5. Abre o modal e aplica a máscara
+    document.getElementById('customerModal').classList.remove('hidden');
+    
+    if (window.lucide) lucide.createIcons();
+    setTimeout(() => applyPhoneMask('custPhone'), 100);
+};
+
+window.deleteCustomerPermanent = async (phone) => {
+    if (!confirm("⚠️ Tem certeza? Isso excluirá os dados cadastrais deste cliente permanentemente.")) return;
+
+    try {
+        const custRef = doc(db, `stores/${currentStoreId}/customers`, phone);
+        
+        // 1. Deleta do Firebase
+        await deleteDoc(custRef);
+
+        // 2. Remove da variável na memória
+        delete savedCustomers[phone];
+
+        // 3. ATUALIZA O DISCO (LocalStorage) - Isso é o que faltava!
+        // Sobrescrevemos o cache local com a lista que já não tem o cliente
+        const cacheKey = `cache_customers_${currentStoreId}`;
+        localStorage.setItem(cacheKey, JSON.stringify(savedCustomers));
+
+        // 4. MUITO IMPORTANTE: Reseta o timer do cache
+        // Ao remover o 'timeKey', forçamos o sistema a baixar tudo do zero no próximo F5
+        const timeKey = `cache_time_customers_${currentStoreId}`;
+        localStorage.removeItem(timeKey);
+
+        // 5. Avisa o servidor (para outros aparelhos saberem da mudança)
+        if (window.markAsDirty) {
+            await window.markAsDirty();
+        }
+
+        showToast("🗑️ Cliente removido!");
+        
+        // 6. Redesenha a tela na hora
+        window.renderCustomerRanking();
+        
+    } catch (e) {
+        console.error(e);
+        showToast("❌ Erro ao excluir cliente.");
+    }
+};
+     
+// ATUALIZADO: handleCustomerSubmit para mostrar o cliente na hora
+window.handleCustomerSubmit = async (e) => {
+    e.preventDefault();
+    const phoneRaw = document.getElementById('custPhone').value.replace(/\D/g, '');
+    if(!phoneRaw) return;
+
+    const btn = e.target.querySelector('button[type="submit"]');
+    btn.disabled = true;
+
+    try {
+        const custRef = doc(db, `stores/${currentStoreId}/customers`, phoneRaw);
+        const data = {
+            name: document.getElementById('custName').value,
+            phone: document.getElementById('custPhone').value,
+            cpf: document.getElementById('custCpf').value,
+            address: document.getElementById('custAddress').value,
+            updatedAt: Date.now()
+        };
+
+        await setDoc(custRef, data, { merge: true });
+     
+        
+        // 1. ATUALIZE O TIMESTAMP NO SERVIDOR (Crucial para o refresh funcionar)
+if (window.markAsDirty) {
+    await window.markAsDirty(); 
+}
+
+// 2. Atualiza o cache local imediatamente
+savedCustomers[phoneRaw] = data;
+
+// 3. Salva no localStorage para que o refresh já tenha o dado novo
+const cacheKey = `cache_customers_${currentStoreId}`;
+localStorage.setItem(cacheKey, JSON.stringify(savedCustomers));
+
+window.closeCustomerModal();
+showToast("✅ Cliente atualizado!");
+window.renderCustomerRanking(); 
+        
+    } catch (e) {
+        showToast("❌ Erro ao salvar.");
+    } finally {
+        btn.disabled = false;
+    }
+};
+
+
+// Carregar clientes cadastrados do Banco
+window.loadSavedCustomers = async (force = false) => {
+    const cacheKey = `cache_customers_${currentStoreId}`;
+    const timeKey = `cache_time_customers_${currentStoreId}`;
+    
+    const localData = localStorage.getItem(cacheKey);
+    const localTime = localStorage.getItem(timeKey);
+    const serverTime = storeConfig.lastUpdate?.toString();
+
+    // REGRA BLAZE: Se o tempo no servidor é igual ao do navegador, custo ZERO.
+    if (!force && localData && localTime === serverTime) {
+        console.log("👥 Clientes: Usando cache de disco (Custo Zero)");
+        savedCustomers = JSON.parse(localData);
+        return;
+    }
+
+    console.log("🌐 Clientes: Sincronizando com Firebase...");
+    const snap = await getDocs(collection(db, `stores/${currentStoreId}/customers`));
+    savedCustomers = {};
+    snap.forEach(doc => {
+        savedCustomers[doc.id] = doc.data();
+    });
+
+    // Salva no disco para a próxima vez
+    localStorage.setItem(cacheKey, JSON.stringify(savedCustomers));
+    localStorage.setItem(timeKey, serverTime || Date.now().toString());
+};
+
+
+     window.applyDynamicColors = (hexColor) => {
+    if (!hexColor) return;
+
+    const root = document.documentElement;
+    
+    // 1. Cores do Painel (CSS)
+    root.style.setProperty('--brand-color', hexColor);
+    root.style.setProperty('--brand-color-soft', hexColor + '1a'); 
+    
+    const adjustColor = (hex, amt) => {
+        return '#' + hex.replace(/^#/, '').replace(/../g, hex => 
+            ('0' + Math.min(255, Math.max(0, parseInt(hex, 16) + amt)).toString(16)).slice(-2));
+    };
+    root.style.setProperty('--brand-color-dark', adjustColor(hexColor, -20));
+    root.style.setProperty('--brand-color-darker', adjustColor(hexColor, -40));
+
+    // 2. COR DO PWA (Barra de Status do Celular)
+    // Isso aqui é o que faz o "aplicativo" mudar de cor no Android e iOS
+    let metaThemeColor = document.querySelector('meta[name="theme-color"]');
+    if (metaThemeColor) {
+        metaThemeColor.setAttribute('content', hexColor);
+    } else {
+        // Caso a tag não exista por algum motivo, ele cria uma na hora
+        const meta = document.createElement('meta');
+        meta.name = "theme-color";
+        meta.content = hexColor;
+        document.getElementsByTagName('head')[0].appendChild(meta);
+    }
+
+    // 3. Atualiza o fundo do Safari (iOS)
+    let metaApple = document.querySelector('meta[name="apple-mobile-web-app-status-bar-style"]');
+    if (metaApple) {
+        // No iOS, se você mudar a cor, é melhor deixar em 'default' para o sistema 
+        // decidir a cor dos ícones (preto ou branco) baseado no fundo.
+        metaApple.setAttribute('content', 'default');
+    }
+};
+window.getCachedProductCount = () => {
+    return Array.isArray(allProducts) ? allProducts.length : 0;
+};
+
+     window.getCachedBannerCount = () => {
+    return Array.isArray(allBanners) ? allBanners.length : 0;
+};
+
+window.getCachedCategoryCount = () => {
+    return Array.isArray(allCategories) ? allCategories.length : 0;
+};
+     window.openCustomerSelector = () => {
+    // Pegamos a lista de clientes do seu cache
+    const customers = Object.values(savedCustomers);
+    
+    const html = `
+        <div id="tempCustomerModal" class="fixed inset-0 z-[999] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
+            <div class="bg-white rounded-2xl w-full max-w-sm max-h-[70vh] flex flex-col shadow-2xl animate-in zoom-in duration-200">
+                <div class="p-4 border-b flex justify-between items-center bg-slate-50 rounded-t-2xl">
+                    <h3 class="font-bold text-slate-800 flex items-center gap-2">
+                        <i data-lucide="users" class="w-4 h-4 text-primary-500"></i> Meus Clientes
+                    </h3>
+                    <button onclick="document.getElementById('tempCustomerModal').remove()" class="p-1 hover:bg-slate-200 rounded-lg">&times;</button>
+                </div>
+                <div class="p-2 overflow-y-auto">
+                    ${customers.length === 0 ? '<p class="p-8 text-center text-slate-400 text-xs">Nenhum cliente cadastrado.</p>' : 
+                      customers.map(c => `
+                        <div onclick="window.selectCustomerForOrder('${c.phone.replace(/\D/g,'')}')" 
+                             class="p-3 hover:bg-primary-50 rounded-xl cursor-pointer border-b border-slate-50 last:border-0 flex items-center justify-between group">
+                            <div class="flex flex-col">
+                                <span class="font-bold text-sm text-slate-700 group-hover:text-primary-600">${c.name}</span>
+                                <span class="text-[10px] text-slate-400 font-mono">${c.phone}</span>
+                            </div>
+                            <i data-lucide="chevron-right" class="w-4 h-4 text-slate-300"></i>
+                        </div>
+                    `).join('')}
+                </div>
+            </div>
+        </div>
+    `;
+    document.body.insertAdjacentHTML('beforeend', html);
+    if(window.lucide) lucide.createIcons();
+};
+
+window.selectCustomerForOrder = (phone) => {
+    const c = savedCustomers[phone];
+    if (c) {
+        // 1. Preenche o Nome
+        document.getElementById('manualOrderCustName').value = c.name || '';
+        
+        // 2. Preenche o WhatsApp (manualPhone)
+        const phoneField = document.getElementById('manualPhone');
+        if (phoneField) phoneField.value = c.phone || '';
+        
+        // 3. Preenche o Endereço (manualAddress)
+        const addrField = document.getElementById('manualAddress');
+        if (addrField) addrField.value = c.address || '';
+
+        // Fecha o seletor
+        const tempModal = document.getElementById('tempCustomerModal');
+        if (tempModal) tempModal.remove();
+        
+        showToast(`✅ Dados de ${c.name} carregados!`);
+    }
+};
+     // Função que roda quando você clica em HOJE, ONTEM, 7 DIAS ou MÊS
+window.updateFinanceRange = (range) => {
+    currentFinanceRange = range;
+    
+    // Atualiza o visual dos botões (cor branca no selecionado)
+    const ranges = ['today', 'yesterday', 'week', 'month'];
+    ranges.forEach(r => {
+        const btn = document.getElementById(`fin-range-${r}`);
+        if(btn) {
+            const isActive = r === range;
+            btn.className = `px-4 py-2 rounded-xl text-[10px] font-black transition-all ${isActive ? 'bg-white shadow-sm text-primary-600' : 'text-slate-500'}`;
+        }
+    });
+
+    window.initFinanceDashboard(); // Recalcula tudo com o novo filtro
+};
+
+// Função do Modal para aplicar datas específicas
+window.applyCustomDate = () => {
+    const start = document.getElementById('customDateStart').value;
+    const end = document.getElementById('customDateEnd').value;
+    
+    if(!start || !end) return showToast("Selecione ambas as datas.");
+    
+    // Converte para milissegundos (meia-noite do início até o fim do dia)
+    customStart = new Date(start + "T00:00:00").getTime();
+    customEnd = new Date(end + "T23:59:59").getTime();
+    
+    document.getElementById('modalCustomDate').classList.add('hidden');
+    currentFinanceRange = 'custom';
+    window.initFinanceDashboard();
+};
+
+window.handlePaymentChange = () => {
+    const payment = document.getElementById("manualPayment").value;
+    const container = document.getElementById("paymentDetails");
+    const fiado = document.getElementById("fiadoField");
+    const parcelado = document.getElementById("parceladoField");
+
+    // Controle visual dos campos extras
+    container.classList.add("hidden");
+    fiado.classList.add("hidden");
+    parcelado.classList.add("hidden");
+
+    if (payment === "fiado") {
+        container.classList.remove("hidden");
+        fiado.classList.remove("hidden");
+    }
+    if (payment === "parcelado") {
+        container.classList.remove("hidden");
+        parcelado.classList.remove("hidden");
+    }
+
+    // --- LÓGICA DE RECÁLCULO DE PREÇOS NO CARRINHO ---
+    const isCashMode = ['pix', 'dinheiro'].includes(payment);
+
+    manualOrder = manualOrder.map(item => {
+        const p = allProducts.find(prod => prod.id === item.id);
+        if (p) {
+            let newPrice;
+
+            // 1. Se o item for uma variação e tiver um preço específico na matriz, mantemos ele
+            if (item.variationDetails && item.variationDetails.price > 0) {
+                newPrice = item.variationDetails.price;
+            } 
+            // 2. Caso contrário, aplicamos a regra de troca de preço baseada no pagamento
+            else {
+                newPrice = isCashMode 
+                    ? (p.promoValue || p.value) // Prioridade Promoção -> Valor Principal (PIX)
+                    : (p.priceCard || p.value);  // Prioridade Valor Cartão -> Fallback Valor Principal
+            }
+            
+            return { ...item, price: newPrice };
+        }
+        return item;
+    });
+
+    // Atualiza a visualização do carrinho e os resultados da busca (que mostram os preços)
+    window.renderManualOrderItems();
+    window.renderManualProductSearch();
+};window.calculateInstallmentValue = function() {
+    const total = parseFloat(document.getElementById('prodCard').value) || 0;
+    const qtd = parseInt(document.getElementById('prodMaxInstallments').value) || 1;
+    const infoDiv = document.getElementById('installmentInfo');
+    const label = document.getElementById('installmentValueLabel');
+
+    if (total > 0 && qtd > 1) {
+        const individual = (total / qtd).toFixed(2);
+        label.innerText = `${qtd}x de R$ ${individual.replace('.', ',')}`;
+        infoDiv.classList.remove('hidden');
+    } else {
+        infoDiv.classList.add('hidden');
+    }
+    
+    // Mantém a sua função original de cálculo de lucro se ela existir
+    if(typeof calculateProfit === "function") calculateProfit();
+}
+
+window.toggleProductFields = function() {
+    const tipo = document.getElementById('configTipoNegocio').value;
+    const containerEstoque = document.getElementById('containerEstoque'); // Certifique-se que a div do estoque tenha esse ID
+    
+    if (tipo === 'restaurante') {
+        containerEstoque.classList.add('hidden'); // Esconde estoque
+    } else {
+        containerEstoque.classList.remove('hidden'); // Mostra estoque
+    }
+};
+
+// 1. Inicialização da variável global
+window.currentProductComplements = [];
+
+// 2. Função para Adicionar Novo Grupo (Chama render porque cria novo HTML)
+window.addNewComplementGroup = function() {
+    if (!window.currentProductComplements) window.currentProductComplements = [];
+    
+    const newGroup = {
+        id: Date.now().toString(),
+        name: "",
+        min: 0,
+        max: 1,
+        items: []
+    };
+    
+    window.currentProductComplements.push(newGroup);
+    window.renderComplementGroups();
+};
+
+// 3. Atualiza os dados do GRUPO (NÃO chama render para não perder o foco/título)
+window.updateGroupData = function(id, field, value) {
+    if (!window.currentProductComplements) return;
+    const group = window.currentProductComplements.find(g => g.id === id);
+    if (group) {
+        group[field] = (field === 'min' || field === 'max') ? (parseInt(value) || 0) : value;
+    }
+    // Silencioso: salva na memória sem resetar o input da tela
+};
+
+// 4. Remover Grupo (Chama render)
+window.removeComplementGroup = function(id) {
+    window.currentProductComplements = window.currentProductComplements.filter(g => g.id !== id);
+    window.renderComplementGroups();
+};
+
+// 5. Adicionar Opção/Item (Chama render)
+window.addNewComplementGroup = function() {
+    if (!window.currentProductComplements) window.currentProductComplements = [];
+    
+    const groupId = Date.now().toString();
+    const newGroup = {
+        id: groupId,
+        name: "",
+        min: 0,
+        max: 1,
+        items: []
+    };
+    
+    window.currentProductComplements.push(newGroup);
+    
+    // FAZ O NOVO GRUPO JÁ APARECER ABERTO
+    window.expandedGroups.add(groupId);
+    
+    window.renderComplementGroups();
+};
+// 6. Remover Opção/Item (Chama render)
+window.removeOptionFromGroup = function(groupId, optionId) {
+    const group = window.currentProductComplements.find(g => g.id === groupId);
+    if (group) {
+        group.items = group.items.filter(item => item.id !== optionId);
+        window.renderComplementGroups();
+    }
+};
+
+// 7. Atualizar dados da OPÇÃO (NÃO chama render)
+window.updateOptionData = function(groupId, optionId, field, value) {
+    if (!window.currentProductComplements) return;
+    const group = window.currentProductComplements.find(g => g.id === groupId);
+    if (group) {
+        const item = group.items.find(i => i.id === optionId);
+        if (item) {
+            item[field] = field === 'price' ? (parseFloat(value) || 0) : value;
+        }
+    }
+    // Silencioso: salva na memória sem resetar o input da tela
+};
+
+// 8. Função de Renderização (Reconstrói a UI lendo a memória)
+window.renderComplementGroups = function() {
+    const area = document.getElementById('complementGroupsArea');
+    if (!area) return;
+
+    const groups = window.currentProductComplements || [];
+
+    if (groups.length === 0) {
+        area.innerHTML = `<p class="text-[10px] text-slate-400 text-center py-4 italic">Nenhum adicional configurado.</p>`;
+        return;
+    }
+
+    area.innerHTML = groups.map((group) => {
+        const isExpanded = window.expandedGroups.has(group.id);
+        const isPaused = group.status === 'paused';
+        
+        return `
+        <div class="bg-slate-50 rounded-[2rem] border border-slate-100 overflow-hidden mb-3 transition-all ${isPaused ? 'opacity-50 grayscale-[0.5]' : ''}">
+            <div class="flex items-center justify-between p-4 cursor-pointer hover:bg-slate-100/50 transition-colors" 
+                 onclick="toggleComplementGroup('${group.id}')">
+                <div class="flex items-center gap-3 flex-1">
+                    <div class="w-8 h-8 rounded-xl bg-white flex items-center justify-center shadow-sm">
+                        <i data-lucide="chevron-down" class="w-4 h-4 text-slate-400 transition-transform ${isExpanded ? '' : '-rotate-90'}"></i>
+                    </div>
+                    <div>
+                        <h5 class="text-[11px] font-black text-slate-700 uppercase tracking-tight flex items-center gap-2">
+                            ${group.name || 'Novo Grupo'} 
+                            ${isPaused ? '<span class="text-[8px] bg-amber-100 text-amber-600 px-2 py-0.5 rounded-full">PAUSADO</span>' : ''}
+                        </h5>
+                        <p class="text-[9px] text-slate-400 font-bold uppercase">${group.items.length} Opções • Regra: ${group.min}/${group.max}</p>
+                    </div>
+                </div>
+                
+                <div class="flex items-center gap-1">
+                    <button type="button" onclick="event.stopPropagation(); toggleGroupStatus('${group.id}')" 
+                        class="p-2 ${isPaused ? 'text-emerald-500' : 'text-amber-500'} hover:scale-110 transition-transform" 
+                        title="${isPaused ? 'Ativar Grupo' : 'Pausar Grupo'}">
+                        <i data-lucide="${isPaused ? 'eye' : 'eye-off'}" class="w-4 h-4"></i>
+                    </button>
+
+                    <button type="button" onclick="event.stopPropagation(); removeComplementGroup('${group.id}')" class="text-rose-400 p-2 hover:text-rose-600 hover:scale-110 transition-transform">
+                        <i data-lucide="trash-2" class="w-4 h-4"></i>
+                    </button>
+                </div>
+            </div>
+
+            <div class="${isExpanded ? 'p-4 pt-0 border-t border-white' : 'hidden'}">
+                <div class="space-y-4 pt-4">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                        <div>
+                            <label class="text-[8px] font-black text-slate-400 uppercase ml-1">Nome do Grupo</label>
+                            <input type="text" placeholder="Ex: Escolha o sabor" 
+                                value="${group.name || ''}"
+                                oninput="updateGroupData('${group.id}', 'name', this.value)"
+                                class="w-full bg-white p-3 rounded-xl text-xs font-bold border-none outline-none focus:ring-2 focus:ring-slate-200">
+                        </div>
+                        <div class="flex gap-2">
+                            <div class="flex-1">
+                                <label class="text-[8px] font-black text-slate-400 uppercase ml-1">Mínimo</label>
+                                <input type="number" value="${group.min}" oninput="updateGroupData('${group.id}', 'min', this.value)" class="w-full p-3 bg-white rounded-xl text-xs font-bold border-none">
+                            </div>
+                            <div class="flex-1">
+                                <label class="text-[8px] font-black text-slate-400 uppercase ml-1">Máximo</label>
+                                <input type="number" value="${group.max}" oninput="updateGroupData('${group.id}', 'max', this.value)" class="w-full p-3 bg-white rounded-xl text-xs font-bold border-none">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="space-y-2">
+                        <label class="text-[8px] font-black text-slate-400 uppercase ml-1">Itens do Grupo</label>
+                        ${group.items.map(item => `
+                            <div class="flex items-center gap-2 bg-white p-2 rounded-2xl shadow-sm border border-slate-50">
+                                <input type="text" placeholder="Item" value="${item.name || ''}"
+                                    oninput="updateOptionData('${group.id}', '${item.id}', 'name', this.value)"
+                                    class="flex-1 p-2 text-[11px] font-bold border-none outline-none bg-transparent">
+                                
+                                <div class="flex items-center gap-1 bg-slate-50 px-3 py-1 rounded-xl">
+                                    <span class="text-[10px] font-bold text-slate-400">R$</span>
+                                    <input type="number" step="0.01" value="${item.price || 0}"
+                                        oninput="updateOptionData('${group.id}', '${item.id}', 'price', this.value)"
+                                        class="w-14 p-1 bg-transparent text-[11px] font-bold border-none outline-none">
+                                </div>
+
+                                <button type="button" onclick="removeOptionFromGroup('${group.id}', '${item.id}')" class="p-2 text-slate-300 hover:text-rose-500">
+                                    <i data-lucide="x" class="w-3 h-3"></i>
+                                </button>
+                            </div>
+                        `).join('')}
+                    </div>
+
+                    <button type="button" onclick="addOptionToGroup('${group.id}')" class="w-full py-3 border-2 border-dashed border-slate-200 rounded-2xl text-[9px] font-black text-slate-400 hover:border-slate-300 transition-all uppercase">
+                        + Adicionar Opção
+                    </button>
+                </div>
+            </div>
+        </div>
+        `;
+    }).join('');
+
+    if (window.lucide) lucide.createIcons();
+};
+
+window.toggleGroupStatus = function(groupId) {
+    const group = window.currentProductComplements.find(g => g.id === groupId);
+    if (group) {
+        // Se não existir a propriedade 'status', ela começa como 'active'
+        group.status = (group.status === 'paused') ? 'active' : 'paused';
+        window.renderComplementGroups();
+    }
+};
+
+// Armazena qual grupo está expandido (por padrão, o último criado)
+window.expandedGroups = new Set();
+
+window.toggleComplementGroup = function(groupId) {
+    if (window.expandedGroups.has(groupId)) {
+        window.expandedGroups.delete(groupId);
+    } else {
+        window.expandedGroups.add(groupId);
+    }
+    window.renderComplementGroups();
+};
+
+// FUNÇÃO: Notificar que o Pedido Saiu para Entrega
+window.notifyShipping = function(orderId, customerData) {
+    // Busca o tipo de negócio atual (prioriza o que está na tela/memória)
+    const tipoNegocio = document.getElementById('configTipoNegocio')?.value || (typeof storeConfig !== 'undefined' ? storeConfig.tipoNegocio : 'varejo');
+    const firstName = customerData.name.split(' ')[0];
+    let msg = "";
+
+    if (tipoNegocio === 'restaurante') {
+        msg = `🛵 *SEU PEDIDO SAIU PARA ENTREGA!* 🛵\n\n` +
+              `Prepara a mesa, *${firstName}*! O motoboy acabou de sair com o seu pedido quentinho. 🔥\n\n` +
+              `🆔 *PEDIDO:* #${orderId.slice(-5).toUpperCase()}\n` +
+              `⏳ Já já ele buzina aí no seu portão!`;
+    } else {
+        msg = `📦 *SEU PEDIDO FOI ENVIADO!* 📦\n\n` +
+              `Ótimas notícias, *${firstName}*! Seu pedido já está a caminho e logo chegará até você.\n\n` +
+              `🆔 *PEDIDO:* #${orderId.slice(-5).toUpperCase()}\n\n` +
+              `🚚 Fique de olho para receber sua encomenda!`;
+    }
+
+    const phone = customerData.phone.replace(/\D/g, '');
+    window.open(`https://wa.me/55${phone}?text=${encodeURIComponent(msg)}`, '_blank');
+};
+
+// FUNÇÃO: Notificar Confirmação (Dentro da sua lógica de alteração de status)
+// Use este bloco dentro do seu if (status === 'confirmed')
+window.sendConfirmationWhatsApp = function(p) {
+    const tipoNegocio = document.getElementById('configTipoNegocio')?.value || (typeof storeConfig !== 'undefined' ? storeConfig.tipoNegocio : 'varejo');
+    const firstName = p.customer.name.split(' ')[0];
+
+    // Formata os itens e seus complementos/variações
+    const itemsText = p.items.map(i => {
+        let detalhes = '';
+        if (tipoNegocio === 'restaurante' && i.escolhas && i.escolhas.length > 0) {
+            detalhes = i.escolhas.map(e => `\n   └ _${e.nome}_`).join('');
+        } else if (i.variationDetails) {
+            detalhes = ` (${i.variationDetails.color}/${i.variationDetails.size})`;
+        }
+        return `✅ *${i.qty}x ${i.name.toUpperCase()}*${detalhes}`;
+    }).join('\n\n');
+
+    const pixInfo = (typeof storeConfig !== 'undefined' ? storeConfig.pix : {}) || {};
+    let pixBlock = "";
+    if (p.paymentMethod.toLowerCase().includes('pix') && pixInfo.key) {
+        pixBlock = `\n\n━━━━━━━━━━━━━━━\n🔹 *PAGAMENTO PIX*\n*Chave:* \`${pixInfo.key}\`\n*Titular:* ${pixInfo.name}\n━━━━━━━━━━━━━━━\n_Envie o comprovante para iniciarmos o preparo!_`;
+    }
+
+    let msg = "";
+    if (tipoNegocio === 'restaurante') {
+        msg = `👨‍🍳 *PEDIDO NA COZINHA!* 👨‍🍳\n\n` +
+              `Olá, *${firstName}*! O Chef já recebeu seu pedido e o fogão já está aceso! 🔥\n\n` +
+              `🆔 *PEDIDO:* #${p.id.slice(-5).toUpperCase()}\n\n` +
+              `📋 *RESUMO:*\n${itemsText}\n\n` +
+              `💰 *TOTAL:* R$ ${p.total.toFixed(2).replace('.', ',')}${pixBlock}\n\n` +
+              `🛵 *STATUS:* Preparando com capricho. Avisaremos quando o motoboy sair!`;
+    } else {
+        msg = `🛍️ *PEDIDO CONFIRMADO!* 🛍️\n\n` +
+              `Olá, *${p.customer.name}*! Seu pedido foi confirmado e já estamos separando os seus produtos.\n\n` +
+              `🆔 *PEDIDO:* #${p.id.slice(-5).toUpperCase()}\n\n` +
+              `📋 *ITENS:*\n${itemsText}\n\n` +
+              `💰 *TOTAL:* R$ ${p.total.toFixed(2).replace('.', ',')}${pixBlock}\n\n` +
+              `⏳ Avisaremos assim que for enviado!`;
+    }
+
+    const phone = p.customer.phone.replace(/\D/g, '');
+    window.open(`https://wa.me/55${phone}?text=${encodeURIComponent(msg)}`, '_blank');
+};
+window.printOrder = function(p) {
+    const printSection = document.getElementById('printSection');
+    if (!printSection) return;
+
+    // 1. Limpa e prepara a seção
+    printSection.innerHTML = ""; 
+    printSection.style.display = 'block';
+
+    const dataPedido = new Date().toLocaleString('pt-BR');
+    const itensHtml = p.items.map(i => {
+        let extras = '';
+        if (i.escolhas && i.escolhas.length > 0) {
+            extras = i.escolhas.map(e => `<div style="font-size: 10px; margin-left: 10px;">- ${e.nome}</div>`).join('');
+        }
+        const varDesc = i.variationDetails ? `<div style="font-size: 10px; color: #333;">VAR: ${i.variationDetails.color || ''} ${i.variationDetails.size || ''}</div>` : '';
+
+        return `
+            <div style="margin-bottom: 6px; border-bottom: 1px dotted #000; padding-bottom: 4px; font-family: 'Courier New', Courier, monospace;">
+                <b style="font-size: 12px;">${i.qty}x ${i.name.toUpperCase()}</b>
+                ${varDesc}
+                ${extras}
+                ${i.observacao ? `<div style="font-size: 10px; margin-top: 2px;"><b>OBS:</b> ${i.observacao}</div>` : ''}
+            </div>
+        `;
+    }).join('');
+
+    // 2. Monta o conteúdo com cores sólidas (Preto no Branco)
+    printSection.innerHTML = `
+        <div style="width: 58mm; max-width: 100%; padding: 10px; background: #fff; color: #000; font-family: monospace;">
+            <div style="text-align: center; font-weight: bold; font-size: 16px; margin-bottom: 5px;">
+                ${(window.storeConfig?.name || 'VITRINE').toUpperCase()}
+            </div>
+            <div style="text-align: center; font-size: 12px; margin-bottom: 10px; border-bottom: 1px dashed #000; padding-bottom: 5px;">
+                PEDIDO #${p.id.slice(-5).toUpperCase()}<br>
+                ${dataPedido}
+            </div>
+            
+            <div style="font-size: 11px; margin-bottom: 10px;">
+                <b>CLIENTE:</b> ${p.customer.name}<br>
+                <b>TEL:</b> ${p.customer.phone}<br>
+                <b>ENTREGA:</b> ${p.deliveryMethod === 'delivery' ? 'SIM 🛵' : 'NÃO (Retirada) 🥡'}<br>
+                ${p.customer.address ? `<b>END:</b> ${p.customer.address}` : ''}
+            </div>
+
+            <div style="margin-bottom: 10px;">
+                ${itensHtml}
+            </div>
+
+            <div style="text-align: right; font-size: 12px; border-top: 1px dashed #000; padding-top: 5px;">
+                <b>TOTAL: R$ ${p.total.toFixed(2).replace('.', ',')}</b><br>
+                <span style="font-size: 10px;">PAGTO: ${typeof p.paymentMethod === 'object' ? p.paymentMethod.type : p.paymentMethod}</span>
+            </div>
+            
+            <div style="text-align: center; margin-top: 20px; font-size: 9px; opacity: 0.7;">
+                ------------------------------<br>
+                OBRIGADO PELA PREFERÊNCIA!
+            </div>
+        </div>
+    `;
+
+    // 3. O PULO DO GATO PARA CELULAR:
+    // Força o navegador a redesenhar o elemento e espera um pouco mais
+    setTimeout(() => {
+        window.print();
+        
+        // No celular, após fechar a tela de print, voltamos ao normal
+        setTimeout(() => {
+            printSection.style.display = 'none';
+        }, 1000);
+    }, 800); // Aumentamos para 800ms para dar tempo do celular processar
+};
+
+function monitorarStatusLoja(storeId) {
+    if (!storeId) return;
+    const docRef = doc(db, "stores", storeId, "config", "store");
+    
+    onSnapshot(docRef, (docSnap) => {
+        if (docSnap.exists()) {
+            const data = docSnap.data();
+            window.storeConfig = data; 
+            
+            // --- NOVA LÓGICA DE COR INFALÍVEL ---
+            const corLojista = data.primaryColor || data.themeColor || window.primaryColor || '#EA1D2C';
+            
+            // Criamos ou atualizamos um bloco de CSS dinâmico no HEAD
+            let dynamicStyle = document.getElementById('dynamic-theme-style');
+            if (!dynamicStyle) {
+                dynamicStyle = document.createElement('style');
+                dynamicStyle.id = 'dynamic-theme-style';
+                document.head.appendChild(dynamicStyle);
+            }
+
+         
+const btnFinalizarManual = document.getElementById('btn-finish-manual-order');
+if (btnFinalizarManual) {
+    btnFinalizarManual.style.setProperty('background-color', corLojista, 'important');
+    btnFinalizarManual.style.setProperty('color', '#FFFFFF', 'important');
+    // Adiciona o hover via JS para manter a elegância
+    btnFinalizarManual.onmouseover = () => btnFinalizarManual.style.filter = 'brightness(0.9)';
+    btnFinalizarManual.onmouseout = () => btnFinalizarManual.style.filter = 'brightness(1)';
+}
+            
+            // Esta regra força a cor no botão e em qualquer outro elemento que use 'bg-primary'
+            dynamicStyle.innerHTML = `
+                #fabAddOrder { 
+                    background-color: ${corLojista} !important; 
+                    color: #white !important;
+                    box-shadow: 0 10px 15px -3px ${corLojista}66 !important;
+                }
+                .text-primary { color: ${corLojista} !important; }
+                .bg-primary { background-color: ${corLojista} !important; }
+                .border-primary { border-color: ${corLojista} !important; }
+            `;
+            // ------------------------------------
+
+            lojaEstaAberta = (data.status === 'active');
+            if (data.goals && typeof window.calculateGoals === 'function') window.calculateGoals();
+            if (typeof atualizarVisualBotao === 'function') atualizarVisualBotao();
+        }
+    });
+}
+
+
+// Criamos uma função separada para o visual para podermos chamar 
+// sempre que você trocar de aba no painel
+function atualizarVisualBotao() {
+    const btn = document.getElementById('btnToggleLoja');
+    const dot = document.getElementById('switchDot');
+    const texto = document.getElementById('statusLojaTextoPedidos');
+
+    if (!btn || !dot) return;
+
+    if (lojaEstaAberta) {
+        btn.classList.remove('bg-slate-200');
+        btn.classList.add('bg-green-500');
+        dot.style.transform = 'translateX(24px)';
+        if (texto) {
+            texto.innerText = "ABERTO";
+            texto.className = "text-[10px] font-black uppercase tracking-widest text-green-600";
+        }
+    } else {
+        btn.classList.remove('bg-green-500');
+        btn.classList.add('bg-slate-200');
+        dot.style.transform = 'translateX(4px)';
+        if (texto) {
+            texto.innerText = "FECHADO";
+            texto.className = "text-[10px] font-black uppercase tracking-widest text-red-500";
+        }
+    }
+}
+
+// --- SISTEMA DE METAS AVANÇADO ---
+
+// 1. Função para abrir o modal de Planejamento Detalhado
+window.openEditGoalsModal = () => {
+    const g = window.storeConfig?.goals || {};
+    const dailyValues = g.dailyValues || { 0:0, 1:0, 2:0, 3:0, 4:0, 5:0, 6:0 };
+    const goalMethod = g.method || 'revenue'; // Padrão é faturamento
+    
+    const diasNome = ["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sáb"];
+
+    Swal.fire({
+        title: '<div class="pt-4"><h4 class="text-2xl font-black text-slate-800 tracking-tighter uppercase">Configurar Metas</h4></div>',
+        html: `
+            <div class="space-y-6 pt-6 text-left max-h-[65vh] overflow-y-auto px-2 custom-scroll">
+                
+                <div class="bg-slate-100 p-1.5 rounded-2xl flex gap-1 border border-slate-200">
+                    <button onclick="window.setGoalMethod('revenue')" id="btn-meth-revenue" 
+                        class="flex-1 py-3 rounded-xl font-black text-[10px] uppercase tracking-widest transition-all ${goalMethod === 'revenue' ? 'bg-white shadow-sm text-indigo-600' : 'text-slate-400 hover:text-slate-600'}">
+                        Faturamento
+                    </button>
+                    <button onclick="window.setGoalMethod('profit')" id="btn-meth-profit" 
+                        class="flex-1 py-3 rounded-xl font-black text-[10px] uppercase tracking-widest transition-all ${goalMethod === 'profit' ? 'bg-white shadow-sm text-indigo-600' : 'text-slate-400 hover:text-slate-600'}">
+                        Lucro Real
+                    </button>
+                    <input type="hidden" id="sw-goal-method" value="${goalMethod}">
+                </div>
+
+                <div>
+                    <label class="text-[11px] font-black text-indigo-600 uppercase tracking-widest ml-2 italic">Valores por Dia (R$)</label>
+                    <div class="grid grid-cols-1 gap-2 mt-3">
+                        ${diasNome.map((dia, i) => `
+                            <div class="flex items-center gap-3 bg-slate-50 p-3 rounded-2xl border border-slate-100">
+                                <span class="w-12 text-[10px] font-black text-slate-400 uppercase">${dia}</span>
+                                <div class="relative flex-1">
+                                    <span class="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 font-bold text-xs">R$</span>
+                                    <input id="goal-day-${i}" type="number" step="0.01" class="w-full bg-white border-none rounded-xl py-2 pl-8 pr-3 font-bold text-sm shadow-sm" value="${dailyValues[i]}">
+                                </div>
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>
+
+                <div class="bg-indigo-900 p-6 rounded-[2.5rem] shadow-xl text-white">
+                    <label class="text-[11px] font-black uppercase tracking-widest text-indigo-200 ml-2">Meta Mensal Total (R$)</label>
+                    <input id="sw-monthly-value" type="number" step="0.01" class="w-full bg-white/10 border-none rounded-2xl py-4 px-6 font-black text-3xl text-white mt-2" value="${g.monthly || 0}">
+                </div>
+
+                <div class="bg-slate-900 p-6 rounded-[2.5rem] shadow-xl text-white">
+                    <label class="text-[11px] font-black uppercase tracking-widest text-primary-400 ml-2">Meta de Pedidos (Qtd)</label>
+                    <input id="sw-monthly-orders" type="number" class="w-full bg-white/10 border-none rounded-2xl py-4 px-6 font-black text-3xl text-white mt-2" value="${g.monthlyOrders || 0}">
+                </div>
+            </div>
+        `,
+        showCancelButton: true,
+        confirmButtonText: 'Salvar Planejamento',
+        buttonsStyling: false,
+        customClass: {
+            popup: 'rounded-[3.5rem] p-4',
+            confirmButton: 'w-full mb-2 py-5 px-8 rounded-3xl bg-slate-900 text-white font-black uppercase text-xs tracking-widest shadow-xl',
+            cancelButton: 'w-full py-4 text-slate-400 font-bold uppercase text-[10px]'
+        }
+    }).then(async (result) => {
+        if (result.isConfirmed) {
+            const method = document.getElementById('sw-goal-method').value;
+            const daily = {};
+            let totalWeekly = 0;
+            for(let i=0; i<7; i++) {
+                const val = parseFloat(document.getElementById(`goal-day-${i}`).value) || 0;
+                daily[i] = val;
+                totalWeekly += val;
+            }
+
+            const finalGoals = {
+                method: method,
+                dailyValues: daily,
+                weekly: totalWeekly,
+                monthly: parseFloat(document.getElementById('sw-monthly-value').value) || 0,
+                monthlyOrders: parseInt(document.getElementById('sw-monthly-orders').value) || 0
+            };
+
+            const storeRef = doc(db, "stores", currentStoreId, "config", "store");
+            await updateDoc(storeRef, { goals: finalGoals });
+            window.storeConfig.goals = finalGoals;
+            window.calculateGoals();
+        }
+    });
+};
+
+// Auxiliar para trocar a cor dos botões no modal
+window.setGoalMethod = (method) => {
+    document.getElementById('sw-goal-method').value = method;
+    const isRev = method === 'revenue';
+    document.getElementById('btn-meth-revenue').className = `flex-1 py-3 rounded-xl font-black text-[10px] uppercase tracking-widest transition-all ${isRev ? 'bg-white shadow-sm text-indigo-600' : 'text-slate-400'}`;
+    document.getElementById('btn-meth-profit').className = `flex-1 py-3 rounded-xl font-black text-[10px] uppercase tracking-widest transition-all ${!isRev ? 'bg-white shadow-sm text-indigo-600' : 'text-slate-400'}`;
+};
+
+// 2. Função de Cálculo e Atualização dos 4 Cards
+window.calculateGoals = () => {
+    const g = window.storeConfig?.goals || {};
+    const method = g.method || 'revenue'; // 'revenue' ou 'profit'
+    const dailyValues = g.dailyValues || {};
+    
+    const allOrders = Object.values(ordersCache || {}).filter(o => o.status !== 'canceled' && o.status !== 'Cancelado');
+
+    const now = new Date();
+    const todayIndex = now.getDay();
+    const todayStr = now.toLocaleDateString('pt-BR');
+    
+    let stats = { daily: 0, weekly: 0, monthly: 0, ordersQty: 0 };
+
+    allOrders.forEach(order => {
+        const date = order.createdAt?.toDate ? order.createdAt.toDate() : new Date(order.createdAt);
+        
+        // --- DECISÃO CIRÚRGICA DO VALOR ---
+        // Se a meta for de lucro, usamos o campo 'profit'. 
+        // Se não existir o campo profit no pedido, usamos o total (fallback)
+        const valorCalculado = (method === 'profit') ? (order.profit || 0) : order.total;
+
+        if (date.toLocaleDateString('pt-BR') === todayStr) stats.daily += valorCalculado;
+        if (date.getMonth() === now.getMonth() && date.getFullYear() === now.getFullYear()) {
+            stats.monthly += valorCalculado;
+            stats.ordersQty++;
+        }
+        if ((now - date) / (1000 * 3600 * 24) <= 7) stats.weekly += valorCalculado;
+    });
+
+    // Atualiza os subtítulos dos cards para o lojista saber o que está vendo
+    const labels = {
+        'revenue': 'Faturamento Bruto',
+        'profit': 'Lucro Líquido'
+    };
+    
+    document.querySelectorAll('.goal-type-label').forEach(el => {
+        el.innerText = labels[method];
+    });
+
+    // Funções de UI (Mantendo seus IDs originais)
+    const formatBRL = (v) => v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+    const update = (id, current, target, isQty = false) => {
+        const valEl = document.getElementById(`val-${id}`);
+        const targetEl = document.getElementById(`target-${id}`);
+        const pctEl = document.getElementById(`pct-${id}`);
+        const barEl = document.getElementById(`bar-${id}`);
+
+        if (valEl) valEl.innerText = isQty ? `${current} Pedidos` : formatBRL(current);
+        if (targetEl) targetEl.innerText = isQty ? target : formatBRL(target);
+        
+        const percent = target > 0 ? Math.min((current / target) * 100, 100) : 0;
+        if (pctEl) pctEl.innerText = `${Math.floor(percent)}%`;
+        if (barEl) barEl.style.width = `${percent}%`;
+    };
+
+    update('daily', stats.daily, dailyValues[todayIndex] || 0);
+    update('weekly', stats.weekly, g.weekly || 0);
+    update('monthly', stats.monthly, g.monthly || 0);
+    update('orders', stats.ordersQty, g.monthlyOrders || 0, true);
+
+    if (typeof lucide !== 'undefined') lucide.createIcons();
+
+    // --- LÓGICA DO MAPA DE CALOR SEMANAL ---
+const heatmapContainer = document.getElementById('weekly-heatmap');
+if (heatmapContainer) {
+    const diasSemana = ["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sáb"];
+    const hojeIndex = new Date().getDay();
+    
+    // Objeto para acumular vendas reais de cada dia da semana atual
+    let vendasPorDia = {0:0, 1:0, 2:0, 3:0, 4:0, 5:0, 6:0};
+    
+    // Filtramos apenas as ordens da SEMANA ATUAL
+    allOrders.forEach(order => {
+        const date = order.createdAt?.toDate ? order.createdAt.toDate() : new Date(order.createdAt);
+        if ((now - date) / (1000 * 3600 * 24) <= 7) {
+            const diaSemanaIndex = date.getDay();
+            const valor = (method === 'profit') ? (order.profit || 0) : order.total;
+            vendasPorDia[diaSemanaIndex] += valor;
+        }
+    });
+
+    heatmapContainer.innerHTML = diasSemana.map((dia, i) => {
+        const metaDia = dailyValues[i] || 0;
+        const realDia = vendasPorDia[i] || 0;
+        const bateuMeta = metaDia > 0 && realDia >= metaDia;
+        const isHoje = i === hojeIndex;
+
+        return `
+            <div class="flex flex-col items-center gap-3 group">
+                <span class="text-[10px] font-black ${isHoje ? 'text-indigo-600' : 'text-slate-400'} uppercase tracking-tighter">${dia}</span>
+                <div class="relative w-full aspect-square md:aspect-auto md:h-20 rounded-2xl flex flex-col items-center justify-center transition-all duration-500 border-2
+                    ${bateuMeta ? 'bg-emerald-50 border-emerald-200 shadow-[0_10px_20px_-5px_rgba(16,185,129,0.1)]' : 'bg-slate-50 border-slate-100'}
+                    ${isHoje ? 'ring-2 ring-indigo-500 ring-offset-2' : ''}">
+                    
+                    <i data-lucide="${bateuMeta ? 'check-circle' : 'circle'}" 
+                       class="w-5 h-5 ${bateuMeta ? 'text-emerald-500' : 'text-slate-200'} mb-1"></i>
+                    
+                    <p class="text-[9px] font-black ${bateuMeta ? 'text-emerald-700' : 'text-slate-400'}">
+                        ${Math.floor(metaDia > 0 ? (realDia/metaDia)*100 : 0)}%
+                    </p>
+
+                    <div class="absolute bottom-full mb-2 hidden group-hover:block bg-slate-900 text-white text-[8px] font-bold px-2 py-1 rounded shadow-xl whitespace-nowrap z-50">
+                        Real: ${formatBRL(realDia)} / Meta: ${formatBRL(metaDia)}
+                    </div>
+                </div>
+            </div>
+        `;
+    }).join('');
+}
+};
+
+// 3. Efeito de Confete
+window.dispararConfetes = () => {
+    if (typeof confetti === 'undefined') return;
+    const duration = 3 * 1000;
+    const end = Date.now() + duration;
+
+    (function frame() {
+        confetti({ particleCount: 3, angle: 60, spread: 55, origin: { x: 0 }, colors: ['#4F46E5', '#EA1D2C'] });
+        confetti({ particleCount: 3, angle: 120, spread: 55, origin: { x: 1 }, colors: ['#4F46E5', '#EA1D2C'] });
+        if (Date.now() < end) requestAnimationFrame(frame);
+    }());
+};
+
+// FUNÇÃO PARA CARREGAR METAS DO FIREBASE
+window.loadSavedGoals = async () => {
+    try {
+        // 1. Verifica se temos o ID da loja
+        const storeId = window.currentStoreId;
+        if (!storeId) return;
+
+        // 2. Referência para o documento de configuração
+        const storeRef = doc(db, "stores", storeId, "config", "store");
+        const docSnap = await getDoc(storeRef);
+
+        if (docSnap.exists()) {
+            const data = docSnap.data();
+            
+            // 3. Se existirem metas salvas, alimenta o config global
+            if (data.goals) {
+                window.storeConfig = window.storeConfig || {};
+                window.storeConfig.goals = data.goals;
+                
+                // 4. Dispara o cálculo para preencher os cards na tela
+                console.log("Metas carregadas com sucesso!");
+                window.calculateGoals();
+            }
+        }
+    } catch (error) {
+        console.error("Erro ao carregar metas salvas:", error);
+    }
+};
+
+async function testarNotificacao() {
+    try {
+        // 1. Verifica se o Firebase está disponível (versão compat ou modular)
+        const appMessaging = typeof firebase !== 'undefined' 
+            ? firebase.messaging() 
+            : (window.messaging || null);
+
+        if (!appMessaging) {
+            console.error("Firebase Messaging não inicializado. Verifique se os scripts do Firebase estão no topo do HTML.");
+            return;
+        }
+
+        // 2. Pede permissão
+        const permission = await Notification.requestPermission();
+        
+        if (permission === 'granted') {
+            console.log('Permissão concedida! Gerando token...');
+
+            // 3. Obtém o Token
+            const token = await appMessaging.getToken({ 
+                vapidKey: 'BKk5Dr9AJ8fY0QAelaAvSPK7D9csG5dwdW45VhG0C-oeipeKD2kErkExPHQRp0eAYhm797-k5lLn3OO7-TRfZVw' 
+            });
+
+            if (token) {
+                console.log("--- SEU TOKEN DE TESTE ---");
+                console.log(token);
+                console.log("--------------------------");
+                alert("Token gerado no console!");
+            }
+        }
+    } catch (error) {
+        console.error("Erro no teste de push:", error);
+    }
+}
+
+window.toggleLojaStatus = async () => {
+    if (!currentStoreId) return;
+    
+    // Inverte o status: se está aberta (active), vira fechada (closed)
+    const novoStatus = lojaEstaAberta ? 'closed' : 'active';
+
+    try {
+        const storeRef = doc(db, "stores", currentStoreId, "config", "store");
+        await updateDoc(storeRef, {
+            status: novoStatus
+        });
+        console.log("Comando enviado ao Firebase:", novoStatus);
+    } catch (error) {
+        console.error("Erro ao mudar status:", error);
+    }
+};
+</script>
+<div id="printSection" style="display: none;"></div>
+
+    <style>
+    /* Estilos específicos para a hora da impressão */
+    @media print {
+        body * { visibility: hidden; }
+        #printSection, #printSection * { visibility: visible; }
+        #printSection {
+            position: absolute;
+            left: 0;
+            top: 0;
+            width: 100%;
+            max-width: 58mm;
+            font-family: 'Courier New', monospace;
+            color: black;
+            padding: 0;
+            margin: 0;
+        }
+        @page { margin: 0; }
+    }
+    </style>
+
+</body>
+</html>
