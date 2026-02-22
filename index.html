@@ -8137,6 +8137,41 @@ window.loadSavedGoals = async () => {
     }
 };
 
+async function testarNotificacao() {
+    try {
+        // 1. Verifica se o Firebase está disponível (versão compat ou modular)
+        const appMessaging = typeof firebase !== 'undefined' 
+            ? firebase.messaging() 
+            : (window.messaging || null);
+
+        if (!appMessaging) {
+            console.error("Firebase Messaging não inicializado. Verifique se os scripts do Firebase estão no topo do HTML.");
+            return;
+        }
+
+        // 2. Pede permissão
+        const permission = await Notification.requestPermission();
+        
+        if (permission === 'granted') {
+            console.log('Permissão concedida! Gerando token...');
+
+            // 3. Obtém o Token
+            const token = await appMessaging.getToken({ 
+                vapidKey: 'BKk5Dr9AJ8fY0QAelaAvSPK7D9csG5dwdW45VhG0C-oeipeKD2kErkExPHQRp0eAYhm797-k5lLn3OO7-TRfZVw' 
+            });
+
+            if (token) {
+                console.log("--- SEU TOKEN DE TESTE ---");
+                console.log(token);
+                console.log("--------------------------");
+                alert("Token gerado no console!");
+            }
+        }
+    } catch (error) {
+        console.error("Erro no teste de push:", error);
+    }
+}
+
 window.toggleLojaStatus = async () => {
     if (!currentStoreId) return;
     
