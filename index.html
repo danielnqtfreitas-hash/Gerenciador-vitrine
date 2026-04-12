@@ -1577,6 +1577,27 @@ tailwind.config = {
                         </div>
                     </div>
 
+                   <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4 p-4 bg-primary-50/50 rounded-2xl border border-primary-100">
+    <div class="flex items-center justify-between">
+        <div>
+            <p class="text-[10px] font-black text-primary-700 uppercase tracking-widest">Disponível no Provador?</p>
+            <p class="text-[9px] text-primary-600/70">Permite combinar looks com esta peça</p>
+        </div>
+        <label class="toggle-switch">
+            <input type="checkbox" id="prodProvador">
+            <span class="slider"></span>
+        </label>
+    </div>
+    <div id="provadorCategoryGroup" class="space-y-1">
+        <label class="text-[10px] font-bold text-slate-500 uppercase ml-1">Posição no Look</label>
+        <select id="prodProvadorPos" class="input-pro bg-white">
+            <option value="superior">Parte Superior (Blusas, Jaquetas...)</option>
+            <option value="inferior">Parte Inferior (Calças, Saias...)</option>
+            <option value="inteiro">Peça Única (Vestidos, Macacões...)</option>
+        </select>
+    </div>
+</div>
+
                     <div class="bg-slate-900 rounded-[2.5rem] p-6 shadow-xl space-y-5">
                         <div class="flex items-center gap-2 mb-2">
                             <i data-lucide="dollar-sign" class="w-4 h-4 text-emerald-400"></i>
@@ -3117,6 +3138,8 @@ function updateQuotas() {
         document.getElementById('prodCategory').value = p.category || ''; 
         document.getElementById('prodValue').value = p.value || 0;
         document.getElementById('prodCard').value = p.priceCard || '';
+document.getElementById('prodProvador').checked = p.disponivelProvador || false;
+document.getElementById('prodProvadorPos').value = p.posicaoProvador || 'superior';
         document.getElementById('prodMaxInstallments').value = p.maxInstallments || 1;
         
         if(window.calculateInstallmentValue) window.calculateInstallmentValue();
@@ -3327,6 +3350,8 @@ installmentValue: (parseFloat(document.getElementById('prodCard').value) / (pars
     images: imageUrls,
     description: document.getElementById('prodDesc').value || '',
     isFeatured: document.getElementById('prodFeatured').checked,
+    disponivelProvador: document.getElementById('prodProvador').checked,
+    posicaoProvador: document.getElementById('prodProvadorPos').value,
     variations: updatedVariations,
     colors: [...new Set(updatedVariations.map(v => v.color))].filter(c => c && c !== 'PADRAO'),
     sizes: [...new Set(updatedVariations.map(v => v.size))].filter(s => s && s !== 'UNICO'),
