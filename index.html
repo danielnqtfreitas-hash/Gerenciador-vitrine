@@ -47,54 +47,89 @@ if ('serviceWorker' in navigator) {
 </script>
 
     
-    <script>
-        // Localize onde está o tailwind.config e substitua por este:
-tailwind.config = {
-    theme: {
-        extend: {
-            fontFamily: { sans: ['Inter', 'sans-serif'] },
-            colors: {
-                slate: { 50: '#f8fafc', 100: '#f1f5f9', 800: '#1e293b', 900: '#0f172a' },
-                // Agora o Tailwind lerá as cores das variáveis do navegador
-                primary: {
-                    50: 'var(--brand-color-soft)',
-                    500: 'var(--brand-color)',
-                    600: 'var(--brand-color-dark)',
-                    700: 'var(--brand-color-darker)',
+   <script>
+    // Configuração corrigida do Tailwind
+    tailwind.config = {
+        theme: {
+            extend: {
+                fontFamily: { sans: ['Inter', 'sans-serif'] },
+                colors: {
+                    // Definindo cores fixas para garantir que o painel nunca perca o estilo
+                    slate: { 50: '#f8fafc', 100: '#f1f5f9', 800: '#1e293b', 900: '#0f172a' },
+                    primary: {
+                        50: '#f5f3ff',
+                        500: '#8b5cf6',
+                        600: '#7c3aed',
+                        700: '#6d28d9',
+                    }
                 }
             }
         }
     }
-}
+</script>
 
-/* Estilo para a barra de rolagem interna do modal */
-.custom-scroll::-webkit-scrollbar {
-    width: 4px;
-}
-.custom-scroll::-webkit-scrollbar-track {
-    background: transparent;
-}
-.custom-scroll::-webkit-scrollbar-thumb {
-    background: #E2E8F0;
-    border-radius: 10px;
-}
+<style>
+    :root {
+        --brand-color: #8b5cf6;
+        --brand-color-soft: #f5f3ff;
+        --brand-color-dark: #7c3aed;
+        --brand-color-darker: #6d28d9;
+    }
 
-/* Animação suave para as barras de progresso */
-[id^="bar-"] {
-    transition: width 1.5s cubic-bezier(0.34, 1.56, 0.64, 1);
-}
+    /* FORÇANDO AS CORES DOS BOTÕES E SIDEBAR */
+    .sidebar-link.active { 
+        background-color: var(--brand-color-soft) !important; 
+        color: var(--brand-color-darker) !important; 
+        border-right: 4px solid var(--brand-color) !important; 
+        font-weight: 600;
+    }
 
-/* Efeito Glassmorphism no Card Dark */
-#view-metas .bg-slate-900 {
-    background: linear-gradient(145deg, #0f172a, #1e293b);
-}
+    /* Seus botões de ação que sumiram precisam dessas classes de segurança */
+    .btn-primary {
+        background-color: var(--brand-color) !important;
+        color: white !important;
+    }
 
-/* Ajuste de sombra para cards brancos */
-#view-metas .bg-white {
-    box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.02), 0 8px 10px -6px rgba(0, 0, 0, 0.02);
-}
+    /* Manter seus estilos de scroll e animações */
+    body { font-family: 'Inter', sans-serif; background-color: #f8fafc; }
+    .custom-scroll::-webkit-scrollbar { width: 4px; }
+    .custom-scroll::-webkit-scrollbar-thumb { background: #E2E8F0; border-radius: 10px; }
 
-    </script>
+    /* Estilos de Modal e Overlay */
+    .modal-overlay { background-color: rgba(15, 23, 42, 0.7); backdrop-filter: blur(8px); }
+    
+    /* Botões de atalho no painel (Banner, Categoria, etc) */
+    [onclick^="openBannerModal"], [onclick^="openCategoryModal"], [onclick^="openCustomerModal"] {
+        border: 2px dashed #e2e8f0 !important;
+        transition: all 0.3s ease;
+    }
+    
+    [onclick^="openBannerModal"]:hover { border-color: var(--brand-color) !important; color: var(--brand-color) !important; }
+
+    /* Toggle Switch */
+    .toggle-switch { width: 44px; height: 24px; position: relative; display: inline-block; }
+    .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #cbd5e1; transition: .4s; border-radius: 34px; }
+    .slider:before { position: absolute; content: ""; height: 18px; width: 18px; left: 3px; bottom: 3px; background-color: white; transition: .4s; border-radius: 50%; }
+    input:checked + .slider { background-color: #22c55e; }
+    input:checked + .slider:before { transform: translateX(20px); }
+
+    /* Tooltip Apple-like */
+    .tooltip-box {
+        position: absolute; top: -8px; left: 50%; transform: translate(-50%, -100%);
+        background: #1f2937; color: white; padding: 8px 10px; border-radius: 8px;
+        font-size: 10px; width: max-content; opacity: 0; pointer-events: none; transition: opacity .2s ease; z-index: 50;
+    }
+    .tooltip:hover .tooltip-box { opacity: 1; }
+
+    /* Impressão */
+    @media print {
+        body > * { display: none !important; }
+        #printSection, #printSection * { display: block !important; visibility: visible !important; }
+        @page { margin: 0; }
+        body { margin: 0 !important; width: 58mm; }
+        #printSection { position: absolute; left: 0; top: 0; width: 58mm; padding: 8px; background: white; }
+    }
+</style>
     <style>
 
      :root {
@@ -131,6 +166,8 @@ tailwind.config = {
         .sidebar-visible { transform: translateX(0); }
 
         .modal-overlay { background-color: rgba(15, 23, 42, 0.7); backdrop-filter: blur(8px); }
+        
+
         
         .auth-card-container { 
             max-height: 95vh; 
@@ -8235,6 +8272,25 @@ window.toggleLojaStatus = async () => {
         @page { margin: 0; }
     }
     </style>
+
+function aplicarCoresAutomaticas() {
+    // 1. Procura botões de salvar nos modais pelo texto
+    const botoesConfirmar = document.querySelectorAll('button');
+    botoesConfirmar.forEach(btn => {
+        const texto = btn.innerText.toLowerCase();
+        if (texto.includes('salvar') || texto.includes('confirmar') || texto.includes('atualizar')) {
+            btn.classList.add('btn-acao-confirmar');
+        }
+        
+        // 2. Procura os botões de atalho (Banner, Categoria, Cliente)
+        if (texto.includes('criar') || texto.includes('novo')) {
+            btn.classList.add('btn-card-atalho');
+        }
+    });
+}
+
+// Executa assim que a página estiver pronta
+window.addEventListener('DOMContentLoaded', aplicarCoresAutomaticas);
 
 </body>
 </html>
