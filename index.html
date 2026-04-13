@@ -8272,25 +8272,5 @@ window.toggleLojaStatus = async () => {
         @page { margin: 0; }
     }
     </style>
-
-function aplicarCoresAutomaticas() {
-    // 1. Procura botões de salvar nos modais pelo texto
-    const botoesConfirmar = document.querySelectorAll('button');
-    botoesConfirmar.forEach(btn => {
-        const texto = btn.innerText.toLowerCase();
-        if (texto.includes('salvar') || texto.includes('confirmar') || texto.includes('atualizar')) {
-            btn.classList.add('btn-acao-confirmar');
-        }
-        
-        // 2. Procura os botões de atalho (Banner, Categoria, Cliente)
-        if (texto.includes('criar') || texto.includes('novo')) {
-            btn.classList.add('btn-card-atalho');
-        }
-    });
-}
-
-// Executa assim que a página estiver pronta
-window.addEventListener('DOMContentLoaded', aplicarCoresAutomaticas);
-
 </body>
 </html>
