@@ -5534,12 +5534,10 @@ window.closeManualOrderModal = () => {
     }
 };
 
-        // --- BUSCA DE PRODUTOS PARA PEDIDO MANUAL ---
+     // --- BUSCA DE PRODUTOS PARA PEDIDO MANUAL ---
 window.renderManualProductSearch = () => {
     const query = document.getElementById("manualProductSearch").value.toLowerCase();
     const container = document.getElementById("manualSearchResults");
-    
-    // --- CIRURGIA: Captura o estado do pagamento ---
     const paymentMethod = document.getElementById("manualPayment").value;
     const isCash = ['pix', 'dinheiro'].includes(paymentMethod);
 
@@ -5547,13 +5545,23 @@ window.renderManualProductSearch = () => {
     if (!query) return;
 
     allProducts.forEach(p => {
+        // 1. Calcula o desconto em Reais (Valor Original - Valor Promo)
+        const valorOriginal = Number(p.value) || 0;
+        const valorPromo = Number(p.promoValue) || 0;
+        const valorDesconto = (valorPromo > 0 && valorPromo < valorOriginal) ? (valorOriginal - valorPromo) : 0;
+
         if (p.variations && p.variations.length > 0) {
             p.variations.forEach(v => {
                 if (v.active && (p.name.toLowerCase().includes(query) || (v.sku && v.sku.toLowerCase().includes(query)))) {
                     
-                    // --- PREÇO INTELIGENTE NA BUSCA ---
-                    const basePrice = v.price || p.promoValue || p.value;
-                    const varPrice = (isCash && p.priceCash) ? p.priceCash : basePrice;
+                    // 2. Aplica o desconto do produto pai no valor da variação
+                    const precoBaseVariacao = Number(v.price) || valorOriginal;
+                    let varPrice = precoBaseVariacao - valorDesconto;
+
+                    // 3. Regra de Cash (PIX) para variações
+                    if (isCash && p.priceCash) {
+                        varPrice = Number(p.priceCash) + (precoBaseVariacao - valorOriginal);
+                    }
 
                     const fotoExibir = v.image ? v.image : (p.images && p.images.length > 0 ? p.images[0] : null);
                     const temEstoque = (Number(v.stock) || 0) > 0;
@@ -5562,12 +5570,10 @@ window.renderManualProductSearch = () => {
             });
         } 
         else {
+            // Lógica para produtos simples (sem variações)
             if (p.name.toLowerCase().includes(query) || (p.sku && p.sku.toLowerCase().includes(query))) {
-                
-                // --- PREÇO INTELIGENTE NA BUSCA (SIMPLES) ---
-                const basePrice = p.promoValue || p.value;
-// Se for cash (PIX), usa o valor principal/promo. Se for cartão, usa o priceCard.
-const finalPrice = isCash ? basePrice : (p.priceCard || p.value);
+                const basePrice = (valorPromo > 0) ? valorPromo : valorOriginal;
+                const finalPrice = isCash ? basePrice : (Number(p.priceCard) || basePrice);
 
                 const fotoExibir = (p.images && p.images.length > 0) ? p.images[0] : null;
                 const temEstoque = (Number(p.stock) || 0) > 0;
