@@ -8250,166 +8250,147 @@ async function testarNotificacao() {
 }
 
 window.fluxoCadastroRapido = async function() {
-    // 1. Reset de variáveis globais para o novo produto
+    // 1. Limpeza de estados anteriores
     currentProductImages = [];
     variationsMatrix = [];
+    imageQueue = [];
     
     try {
-        // ETAPA 1: FOTO E RECORTE
-        const { value: file } = await Swal.fire({
+        // ETAPA 1: FOTO
+        const { value: fileSelected } = await Swal.fire({
             title: '1. Foto do Produto',
-            text: 'Selecione a imagem principal',
-            input: 'file',
-            inputAttributes: { 'accept': 'image/*' },
-            confirmButtonText: 'Abrir Editor →',
+            html: `
+                <div class="mt-2 text-left">
+                    <p class="text-sm text-gray-500 mb-4">Escolha a foto para abrir o editor.</p>
+                    <input type="file" id="swal-input-file" accept="image/*" class="block w-full text-sm border rounded-lg cursor-pointer bg-gray-50 p-2">
+                </div>
+            `,
             showCancelButton: true,
-            cancelButtonText: 'Cancelar'
+            confirmButtonText: 'Abrir Editor →'
         });
 
-        if (!file) return;
+        if (!fileSelected) return;
 
-        // Gatilho para o seu Cropper atual
-        const inputReal = document.getElementById('productImages'); 
-        if (inputReal) {
-            const dt = new DataTransfer();
-            dt.items.add(file);
-            inputReal.files = dt.files;
-            inputReal.dispatchEvent(new Event('change')); 
-            
-            await Swal.fire({
-                icon: 'info',
-                title: 'Ajuste o Recorte',
-                text: 'Recorte a foto no editor, confirme e clique abaixo.',
-                confirmButtonText: 'Foto Recortada! Continuar →',
-                allowOutsideClick: false
-            });
+        const inputArquivo = document.getElementById('swal-input-file');
+        if (inputArquivo.files[0]) {
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                imageQueue.push(e.target.result);
+                openCropModal(e.target.result);
+            };
+            reader.readAsDataURL(inputArquivo.files[0]);
         }
 
-        // ETAPA 2: DADOS BÁSICOS (NOME E PREÇO)
-        const { value: nome } = await Swal.fire({
-            title: '2. Nome do Produto',
-            input: 'text',
-            inputPlaceholder: 'Ex: Camiseta Básica',
-            preConfirm: (v) => v || Swal.showValidationMessage('Nome é obrigatório')
+        // ESPERA O RECORTE
+        const toast = Swal.mixin({ toast: true, position: 'top-end', showConfirmButton: false });
+        toast.fire({ icon: 'info', title: 'Ajuste o recorte e confirme no editor' });
+
+        await new Promise((resolve) => {
+            const check = setInterval(() => {
+                if (currentProductImages.length > 0) {
+                    clearInterval(check);
+                    resolve();
+                }
+            }, 500);
         });
-        if (!nome) return;
 
-        const { value: preco } = await Swal.fire({
-            title: '3. Preço de Venda',
-            input: 'number',
-            inputAttributes: { step: '0.01' },
-            preConfirm: (v) => v > 0 || Swal.showValidationMessage('Preço inválido')
-        });
-        if (!preco) return;
+        // ETAPA 2: NOME E PREÇO
+        const { value: nome } = await Swal.fire({ title: '2. Nome', input: 'text' });
+        const { value: preco } = await Swal.fire({ title: '3. Preço', input: 'number', inputAttributes: { step: '0.01' } });
+        if (!nome || !preco) return;
 
-        // ETAPA 3: CATEGORIA
-        // Puxa as categorias que já existem no seu estado 'allCategories' ou 'allProducts'
-        const categoriasExistentes = (typeof allCategories !== 'undefined') 
-            ? allCategories.map(c => c.name) 
-            : [...new Set(allProducts.map(p => p.category))].filter(Boolean);
+        // ETAPA 3: CATEGORIA (CORREÇÃO DA ASSOCIAÇÃO)
+        let listaCats = {};
+        if (typeof allCategories !== 'undefined') {
+            allCategories.forEach(c => listaCats[c.name] = c.name);
+        }
+        listaCats["Nova"] = "+ Criar Nova";
 
-        const opcoes = {};
-        categoriasExistentes.forEach(c => opcoes[c] = c);
-        opcoes["Nova"] = "+ Criar Nova";
-
-        const { value: catSelecionada } = await Swal.fire({
+        const { value: catSel } = await Swal.fire({
             title: '4. Categoria',
             input: 'select',
-            inputOptions: opcoes
+            inputOptions: listaCats
         });
-        if (!catSelecionada) return;
 
-        let categoriaFinal = catSelecionada;
-        if (catSelecionada === "Nova") {
+        let categoriaFinal = catSel;
+        if (catSel === "Nova") {
             const { value: nCat } = await Swal.fire({ title: 'Nome da Categoria', input: 'text' });
             categoriaFinal = nCat || 'Geral';
         }
 
-        // ETAPA 4: VARIAÇÕES (TAMANHOS E CORES)
-        const { value: tamanhosTxt } = await Swal.fire({
-            title: '5. Tamanhos',
-            text: 'Ex: P, M, G (ou deixe vazio)',
-            input: 'text'
+        // ETAPA 4: VARIAÇÕES (CORES E TAMANHOS)
+        const { value: modo } = await Swal.fire({
+            title: 'Configurar Variações?',
+            showCancelButton: true,
+            confirmButtonText: 'Sim (Cores/Tamanhos)',
+            cancelButtonText: 'Não (Estoque Único)'
         });
 
-        const { value: coresTxt } = await Swal.fire({
-            title: '6. Cores',
-            text: 'Ex: Azul, Preto (ou deixe vazio)',
-            input: 'text'
-        });
+        let estoqueTotal = 0;
 
-        const listaT = tamanhosTxt ? tamanhosTxt.split(',').map(s => s.trim()) : ['Único'];
-        const listaC = coresTxt ? coresTxt.split(',').map(c => c.trim()) : ['Padrão'];
-        
-        let somaEstoqueTotal = 0;
+        if (modo) {
+            const { value: cores } = await Swal.fire({ title: 'Cores', text: 'Ex: Azul, Preto', input: 'text', inputValue: 'Padrão' });
+            const { value: tamanhos } = await Swal.fire({ title: 'Tamanhos', text: 'Ex: P, M, G', input: 'text', inputValue: 'Único' });
 
-        for (let t of listaT) {
-            for (let c of listaC) {
-                const { value: est, isDismissed, isDenied } = await Swal.fire({
-                    title: `Estoque: ${t} - ${c}`,
-                    input: 'number',
-                    inputValue: 1,
-                    showDenyButton: true,
-                    denyButtonText: 'Não tenho',
-                    confirmButtonText: 'Próximo'
-                });
+            const listC = cores.split(',').map(s => s.trim().toUpperCase());
+            const listT = tamanhos.split(',').map(s => s.trim().toUpperCase());
 
-                if (!isDismissed && !isDenied) {
-                    const qtd = Number(est) || 0;
+            for (let c of listC) {
+                for (let t of listT) {
+                    const { value: q } = await Swal.fire({ title: `Qtd: ${c} / ${t}`, input: 'number', inputValue: 1 });
+                    const qtd = parseInt(q) || 0;
+                    estoqueTotal += qtd;
                     variationsMatrix.push({
-                        id: Date.now() + Math.random().toString(36).substr(2, 9),
-                        size: t,
+                        id: 'v_' + Date.now() + Math.random().toString(36).substr(2,5),
                         color: c,
+                        size: t,
                         stock: qtd,
-                        price: Number(preco)
+                        price: parseFloat(preco),
+                        active: true
                     });
-                    somaEstoqueTotal += qtd;
                 }
             }
+        } else {
+            const { value: q } = await Swal.fire({ title: 'Estoque Total', input: 'number', inputValue: 1 });
+            estoqueTotal = parseInt(q) || 0;
+            variationsMatrix.push({
+                id: 'v_' + Date.now(),
+                color: 'PADRÃO',
+                size: 'ÚNICO',
+                stock: estoqueTotal,
+                price: parseFloat(preco),
+                active: true
+            });
         }
 
-        // --- SALVAMENTO DIRETO ---
-        Swal.fire({
-            title: 'Salvando produto...',
-            text: 'Aguarde um instante.',
-            allowOutsideClick: false,
-            didOpen: () => { Swal.showLoading(); }
-        });
+        // ETAPA 5: SALVAMENTO (SINCRONIA TOTAL)
+        Swal.fire({ title: 'Salvando...', didOpen: () => Swal.showLoading() });
 
-        // Montamos o objeto exatamente como a sua função handleSaveProduct espera
-        const produtoFinal = {
-            name: nome,
-            value: Number(preco),
-            category: categoriaFinal,
-            stock: somaEstoqueTotal,
-            sku: 'R' + Math.floor(Date.now() / 1000),
-            images: currentProductImages, // Imagens capturadas pelo Cropper
-            variations: variationsMatrix,
-            posicaoProvador: 'superior',
-            isFeatured: false,
-            description: '',
-            createdAt: Date.now()
+        // Função auxiliar para forçar o sistema a aceitar o valor
+        const forceInput = (id, val) => {
+            const el = document.getElementById(id);
+            if (el) {
+                el.value = val;
+                // Dispara eventos para que o Firebase e os validadores do sistema leiam o valor
+                el.dispatchEvent(new Event('input', { bubbles: true }));
+                el.dispatchEvent(new Event('change', { bubbles: true }));
+            }
         };
 
-        // Chama a função de salvamento do seu sistema (Firebase)
-        // Passamos 'null' no primeiro parâmetro (e) e o objeto no segundo (manualData)
-        if (typeof handleSaveProduct === 'function') {
-            await handleSaveProduct(null, produtoFinal);
-            
-            Swal.fire({
-                icon: 'success',
-                title: 'Produto Cadastrado!',
-                text: 'O produto já está disponível na sua loja.',
-                timer: 2000,
-                showConfirmButton: false
-            });
-        } else {
-            throw new Error("Função de salvamento não encontrada.");
+        forceInput('prodName', nome);
+        forceInput('prodValue', preco);
+        forceInput('prodCategory', categoriaFinal); // AQUI ASSOCIA A CATEGORIA
+        forceInput('prodStock', estoqueTotal); // AQUI PREENCHE O ESTOQUE TOTAL
+        forceInput('prodId', ""); 
+
+        if (typeof window.handleProductSubmit === 'function') {
+            await window.handleProductSubmit({ preventDefault: () => {} });
+            Swal.fire({ icon: 'success', title: 'Sucesso!', text: `Categoria: ${categoriaFinal} | Estoque: ${estoqueTotal}` });
         }
 
     } catch (e) {
-        console.error("Erro no salvamento rápido:", e);
-        Swal.fire('Erro', 'Não foi possível salvar automaticamente: ' + e.message, 'error');
+        console.error(e);
+        Swal.fire('Erro', e.message, 'error');
     }
 };
 
