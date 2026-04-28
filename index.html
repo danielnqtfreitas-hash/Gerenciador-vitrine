@@ -8249,35 +8249,36 @@ async function testarNotificacao() {
     }
 }
 
-     async function fluxoCadastroRapido() {
-    // Objeto inicial do produto
+   // Adicionando ao window para garantir que o botão HTML encontre a função
+window.fluxoCadastroRapido = async function() {
+    console.log("Iniciando fluxo rápido..."); // Isso aparecerá no F12 se funcionar
+    
     let novoProduto = {
         name: '',
         value: 0,
         category: '',
         stock: 1,
         images: [],
-        sku: 'R' + Math.floor(Date.now() / 1000), // Gera um SKU rápido
+        sku: 'R' + Math.floor(Date.now() / 1000),
         posicaoProvador: 'superior',
         description: '',
         createdAt: Date.now()
     };
 
     try {
-        // PASSO 1: FOTO
+        // Passo 1: Foto
         const { value: file } = await Swal.fire({
             title: 'Foto do Produto',
             text: 'Selecione a imagem principal',
             input: 'file',
             inputAttributes: { 'accept': 'image/*' },
             confirmButtonText: 'Escolher Foto →',
-            showCancelButton: true,
-            cancelButtonText: 'Cancelar'
+            showCancelButton: true
         });
 
         if (!file) return;
 
-        // Dispara o seu sistema de recorte (Cropper)
+        // Dispara o Cropper que você já tem no index 99
         const inputReal = document.getElementById('productImages'); 
         if (inputReal) {
             const dt = new DataTransfer();
@@ -8289,86 +8290,75 @@ async function testarNotificacao() {
         await Swal.fire({
             icon: 'info',
             title: 'Ajuste o Recorte',
-            text: 'Recorte a imagem e confirme no editor. Depois volte aqui para continuar.',
+            text: 'Corte a foto no quadro que apareceu e clique em "Confirmar Recorte". Depois volte aqui.',
             confirmButtonText: 'Já recortei, continuar →'
         });
 
-        // PASSO 2: NOME
+        // Passo 2: Nome
         const { value: nome } = await Swal.fire({
             title: 'Qual o nome?',
             input: 'text',
-            inputPlaceholder: 'Ex: Calça Alfaiataria',
-            preConfirm: (v) => v || Swal.showValidationMessage('O nome é obrigatório')
+            preConfirm: (v) => v || Swal.showValidationMessage('Nome obrigatório')
         });
         if (!nome) return;
         novoProduto.name = nome;
 
-        // PASSO 3: PREÇO
+        // Passo 3: Preço
         const { value: preco } = await Swal.fire({
-            title: 'Preço de Venda (R$)',
+            title: 'Preço (R$)',
             input: 'number',
             inputAttributes: { step: '0.01' },
-            preConfirm: (v) => v > 0 || Swal.showValidationMessage('Insira um valor válido')
+            preConfirm: (v) => v > 0 || Swal.showValidationMessage('Valor inválido')
         });
         if (!preco) return;
         novoProduto.value = Number(preco);
 
-        // PASSO 4: CATEGORIA (DINÂMICA DA LOJA)
-        // Usando a variável 'allProducts' que já existe no seu sistema
+        // Passo 4: Categoria
         const categoriasExistentes = [...new Set(allProducts.map(p => p.category))].filter(Boolean);
         const opcoes = {};
         categoriasExistentes.forEach(c => opcoes[c] = c);
-        opcoes["Nova"] = "+ Criar Nova Categoria";
+        opcoes["Nova"] = "+ Criar Nova";
 
         const { value: cat } = await Swal.fire({
             title: 'Categoria',
             input: 'select',
-            inputOptions: opcoes,
-            inputPlaceholder: 'Selecione...'
+            inputOptions: opcoes
         });
 
         if (!cat) return;
-
         if (cat === "Nova") {
-            const { value: nCat } = await Swal.fire({
-                title: 'Nome da Nova Categoria',
-                input: 'text',
-                preConfirm: (v) => v || Swal.showValidationMessage('Digite o nome')
-            });
+            const { value: nCat } = await Swal.fire({ title: 'Nome da Categoria', input: 'text' });
             novoProduto.category = nCat || 'Geral';
         } else {
             novoProduto.category = cat;
         }
 
-        // PASSO FINAL: CONFIRMAÇÃO
+        // Salvar
         const confirm = await Swal.fire({
-            title: 'Salvar Agora?',
-            html: `<b>${novoProduto.name}</b><br>R$ ${novoProduto.value.toFixed(2)}`,
+            title: 'Salvar agora?',
+            text: novoProduto.name,
             icon: 'question',
             showCancelButton: true,
-            confirmButtonText: 'Sim, Salvar!',
-            confirmButtonColor: '#10b981'
+            confirmButtonText: 'Sim, Salvar!'
         });
 
         if (confirm.isConfirmed) {
-            // Vincula as imagens que o Cropper processou
+            // Aqui ele pega o que o seu sistema de imagens já processou
             novoProduto.images = typeof currentProductImages !== 'undefined' ? currentProductImages : [];
             
-            // Chama a sua função oficial de salvamento
-            // Passamos 'null' no evento pois a função espera um event como 1º param
+            // Chama a sua função handleSaveProduct (que está no seu index 99)
             if (typeof handleSaveProduct === 'function') {
                 await handleSaveProduct(null, novoProduto);
-                Swal.fire('Sucesso!', 'Produto cadastrado com rapidez!', 'success');
+                Swal.fire('Sucesso!', 'Produto salvo!', 'success');
             } else {
-                console.error("Função handleSaveProduct não encontrada!");
-                Swal.fire('Erro', 'Não conseguimos salvar automaticamente.', 'error');
+                alert("Erro: Função de salvar não encontrada no script.");
             }
         }
-
     } catch (e) {
-        console.error("Erro no cadastro rápido:", e);
+        console.error(e);
     }
-     }
+};
+  
 
 
 window.toggleLojaStatus = async () => {
