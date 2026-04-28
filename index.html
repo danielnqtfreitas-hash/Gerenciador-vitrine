@@ -1056,14 +1056,15 @@ if ('serviceWorker' in navigator) {
                 <div class="flex flex-col md:flex-row justify-between items-center gap-4">
                     <div class="relative w-full md:w-96"><i data-lucide="search" class="absolute left-4 top-3.5 text-slate-400 w-4 h-4"></i><input type="text" id="productSearch" onkeyup="renderProductList()" placeholder="Pesquisar catálogo..." class="w-full pl-12 border rounded-2xl p-3.5 outline-none bg-white"></div>
                     <div class="flex flex-col gap-2 w-full md:w-auto">
-    <button onclick="openAddProductModal()" class="w-full bg-slate-900 text-white px-8 py-3.5 rounded-2xl font-bold flex justify-center items-center gap-2 shadow-lg uppercase text-sm">
+    <div class="flex flex-col gap-2 w-full md:w-auto">
+    <button onclick="window.openProductModal()" class="w-full bg-slate-900 text-white px-8 py-3.5 rounded-2xl font-bold flex justify-center items-center gap-2 shadow-lg uppercase text-sm">
         <i data-lucide="plus" class="w-5 h-5"></i> Novo Produto
     </button>
 
     <button onclick="fluxoCadastroRapido()" class="w-full bg-gradient-to-r from-orange-500 to-amber-600 text-white px-8 py-3 rounded-2xl font-bold flex justify-center items-center gap-2 shadow-md hover:scale-[1.02] transition-all uppercase text-[12px]">
-        <i data-lucide="zap" class="w-4 h-4 fill-white"></i> Produto Rápido
+        <i data-lucide="zap" class="w-4 h-4 fill-white text-white border-none"></i> Produto Rápido
     </button>
-                    </div>
+    </div>
                 </div>
                 <div id="productListGrouped" class="space-y-4 pb-12"></div>
             </div>
