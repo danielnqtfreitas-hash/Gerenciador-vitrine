@@ -8250,17 +8250,14 @@ async function testarNotificacao() {
 }
 
 window.fluxoCadastroRapido = async function() {
-    // 1. Reset total para garantir que não misture com o produto anterior
+    // 1. Reset completo dos estados globais do seu index (99).html
     currentProductImages = [];
     variationsMatrix = [];
     if (typeof window.currentProductComplements !== 'undefined') window.currentProductComplements = [];
     
-    let dadosBase = {
-        name: '',
-        value: 0,
-        category: '',
-        sku: 'R' + Math.floor(Date.now() / 1000)
-    };
+    // Limpa visualmente o container de imagens
+    const containerImgs = document.getElementById('imagePreviews');
+    if(containerImgs) containerImgs.innerHTML = '';
 
     try {
         // ETAPA 1: FOTO
@@ -8269,13 +8266,12 @@ window.fluxoCadastroRapido = async function() {
             text: 'Selecione a imagem principal',
             input: 'file',
             inputAttributes: { 'accept': 'image/*' },
-            confirmButtonText: 'Próximo →',
-            showCancelButton: true
+            confirmButtonText: 'Próximo →'
         });
 
         if (!file) return;
 
-        // Dispara o Cropper real
+        // Gatilho para o Cropper
         const inputReal = document.getElementById('productImages'); 
         if (inputReal) {
             const dt = new DataTransfer();
@@ -8286,7 +8282,7 @@ window.fluxoCadastroRapido = async function() {
             await Swal.fire({
                 icon: 'info',
                 title: 'Ajuste o Recorte',
-                text: 'Recorte a foto no editor que abriu e clique em "Confirmar Recorte". Depois volte aqui para continuar.',
+                text: 'Recorte a foto no editor, clique em "Confirmar Recorte" e depois retorne aqui.',
                 confirmButtonText: 'Já recortei, continuar'
             });
         }
@@ -8295,39 +8291,34 @@ window.fluxoCadastroRapido = async function() {
         const { value: nome } = await Swal.fire({
             title: '2. Nome do Produto',
             input: 'text',
-            inputPlaceholder: 'Ex: Camiseta Slim Fit',
             confirmButtonText: 'Próximo →',
-            preConfirm: (v) => v || Swal.showValidationMessage('O nome é obrigatório')
+            preConfirm: (v) => v || Swal.showValidationMessage('Nome obrigatório')
         });
         if (!nome) return;
-        dadosBase.name = nome;
 
         // ETAPA 3: PREÇO
         const { value: preco } = await Swal.fire({
-            title: '3. Valor de Venda',
+            title: '3. Preço de Venda',
             input: 'number',
             inputAttributes: { step: '0.01' },
-            inputPlaceholder: '0,00',
-            confirmButtonText: 'Próximo →',
-            preConfirm: (v) => v > 0 || Swal.showValidationMessage('Insira um valor válido')
+            confirmButtonText: 'Próximo →'
         });
         if (!preco) return;
-        dadosBase.value = Number(preco);
 
         // ETAPA 4: TAMANHOS E CORES
         const { value: tamanhosTxt } = await Swal.fire({
             title: '4. Tamanhos',
-            text: 'Ex: P, M, G (Separe por vírgula ou deixe vazio)',
+            text: 'Ex: P, M, G',
             input: 'text'
         });
 
         const { value: coresTxt } = await Swal.fire({
             title: '5. Cores',
-            text: 'Ex: Preto, Branco (Separe por vírgula ou deixe vazio)',
+            text: 'Ex: Preto, Branco',
             input: 'text'
         });
 
-        // LÓGICA DE VARIAÇÕES E SOMA DE ESTOQUE
+        // LÓGICA DE VARIAÇÕES E SOMA
         const listaT = tamanhosTxt ? tamanhosTxt.split(',').map(s => s.trim()) : ['Único'];
         const listaC = coresTxt ? coresTxt.split(',').map(c => c.trim()) : ['Padrão'];
         
@@ -8337,7 +8328,6 @@ window.fluxoCadastroRapido = async function() {
             for (let c of listaC) {
                 const { value: est, isDismissed, isDenied } = await Swal.fire({
                     title: `Estoque: ${t} - ${c}`,
-                    html: `Quantas unidades de <b>${t}</b> na cor <b>${c}</b>?`,
                     input: 'number',
                     inputValue: 1,
                     showDenyButton: true,
@@ -8348,65 +8338,83 @@ window.fluxoCadastroRapido = async function() {
                 if (!isDismissed && !isDenied) {
                     const qtd = Number(est) || 0;
                     variationsMatrix.push({
-                        id: Date.now() + Math.random(),
+                        id: Date.now() + Math.random().toString(36).substr(2, 9),
                         size: t,
                         color: c,
                         stock: qtd,
-                        price: dadosBase.value
+                        price: Number(preco)
                     });
                     somaEstoqueTotal += qtd;
                 }
             }
         }
 
-        // ETAPA 7: CATEGORIA
+        // ETAPA 6: CATEGORIA
         const categoriasExistentes = [...new Set(allProducts.map(p => p.category))].filter(Boolean);
         const opcoes = {};
         categoriasExistentes.forEach(c => opcoes[c] = c);
         opcoes["Nova"] = "+ Criar Nova";
 
         const { value: cat } = await Swal.fire({
-            title: '7. Categoria',
+            title: '6. Categoria',
             input: 'select',
             inputOptions: opcoes
         });
 
+        let categoriaFinal = cat;
         if (cat === "Nova") {
             const { value: nCat } = await Swal.fire({ title: 'Nome da Categoria', input: 'text' });
-            dadosBase.category = nCat || 'Geral';
-        } else {
-            dadosBase.category = cat || 'Geral';
+            categoriaFinal = nCat || 'Geral';
+            
+            // Adiciona a nova categoria ao Select real do HTML para não dar erro de associação
+            const catSelect = document.getElementById('prodCategory');
+            if (catSelect && categoriaFinal) {
+                const opt = document.createElement('option');
+                opt.value = categoriaFinal;
+                opt.text = categoriaFinal;
+                catSelect.add(opt);
+            }
         }
 
-        // FINALIZAÇÃO - ALIMENTANDO O SISTEMA
-        document.getElementById('prodName').value = dadosBase.name;
-        document.getElementById('prodValue').value = dadosBase.value; // Corrigido para prodValue
-        document.getElementById('prodCategory').value = dadosBase.category;
-        document.getElementById('prodStock').value = somaEstoqueTotal; // Soma automática aplicada aqui
+        // --- FINALIZAÇÃO E SINCRONIZAÇÃO COM O DOM ---
+        
+        // 1. Preenche os Inputs
+        document.getElementById('prodName').value = nome;
+        document.getElementById('prodValue').value = Number(preco);
+        document.getElementById('prodCategory').value = categoriaFinal;
+        document.getElementById('prodStock').value = somaEstoqueTotal;
         document.getElementById('prodId').value = ''; 
 
-        // Se o recorte funcionou, as imagens estão no currentProductImages. Vamos renderizar.
-        if (typeof renderImagePreviews === "function") {
+        // 2. Sincroniza a Foto (Crucial)
+        // O Cropper do index(99) joga a imagem em currentProductImages. 
+        // Chamamos a função de renderização que você já tem:
+        if (typeof renderImagePreviews === 'function') {
             renderImagePreviews();
         }
 
-        // Renderiza a grade de variações
+        // 3. Sincroniza a Grade de Variações
+        const matrixCont = document.getElementById('variationMatrixContainer');
         if (variationsMatrix.length > 0) {
-            renderMatrixUI(); 
-            document.getElementById('variationMatrixContainer')?.classList.remove('hidden');
+            if (matrixCont) matrixCont.classList.remove('hidden');
+            if (typeof renderMatrixUI === 'function') {
+                renderMatrixUI();
+            }
+        } else {
+            if (matrixCont) matrixCont.classList.add('hidden');
         }
 
-        // Abre o modal final
+        // 4. Abre o modal e cria os ícones (Lucide)
         document.getElementById('productModal').classList.remove('hidden');
+        if (typeof lucide !== 'undefined') lucide.createIcons();
         
         Swal.fire({
-            title: 'Tudo pronto!',
-            text: 'Revise os dados e clique em SALVAR no final da página.',
+            title: 'Quase pronto!',
+            text: 'Verifique se a foto apareceu e clique em SALVAR.',
             icon: 'success'
         });
 
     } catch (e) {
-        console.error("Erro no fluxo:", e);
+        console.error("Erro no cadastro rápido:", e);
     }
 };
  
