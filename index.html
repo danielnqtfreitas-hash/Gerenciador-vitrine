@@ -8249,71 +8249,121 @@ async function testarNotificacao() {
     }
 }
 
-   // Adicionando ao window para garantir que o botão HTML encontre a função
-window.fluxoCadastroRapido = async function() {
-    console.log("Iniciando fluxo rápido..."); // Isso aparecerá no F12 se funcionar
+   window.fluxoCadastroRapido = async function() {
+    // 1. Reinicia os dados temporários do seu sistema para um novo produto
+    currentProductImages = [];
+    variationsMatrix = [];
     
     let novoProduto = {
         name: '',
         value: 0,
         category: '',
-        stock: 1,
+        stock: 0,
+        sku: 'QR' + Math.floor(Date.now() / 1000),
         images: [],
-        sku: 'R' + Math.floor(Date.now() / 1000),
-        posicaoProvador: 'superior',
-        description: '',
+        description: 'Cadastrado via modo rápido',
         createdAt: Date.now()
     };
 
     try {
-        // Passo 1: Foto
+        // PASSO 1: FOTO E RECORTE
         const { value: file } = await Swal.fire({
-            title: 'Foto do Produto',
+            title: '1. Foto do Produto',
             text: 'Selecione a imagem principal',
             input: 'file',
             inputAttributes: { 'accept': 'image/*' },
-            confirmButtonText: 'Escolher Foto →',
+            confirmButtonText: 'Abrir Editor de Recorte →',
             showCancelButton: true
         });
 
         if (!file) return;
 
-        // Dispara o Cropper que você já tem no index 99
+        // Dispara o seu Cropper real do sistema
         const inputReal = document.getElementById('productImages'); 
         if (inputReal) {
             const dt = new DataTransfer();
             dt.items.add(file);
             inputReal.files = dt.files;
             inputReal.dispatchEvent(new Event('change')); 
+            
+            // Aguarda um pouco para o modal do cropper abrir e avisa o usuário
+            await Swal.fire({
+                icon: 'info',
+                title: 'Ajuste sua Foto',
+                text: 'O editor abriu ao fundo. Recorte a imagem, clique em "Confirmar Recorte" e depois clique aqui para continuar.',
+                confirmButtonText: 'Já recortei, continuar cadastro →'
+            });
         }
 
-        await Swal.fire({
-            icon: 'info',
-            title: 'Ajuste o Recorte',
-            text: 'Corte a foto no quadro que apareceu e clique em "Confirmar Recorte". Depois volte aqui.',
-            confirmButtonText: 'Já recortei, continuar →'
+        // PASSO 2: NOME E PREÇO
+        const { value: formValues } = await Swal.fire({
+            title: 'Informações Básicas',
+            html:
+                '<input id="swal-name" class="swal2-input" placeholder="Nome do Produto">' +
+                '<input id="swal-price" type="number" class="swal2-input" placeholder="Preço de Venda">',
+            focusConfirm: false,
+            preConfirm: () => {
+                const n = document.getElementById('swal-name').value;
+                const p = document.getElementById('swal-price').value;
+                if (!n || !p) return Swal.showValidationMessage('Preencha nome e preço');
+                return { name: n, price: p };
+            }
         });
+        if (!formValues) return;
+        novoProduto.name = formValues.name;
+        novoProduto.value = Number(formValues.price);
 
-        // Passo 2: Nome
-        const { value: nome } = await Swal.fire({
-            title: 'Qual o nome?',
+        // PASSO 3: TAMANHOS
+        const { value: tamanhos } = await Swal.fire({
+            title: 'Quais os Tamanhos?',
             input: 'text',
-            preConfirm: (v) => v || Swal.showValidationMessage('Nome obrigatório')
+            inputPlaceholder: 'Ex: P, M, G ou 36, 38, 40',
+            text: 'Separe por vírgula. Deixe em branco se não tiver.',
+            confirmButtonText: 'Próximo →'
         });
-        if (!nome) return;
-        novoProduto.name = nome;
 
-        // Passo 3: Preço
-        const { value: preco } = await Swal.fire({
-            title: 'Preço (R$)',
-            input: 'number',
-            inputAttributes: { step: '0.01' },
-            preConfirm: (v) => v > 0 || Swal.showValidationMessage('Valor inválido')
+        // PASSO 4: CORES
+        const { value: cores } = await Swal.fire({
+            title: 'Quais as Cores?',
+            input: 'text',
+            inputPlaceholder: 'Ex: Preto, Azul, Branco',
+            text: 'Separe por vírgula. Deixe em branco se não tiver.',
+            confirmButtonText: 'Próximo →'
         });
-        if (!preco) return;
-        novoProduto.value = Number(preco);
 
-        // Passo 4: Categoria
+        // GERAÇÃO AUTOMÁTICA DA GRADE (ESTOQUE)
+        if (tamanhos || cores) {
+            const listaT = tamanhos ? tamanhos.split(',').map(s => s.trim()) : ['Único'];
+            const listaC = cores ? cores.split(',').map(c => c.trim()) : ['Padrão'];
+            
+            // Criamos a matriz de variações para o seu sistema entender
+            listaT.forEach(t => {
+                listaC.forEach(c => {
+                    variationsMatrix.push({
+                        id: Date.now() + Math.random(),
+                        size: t,
+                        color: c,
+                        stock: 1, // Estoque padrão inicial
+                        price: novoProduto.value
+                    });
+                });
+            });
+
+            await Swal.fire({
+                title: 'Estoque Gerado!',
+                text: `Geramos ${variationsMatrix.length} variações. Você poderá ajustar o estoque individual de cada uma na tela final.`,
+                icon: 'success'
+            });
+        } else {
+            const { value: est } = await Swal.fire({
+                title: 'Quantidade em Estoque',
+                input: 'number',
+                inputValue: 1
+            });
+            novoProduto.stock = Number(est);
+        }
+
+        // PASSO 5: CATEGORIA
         const categoriasExistentes = [...new Set(allProducts.map(p => p.category))].filter(Boolean);
         const opcoes = {};
         categoriasExistentes.forEach(c => opcoes[c] = c);
@@ -8325,40 +8375,46 @@ window.fluxoCadastroRapido = async function() {
             inputOptions: opcoes
         });
 
-        if (!cat) return;
         if (cat === "Nova") {
             const { value: nCat } = await Swal.fire({ title: 'Nome da Categoria', input: 'text' });
             novoProduto.category = nCat || 'Geral';
         } else {
-            novoProduto.category = cat;
+            novoProduto.category = cat || 'Geral';
         }
 
-        // Salvar
-        const confirm = await Swal.fire({
-            title: 'Salvar agora?',
-            text: novoProduto.name,
-            icon: 'question',
-            showCancelButton: true,
-            confirmButtonText: 'Sim, Salvar!'
-        });
+        // FINALIZAÇÃO: Manda para o seu modal original para revisão final
+        // Isso garante que TODA a sua lógica de salvar (Firebase) funcione sem erros
+        abrirRevisaoFinal(novoProduto);
 
-        if (confirm.isConfirmed) {
-            // Aqui ele pega o que o seu sistema de imagens já processou
-            novoProduto.images = typeof currentProductImages !== 'undefined' ? currentProductImages : [];
-            
-            // Chama a sua função handleSaveProduct (que está no seu index 99)
-            if (typeof handleSaveProduct === 'function') {
-                await handleSaveProduct(null, novoProduto);
-                Swal.fire('Sucesso!', 'Produto salvo!', 'success');
-            } else {
-                alert("Erro: Função de salvar não encontrada no script.");
-            }
-        }
     } catch (e) {
         console.error(e);
     }
 };
-  
+
+function abrirRevisaoFinal(dados) {
+    // Preenche o seu formulário real que já está no HTML
+    document.getElementById('prodName').value = dados.name;
+    document.getElementById('prodValue').value = dados.value;
+    document.getElementById('prodCategory').value = dados.category;
+    document.getElementById('prodStock').value = dados.stock;
+    document.getElementById('prodId').value = ''; // Novo produto
+    
+    // Se houve variações, o sistema de matriz já está preenchido, só pedimos para renderizar
+    if (variationsMatrix.length > 0) {
+        const matrixCont = document.getElementById('variationMatrixContainer');
+        if(matrixCont) matrixCont.classList.remove('hidden');
+        renderMatrixUI(); // Função que já existe no seu index (99)
+    }
+
+    // Abre o seu modal principal para o usuário dar o clique final em "Salvar"
+    document.getElementById('productModal').classList.remove('hidden');
+    
+    Swal.fire({
+        title: 'Quase lá!',
+        text: 'Preenchemos os dados principais. Agora revise a grade de estoque e clique em SALVAR no final da página.',
+        icon: 'success'
+    });
+}
 
 
 window.toggleLojaStatus = async () => {
