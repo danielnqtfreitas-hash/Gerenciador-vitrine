@@ -8250,147 +8250,228 @@ async function testarNotificacao() {
 }
 
 window.fluxoCadastroRapido = async function() {
-    // 1. Limpeza de estados anteriores
+    // Reset de estados e variáveis de controle
     currentProductImages = [];
     variationsMatrix = [];
     imageQueue = [];
     
-    try {
-        // ETAPA 1: FOTO
-        const { value: fileSelected } = await Swal.fire({
-            title: '1. Foto do Produto',
-            html: `
-                <div class="mt-2 text-left">
-                    <p class="text-sm text-gray-500 mb-4">Escolha a foto para abrir o editor.</p>
-                    <input type="file" id="swal-input-file" accept="image/*" class="block w-full text-sm border rounded-lg cursor-pointer bg-gray-50 p-2">
-                </div>
-            `,
-            showCancelButton: true,
-            confirmButtonText: 'Abrir Editor →'
-        });
+    let passo = 1;
+    let dados = {
+        nome: '',
+        pix: '',
+        cartao: '',
+        categoria: '',
+        cores: '',
+        tamanhos: ''
+    };
 
-        if (!fileSelected) return;
+    // Função auxiliar para os inputs do SweetAlert
+    const swalConfig = (title, placeholder, value, example) => ({
+        title: title,
+        html: `<p class="text-xs text-gray-500 mb-1">Exemplo: ${example}</p>`,
+        input: 'text',
+        inputPlaceholder: placeholder,
+        inputValue: value,
+        showDenyButton: passo > 1,
+        denyButtonText: '← Voltar',
+        confirmButtonText: 'Próximo →',
+        showCancelButton: true,
+        cancelButtonText: 'Sair',
+        inputValidator: (v) => !v && 'Este campo é obrigatório!'
+    });
 
-        const inputArquivo = document.getElementById('swal-input-file');
-        if (inputArquivo.files[0]) {
-            const reader = new FileReader();
-            reader.onload = (e) => {
-                imageQueue.push(e.target.result);
-                openCropModal(e.target.result);
-            };
-            reader.readAsDataURL(inputArquivo.files[0]);
-        }
+    while (passo <= 9) {
+        try {
+            // PASSO 1: FOTO
+            if (passo === 1) {
+                const { isConfirmed, isDismissed } = await Swal.fire({
+                    title: '1. Foto do Produto',
+                    html: `<p class="text-xs text-gray-500 mb-4">Exemplo: Uma foto clara do item de frente</p>
+                           <input type="file" id="swal-file" accept="image/*" class="block w-full text-sm border rounded-lg p-2 bg-gray-50">`,
+                    confirmButtonText: 'Abrir Editor →',
+                    showCancelButton: true,
+                    cancelButtonText: 'Sair',
+                    preConfirm: () => document.getElementById('swal-file').files[0]
+                });
 
-        // ESPERA O RECORTE
-        const toast = Swal.mixin({ toast: true, position: 'top-end', showConfirmButton: false });
-        toast.fire({ icon: 'info', title: 'Ajuste o recorte e confirme no editor' });
-
-        await new Promise((resolve) => {
-            const check = setInterval(() => {
-                if (currentProductImages.length > 0) {
-                    clearInterval(check);
-                    resolve();
-                }
-            }, 500);
-        });
-
-        // ETAPA 2: NOME E PREÇO
-        const { value: nome } = await Swal.fire({ title: '2. Nome', input: 'text' });
-        const { value: preco } = await Swal.fire({ title: '3. Preço', input: 'number', inputAttributes: { step: '0.01' } });
-        if (!nome || !preco) return;
-
-        // ETAPA 3: CATEGORIA (CORREÇÃO DA ASSOCIAÇÃO)
-        let listaCats = {};
-        if (typeof allCategories !== 'undefined') {
-            allCategories.forEach(c => listaCats[c.name] = c.name);
-        }
-        listaCats["Nova"] = "+ Criar Nova";
-
-        const { value: catSel } = await Swal.fire({
-            title: '4. Categoria',
-            input: 'select',
-            inputOptions: listaCats
-        });
-
-        let categoriaFinal = catSel;
-        if (catSel === "Nova") {
-            const { value: nCat } = await Swal.fire({ title: 'Nome da Categoria', input: 'text' });
-            categoriaFinal = nCat || 'Geral';
-        }
-
-        // ETAPA 4: VARIAÇÕES (CORES E TAMANHOS)
-        const { value: modo } = await Swal.fire({
-            title: 'Configurar Variações?',
-            showCancelButton: true,
-            confirmButtonText: 'Sim (Cores/Tamanhos)',
-            cancelButtonText: 'Não (Estoque Único)'
-        });
-
-        let estoqueTotal = 0;
-
-        if (modo) {
-            const { value: cores } = await Swal.fire({ title: 'Cores', text: 'Ex: Azul, Preto', input: 'text', inputValue: 'Padrão' });
-            const { value: tamanhos } = await Swal.fire({ title: 'Tamanhos', text: 'Ex: P, M, G', input: 'text', inputValue: 'Único' });
-
-            const listC = cores.split(',').map(s => s.trim().toUpperCase());
-            const listT = tamanhos.split(',').map(s => s.trim().toUpperCase());
-
-            for (let c of listC) {
-                for (let t of listT) {
-                    const { value: q } = await Swal.fire({ title: `Qtd: ${c} / ${t}`, input: 'number', inputValue: 1 });
-                    const qtd = parseInt(q) || 0;
-                    estoqueTotal += qtd;
-                    variationsMatrix.push({
-                        id: 'v_' + Date.now() + Math.random().toString(36).substr(2,5),
-                        color: c,
-                        size: t,
-                        stock: qtd,
-                        price: parseFloat(preco),
-                        active: true
+                if (isDismissed) return;
+                const file = document.getElementById('swal-file').files[0];
+                
+                if (file) {
+                    const reader = new FileReader();
+                    reader.onload = (e) => {
+                        imageQueue.push(e.target.result);
+                        openCropModal(e.target.result);
+                    };
+                    reader.readAsDataURL(file);
+                    
+                    // Espera o recorte ser concluído no seu modal original
+                    await new Promise(resolve => {
+                        const check = setInterval(() => {
+                            if (currentProductImages.length > 0) { clearInterval(check); resolve(); }
+                        }, 500);
                     });
+                    passo = 2;
+                } else {
+                    Swal.showValidationMessage('Selecione uma foto primeiro!');
                 }
             }
-        } else {
-            const { value: q } = await Swal.fire({ title: 'Estoque Total', input: 'number', inputValue: 1 });
-            estoqueTotal = parseInt(q) || 0;
-            variationsMatrix.push({
-                id: 'v_' + Date.now(),
-                color: 'PADRÃO',
-                size: 'ÚNICO',
-                stock: estoqueTotal,
-                price: parseFloat(preco),
-                active: true
-            });
-        }
 
-        // ETAPA 5: SALVAMENTO (SINCRONIA TOTAL)
-        Swal.fire({ title: 'Salvando...', didOpen: () => Swal.showLoading() });
-
-        // Função auxiliar para forçar o sistema a aceitar o valor
-        const forceInput = (id, val) => {
-            const el = document.getElementById(id);
-            if (el) {
-                el.value = val;
-                // Dispara eventos para que o Firebase e os validadores do sistema leiam o valor
-                el.dispatchEvent(new Event('input', { bubbles: true }));
-                el.dispatchEvent(new Event('change', { bubbles: true }));
+            // PASSO 2: NOME
+            else if (passo === 2) {
+                const res = await Swal.fire(swalConfig('2. Nome do Produto', 'Digite o nome...', dados.nome, 'Camiseta Oversized Preta'));
+                if (res.isDismissed) return;
+                if (res.isDenied) { passo = 1; currentProductImages = []; continue; }
+                dados.nome = res.value;
+                passo = 3;
             }
-        };
 
-        forceInput('prodName', nome);
-        forceInput('prodValue', preco);
-        forceInput('prodCategory', categoriaFinal); // AQUI ASSOCIA A CATEGORIA
-        forceInput('prodStock', estoqueTotal); // AQUI PREENCHE O ESTOQUE TOTAL
-        forceInput('prodId', ""); 
+            // PASSO 3: PREÇO PIX
+            else if (passo === 3) {
+                const res = await Swal.fire({...swalConfig('3. Preço à Vista (PIX)', '0.00', dados.pix, '89.90'), input: 'number'});
+                if (res.isDismissed) return;
+                if (res.isDenied) { passo = 2; continue; }
+                dados.pix = res.value;
+                passo = 4;
+            }
 
-        if (typeof window.handleProductSubmit === 'function') {
-            await window.handleProductSubmit({ preventDefault: () => {} });
-            Swal.fire({ icon: 'success', title: 'Sucesso!', text: `Categoria: ${categoriaFinal} | Estoque: ${estoqueTotal}` });
+            // PASSO 4: PREÇO CARTÃO
+            else if (passo === 4) {
+                const res = await Swal.fire({...swalConfig('4. Preço no Cartão', '0.00', dados.cartao || dados.pix, '99.90'), input: 'number'});
+                if (res.isDismissed) return;
+                if (res.isDenied) { passo = 3; continue; }
+                dados.cartao = res.value;
+                passo = 5;
+            }
+
+            // PASSO 5: CATEGORIA
+            else if (passo === 5) {
+                let cats = {};
+                if (typeof allCategories !== 'undefined') allCategories.forEach(c => cats[c.name] = c.name);
+                cats["Nova"] = "+ Criar Nova Categoria";
+
+                const res = await Swal.fire({
+                    title: '5. Categoria',
+                    html: `<p class="text-xs text-gray-500 mb-1">Exemplo: Camisetas, Calçados ou Acessórios</p>`,
+                    input: 'select',
+                    inputOptions: cats,
+                    inputValue: dados.categoria,
+                    showDenyButton: true,
+                    denyButtonText: '← Voltar',
+                    confirmButtonText: 'Próximo →'
+                });
+
+                if (res.isDismissed) return;
+                if (res.isDenied) { passo = 4; continue; }
+
+                if (res.value === "Nova") {
+                    const { value: nCat } = await Swal.fire({ title: 'Nome da Nova Categoria', input: 'text', inputPlaceholder: 'Ex: Promoções' });
+                    dados.categoria = nCat || 'Geral';
+                } else {
+                    dados.categoria = res.value;
+                }
+                passo = 6;
+            }
+
+            // PASSO 6: CORES
+            else if (passo === 6) {
+                const res = await Swal.fire(swalConfig('6. Cores Disponíveis', 'Azul, Preto...', dados.cores || 'PADRÃO', 'Preto, Branco, Azul'));
+                if (res.isDismissed) return;
+                if (res.isDenied) { passo = 5; continue; }
+                dados.cores = res.value;
+                passo = 7;
+            }
+
+            // PASSO 7: TAMANHOS
+            else if (passo === 7) {
+                const res = await Swal.fire(swalConfig('7. Tamanhos Disponíveis', 'P, M, G...', dados.tamanhos || 'ÚNICO', 'P, M, G, GG ou 38, 40, 42'));
+                if (res.isDismissed) return;
+                if (res.isDenied) { passo = 6; continue; }
+                dados.tamanhos = res.value;
+                passo = 8;
+            }
+
+            // PASSO 8: ESTOQUE POR VARIAÇÃO
+            else if (passo === 8) {
+                const listC = dados.cores.split(',').map(s => s.trim().toUpperCase());
+                const listT = dados.tamanhos.split(',').map(s => s.trim().toUpperCase());
+                
+                variationsMatrix = [];
+                let total = 0;
+                let principalSku = 'SKU-' + Date.now().toString().slice(-6);
+                let voltarCores = false;
+
+                for (let c of listC) {
+                    for (let t of listT) {
+                        const { value: q, isDismissed } = await Swal.fire({ 
+                            title: `Estoque para: ${c} / ${t}`, 
+                            html: `<p class="text-xs text-gray-500">Quanto você tem desse modelo no estoque?</p>`,
+                            input: 'number', 
+                            inputValue: 1,
+                            showCancelButton: true,
+                            cancelButtonText: '← Voltar para Tamanhos'
+                        });
+
+                        if (isDismissed) { voltarCores = true; break; }
+
+                        const qtd = parseInt(q) || 0;
+                        total += qtd;
+                        variationsMatrix.push({
+                            id: 'v_' + Date.now() + Math.random().toString(36).substr(2,5),
+                            color: c, size: t, stock: qtd, price: parseFloat(dados.pix),
+                            sku: `${principalSku}-${c.slice(0,2)}-${t.slice(0,2)}`.replace(/[^a-z0-9-]/gi, ''),
+                            active: true
+                        });
+                    }
+                    if (voltarCores) break;
+                }
+
+                if (voltarCores) { passo = 7; continue; }
+                dados.estoqueTotal = total;
+                dados.sku = principalSku;
+                passo = 9;
+            }
+
+            // PASSO 9: SALVAMENTO FINAL
+            else if (passo === 9) {
+                Swal.fire({ title: 'Finalizando Cadastro...', didOpen: () => Swal.showLoading() });
+
+                const set = (id, val) => {
+                    const el = document.getElementById(id);
+                    if (el) {
+                        el.value = val;
+                        el.dispatchEvent(new Event('input', { bubbles: true }));
+                        el.dispatchEvent(new Event('change', { bubbles: true }));
+                    }
+                };
+
+                set('prodName', dados.nome);
+                set('prodValue', dados.pix);
+                set('prodCard', dados.cartao);
+                set('prodStock', dados.estoqueTotal);
+                set('prodSku', dados.sku);
+                set('prodId', ""); 
+                
+                const sel = document.getElementById('prodCategory');
+                if (sel) {
+                    if (!Array.from(sel.options).some(o => o.value === dados.categoria)) {
+                        sel.add(new Option(dados.categoria, dados.categoria));
+                    }
+                    sel.value = dados.categoria;
+                    sel.dispatchEvent(new Event('change', { bubbles: true }));
+                }
+
+                if (typeof window.handleProductSubmit === 'function') {
+                    await window.handleProductSubmit({ preventDefault: () => {} });
+                    Swal.fire({ icon: 'success', title: 'Produto Cadastrado!', text: `O produto ${dados.nome} já está na sua loja.`, timer: 3000, showConfirmButton: false });
+                }
+                break;
+            }
+        } catch (e) {
+            console.error(e);
+            Swal.fire('Erro', 'Algo deu errado. Tente novamente.', 'error');
+            break;
         }
-
-    } catch (e) {
-        console.error(e);
-        Swal.fire('Erro', e.message, 'error');
     }
 };
 
