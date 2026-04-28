@@ -8250,65 +8250,71 @@ async function testarNotificacao() {
 }
 
      async function fluxoCadastroRapido() {
+    // Objeto inicial do produto
     let novoProduto = {
         name: '',
         value: 0,
         category: '',
         stock: 1,
         images: [],
-        posicaoProvador: 'nenhuma',
+        sku: 'R' + Math.floor(Date.now() / 1000), // Gera um SKU rápido
+        posicaoProvador: 'superior',
+        description: '',
         createdAt: Date.now()
     };
 
     try {
-        // 1. FOTO
+        // PASSO 1: FOTO
         const { value: file } = await Swal.fire({
-            title: 'Passo 1: Foto',
-            text: 'Selecione a imagem do produto',
+            title: 'Foto do Produto',
+            text: 'Selecione a imagem principal',
             input: 'file',
             inputAttributes: { 'accept': 'image/*' },
-            confirmButtonText: 'Próximo →',
-            showCancelButton: true
+            confirmButtonText: 'Escolher Foto →',
+            showCancelButton: true,
+            cancelButtonText: 'Cancelar'
         });
 
         if (!file) return;
 
-        // Dispara o seu sistema de recorte
+        // Dispara o seu sistema de recorte (Cropper)
         const inputReal = document.getElementById('productImages'); 
-        const dt = new DataTransfer();
-        dt.items.add(file);
-        inputReal.files = dt.files;
-        inputReal.dispatchEvent(new Event('change')); 
+        if (inputReal) {
+            const dt = new DataTransfer();
+            dt.items.add(file);
+            inputReal.files = dt.files;
+            inputReal.dispatchEvent(new Event('change')); 
+        }
 
         await Swal.fire({
             icon: 'info',
             title: 'Ajuste o Recorte',
-            text: 'Corte a foto no quadro que apareceu e clique em "Confirmar Recorte". Depois volte aqui para continuar.',
+            text: 'Recorte a imagem e confirme no editor. Depois volte aqui para continuar.',
             confirmButtonText: 'Já recortei, continuar →'
         });
 
-        // 2. NOME
+        // PASSO 2: NOME
         const { value: nome } = await Swal.fire({
-            title: 'Nome do Produto',
+            title: 'Qual o nome?',
             input: 'text',
-            inputPlaceholder: 'Ex: Camiseta Básica',
+            inputPlaceholder: 'Ex: Calça Alfaiataria',
             preConfirm: (v) => v || Swal.showValidationMessage('O nome é obrigatório')
         });
         if (!nome) return;
         novoProduto.name = nome;
 
-        // 3. PREÇO
+        // PASSO 3: PREÇO
         const { value: preco } = await Swal.fire({
-            title: 'Valor (R$)',
+            title: 'Preço de Venda (R$)',
             input: 'number',
             inputAttributes: { step: '0.01' },
-            preConfirm: (v) => v > 0 || Swal.showValidationMessage('Insira um valor')
+            preConfirm: (v) => v > 0 || Swal.showValidationMessage('Insira um valor válido')
         });
         if (!preco) return;
         novoProduto.value = Number(preco);
 
-        // 4. CATEGORIA DINÂMICA
-        // Pega as categorias que já existem nos seus produtos
+        // PASSO 4: CATEGORIA (DINÂMICA DA LOJA)
+        // Usando a variável 'allProducts' que já existe no seu sistema
         const categoriasExistentes = [...new Set(allProducts.map(p => p.category))].filter(Boolean);
         const opcoes = {};
         categoriasExistentes.forEach(c => opcoes[c] = c);
@@ -8317,40 +8323,52 @@ async function testarNotificacao() {
         const { value: cat } = await Swal.fire({
             title: 'Categoria',
             input: 'select',
-            inputOptions: opcoes
+            inputOptions: opcoes,
+            inputPlaceholder: 'Selecione...'
         });
+
+        if (!cat) return;
 
         if (cat === "Nova") {
             const { value: nCat } = await Swal.fire({
                 title: 'Nome da Nova Categoria',
-                input: 'text'
+                input: 'text',
+                preConfirm: (v) => v || Swal.showValidationMessage('Digite o nome')
             });
             novoProduto.category = nCat || 'Geral';
         } else {
             novoProduto.category = cat;
         }
 
-        // 5. SALVAR
-        const resumo = await Swal.fire({
-            title: 'Salvar Produto?',
+        // PASSO FINAL: CONFIRMAÇÃO
+        const confirm = await Swal.fire({
+            title: 'Salvar Agora?',
             html: `<b>${novoProduto.name}</b><br>R$ ${novoProduto.value.toFixed(2)}`,
             icon: 'question',
             showCancelButton: true,
-            confirmButtonText: 'Sim, Salvar!'
+            confirmButtonText: 'Sim, Salvar!',
+            confirmButtonColor: '#10b981'
         });
 
-        if (resumo.isConfirmed) {
-            // Usa as imagens que o seu Cropper processou
-            novoProduto.images = typeof uploadedImages !== 'undefined' ? uploadedImages : [];
+        if (confirm.isConfirmed) {
+            // Vincula as imagens que o Cropper processou
+            novoProduto.images = typeof currentProductImages !== 'undefined' ? currentProductImages : [];
             
-            // Chama a sua função de salvar do index 99
-            // Se a sua função de salvar tiver outro nome, mude aqui:
-            await handleSaveProduct(null, novoProduto); 
-            
-            Swal.fire('Sucesso!', 'Produto cadastrado!', 'success');
+            // Chama a sua função oficial de salvamento
+            // Passamos 'null' no evento pois a função espera um event como 1º param
+            if (typeof handleSaveProduct === 'function') {
+                await handleSaveProduct(null, novoProduto);
+                Swal.fire('Sucesso!', 'Produto cadastrado com rapidez!', 'success');
+            } else {
+                console.error("Função handleSaveProduct não encontrada!");
+                Swal.fire('Erro', 'Não conseguimos salvar automaticamente.', 'error');
+            }
         }
-    } catch (e) { console.error(e); }
-}
+
+    } catch (e) {
+        console.error("Erro no cadastro rápido:", e);
+    }
+     }
 
 
 window.toggleLojaStatus = async () => {
