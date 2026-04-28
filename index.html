@@ -3261,13 +3261,11 @@ window.duplicateProduct = function(id) {
     showToast("✨ Cópia criada! Ajuste o nome e salve.");
 };
        
-
-
-     window.handleProductSubmit = async (e, manualData = null) => {
-    if (e) e.preventDefault();
-    
-    // Se manualData existir, usamos o ID vindo dele (ou vazio para novo)
-    const id = manualData ? (manualData.id || '') : document.getElementById('prodId').value;
+        window.handleProductSubmit = async (e) => {
+    e.preventDefault();
+    const tipoNegocio = document.getElementById('configTipoNegocio')?.value || 'varejo';
+    const complementsData = window.currentProductComplements || [];
+    const id = document.getElementById('prodId').value;
     const isNew = !id;
 
     if (isNew && allProducts.length >= (storeConfig.maxProducts || 999)) {
@@ -3275,31 +3273,15 @@ window.duplicateProduct = function(id) {
         return;
     }
 
-    // Gerencia o Loading (Se for rápido, usa SweetAlert. Se for manual, usa o loader do botão)
-    if (!manualData) {
-        const btn = document.getElementById('btnSaveProd');
-        const loader = document.getElementById('imageLoading');
-        if(btn) btn.disabled = true;
-        if(loader) loader.classList.remove('hidden');
-    } else {
-        Swal.fire({ title: 'Salvando no Banco...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
-    }
+    const btn = document.getElementById('btnSaveProd');
+    const loader = document.getElementById('imageLoading');
+    if(btn) btn.disabled = true;
+    if(loader) loader.classList.remove('hidden');
 
     try {
         const finalId = id || 'prod_' + Date.now();
         const docRef = doc(db, `stores/${currentStoreId}/products`, finalId);
         
-        // --- DEFINIÇÃO DOS DADOS (Vem do Wizard ou do Formulário) ---
-        const name = manualData ? manualData.name : document.getElementById('prodName').value;
-        const value = manualData ? manualData.value : parseFloat(document.getElementById('prodValue').value);
-        const category = manualData ? manualData.category : document.getElementById('prodCategory').value;
-        const stock = manualData ? manualData.stock : parseInt(document.getElementById('prodStock').value);
-        const sku = manualData ? manualData.sku : (document.getElementById('prodSku').value || 'R'+Date.now());
-        
-        // As imagens e variações também mudam conforme a origem
-        const imagesToUpload = manualData ? manualData.images : currentProductImages;
-        const variationsToProcess = manualData ? manualData.variations : variationsMatrix;
-
         // --- 1. BUSCA DADOS ANTIGOS PARA GESTÃO DA LIXEIRA ---
         const snap = await getDoc(docRef);
         let trashFiles = [];
@@ -3309,8 +3291,8 @@ window.duplicateProduct = function(id) {
 
         // --- 2. UPLOAD DAS IMAGENS PRINCIPAIS ---
         const imageUrls = [];
-        for (let i = 0; i < imagesToUpload.length; i++) {
-            const img = imagesToUpload[i];
+        for (let i = 0; i < currentProductImages.length; i++) {
+            const img = currentProductImages[i];
             if (img.startsWith('http')) { 
                 imageUrls.push(img); 
             } else {
@@ -3319,7 +3301,6 @@ window.duplicateProduct = function(id) {
                 imageUrls.push(await getDownloadURL(fileRef));
             }
         }
-    
 
                 // --- 3. UPLOAD DAS IMAGENS DE VARIAÇÕES ---
         const updatedVariations = [];
@@ -8269,44 +8250,50 @@ async function testarNotificacao() {
 }
 
 window.fluxoCadastroRapido = async function() {
-    // Reset inicial para evitar conflitos
+    // 1. Reset de variáveis globais para o novo produto
     currentProductImages = [];
     variationsMatrix = [];
-
+    
     try {
-        // 1. FOTO
+        // ETAPA 1: FOTO E RECORTE
         const { value: file } = await Swal.fire({
             title: '1. Foto do Produto',
+            text: 'Selecione a imagem principal',
             input: 'file',
             inputAttributes: { 'accept': 'image/*' },
-            confirmButtonText: 'Próximo →',
-            showCancelButton: true
+            confirmButtonText: 'Abrir Editor →',
+            showCancelButton: true,
+            cancelButtonText: 'Cancelar'
         });
+
         if (!file) return;
 
+        // Gatilho para o seu Cropper atual
         const inputReal = document.getElementById('productImages'); 
         if (inputReal) {
-            const dt = new DataTransfer(); dt.items.add(file);
+            const dt = new DataTransfer();
+            dt.items.add(file);
             inputReal.files = dt.files;
             inputReal.dispatchEvent(new Event('change')); 
+            
             await Swal.fire({
+                icon: 'info',
                 title: 'Ajuste o Recorte',
-                text: 'Recorte a foto no editor que abriu ao fundo e clique em "Confirmar".',
-                confirmButtonText: 'Já recortei, continuar →',
+                text: 'Recorte a foto no editor, confirme e clique abaixo.',
+                confirmButtonText: 'Foto Recortada! Continuar →',
                 allowOutsideClick: false
             });
         }
 
-        // 2. NOME
+        // ETAPA 2: DADOS BÁSICOS (NOME E PREÇO)
         const { value: nome } = await Swal.fire({
             title: '2. Nome do Produto',
             input: 'text',
-            inputPlaceholder: 'Ex: Camisa Polo Azul',
+            inputPlaceholder: 'Ex: Camiseta Básica',
             preConfirm: (v) => v || Swal.showValidationMessage('Nome é obrigatório')
         });
         if (!nome) return;
 
-        // 3. PREÇO
         const { value: preco } = await Swal.fire({
             title: '3. Preço de Venda',
             input: 'number',
@@ -8315,80 +8302,117 @@ window.fluxoCadastroRapido = async function() {
         });
         if (!preco) return;
 
-        // 4. CATEGORIA
-        const categorias = [...new Set(allProducts.map(p => p.category))];
-        const { value: cat } = await Swal.fire({
+        // ETAPA 3: CATEGORIA
+        // Puxa as categorias que já existem no seu estado 'allCategories' ou 'allProducts'
+        const categoriasExistentes = (typeof allCategories !== 'undefined') 
+            ? allCategories.map(c => c.name) 
+            : [...new Set(allProducts.map(p => p.category))].filter(Boolean);
+
+        const opcoes = {};
+        categoriasExistentes.forEach(c => opcoes[c] = c);
+        opcoes["Nova"] = "+ Criar Nova";
+
+        const { value: catSelecionada } = await Swal.fire({
             title: '4. Categoria',
             input: 'select',
-            inputOptions: categorias.reduce((a,v) => ({...a,[v]:v}), {"Nova": "+ Criar Nova"})
+            inputOptions: opcoes
         });
-        let categoriaFinal = cat;
-        if (cat === "Nova") {
-            const { value: nCat } = await Swal.fire({ title: 'Nome da Nova Categoria', input: 'text' });
+        if (!catSelecionada) return;
+
+        let categoriaFinal = catSelecionada;
+        if (catSelecionada === "Nova") {
+            const { value: nCat } = await Swal.fire({ title: 'Nome da Categoria', input: 'text' });
             categoriaFinal = nCat || 'Geral';
         }
 
-        // 5. GRADE E ESTOQUE
-        const { value: tamanhos } = await Swal.fire({
+        // ETAPA 4: VARIAÇÕES (TAMANHOS E CORES)
+        const { value: tamanhosTxt } = await Swal.fire({
             title: '5. Tamanhos',
-            input: 'text',
-            text: 'Digite separados por vírgula (P, M, G). Deixe vazio se for Único.',
-            inputPlaceholder: 'P, M, G'
+            text: 'Ex: P, M, G (ou deixe vazio)',
+            input: 'text'
         });
 
-        const listaT = tamanhos ? tamanhos.split(',').map(s => s.trim().toUpperCase()) : ['ÚNICO'];
-        let somaEstoque = 0;
+        const { value: coresTxt } = await Swal.fire({
+            title: '6. Cores',
+            text: 'Ex: Azul, Preto (ou deixe vazio)',
+            input: 'text'
+        });
+
+        const listaT = tamanhosTxt ? tamanhosTxt.split(',').map(s => s.trim()) : ['Único'];
+        const listaC = coresTxt ? coresTxt.split(',').map(c => c.trim()) : ['Padrão'];
+        
+        let somaEstoqueTotal = 0;
 
         for (let t of listaT) {
-            const { value: est } = await Swal.fire({
-                title: `Estoque para: ${t}`,
-                input: 'number',
-                inputValue: 1,
-                confirmButtonText: 'Avançar'
-            });
-            const qtd = Number(est) || 0;
-            variationsMatrix.push({
-                id: Date.now() + Math.random(),
-                size: t,
-                color: 'PADRÃO',
-                stock: qtd,
-                price: Number(preco),
-                active: true
-            });
-            somaEstoque += qtd;
+            for (let c of listaC) {
+                const { value: est, isDismissed, isDenied } = await Swal.fire({
+                    title: `Estoque: ${t} - ${c}`,
+                    input: 'number',
+                    inputValue: 1,
+                    showDenyButton: true,
+                    denyButtonText: 'Não tenho',
+                    confirmButtonText: 'Próximo'
+                });
+
+                if (!isDismissed && !isDenied) {
+                    const qtd = Number(est) || 0;
+                    variationsMatrix.push({
+                        id: Date.now() + Math.random().toString(36).substr(2, 9),
+                        size: t,
+                        color: c,
+                        stock: qtd,
+                        price: Number(preco)
+                    });
+                    somaEstoqueTotal += qtd;
+                }
+            }
         }
 
-        // 6. DISPARO DO SALVAMENTO AUTOMÁTICO
-        const dadosParaSalvar = {
+        // --- SALVAMENTO DIRETO ---
+        Swal.fire({
+            title: 'Salvando produto...',
+            text: 'Aguarde um instante.',
+            allowOutsideClick: false,
+            didOpen: () => { Swal.showLoading(); }
+        });
+
+        // Montamos o objeto exatamente como a sua função handleSaveProduct espera
+        const produtoFinal = {
             name: nome,
             value: Number(preco),
             category: categoriaFinal,
-            stock: somaEstoque,
-            sku: 'QR-' + Date.now(),
-            images: currentProductImages, // Capturado pelo evento do Cropper
-            variations: variationsMatrix
+            stock: somaEstoqueTotal,
+            sku: 'R' + Math.floor(Date.now() / 1000),
+            images: currentProductImages, // Imagens capturadas pelo Cropper
+            variations: variationsMatrix,
+            posicaoProvador: 'superior',
+            isFeatured: false,
+            description: '',
+            createdAt: Date.now()
         };
 
-        // Chama a função handleProductSubmit passando os dados manuais
-        await window.handleProductSubmit(null, dadosParaSalvar);
-
-        // Feedback final e atualização da tela
-        Swal.fire({
-            icon: 'success',
-            title: 'Produto Salvo!',
-            text: 'O cadastro rápido foi concluído com sucesso.',
-            timer: 2000,
-            showConfirmButton: false
-        });
-
-        if (typeof renderProductList === 'function') renderProductList();
-        if (document.getElementById('productModal')) document.getElementById('productModal').classList.add('hidden');
+        // Chama a função de salvamento do seu sistema (Firebase)
+        // Passamos 'null' no primeiro parâmetro (e) e o objeto no segundo (manualData)
+        if (typeof handleSaveProduct === 'function') {
+            await handleSaveProduct(null, produtoFinal);
+            
+            Swal.fire({
+                icon: 'success',
+                title: 'Produto Cadastrado!',
+                text: 'O produto já está disponível na sua loja.',
+                timer: 2000,
+                showConfirmButton: false
+            });
+        } else {
+            throw new Error("Função de salvamento não encontrada.");
+        }
 
     } catch (e) {
-        console.error("Erro no fluxo rápido:", e);
-        Swal.fire('Erro', 'Houve um problema ao salvar o produto.', 'error');
+        console.error("Erro no salvamento rápido:", e);
+        Swal.fire('Erro', 'Não foi possível salvar automaticamente: ' + e.message, 'error');
     }
 };
+
             
 window.toggleLojaStatus = async () => {
     if (!currentStoreId) return;
