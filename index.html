@@ -8250,98 +8250,151 @@ async function testarNotificacao() {
 }
 
 window.fluxoCadastroRapido = async function() {
-    // Reset de estados e variáveis de controle
+    // Reset de estados
     currentProductImages = [];
     variationsMatrix = [];
     imageQueue = [];
     
     let passo = 1;
-    let dados = {
-        nome: '',
-        pix: '',
-        cartao: '',
-        categoria: '',
-        cores: '',
-        tamanhos: ''
-    };
+    let dados = { nome: '', pix: '', cartao: '', categoria: '', cores: '', tamanhos: '' };
 
-    // Função auxiliar para os inputs do SweetAlert
-    const swalConfig = (title, placeholder, value, example) => ({
-        title: title,
-        html: `<p class="text-xs text-gray-500 mb-1">Exemplo: ${example}</p>`,
-        input: 'text',
-        inputPlaceholder: placeholder,
-        inputValue: value,
-        showDenyButton: passo > 1,
-        denyButtonText: '← Voltar',
-        confirmButtonText: 'Próximo →',
+    // --- DESIGN CUSTOMIZADO (Fiel à identidade visual) ---
+    const estilizacaoCSS = `
+        .swal2-fluxo-popup {
+            border-radius: 20px !important;
+            padding: 2rem !important;
+            font-family: 'Inter', sans-serif !important;
+            margin-bottom: 90px !important; /* Ajuste teclado mobile */
+        }
+        .swal2-fluxo-title {
+            font-weight: 700 !important;
+            color: #1f2937 !important;
+            font-size: 1.4rem !important;
+            padding-bottom: 0 !important;
+        }
+        .swal2-fluxo-input {
+            border-radius: 10px !important;
+            border: 1px solid #e5e7eb !important;
+            box-shadow: none !important;
+            font-size: 1rem !important;
+            margin-top: 15px !important;
+        }
+        .swal2-fluxo-confirm {
+            background-color: #2563eb !important; /* Azul moderno */
+            border-radius: 10px !important;
+            padding: 12px 24px !important;
+            font-weight: 600 !important;
+        }
+        .swal2-fluxo-deny {
+            background-color: #f3f4f6 !important;
+            color: #4b5563 !important;
+            border-radius: 10px !important;
+            font-weight: 600 !important;
+        }
+        .swal2-fluxo-example {
+            color: #9ca3af;
+            font-size: 0.85rem;
+            margin-top: 8px;
+            display: block;
+            font-style: italic;
+        }
+        @media (min-width: 768px) { .swal2-fluxo-popup { margin-bottom: 0 !important; } }
+    `;
+
+    if (!document.getElementById('style-fluxo-design')) {
+        const styleTag = document.createElement('style');
+        styleTag.id = 'style-fluxo-design';
+        styleTag.innerHTML = estilizacaoCSS;
+        document.head.appendChild(styleTag);
+    }
+
+    const baseSwal = {
+        heightAuto: false,
+        scrollbarPadding: false,
         showCancelButton: true,
+        showDenyButton: true,
+        confirmButtonText: 'Próximo →',
+        denyButtonText: '← Voltar',
         cancelButtonText: 'Sair',
-        inputValidator: (v) => !v && 'Este campo é obrigatório!'
-    });
+        customClass: {
+            popup: 'swal2-fluxo-popup',
+            title: 'swal2-fluxo-title',
+            input: 'swal2-fluxo-input',
+            confirmButton: 'swal2-fluxo-confirm',
+            denyButton: 'swal2-fluxo-deny'
+        },
+        buttonsStyling: true
+    };
 
     while (passo <= 9) {
         try {
             // PASSO 1: FOTO
             if (passo === 1) {
-                const { isConfirmed, isDismissed } = await Swal.fire({
-                    title: '1. Foto do Produto',
-                    html: `<p class="text-xs text-gray-500 mb-4">Exemplo: Uma foto clara do item de frente</p>
-                           <input type="file" id="swal-file" accept="image/*" class="block w-full text-sm border rounded-lg p-2 bg-gray-50">`,
-                    confirmButtonText: 'Abrir Editor →',
-                    showCancelButton: true,
-                    cancelButtonText: 'Sair',
+                const { isConfirmed } = await Swal.fire({
+                    ...baseSwal,
+                    title: 'Escolha a Foto',
+                    showDenyButton: false,
+                    html: `
+                        <span class="swal2-fluxo-example">Dica: Fotos com fundo claro vendem mais.</span>
+                        <div class="mt-4 border-2 border-dashed border-gray-200 rounded-xl p-4 bg-gray-50">
+                            <input type="file" id="swal-file" accept="image/*" class="w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100">
+                        </div>
+                    `,
                     preConfirm: () => document.getElementById('swal-file').files[0]
                 });
 
-                if (isDismissed) return;
-                const file = document.getElementById('swal-file').files[0];
-                
+                const file = document.getElementById('swal-file')?.files[0];
                 if (file) {
                     const reader = new FileReader();
-                    reader.onload = (e) => {
-                        imageQueue.push(e.target.result);
-                        openCropModal(e.target.result);
-                    };
+                    reader.onload = (e) => { imageQueue.push(e.target.result); openCropModal(e.target.result); };
                     reader.readAsDataURL(file);
-                    
-                    // Espera o recorte ser concluído no seu modal original
-                    await new Promise(resolve => {
-                        const check = setInterval(() => {
-                            if (currentProductImages.length > 0) { clearInterval(check); resolve(); }
-                        }, 500);
-                    });
+                    await new Promise(r => { const c = setInterval(() => { if (currentProductImages.length > 0) { clearInterval(c); r(); } }, 500); });
                     passo = 2;
-                } else {
-                    Swal.showValidationMessage('Selecione uma foto primeiro!');
-                }
+                } else if (isConfirmed) { Swal.showValidationMessage('Selecione uma imagem!'); } else return;
             }
 
             // PASSO 2: NOME
             else if (passo === 2) {
-                const res = await Swal.fire(swalConfig('2. Nome do Produto', 'Digite o nome...', dados.nome, 'Camiseta Oversized Preta'));
-                if (res.isDismissed) return;
+                const res = await Swal.fire({
+                    ...baseSwal,
+                    title: 'Nome do Produto',
+                    input: 'text',
+                    inputValue: dados.nome,
+                    footer: '<span class="swal2-fluxo-example">Ex: Camiseta Cotton Premium</span>',
+                    inputValidator: (v) => !v && 'O nome é obrigatório'
+                });
+                if (res.isDismissed && !res.isDenied) return;
                 if (res.isDenied) { passo = 1; currentProductImages = []; continue; }
-                dados.nome = res.value;
-                passo = 3;
+                dados.nome = res.value; passo = 3;
             }
 
             // PASSO 3: PREÇO PIX
             else if (passo === 3) {
-                const res = await Swal.fire({...swalConfig('3. Preço à Vista (PIX)', '0.00', dados.pix, '89.90'), input: 'number'});
-                if (res.isDismissed) return;
+                const res = await Swal.fire({
+                    ...baseSwal,
+                    title: 'Preço à Vista',
+                    input: 'number',
+                    inputValue: dados.pix,
+                    footer: '<span class="swal2-fluxo-example">Valor sugerido no PIX ou Dinheiro</span>',
+                    inputValidator: (v) => !v && 'Defina um preço'
+                });
+                if (res.isDismissed && !res.isDenied) return;
                 if (res.isDenied) { passo = 2; continue; }
-                dados.pix = res.value;
-                passo = 4;
+                dados.pix = res.value; passo = 4;
             }
 
             // PASSO 4: PREÇO CARTÃO
             else if (passo === 4) {
-                const res = await Swal.fire({...swalConfig('4. Preço no Cartão', '0.00', dados.cartao || dados.pix, '99.90'), input: 'number'});
-                if (res.isDismissed) return;
+                const res = await Swal.fire({
+                    ...baseSwal,
+                    title: 'Preço no Cartão',
+                    input: 'number',
+                    inputValue: dados.cartao || dados.pix,
+                    footer: '<span class="swal2-fluxo-example">Considere as taxas da sua maquininha</span>'
+                });
+                if (res.isDismissed && !res.isDenied) return;
                 if (res.isDenied) { passo = 3; continue; }
-                dados.cartao = res.value;
-                passo = 5;
+                dados.cartao = res.value; passo = 5;
             }
 
             // PASSO 5: CATEGORIA
@@ -8349,129 +8402,136 @@ window.fluxoCadastroRapido = async function() {
                 let cats = {};
                 if (typeof allCategories !== 'undefined') allCategories.forEach(c => cats[c.name] = c.name);
                 cats["Nova"] = "+ Criar Nova Categoria";
-
                 const res = await Swal.fire({
-                    title: '5. Categoria',
-                    html: `<p class="text-xs text-gray-500 mb-1">Exemplo: Camisetas, Calçados ou Acessórios</p>`,
+                    ...baseSwal,
+                    title: 'Categoria',
                     input: 'select',
                     inputOptions: cats,
                     inputValue: dados.categoria,
-                    showDenyButton: true,
-                    denyButtonText: '← Voltar',
-                    confirmButtonText: 'Próximo →'
+                    footer: '<span class="swal2-fluxo-example">Ajuda o cliente a encontrar o produto</span>'
                 });
-
-                if (res.isDismissed) return;
+                if (res.isDismissed && !res.isDenied) return;
                 if (res.isDenied) { passo = 4; continue; }
-
                 if (res.value === "Nova") {
-                    const { value: nCat } = await Swal.fire({ title: 'Nome da Nova Categoria', input: 'text', inputPlaceholder: 'Ex: Promoções' });
+                    const { value: nCat } = await Swal.fire({ ...baseSwal, title: 'Nome da Categoria', input: 'text', showDenyButton: false });
                     dados.categoria = nCat || 'Geral';
-                } else {
-                    dados.categoria = res.value;
-                }
+                } else { dados.categoria = res.value; }
                 passo = 6;
             }
 
             // PASSO 6: CORES
             else if (passo === 6) {
-                const res = await Swal.fire(swalConfig('6. Cores Disponíveis', 'Azul, Preto...', dados.cores || 'PADRÃO', 'Preto, Branco, Azul'));
-                if (res.isDismissed) return;
+                const res = await Swal.fire({
+                    ...baseSwal,
+                    title: 'Cores',
+                    input: 'text',
+                    inputValue: dados.cores || 'PADRÃO',
+                    footer: '<span class="swal2-fluxo-example">Separe por vírgula. Ex: Preto, Branco, Vermelho</span>'
+                });
+                if (res.isDismissed && !res.isDenied) return;
                 if (res.isDenied) { passo = 5; continue; }
-                dados.cores = res.value;
-                passo = 7;
+                dados.cores = res.value; passo = 7;
             }
 
             // PASSO 7: TAMANHOS
             else if (passo === 7) {
-                const res = await Swal.fire(swalConfig('7. Tamanhos Disponíveis', 'P, M, G...', dados.tamanhos || 'ÚNICO', 'P, M, G, GG ou 38, 40, 42'));
-                if (res.isDismissed) return;
+                const res = await Swal.fire({
+                    ...baseSwal,
+                    title: 'Tamanhos',
+                    input: 'text',
+                    inputValue: dados.tamanhos || 'ÚNICO',
+                    footer: '<span class="swal2-fluxo-example">Ex: P, M, G ou 38, 40, 42</span>'
+                });
+                if (res.isDismissed && !res.isDenied) return;
                 if (res.isDenied) { passo = 6; continue; }
-                dados.tamanhos = res.value;
-                passo = 8;
+                dados.tamanhos = res.value; passo = 8;
             }
 
-            // PASSO 8: ESTOQUE POR VARIAÇÃO
+            // PASSO 8: ESTOQUE
             else if (passo === 8) {
                 const listC = dados.cores.split(',').map(s => s.trim().toUpperCase());
                 const listT = dados.tamanhos.split(',').map(s => s.trim().toUpperCase());
-                
                 variationsMatrix = [];
-                let total = 0;
-                let principalSku = 'SKU-' + Date.now().toString().slice(-6);
-                let voltarCores = false;
+                let totalE = 0;
+                let skuB = 'SKU-' + Date.now().toString().slice(-6);
+                let cancel = false;
 
                 for (let c of listC) {
                     for (let t of listT) {
-                        const { value: q, isDismissed } = await Swal.fire({ 
-                            title: `Estoque para: ${c} / ${t}`, 
-                            html: `<p class="text-xs text-gray-500">Quanto você tem desse modelo no estoque?</p>`,
-                            input: 'number', 
+                        const { value: q, isDismissed } = await Swal.fire({
+                            ...baseSwal,
+                            title: `Estoque: ${c} / ${t}`,
+                            input: 'number',
                             inputValue: 1,
-                            showCancelButton: true,
-                            cancelButtonText: '← Voltar para Tamanhos'
+                            showDenyButton: false
                         });
-
-                        if (isDismissed) { voltarCores = true; break; }
-
+                        if (isDismissed) { cancel = true; break; }
                         const qtd = parseInt(q) || 0;
-                        total += qtd;
+                        totalE += qtd;
                         variationsMatrix.push({
                             id: 'v_' + Date.now() + Math.random().toString(36).substr(2,5),
                             color: c, size: t, stock: qtd, price: parseFloat(dados.pix),
-                            sku: `${principalSku}-${c.slice(0,2)}-${t.slice(0,2)}`.replace(/[^a-z0-9-]/gi, ''),
+                            sku: `${skuB}-${c.slice(0,2)}-${t.slice(0,2)}`.replace(/[^a-z0-9-]/gi, ''),
                             active: true
                         });
                     }
-                    if (voltarCores) break;
+                    if (cancel) break;
                 }
-
-                if (voltarCores) { passo = 7; continue; }
-                dados.estoqueTotal = total;
-                dados.sku = principalSku;
+                if (cancel) { passo = 7; continue; }
+                dados.estoqueTotal = totalE;
+                dados.sku = skuB;
                 passo = 9;
             }
 
-            // PASSO 9: SALVAMENTO FINAL
+            // PASSO 9: SALVAMENTO E MENU FINAL
             else if (passo === 9) {
-                Swal.fire({ title: 'Finalizando Cadastro...', didOpen: () => Swal.showLoading() });
+                Swal.fire({ title: 'Salvando...', heightAuto: false, didOpen: () => Swal.showLoading() });
 
-                const set = (id, val) => {
+                // Injeção nos campos reais do seu site
+                const setF = (id, v) => {
                     const el = document.getElementById(id);
-                    if (el) {
-                        el.value = val;
-                        el.dispatchEvent(new Event('input', { bubbles: true }));
-                        el.dispatchEvent(new Event('change', { bubbles: true }));
-                    }
+                    if (el) { el.value = v; el.dispatchEvent(new Event('input', { bubbles: true })); el.dispatchEvent(new Event('change', { bubbles: true })); }
                 };
 
-                set('prodName', dados.nome);
-                set('prodValue', dados.pix);
-                set('prodCard', dados.cartao);
-                set('prodStock', dados.estoqueTotal);
-                set('prodSku', dados.sku);
-                set('prodId', ""); 
-                
-                const sel = document.getElementById('prodCategory');
-                if (sel) {
-                    if (!Array.from(sel.options).some(o => o.value === dados.categoria)) {
-                        sel.add(new Option(dados.categoria, dados.categoria));
+                const selCat = document.getElementById('prodCategory');
+                if (selCat) {
+                    if (!Array.from(selCat.options).some(o => o.value === dados.categoria)) {
+                        selCat.add(new Option(dados.categoria, dados.categoria));
                     }
-                    sel.value = dados.categoria;
-                    sel.dispatchEvent(new Event('change', { bubbles: true }));
+                    selCat.value = dados.categoria;
+                    selCat.dispatchEvent(new Event('change', { bubbles: true }));
                 }
+
+                setF('prodName', dados.nome);
+                setF('prodValue', dados.pix);
+                setF('prodCard', dados.cartao);
+                setF('prodStock', dados.estoqueTotal);
+                setF('prodSku', dados.sku);
+                setF('prodId', "");
 
                 if (typeof window.handleProductSubmit === 'function') {
                     await window.handleProductSubmit({ preventDefault: () => {} });
-                    Swal.fire({ icon: 'success', title: 'Produto Cadastrado!', text: `O produto ${dados.nome} já está na sua loja.`, timer: 3000, showConfirmButton: false });
+                    
+                    const fRes = await Swal.fire({
+                        ...baseSwal,
+                        icon: 'success',
+                        title: 'Tudo pronto!',
+                        text: `"${dados.nome}" foi adicionado.`,
+                        confirmButtonText: '+ Outro Produto',
+                        denyButtonText: 'Ver na Lista',
+                        denyButtonColor: '#10b981',
+                        cancelButtonText: 'Fechar'
+                    });
+
+                    if (fRes.isConfirmed) { window.fluxoCadastroRapido(); }
+                    else if (fRes.isDenied) { 
+                        document.getElementById('productModal')?.classList.add('hidden');
+                        document.getElementById('productList')?.scrollIntoView({ behavior: 'smooth' });
+                    }
                 }
                 break;
             }
-        } catch (e) {
-            console.error(e);
-            Swal.fire('Erro', 'Algo deu errado. Tente novamente.', 'error');
-            break;
-        }
+        } catch (e) { console.error(e); break; }
     }
 };
 
