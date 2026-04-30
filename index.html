@@ -5772,27 +5772,32 @@ window.renderManualOrderItems = () => {
     if (window.lucide) lucide.createIcons();
 };
 
-// --- 3. ATUALIZAÇÃO DO TOTAL (O SEGREDO DO "VALOR PREENCHIDO") ---
 window.updateManualTotal = () => {
-    const totalCalculado = manualOrder.reduce((acc, item) => {
-        return acc + (Number(item.qty) * Number(item.price));
+    // 1. Calcula o total somando cada item do carrinho
+    const total = manualOrder.reduce((acc, item) => {
+        const q = Number(item.qty) || 0;
+        const p = Number(item.price) || 0;
+        return acc + (q * p);
     }, 0);
     
+    // 2. Atualiza o texto visual (Onde aparece R$ 0,00)
     const displayTotal = document.getElementById("manualOrderTotal");
-    const inputOverride = document.getElementById("manualOrderTotalOverride");
-
     if (displayTotal) {
-        displayTotal.innerText = `R$ ${totalCalculado.toFixed(2).replace('.', ',')}`;
+        displayTotal.innerText = total.toLocaleString('pt-BR', { 
+            style: 'currency', 
+            currency: 'BRL' 
+        });
     }
 
-    // Se o usuário já preencheu algo manualmente, não mexemos no valor dele.
-    // Se o campo estiver vazio, sugerimos o total calculado.
-    if (inputOverride && (inputOverride.value === "" || inputOverride.getAttribute('data-auto') === 'true')) {
-        inputOverride.value = totalCalculado.toFixed(2);
-        inputOverride.setAttribute('data-auto', 'true'); // Marca que foi preenchido automaticamente
+    // 3. Atualiza o input que salva o valor no banco (Override)
+    const inputOverride = document.getElementById("manualOrderTotalOverride");
+    if (inputOverride) {
+        // Injeta o valor calculado para garantir que não salve como zero
+        inputOverride.value = total.toFixed(2);
     }
     
-    window.currentManualTotal = totalCalculado;
+    // Guarda o valor em uma variável global de segurança
+    window.currentManualTotal = total;
 };
 
 // --- 4. GESTÃO DE QUANTIDADE E ESTOQUE ---
@@ -6071,51 +6076,69 @@ if ((status === 'confirmed' || status === 'completed') && (!alreadyDeducted || e
         }, 1000); // Aguarda 1 segundo para não conflitar com o popup do Zap
     }
 }
-        // --- CASO B: CANCELAR (ESTORNAR ESTOQUE) ---
-        if (status === 'canceled' && alreadyDeducted) {
-            console.log("Estornando estoque de forma agrupada...");
-            
-            const itemsByProduct = p.items.reduce((acc, item) => {
-                if (!acc[item.id]) acc[item.id] = [];
-                acc[item.id].push(item);
-                return acc;
-            }, {});
+       // --- CASO B: CANCELAR (ESTORNAR ESTOQUE) ---
+if (status === 'canceled' && alreadyDeducted) {
+    console.log("Estornando estoque de forma agrupada...");
+    
+    // Agrupa itens por ID de produto para fazer apenas um "updateDoc" por produto
+    const itemsByProduct = p.items.reduce((acc, item) => {
+        if (!acc[item.id]) acc[item.id] = [];
+        acc[item.id].push(item);
+        return acc;
+    }, {});
 
-            const stockPromises = Object.keys(itemsByProduct).map(async (productId) => {
-                const productRef = doc(db, `stores/${currentStoreId}/products`, productId);
-                const snap = await getDoc(productRef);
+    const stockPromises = Object.keys(itemsByProduct).map(async (productId) => {
+        const productRef = doc(db, `stores/${currentStoreId}/products`, productId);
+        const snap = await getDoc(productRef);
 
-                if (snap.exists()) {
-                    const prodData = snap.data();
-                    const itemsToRestore = itemsByProduct[productId];
-                    let updatePayload = {};
+        if (snap.exists()) {
+            const prodData = snap.data();
+            const itemsToRestore = itemsByProduct[productId];
+            let updatePayload = {};
 
-                    if (prodData.variations && prodData.variations.length > 0) {
-                        let novasVariacoes = [...prodData.variations];
-                        itemsToRestore.forEach(itemPedido => {
-                            const { sku } = itemPedido.variationDetails || {};
-                            novasVariacoes = novasVariacoes.map(v => {
-                                if (v.sku === sku) {
-                                    return { ...v, stock: (Number(v.stock) || 0) + Number(itemPedido.qty) };
-                                }
-                                return v;
-                            });
+            // Se o produto tem variações (Cores/Tamanhos)
+            if (prodData.variations && prodData.variations.length > 0) {
+                let novasVariacoes = [...prodData.variations];
+                
+                itemsToRestore.forEach(itemPedido => {
+                    // Tenta pegar o SKU de dois lugares para não haver erro
+                    const skuParaDevolver = itemPedido.sku || itemPedido.variationDetails?.sku;
+                    
+                    if (skuParaDevolver) {
+                        novasVariacoes = novasVariacoes.map(v => {
+                            if (v.sku === skuParaDevolver) {
+                                const estoqueAtual = Number(v.stock) || 0;
+                                const qtdRetorno = Number(itemPedido.qty) || 0;
+                                return { ...v, stock: estoqueAtual + qtdRetorno };
+                            }
+                            return v;
                         });
-                        updatePayload.variations = novasVariacoes;
-                        updatePayload.stock = novasVariacoes.reduce((sum, v) => sum + (v.active !== false ? (Number(v.stock) || 0) : 0), 0);
-                    } else {
-                        const totalQty = itemsToRestore.reduce((sum, i) => sum + Number(i.qty), 0);
-                        updatePayload.stock = (Number(prodData.stock) || 0) + totalQty;
                     }
+                });
+                
+                updatePayload.variations = novasVariacoes;
+                // Soma o estoque total das variações ativas
+                updatePayload.stock = novasVariacoes.reduce((sum, v) => sum + (Number(v.stock) || 0), 0);
+            } 
+            // Se for produto simples
+            else {
+                const totalQty = itemsToRestore.reduce((sum, i) => sum + Number(i.qty), 0);
+                const estoqueAtual = Number(prodData.stock) || 0;
+                updatePayload.stock = estoqueAtual + totalQty;
+            }
 
-                    if (updatePayload.stock > 0) updatePayload.status = 'active';
-                    return updateDoc(productRef, updatePayload);
-                }
-            });
+            // Se voltou a ter estoque, garante que o produto saia do 'paused'
+            if (updatePayload.stock > 0) {
+                updatePayload.status = 'active';
+            }
 
-            await Promise.all(stockPromises);
-            orderUpdate.stockDeducted = false;
+            return updateDoc(productRef, updatePayload);
         }
+    });
+
+    await Promise.all(stockPromises);
+    orderUpdate.stockDeducted = false; // Marca que o estoque não está mais deduzido
+}
 
         // --- SALVAR NO FIREBASE ---
         await updateDoc(orderRef, orderUpdate);
