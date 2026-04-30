@@ -5679,68 +5679,51 @@ window.addManualItem = (id, varData = null) => {
     window.renderManualOrderItems();
 };
 
-// --- FUNÇÃO AUXILIAR: CALCULA O PREÇO COM BASE NAS REGRAS DE NEGÓCIO ---
+// --- 1. CÁLCULO DE PREÇO (CENTRALIZADO) ---
 window.calculateItemPrice = (product, varData = null) => {
     const paymentMethod = document.getElementById("manualPayment")?.value || 'dinheiro';
     const isCashMode = ['pix', 'dinheiro'].includes(paymentMethod);
 
-    // 1. Definição do Valor Base (Tenta todos os nomes de campos possíveis)
-    let valorBase = 0;
-    if (varData && Number(varData.price) > 0) {
-        valorBase = Number(varData.price);
-    } else {
-        // Tenta .value (padrão Firebase), se não .price, se não .priceCard
-        valorBase = Number(product.value) || Number(product.price) || Number(product.priceCard) || 0;
-    }
+    // Valor Base (Variação > Produto)
+    let valorBase = (varData && Number(varData.price) > 0) 
+        ? Number(varData.price) 
+        : (Number(product.value) || Number(product.price) || Number(product.priceCard) || 0);
 
-    // 2. Definição do Valor Promocional
-    let valorPromo = 0;
-    if (varData && Number(varData.promoPrice) > 0) {
-        valorPromo = Number(varData.promoPrice);
-    } else {
-        valorPromo = Number(product.promoValue) || Number(product.promoPrice) || 0;
-    }
+    // Valor Promocional
+    let valorPromo = (varData && Number(varData.promoPrice) > 0)
+        ? Number(varData.promoPrice)
+        : (Number(product.promoValue) || Number(product.promoPrice) || 0);
 
     let price = valorBase;
 
-    // 3. Lógica de decisão
+    // Lógica: Pix/Dinheiro usa Promoção (se houver). Cartão usa PriceCard ou Base.
     if (isCashMode && valorPromo > 0) {
-        price = valorPromo; // Se tem promo e é dinheiro/pix, aplica
+        price = valorPromo;
     } else if (!isCashMode) {
-        // Se for cartão, prioriza o campo priceCard, se não existir, usa o valorBase
         price = Number(product.priceCard) || valorBase;
     }
 
-    // Se depois de tudo ainda for 0, algo está errado no cadastro do produto
-    if (price === 0) {
-        console.warn(`Produto ${product.name} está com valor zerado no banco de dados.`);
-    }
-
-    return price;
+    return Number(price) || 0;
 };
-// --- MOSTRA OS ITENS ADICIONADOS NO PEDIDO ---
+
+// --- 2. RENDERIZAÇÃO DO CARRINHO ---
 window.renderManualOrderItems = () => {
     const container = document.getElementById("manualOrderItems");
     if (!container) return;
     
-    // Limpa o container antes de começar
     container.innerHTML = "";
 
-    // Se o carrinho estiver vazio, podemos avisar ou apenas parar
     if (manualOrder.length === 0) {
         container.innerHTML = `<p class="text-center text-slate-400 text-xs py-4">Carrinho vazio</p>`;
-        window.updateManualTotal(); // Para zerar o total exibido
+        window.updateManualTotal();
         return;
     }
 
-    // Usaremos um array para montar o HTML (mais performático e seguro)
     const htmlItems = manualOrder.map(item => {
-        // 1. Busca o estoque real para validar o botão de "+"
         const prodOriginal = allProducts.find(p => p.id === item.id);
         let estoqueDisponivel = 0;
 
         if (prodOriginal) {
-            // Verifica se é variação ou produto simples
             if (item.sku && prodOriginal.variations) {
                 const vMatch = prodOriginal.variations.find(v => v.sku === item.sku);
                 estoqueDisponivel = vMatch ? (Number(vMatch.stock) || 0) : 0;
@@ -5749,38 +5732,31 @@ window.renderManualOrderItems = () => {
             }
         }
 
-        // 2. Cálculos com garantia numérica
         const qtd = Number(item.qty) || 0;
         const precoUnitario = Number(item.price) || 0;
         const subtotalCalculado = (qtd * precoUnitario).toFixed(2).replace('.', ',');
         
-        const fotoUrl = item.image;
         const noLimite = qtd >= estoqueDisponivel;
 
         return `
             <div class="p-2 border rounded-2xl bg-white shadow-sm flex items-center gap-3 mb-2 animate-fade-in">
-                
                 <div class="w-12 h-12 rounded-xl overflow-hidden bg-slate-50 flex-shrink-0 border border-slate-100">
-                    ${fotoUrl 
-                        ? `<img src="${fotoUrl}" class="w-full h-full object-cover">` 
+                    ${item.image 
+                        ? `<img src="${item.image}" class="w-full h-full object-cover">` 
                         : `<div class="w-full h-full flex items-center justify-center text-slate-300"><i data-lucide="image" class="w-5 h-5"></i></div>`
                     }
                 </div>
-
                 <div class="flex-1 min-w-0">
                     <p class="font-bold text-slate-800 text-[11px] leading-tight truncate uppercase">${item.name}</p>
                     <p class="text-[8px] font-mono text-slate-400 uppercase">SKU: ${item.sku || 'N/A'}</p>
                     <p class="text-[10px] text-primary-600 font-black mt-0.5">R$ ${subtotalCalculado}</p>
                 </div>
-
                 <div class="flex items-center gap-1 bg-slate-50 p-1 rounded-xl border border-slate-100">
                     <button onclick="window.changeManualQty('${item.cartId}', -1)" 
                             class="w-7 h-7 flex items-center justify-center bg-white border border-slate-200 rounded-lg text-slate-600 active:scale-90 transition-all">
                         <i data-lucide="minus" class="w-3 h-3"></i>
                     </button>
-
                     <span class="font-bold text-xs min-w-[24px] text-center">${qtd}</span>
-
                     <button onclick="window.changeManualQty('${item.cartId}', 1)" 
                             ${noLimite ? 'disabled' : ''}
                             class="w-7 h-7 flex items-center justify-center bg-white border border-slate-200 rounded-lg text-slate-600 active:scale-90 transition-all ${noLimite ? 'opacity-30 cursor-not-allowed' : ''}">
@@ -5792,60 +5768,51 @@ window.renderManualOrderItems = () => {
     });
 
     container.innerHTML = htmlItems.join("");
-
-    // ATENÇÃO: Chama a atualização do total logo após renderizar os itens
     window.updateManualTotal();
-    
-    // Recria os ícones do Lucide
     if (window.lucide) lucide.createIcons();
 };
 
-// --- ATUALIZA O VALOR TOTAL DO PEDIDO NO MODAL ---
+// --- 3. ATUALIZAÇÃO DO TOTAL (O SEGREDO DO "VALOR PREENCHIDO") ---
 window.updateManualTotal = () => {
-    // Garante que o cálculo use números puros
-    const total = manualOrder.reduce((acc, item) => {
-        const q = Number(item.qty) || 0;
-        const p = Number(item.price) || 0;
-        return acc + (q * p);
+    const totalCalculado = manualOrder.reduce((acc, item) => {
+        return acc + (Number(item.qty) * Number(item.price));
     }, 0);
     
     const displayTotal = document.getElementById("manualOrderTotal");
+    const inputOverride = document.getElementById("manualOrderTotalOverride");
+
     if (displayTotal) {
-        displayTotal.innerText = `R$ ${total.toFixed(2).replace('.', ',')}`;
+        displayTotal.innerText = `R$ ${totalCalculado.toFixed(2).replace('.', ',')}`;
     }
 
-    // Sincroniza com o input de override caso ele exista
-    const inputOverride = document.getElementById("manualOrderTotalOverride");
-    if (inputOverride) {
-        inputOverride.value = total.toFixed(2);
+    // Se o usuário já preencheu algo manualmente, não mexemos no valor dele.
+    // Se o campo estiver vazio, sugerimos o total calculado.
+    if (inputOverride && (inputOverride.value === "" || inputOverride.getAttribute('data-auto') === 'true')) {
+        inputOverride.value = totalCalculado.toFixed(2);
+        inputOverride.setAttribute('data-auto', 'true'); // Marca que foi preenchido automaticamente
     }
     
-    window.currentManualTotal = total;
+    window.currentManualTotal = totalCalculado;
 };
-// --- ALTERAR QUANTIDADE (+/-) ---
+
+// --- 4. GESTÃO DE QUANTIDADE E ESTOQUE ---
 window.changeManualQty = (cartId, diff) => {
-    // 1. Localiza o item no carrinho
     const itemIndex = manualOrder.findIndex(i => i.cartId === cartId);
     if (itemIndex === -1) return;
 
     const item = manualOrder[itemIndex];
-
-    // 2. Verifica o estoque real no catálogo
     const prodOriginal = allProducts.find(p => p.id === item.id);
     let estoqueMaximo = 0;
 
     if (prodOriginal) {
         if (item.variationDetails) {
-            // Busca o estoque da variação específica (Cor/Tamanho)
             const vMatch = prodOriginal.variations?.find(v => v.sku === item.sku);
             estoqueMaximo = vMatch ? (Number(vMatch.stock) || 0) : 0;
         } else {
-            // Produto simples
             estoqueMaximo = Number(prodOriginal.stock) || 0;
         }
     }
 
-    // 3. Lógica de Aumento/Diminuição
     const novaQtd = item.qty + diff;
 
     if (novaQtd > estoqueMaximo && diff > 0) {
@@ -5854,21 +5821,17 @@ window.changeManualQty = (cartId, diff) => {
     }
 
     if (novaQtd <= 0) {
-        // Remove o item se chegar a zero
         manualOrder.splice(itemIndex, 1);
         showToast("🗑️ Item removido do carrinho");
     } else {
         item.qty = novaQtd;
     }
 
-    // 4. Atualiza a interface
     window.renderManualOrderItems();
 };
 
 
-        // --- FINALIZAR E SALVAR O PEDIDO MANUAL ---
-
-window.finishManualOrder = async () => {
+ window.finishManualOrder = async () => {
     // 1. VALIDAÇÕES DE SEGURANÇA
     if (manualOrder.length === 0) return showToast("⚠️ Carrinho vazio!");
     
@@ -5887,16 +5850,13 @@ window.finishManualOrder = async () => {
     if (btn) btn.disabled = true;
 
     try {
-        // 2. PROCESSAMENTO FINANCEIRO (O SEGREDO DO LUCRO FIXO)
+        // 2. PROCESSAMENTO FINANCEIRO
         let totalCalculado = 0;
         let lucroTotalPedido = 0;
 
-        // Criamos uma versão dos itens que "congela" os valores atuais
+        // Criamos o snapshot congelado dos itens
         const itemsSnapshot = manualOrder.map(item => {
-            // Buscamos o produto original no cache para pegar o custo (cost) atual
             const pOriginal = allProducts.find(p => p.id === item.id);
-            
-            // Se o produto não tiver custo definido, assume 0
             const custoNoMomento = pOriginal ? (Number(pOriginal.cost) || 0) : 0;
             const precoVenda = Number(item.price);
             const qtd = Number(item.qty);
@@ -5911,24 +5871,33 @@ window.finishManualOrder = async () => {
             return {
                 id: item.id,
                 name: item.name,
-                sku: item.sku, // SKU da variação específica
+                sku: item.sku,
                 qty: qtd,
-                price: precoVenda,        // Preço vendido (fixado)
-                costPrice: custoNoMomento,  // Custo na hora da venda (fixado)
+                price: precoVenda,
+                costPrice: custoNoMomento,
                 subtotal: subtotalItem,
-                profit: lucroTotalItem     // Lucro calculado (fixado)
+                profit: lucroTotalItem
             };
         });
 
+        // Lógica de Override do Total (Prioriza o que foi digitado)
         const overrideInput = document.getElementById('manualOrderTotalOverride');
-        const overrideValue = parseFloat(overrideInput?.value);
+        let totalFinal = totalCalculado;
         
-        // Se o usuário editou o total manualmente, respeitamos o valor dele
-        let totalFinal = (!isNaN(overrideValue) && overrideValue > 0 && document.activeElement === overrideInput) 
-            ? overrideValue 
-            : totalCalculado;
+        if (overrideInput && overrideInput.value.trim() !== "") {
+            // Converte "150,00" para "150.00" para o cálculo funcionar
+            const valorDigitado = parseFloat(overrideInput.value.replace(',', '.'));
+            if (!isNaN(valorDigitado) && valorDigitado > 0) {
+                totalFinal = valorDigitado;
+                
+                // Ajuste Proporcional do Lucro:
+                // Se você deu desconto no total, o lucro total diminui na mesma proporção.
+                const diferenca = totalCalculado - totalFinal;
+                lucroTotalPedido -= diferenca;
+            }
+        }
 
-        // 3. ESTRUTURA DO DOCUMENTO DO PEDIDO
+        // 3. ESTRUTURA DO DOCUMENTO
         const newOrder = {
             customer: {
                 name: document.getElementById("manualOrderCustName")?.value || "Cliente Local",
@@ -5939,9 +5908,9 @@ window.finishManualOrder = async () => {
                 type: payment,
                 ...paymentExtra
             },
-            items: itemsSnapshot, // Aqui estão os dados congelados
+            items: itemsSnapshot,
             total: Number(totalFinal.toFixed(2)),
-            totalProfit: Number(lucroTotalPedido.toFixed(2)), // Salva o lucro total no banco
+            totalProfit: Number(lucroTotalPedido.toFixed(2)),
             status: (payment === "fiado" || payment === "parcelado") ? "to_receive" : "completed",
             createdAt: new Date(),
             manual: true,
@@ -5951,7 +5920,7 @@ window.finishManualOrder = async () => {
         // 4. SALVAR NO FIREBASE
         await addDoc(collection(db, `stores/${currentStoreId}/orders`), newOrder);
 
-        // 5. BAIXA DE ESTOQUE (Sincronizada por SKU de variação)
+        // 5. BAIXA DE ESTOQUE (SKU Sincronizado)
         for (const item of manualOrder) {
             const productRef = doc(db, `stores/${currentStoreId}/products`, item.id);
             const snap = await getDoc(productRef);
@@ -5960,7 +5929,6 @@ window.finishManualOrder = async () => {
                 const prodData = snap.data();
                 let updateData = {};
 
-                // Se o produto tem variações (conforme seu JSON)
                 if (prodData.variations && prodData.variations.length > 0) {
                     const novasVariacoes = prodData.variations.map(v => {
                         if (v.sku === item.sku) {
@@ -5972,7 +5940,6 @@ window.finishManualOrder = async () => {
                     updateData.variations = novasVariacoes;
                     updateData.stock = novasVariacoes.reduce((sum, v) => sum + (Number(v.stock) || 0), 0);
                 } else {
-                    // Produto simples
                     const estoqueGeralAntigo = Number(prodData.stock) || 0;
                     updateData.stock = Math.max(0, estoqueGeralAntigo - Number(item.qty));
                 }
@@ -5982,14 +5949,13 @@ window.finishManualOrder = async () => {
             }
         }
 
-        // 6. ATUALIZAÇÃO DA INTERFACE E CACHE
+        // 6. LIMPEZA E FEEDBACK
         await updateDoc(doc(db, `stores/${currentStoreId}/config/store`), { lastUpdate: Date.now() });
         if (typeof loadProductsCache === "function") await loadProductsCache(true);
-        if (typeof renderProductList === "function") renderProductList();
         
-        showToast("✅ Venda finalizada! Lucro e estoque blindados.");
+        showToast("✅ Venda finalizada com sucesso!");
         
-        // Reset de campos e fechar modal
+        // Reset completo
         manualOrder = [];
         document.getElementById("manualOrderCustName").value = "";
         document.getElementById("manualPhone").value = "";
