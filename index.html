@@ -700,15 +700,13 @@ if ('serviceWorker' in navigator) {
          </button>
             
         </nav>
-        
-
 
         <div class="p-6 border-t bg-slate-50">
             <button onclick="handleLogout()" class="w-full flex items-center justify-center gap-2 py-4 text-red-600 bg-red-50 rounded-xl font-bold"><i data-lucide="log-out" class="w-5 h-5"></i> Encerrar Sessão</button>
         </div>
     </aside>
 
-    <aside class="hidden md:flex flex-col w-64 bg-white border-r border-slate-200 h-full shadow-lg z-10 relative">
+      <aside class="hidden md:flex flex-col w-64 bg-white border-r border-slate-200 h-full shadow-lg z-10 relative">
         <div class="h-16 flex items-center px-6 border-b border-primary-600/10 justify-between">
             <div class="flex items-center gap-3 truncate">
                 <img id="sidebarStoreLogo" src="" class="w-9 h-9 rounded-full object-cover border border-slate-200 hidden" alt="Logo">
@@ -1052,22 +1050,30 @@ if ('serviceWorker' in navigator) {
                 <div id="emptyBannersMsg" class="hidden text-center py-24 text-slate-400 italic">Nenhum banner ativo.</div>
             </div>
 
-            <div id="view-products" class="max-w-6xl mx-auto space-y-6 hidden animate-fade-in">
-                <div class="flex flex-col md:flex-row justify-between items-center gap-4">
-                    <div class="relative w-full md:w-96"><i data-lucide="search" class="absolute left-4 top-3.5 text-slate-400 w-4 h-4"></i><input type="text" id="productSearch" onkeyup="renderProductList()" placeholder="Pesquisar catálogo..." class="w-full pl-12 border rounded-2xl p-3.5 outline-none bg-white"></div>
-                    <div class="flex flex-col gap-2 w-full md:w-auto">
-    <div class="flex flex-col gap-2 w-full md:w-auto">
-    <button onclick="window.openProductModal()" class="w-full bg-slate-900 text-white px-8 py-3.5 rounded-2xl font-bold flex justify-center items-center gap-2 shadow-lg uppercase text-sm">
-        <i data-lucide="plus" class="w-5 h-5"></i> Novo Produto
-    </button>
+          <div id="view-products" class="max-w-6xl mx-auto space-y-6 hidden animate-fade-in">
+    <!-- Topo: Pesquisa e Botões -->
+    <div class="flex flex-col md:flex-row justify-between items-center gap-4">
+        <!-- Barra de Busca -->
+        <div class="relative w-full md:w-96">
+            <i data-lucide="search" class="absolute left-4 top-3.5 text-slate-400 w-4 h-4"></i>
+            <input type="text" id="productSearch" onkeyup="renderProductList()" placeholder="Pesquisar catálogo..." class="w-full pl-12 border rounded-2xl p-3.5 outline-none bg-white">
+        </div>
+        
+        <!-- Grupo de Botões -->
+        <div class="flex flex-col sm:flex-row gap-2 w-full md:w-auto">
+            <button onclick="window.openProductModal()" class="flex-1 bg-slate-900 text-white px-8 py-3.5 rounded-2xl font-bold flex justify-center items-center gap-2 shadow-lg uppercase text-sm">
+                <i data-lucide="plus" class="w-5 h-5"></i> Novo Produto
+            </button>
 
-    <button onclick="fluxoCadastroRapido()" class="w-full bg-gradient-to-r from-orange-500 to-amber-600 text-white px-8 py-3 rounded-2xl font-bold flex justify-center items-center gap-2 shadow-md hover:scale-[1.02] transition-all uppercase text-[12px]">
-        <i data-lucide="zap" class="w-4 h-4 fill-white text-white border-none"></i> Produto Rápido
-    </button>
+            <button onclick="fluxoCadastroRapido()" class="flex-1 bg-gradient-to-r from-orange-500 to-amber-600 text-white px-8 py-3 rounded-2xl font-bold flex justify-center items-center gap-2 shadow-md hover:scale-[1.02] transition-all uppercase text-[12px]">
+                <i data-lucide="zap" class="w-4 h-4"></i> Produto Rápido
+            </button>
+        </div>
     </div>
-                </div>
-                <div id="productListGrouped" class="space-y-4 pb-12"></div>
-            </div>
+
+    <!-- Lista de Produtos -->
+    <div id="productListGrouped" class="space-y-4 pb-12"></div>
+</div>
 
             <div id="view-categories" class="max-w-4xl mx-auto space-y-6 hidden animate-fade-in">
                 <div class="bg-white p-6 md:p-8 border border-slate-100 rounded-3xl shadow-sm">
@@ -1100,7 +1106,7 @@ if ('serviceWorker' in navigator) {
            </div>
             </div>
 
-          <div id="view-customers" class="max-w-6xl mx-auto space-y-4 hidden animate-fade-in">
+         <div id="view-customers" class="max-w-6xl mx-auto space-y-4 hidden animate-fade-in">
     <div class="flex items-center justify-between bg-white p-4 md:p-6 rounded-[2rem] border border-slate-200 shadow-sm">
         <div class="flex items-center gap-3">
             <div class="w-10 h-10 md:w-12 md:h-12 bg-slate-900 text-white rounded-2xl flex items-center justify-center shadow-lg shrink-0">
@@ -1332,6 +1338,7 @@ if ('serviceWorker' in navigator) {
             </form>       
             </div>
          </div>
+     
      
      <div id="modalCustomDate" class="modal-overlay fixed inset-0 z-[200] flex items-center justify-center p-4 hidden">
     <div class="bg-white rounded-[2rem] shadow-2xl w-full max-w-xs p-6 animate-fade-in">
