@@ -2895,7 +2895,7 @@ window.initOrderListener = (storeId) => {
     window.currentStoreSlug = storeSlug;
     
     // Monta a URL sem o "loja." extra após a barra
-    const urlProfissional = `https://loja.vitrineonline.app.br/${storeSlug}`;
+    const urlProfissional = `https://loja.vitrineonline.app.br/cliente/?id=${storeSlug}`;
     
     const urlDisplay = document.getElementById('urlDisplay');
     if (urlDisplay) urlDisplay.textContent = urlProfissional;
@@ -4310,7 +4310,7 @@ const updateUI = (id, current, target, isQty = false) => {
     }
 
     // Link limpo, sem o "loja." depois da barra
-    const novaUrl = `https://loja.vitrineonline.app.br/${storeSlug}`;
+    const novaUrl = `https://loja.vitrineonline.app.br/cliente/?id=${storeSlug}`;
     window.open(novaUrl, '_blank');
 };
 
@@ -4324,7 +4324,7 @@ window.copyStoreLink = () => {
     }
 
     // Link limpo para o lojista colar no Instagram
-    const linkParaCopiar = `https://loja.vitrineonline.app.br/${storeSlug}`;
+    const linkParaCopiar = `https://loja.vitrineonline.app.br/cliente/?id=${storeSlug}`;
     
     // Lógica de cópia...
     navigator.clipboard.writeText(linkParaCopiar).then(() => {
