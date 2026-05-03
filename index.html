@@ -4310,7 +4310,7 @@ const updateUI = (id, current, target, isQty = false) => {
     }
 
     // Link limpo, sem o "loja." depois da barra
-    const novaUrl = `https://loja.vitrineonline.app.br/cliente/?id=${storeSlug}`;
+    const novaUrl = `https://loja.vitrineonline.app.br/cliente/${storeSlug}`;
     window.open(novaUrl, '_blank');
 };
 
@@ -4324,7 +4324,7 @@ window.copyStoreLink = () => {
     }
 
     // Link limpo para o lojista colar no Instagram
-    const linkParaCopiar = `https://loja.vitrineonline.app.br/cliente/?id=${storeSlug}`;
+    const linkParaCopiar = `https://loja.vitrineonline.app.br/cliente/${storeSlug}`;
     
     // Lógica de cópia...
     navigator.clipboard.writeText(linkParaCopiar).then(() => {
