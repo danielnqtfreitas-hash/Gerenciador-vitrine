@@ -8894,17 +8894,14 @@ window.toggleLojaStatus = async () => {
     }
     </style>
 
-<script type="module">
-  import { GoogleGenerativeAI } from "https://esm.run/@google/generative-ai";
-
-  const API_KEY = "AIzaSyDQVPG4Retisew6KOKgifYNF0J7TWm1idY";
-  const genAI = new GoogleGenerativeAI(API_KEY);
-
+<script>
   window.gerarDescricaoComIA = async function() {
     const nome = document.getElementById('prodName')?.value;
     const campoDesc = document.getElementById('prodDesc');
     const loading = document.getElementById('iaLoadingDesc');
     const btn = document.getElementById('btnGerarIA');
+    
+    const API_KEY = "AIzaSyDQVPG4Retisew6KOKgifYNF0J7TWm1idY";
 
     if (!nome || nome.trim() === "") {
       alert("⚠️ Digite o nome do produto primeiro!");
@@ -8915,20 +8912,35 @@ window.toggleLojaStatus = async () => {
       loading.classList.remove('hidden');
       btn.disabled = true;
 
-      // AJUSTE AQUI: Mudamos para 'gemini-1.5-flash' sem o prefixo manual 
-      // e garantimos que a biblioteca use a rota correta internamente.
-      const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
-      
-      const prompt = `Você é um vendedor de elite. Escreva uma descrição curta (máximo 250 caracteres) para: "${nome}". Use bullet points e foque em qualidade.`;
+      // Usando gemini-1.5-flash-latest na v1beta (rota mais compatível no momento)
+      const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key=${API_KEY}`;
 
-      const result = await model.generateContent(nome); // Simplificando a chamada
-      const response = await result.response;
-      campoDesc.value = response.text();
+      const response = await fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          contents: [{
+            parts: [{ text: `Descreva de forma curta e profissional este produto para uma vitrine online: "${nome}". Use no máximo 200 caracteres.` }]
+          }]
+        })
+      });
+
+      const data = await response.json();
+
+      if (data.error) {
+        // Se der erro 404 de novo, ele avisa exatamente qual o problema
+        console.error("Erro detalhado:", data.error);
+        alert(`Erro do Google: ${data.error.message}`);
+        return;
+      }
+
+      if (data.candidates && data.candidates[0].content) {
+        campoDesc.value = data.candidates[0].content.parts[0].text;
+      }
       
     } catch (error) {
-      console.error("Erro detalhado:", error);
-      // Se o erro persistir, tentamos uma rota alternativa comum em bibliotecas CDN
-      alert("Erro 404: O Google ainda está propagando seu modelo. Tente novamente em 1 minuto ou verifique se a chave está ativa no Google AI Studio.");
+      console.error("Falha na requisição:", error);
+      alert("❌ Erro de conexão. Tente novamente.");
     } finally {
       loading.classList.add('hidden');
       btn.disabled = false;
