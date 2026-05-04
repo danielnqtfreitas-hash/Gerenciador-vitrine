@@ -1023,119 +1023,134 @@ if ('serviceWorker' in navigator) {
            </button>
 
            
-<div id="view-finance" class="max-w-6xl mx-auto space-y-6 hidden animate-fade-in pb-20 text-left">
+<div id="view-finance" class="max-w-5xl mx-auto space-y-10 hidden animate-fade-in pb-32 px-4">
     
-    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 px-2">
-        <div class="text-left">
-            <h3 class="text-xl font-black text-slate-800 tracking-tight">Painel Financeiro</h3>
-            <p id="fin-label-periodo" class="text-[10px] font-black text-primary-500 uppercase tracking-widest">RESUMO: HOJE</p>
+    <!-- CABEÇALHO LUXO -->
+    <div class="flex justify-between items-end px-2">
+        <div>
+            <span class="text-[9px] font-black text-primary-500 uppercase tracking-[0.4em] mb-1 block">painel</span>
+            <h3 class="text-3xl font-black text-slate-900 tracking-tighter">Financeiro</h3>
         </div>
-        
-        <div class="flex bg-slate-200/50 p-1 rounded-xl border border-slate-200">
-            <button onclick="updateFinanceRange('today')" id="fin-range-today" class="px-3 py-1.5 rounded-lg text-[10px] font-black transition-all">HOJE</button>
-            <button onclick="updateFinanceRange('yesterday')" id="fin-range-yesterday" class="px-3 py-1.5 rounded-lg text-[10px] font-black transition-all">ONTEM</button>
-            <button onclick="updateFinanceRange('week')" id="fin-range-week" class="px-3 py-1.5 rounded-lg text-[10px] font-black transition-all">7D</button>
-            <button onclick="updateFinanceRange('month')" id="fin-range-month" class="px-3 py-1.5 rounded-lg text-[10px] font-black transition-all">MÊS</button>
-            <button onclick="document.getElementById('modalCustomDate').classList.remove('hidden')" class="px-2 py-1.5 text-slate-500"><i data-lucide="calendar" class="w-3.5 h-3.5"></i></button>
+        <div class="flex flex-col items-end">
+            <div id="fin-label-periodo" class="text-[10px] font-black text-slate-400 uppercase tracking-widest bg-slate-100 px-3 py-1 rounded-full border border-slate-200">
+                Resumo de Hoje
+            </div>
         </div>
     </div>
 
-    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div class="bg-slate-900 p-8 rounded-[2rem] text-white shadow-lg flex flex-col items-start justify-center relative overflow-hidden">
-            <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Faturamento Bruto</p>
-            <h2 class="text-4xl font-black" id="fin-rev-day">R$ 0,00</h2>
-            <div class="flex items-center gap-2 mt-2 text-primary-400">
-                <i data-lucide="trending-up" class="w-4 h-4"></i>
-                <span class="text-[10px] font-bold uppercase" id="fin-orders-day">0 pedidos</span>
-            </div>
-            <div class="absolute right-6 top-1/2 -translate-y-1/2 opacity-10">
-                <i data-lucide="bar-chart-3" class="w-16 h-16 text-white"></i>
-            </div>
-        </div>
-
-        <div class="bg-white p-8 rounded-[2rem] border border-slate-200 shadow-sm flex flex-col items-start justify-center">
-            <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Lucro Real Líquido</p>
-            <h2 class="text-4xl font-black text-emerald-600" id="fin-profit-real">R$ 0,00</h2>
-            <p class="text-[10px] text-slate-400 font-bold mt-1 uppercase tracking-tighter">Faturamento - Custos de Aquisição</p>
-        </div>
+    <!-- SELETOR DE PERÍODO ESTILO FINTECH -->
+    <div class="flex bg-white/50 backdrop-blur-md p-1.5 rounded-[2rem] border border-slate-200/60 shadow-inner overflow-x-auto no-scrollbar">
+        <button onclick="updateFinanceRange('today')" id="fin-range-today" class="flex-1 min-w-[80px] py-3 rounded-[1.5rem] text-[10px] font-black transition-all">HOJE</button>
+        <button onclick="updateFinanceRange('yesterday')" id="fin-range-yesterday" class="flex-1 min-w-[80px] py-3 rounded-[1.5rem] text-[10px] font-black transition-all text-slate-400">ONTEM</button>
+        <button onclick="updateFinanceRange('week')" id="fin-range-week" class="flex-1 min-w-[80px] py-3 rounded-[1.5rem] text-[10px] font-black transition-all text-slate-400">SEMANA</button>
+        <button onclick="updateFinanceRange('month')" id="fin-range-month" class="flex-1 min-w-[80px] py-3 rounded-[1.5rem] text-[10px] font-black transition-all text-slate-400">MENSAL</button>
+        <button onclick="document.getElementById('modalCustomDate').classList.remove('hidden')" class="px-4 text-slate-400">
+            <i data-lucide="calendar-days" class="w-4 h-4"></i>
+        </button>
     </div>
 
-    <div class="bg-white p-6 rounded-[2.5rem] border border-slate-200 shadow-sm text-left">
-        <div class="flex items-center justify-between mb-6">
-            <div class="flex items-center gap-3">
-                <div class="w-8 h-8 rounded-lg bg-primary-50 text-primary-600 flex items-center justify-center">
-                    <i data-lucide="line-chart" class="w-4 h-4"></i>
+    <!-- CARD PRINCIPAL: O "GOLDEN CARD" -->
+    <div class="relative group">
+        <div class="absolute -inset-1 bg-gradient-to-r from-primary-500 to-blue-600 rounded-[3rem] blur opacity-20 group-hover:opacity-40 transition duration-1000"></div>
+        <div class="relative bg-slate-950 rounded-[3rem] p-10 text-white shadow-2xl overflow-hidden">
+            <!-- Gráfico de fundo decorativo -->
+            <div class="absolute right-0 bottom-0 opacity-20 translate-y-1/4">
+                <svg width="300" height="150" viewBox="0 0 300 150" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M0 150C50 120 100 140 150 100C200 60 250 80 300 20" stroke="white" stroke-width="4" stroke-linecap="round"/>
+                </svg>
+            </div>
+
+            <div class="flex justify-between items-start mb-12">
+                <div>
+                    <p class="text-[10px] font-black text-slate-500 uppercase tracking-[0.3em] mb-3">Receita Bruta Acumulada</p>
+                    <div class="flex items-baseline gap-3">
+                        <span class="text-2xl font-bold text-primary-400">R$</span>
+                        <h2 class="text-6xl font-black tracking-tighter" id="fin-rev-day">0,00</h2>
+                    </div>
                 </div>
-                <h4 class="text-xs font-black text-slate-800 uppercase tracking-widest">Evolução de Faturamento</h4>
+                <div class="bg-white/10 backdrop-blur-xl p-4 rounded-3xl border border-white/10">
+                    <i data-lucide="zap" class="w-6 h-6 text-primary-400 fill-primary-400"></i>
+                </div>
             </div>
-            <span id="chart-info-label" class="text-[9px] font-black text-slate-400 uppercase bg-slate-50 px-2 py-1 rounded-md">Vendas em R$</span>
-        </div>
-        <div class="h-48 w-full relative">
-            <canvas id="financePerformanceChart"></canvas>
-        </div>
-    </div>
 
-    <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        <div class="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm text-left">
-            <div class="w-8 h-8 rounded-lg bg-emerald-100 text-emerald-600 flex items-center justify-center mb-4">
-                <i data-lucide="qr-code" class="w-4 h-4"></i>
-            </div>
-            <p class="text-[9px] font-black text-slate-400 uppercase mb-1">Via PIX</p>
-            <h4 class="text-xl font-black text-slate-800" id="fin-rev-pix">R$ 0,00</h4>
-            <div class="mt-3 pt-3 border-t border-slate-50">
-                <p class="text-[9px] font-bold text-emerald-400 uppercase">Lucro: <span id="fin-profit-pix" class="text-emerald-600">R$ 0,00</span></p>
-            </div>
-        </div>
-
-        <div class="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm text-left">
-            <div class="w-8 h-8 rounded-lg bg-blue-100 text-blue-600 flex items-center justify-center mb-4">
-                <i data-lucide="credit-card" class="w-4 h-4"></i>
-            </div>
-            <p class="text-[9px] font-black text-slate-400 uppercase mb-1">Via Cartão</p>
-            <h4 class="text-xl font-black text-slate-800" id="fin-rev-card">R$ 0,00</h4>
-            <div class="mt-3 pt-3 border-t border-slate-50">
-                <p class="text-[9px] font-bold text-blue-400 uppercase">Lucro: <span id="fin-profit-card" class="text-blue-600">R$ 0,00</span></p>
-            </div>
-        </div>
-
-        <div class="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm text-left">
-            <div class="w-8 h-8 rounded-lg bg-amber-100 text-amber-600 flex items-center justify-center mb-4">
-                <i data-lucide="banknote" class="w-4 h-4"></i>
-            </div>
-            <p class="text-[9px] font-black text-slate-400 uppercase mb-1">Dinheiro / Outros</p>
-            <h4 class="text-xl font-black text-slate-800" id="fin-rev-cash">R$ 0,00</h4>
-            <div class="mt-3 pt-3 border-t border-slate-50">
-                <p class="text-[9px] font-bold text-amber-400 uppercase">Lucro: <span id="fin-profit-cash" class="text-amber-600">R$ 0,00</span></p>
+            <div class="grid grid-cols-2 gap-8 relative z-10">
+                <div class="bg-white/5 p-5 rounded-[2rem] border border-white/5">
+                    <p class="text-[9px] font-bold text-slate-500 uppercase mb-1">Volume de Vendas</p>
+                    <p class="text-xl font-black text-white" id="fin-orders-day">0 Pedidos</p>
+                </div>
+                <div class="bg-white/5 p-5 rounded-[2rem] border border-white/5">
+                    <p class="text-[9px] font-bold text-slate-500 uppercase mb-1">Lucro Real Líquido</p>
+                    <p class="text-xl font-black text-emerald-400" id="fin-profit-real">R$ 0,00</p>
+                </div>
             </div>
         </div>
     </div>
 
-    <div class="bg-white p-8 rounded-[2.5rem] border border-slate-200 shadow-sm text-left">
-        <div class="flex items-center gap-3 mb-6">
-            <div class="w-8 h-8 rounded-lg bg-slate-100 text-slate-500 flex items-center justify-center">
-                <i data-lucide="box" class="w-4 h-4"></i>
+    <!-- MÉTODOS DE PAGAMENTO: GRID MINIMALISTA -->
+    <div class="grid grid-cols-3 gap-4">
+        <!-- PIX -->
+        <div class="bg-white p-6 rounded-[2.5rem] shadow-sm border border-slate-100 flex flex-col items-center text-center">
+            <div class="w-12 h-12 rounded-2xl bg-emerald-50 text-emerald-600 flex items-center justify-center mb-4">
+                <i data-lucide="qr-code" class="w-6 h-6"></i>
             </div>
-            <h4 class="text-xs font-black text-slate-800 uppercase tracking-widest">Patrimônio e Inventário</h4>
+            <p class="text-[9px] font-black text-slate-400 uppercase tracking-tighter mb-1">PIX</p>
+            <p class="text-sm font-black text-slate-900" id="fin-rev-pix">R$ 0,00</p>
         </div>
-        
-        <div class="grid grid-cols-1 sm:grid-cols-3 gap-8">
-            <div>
-                <p class="text-[9px] font-black text-slate-400 uppercase mb-1 tracking-tighter">Total em Venda (Gôndola)</p>
-                <p class="text-2xl font-black text-slate-900" id="fin-stock-value">R$ 0,00</p>
+        <!-- CARTÃO -->
+        <div class="bg-white p-6 rounded-[2.5rem] shadow-sm border border-slate-100 flex flex-col items-center text-center">
+            <div class="w-12 h-12 rounded-2xl bg-blue-50 text-blue-600 flex items-center justify-center mb-4">
+                <i data-lucide="credit-card" class="w-6 h-6"></i>
             </div>
-            <div>
-                <p class="text-[9px] font-black text-slate-400 uppercase mb-1 tracking-tighter">Investimento (Custo)</p>
-                <p class="text-2xl font-black text-slate-500" id="fin-stock-cost">R$ 0,00</p>
+            <p class="text-[9px] font-black text-slate-400 uppercase tracking-tighter mb-1">Cartão</p>
+            <p class="text-sm font-black text-slate-900" id="fin-rev-card">R$ 0,00</p>
+        </div>
+        <!-- OUTROS -->
+        <div class="bg-white p-6 rounded-[2.5rem] shadow-sm border border-slate-100 flex flex-col items-center text-center">
+            <div class="w-12 h-12 rounded-2xl bg-slate-50 text-slate-600 flex items-center justify-center mb-4">
+                <i data-lucide="banknote" class="w-6 h-6"></i>
             </div>
-            <div>
-                <p class="text-[9px] font-black text-emerald-500 uppercase mb-1 tracking-tighter">Lucro Estimado (Projetado)</p>
-                <p class="text-2xl font-black text-emerald-600" id="fin-profit-potential">R$ 0,00</p>
+            <p class="text-[9px] font-black text-slate-400 uppercase tracking-tighter mb-1">Espécie</p>
+            <p class="text-sm font-black text-slate-900" id="fin-rev-cash">R$ 0,00</p>
+        </div>
+    </div>
+
+    <!-- SEÇÃO DE PERFORMANCE E ESTOQUE -->
+    <div class="space-y-6">
+        <!-- Gráfico Estilo Glass -->
+        <div class="bg-white p-8 rounded-[3rem] border border-slate-100 shadow-sm relative overflow-hidden">
+            <div class="flex items-center justify-between mb-10">
+                <h4 class="text-xs font-black text-slate-900 uppercase tracking-widest">Evolução Diária</h4>
+                <div class="flex items-center gap-2">
+                    <div class="w-2 h-2 rounded-full bg-primary-500"></div>
+                    <span class="text-[10px] font-bold text-slate-400 uppercase">Faturamento</span>
+                </div>
+            </div>
+            <div class="h-56">
+                <canvas id="financePerformanceChart"></canvas>
             </div>
         </div>
-        
-        <div class="mt-8 pt-4 border-t border-slate-50 flex justify-between items-center">
-            <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Peças disponíveis no catálogo</p>
-            <span id="fin-stock-count" class="bg-slate-100 px-3 py-1 rounded-full text-[10px] font-black text-slate-600">0 UNIDADES</span>
+
+        <!-- Card de Patrimônio: Design Técnico -->
+        <div class="bg-slate-50 p-8 rounded-[3rem] border border-slate-200/50 flex flex-col sm:flex-row justify-between items-center gap-8">
+            <div class="flex items-center gap-6 text-left w-full">
+                <div class="w-16 h-16 rounded-[1.5rem] bg-white shadow-sm flex items-center justify-center border border-slate-200">
+                    <i data-lucide="package-search" class="w-8 h-8 text-slate-400"></i>
+                </div>
+                <div>
+                    <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Patrimônio Líquido em Estoque</p>
+                    <h4 class="text-3xl font-black text-slate-900 tracking-tight" id="fin-stock-value">R$ 0,00</h4>
+                </div>
+            </div>
+            <div class="w-full sm:w-auto flex gap-4">
+                <div class="bg-white px-6 py-4 rounded-[1.5rem] shadow-sm border border-slate-200 text-center">
+                    <p class="text-[8px] font-black text-slate-400 uppercase">Itens</p>
+                    <p class="text-lg font-black text-slate-800" id="fin-stock-count">0</p>
+                </div>
+                <div class="bg-emerald-500 px-6 py-4 rounded-[1.5rem] shadow-lg shadow-emerald-100 text-center">
+                    <p class="text-[8px] font-black text-emerald-100 uppercase">ROI Estimado</p>
+                    <p class="text-lg font-black text-white" id="fin-profit-potential">R$ 0,00</p>
+                </div>
+            </div>
         </div>
     </div>
 </div>
