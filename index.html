@@ -125,75 +125,89 @@
     }
 </script>
 
+<!-- 1. IMPORTAÇÕES DO FIREBASE (OBRIGATÓRIO NA PÁGINA) -->
+<!-- Estas bibliotecas permitem que a página use o objeto 'firebase' -->
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-messaging-compat.js"></script>
+
 <script>
 /**
- * 1. FUNÇÃO PARA SINCRONIZAR O TOKEN
- * Esta função utiliza o método .set() com { merge: true } para garantir 
- * que o token seja ATUALIZADO em vez de criar um novo documento toda vez.
+ * 2. CONFIGURAÇÃO DO PROJETO (meuestoque-1badc)
  */
-async function registrarOuAtualizarToken(token, storeId) {
-    if (!storeId) {
-        console.warn("⚠️ ID da loja não identificado. O token não será salvo.");
-        return;
-    }
+const firebaseConfig = {
+    apiKey: "AIzaSyAdwsGBTApwOwqr37qCv72gdPRbipsZG0Q",
+    authDomain: "meuestoque-1badc.firebaseapp.com",
+    projectId: "meuestoque-1badc",
+    storageBucket: "meuestoque-1badc.firebasestorage.app",
+    messagingSenderId: "730003067834",
+    appId: "1:730003067834:web:b205f1ea59053345960383"
+};
 
-    // Caminho fixo para evitar duplicidade no banco
-    const docRef = firebase.firestore().doc(`stores/${storeId}/config/notifications`);
+// Inicializa o Firebase apenas se ainda não foi inicializado
+if (!firebase.apps.length) {
+    firebase.initializeApp(firebaseConfig);
+}
+
+const db = firebase.firestore();
+const messaging = firebase.messaging();
+
+/**
+ * 3. FUNÇÃO PARA ATUALIZAR O TOKEN NO FIRESTORE
+ * Usa .set com { merge: true } para evitar duplicatas na loja 'dandan'.
+ */
+async function registrarOuAtualizarToken(token) {
+    // Identifica a loja (use sua variável 'lojaAtiva' ou 'dandan' como padrão)
+    const storeId = (typeof lojaAtiva !== 'undefined' && lojaAtiva) ? lojaAtiva : 'dandan';
+    
+    // Caminho fixo no banco para não criar documentos novos com IDs aleatórios
+    const docRef = db.doc(`stores/${storeId}/config/notifications`);
 
     try {
         await docRef.set({
             fcmToken: token,
             lastUpdate: firebase.firestore.FieldValue.serverTimestamp(),
-            platform: "web_pwa"
-        }, { merge: true }); // O merge mantém os outros campos do documento intactos
+            status: "ativo",
+            device: "Redmi 14 PWA"
+        }, { merge: true }); 
         
         console.log(`✅ Token sincronizado com sucesso para a loja: ${storeId}`);
     } catch (error) {
-        console.error("❌ Erro ao sincronizar token no Firestore:", error);
+        console.error("❌ Erro ao salvar token no Firestore:", error);
     }
 }
 
 /**
- * 2. REGISTRO DO SERVICE WORKER E CAPTURA DO TOKEN
- * O uso de async/await aqui garante que o fluxo siga a ordem correta.
+ * 4. REGISTRO DO SERVICE WORKER E CAPTURA DO TOKEN
  */
 if ('serviceWorker' in navigator) {
     window.addEventListener('load', async () => {
         try {
-            // Registra o Service Worker que você acabou de subir via deploy
+            // Registra o seu arquivo firebase-messaging-sw.js
             const registration = await navigator.serviceWorker.register('/firebase-messaging-sw.js');
-            console.log('✅ Service Worker ativo no escopo:', registration.scope);
-            
-            // Inicializa o messaging (Certifique-se de que o SDK está carregado antes deste script)
-            const messaging = firebase.messaging();
-            
-            // Solicita permissão ao lojista[cite: 1]
+            console.log('✅ Service Worker (Push) registrado com sucesso!');
+
+            // Solicita permissão para enviar notificações
             const permission = await Notification.requestPermission();
             
             if (permission === 'granted') {
-                // Gera o token usando sua chave VAPID[cite: 1]
-                const currentToken = await messaging.getToken({ 
+                // Gera o token do navegador
+                const currentToken = await messaging.getToken({
                     serviceWorkerRegistration: registration,
-                    vapidKey: 'BKk5Dr9AJ8fY0QAelaAvSPK7D9csG5dwdW45VhG0C-oeipeKD2kErkExPHQRp0eAYhm797-k5lLn3OO7-TRfZVw' 
+                    vapidKey: 'BKk5Dr9AJ8fY0QAelaAvSPK7D9csG5dwdW45VhG0C-oeipeKD2kErkExPHQRp0eAYhm797-k5lLn3OO7-TRfZVw'
                 });
 
                 if (currentToken) {
                     console.log('🚀 Token gerado:', currentToken);
-                    
-                    // Define a loja ativa dinamicamente (ajuste conforme sua variável global)[cite: 1]
-                    const storeId = (typeof lojaAtiva !== 'undefined' && lojaAtiva) ? lojaAtiva : 'dandan';
-                    
-                    // Chama a função para salvar/atualizar no Firestore[cite: 1]
-                    await registrarOuAtualizarToken(currentToken, storeId);
-                    
+                    // Salva no banco de dados da loja dandan
+                    await registrarOuAtualizarToken(currentToken);
                 } else {
-                    console.warn('⚠️ Nenhum token disponível. Verifique as configurações do FCM.');
+                    console.warn('⚠️ Nenhum token disponível.');
                 }
             } else {
-                console.warn('❌ Permissão de notificação negada pelo usuário.');
+                console.warn('❌ Permissão de notificação negada.');
             }
         } catch (err) {
-            // Se cair aqui, verifique se o Firebase foi carregado corretamente no HTML[cite: 1]
             console.error('❌ Erro no fluxo de notificações:', err);
         }
     });
