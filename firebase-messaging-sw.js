@@ -1,7 +1,8 @@
+// 1. Importação dos SDKs Compat (Essencial para evitar o erro "firebase is not defined")
 importScripts('https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js');
 importScripts('https://www.gstatic.com/firebasejs/10.7.1/firebase-messaging-compat.js');
 
-// 1. Inicialização
+// 2. Inicialização com suas credenciais do projeto "meuestoque-1badc"
 firebase.initializeApp({
     apiKey: "AIzaSyAdwsGBTApwOwqr37qCv72gdPRbipsZG0Q", 
     authDomain: "meuestoque-1badc.firebaseapp.com", 
@@ -13,12 +14,13 @@ firebase.initializeApp({
 
 const messaging = firebase.messaging();
 
-// 2. Configuração de Cache (O que estava no js.js)
+// 3. Configuração de Cache (Estratégia PWA)
 const CACHE_NAME = 'vitrine-pro-cache-v2';
 const ASSETS_TO_CACHE = [
     '/',
     '/index.html',
-    '/manifest.json'
+    '/manifest.json',
+    '/favicon.png'
 ];
 
 self.addEventListener('install', (event) => {
@@ -34,29 +36,44 @@ self.addEventListener('fetch', (event) => {
     );
 });
 
-// 3. Notificações em Background
+// 4. Tratamento de Mensagens em Segundo Plano (Background)
 messaging.onBackgroundMessage((payload) => {
+    console.log('[sw.js] Mensagem recebida em background:', payload);
+
     const notificationTitle = payload.notification?.title || "Novo Pedido!";
     const notificationOptions = {
-        body: payload.notification?.body || "Aceda ao painel para ver detalhes.",
+        body: payload.notification?.body || "Acesse o painel para ver detalhes.",
         icon: 'https://vitrineonline.app.br/favicon.png',
         badge: 'https://vitrineonline.app.br/favicon.png',
-        tag: 'novo-pedido',
+        tag: 'novo-pedido', // Agrupa notificações para não floodar o celular
         renotify: true,
         vibrate: [200, 100, 200],
-        data: { url: '/painel' }
+        data: { 
+            url: payload.data?.url || '/painel' // URL dinâmica vinda do Firebase
+        }
     };
+
     return self.registration.showNotification(notificationTitle, notificationOptions);
 });
 
+// 5. Ação ao Clicar na Notificação
 self.addEventListener('notificationclick', (event) => {
     event.notification.close();
+
+    const targetUrl = event.notification.data.url;
+
     event.waitUntil(
         clients.matchAll({ type: 'window', includeUncontrolled: true }).then((windowClients) => {
+            // Se já houver uma aba aberta, foca nela
             for (let client of windowClients) {
-                if (client.url.includes('/painel') && 'focus' in client) return client.focus();
+                if (client.url.includes(targetUrl) && 'focus' in client) {
+                    return client.focus();
+                }
             }
-            if (clients.openWindow) return clients.openWindow('/painel');
+            // Caso contrário, abre uma nova aba
+            if (clients.openWindow) {
+                return clients.openWindow(targetUrl);
+            }
         })
     );
 });
