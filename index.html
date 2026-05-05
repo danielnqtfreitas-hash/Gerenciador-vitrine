@@ -102,25 +102,54 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/driver.js@1.0.1/dist/driver.css"/>
 <script src="https://cdn.jsdelivr.net/npm/driver.js@1.0.1/dist/driver.js.iife.js"></script>
 
- <script>
+<script>
 if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => {
         navigator.serviceWorker.register('/firebase-messaging-sw.js')
             .then(reg => {
                 console.log('✅ Service Worker de Mensagens Ativo:', reg.scope);
                 
-                // Vincula o Firebase Messaging ao Service Worker registado
+                // Inicializa a função de permissão e token após o registro
                 if (typeof firebase !== 'undefined') {
-                    const messaging = firebase.messaging();
-                    if (typeof messaging.useServiceWorker === 'function') {
-                        messaging.useServiceWorker(reg);
-                    }
+                    configurarNotificacoes(reg);
                 }
             })
             .catch(err => {
                 console.error('❌ Erro ao registar Service Worker:', err);
             });
     });
+}
+
+async function configurarNotificacoes(registration) {
+    const messaging = firebase.messaging();
+    
+    try {
+        const permission = await Notification.requestPermission();
+        
+        if (permission === 'granted') {
+            const token = await messaging.getToken({
+                serviceWorkerRegistration: registration,
+                vapidKey: 'BKk5Dr9AJ8fY0QAelaAvSPK7D9csG5dwdW45VhG0C-oeipeKD2kErkExPHQRp0eAYhm797-k5lLn3OO7-TRfZVw'
+            });
+
+            if (token) {
+                console.log('✅ Token gerado:', token);
+                
+                // Pegue o ID do usuário logado (ex: auth.currentUser.uid)
+                const user = firebase.auth().currentUser;
+                if (user) {
+                    await firebase.firestore().collection('users').doc(user.uid).set({
+                        fcmToken: token,
+                        lastTokenUpdate: new Date()
+                    }, { merge: true });
+                    
+                    console.log('🚀 Endereço de notificação salvo no banco!');
+                }
+            }
+        }
+    } catch (err) {
+        console.error('❌ Erro ao configurar notificações:', err);
+    }
 }
 </script>
 
