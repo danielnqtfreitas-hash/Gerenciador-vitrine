@@ -3799,8 +3799,7 @@ installmentValue: (parseFloat(document.getElementById('prodCard').value) / (pars
     }
 };
             
-       
-               window.deleteProduct = async (id, imageUrls = []) => {
+       window.deleteProduct = async (id, imageUrls = []) => {
     if(!confirm("Deseja apagar este produto permanentemente? Suas fotos também serão removidas do servidor.")) return;
 
     try {
@@ -3808,7 +3807,6 @@ installmentValue: (parseFloat(document.getElementById('prodCard').value) / (pars
         const snap = await getDoc(docRef);
         const data = snap.exists() ? snap.data() : null;
 
-        // 1. Coleta TODAS as URLs de imagens para deletar (Principais + Variações + Lixeira)
         let allImagesToDelete = [...imageUrls];
         
         if (data) {
@@ -3820,10 +3818,16 @@ installmentValue: (parseFloat(document.getElementById('prodCard').value) / (pars
             }
         }
 
-        // 2. Apaga o documento no Firestore
+        // 1. Apaga o documento no Firestore
         await deleteDoc(docRef); 
 
-        // 3. Limpeza Física no Storage (Evita desperdício de espaço)
+        // 2. ATUALIZAÇÃO CRUCIAL PARA O CACHE DO CLIENTE (Adicione estas linhas aqui)
+        const storeConfigRef = doc(db, "stores", currentStoreId, "config", "store");
+        await updateDoc(storeConfigRef, {
+            lastUpdate: Date.now()
+        }).catch(err => console.error("Erro ao atualizar timestamp da loja:", err));
+
+        // 3. Limpeza Física no Storage
         const deletePromises = allImagesToDelete.map(url => {
             if (url && url.includes('firebasestorage')) {
                 const imageRef = ref(storage, url);
@@ -3832,13 +3836,12 @@ installmentValue: (parseFloat(document.getElementById('prodCard').value) / (pars
         });
         await Promise.all(deletePromises);
 
-        // 4. Sincroniza vitrine
-        await deleteDoc(docRef); 
-      await loadProductsCache(true);
-     renderProductList();
-// Avisa o botão para ficar colorido
-window.markAsDirty(); 
-showToast("🗑️ Produto e todos os arquivos removidos!");
+        // 4. Sincroniza painel do lojista
+        await loadProductsCache(true);
+        renderProductList();
+        
+        window.markAsDirty(); 
+        showToast("🗑️ Produto e todos os arquivos removidos!");
 
     } catch (err) {
         console.error("Erro na exclusão:", err);
@@ -3846,6 +3849,7 @@ showToast("🗑️ Produto e todos os arquivos removidos!");
     }
 };
 
+               
 
         window.toggleProductStatus = async (id, currentStatus) => {
     const newStatus = currentStatus === 'paused' ? 'active' : 'paused';
