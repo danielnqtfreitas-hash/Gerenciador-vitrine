@@ -19,12 +19,82 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 
+<!-- 1. Configuração da Biblioteca Google AI -->
 <script type="importmap">
   {
     "imports": {
       "@google/generative-ai": "https://esm.run/@google/generative-ai"
     }
   }
+</script>
+
+<!-- 2. Lógica da IA com Trava de Segurança -->
+<script type="module">
+  import { GoogleGenerativeAI } from "@google/generative-ai";
+
+  // Variável de controle para a trava (throttling)
+  let isGenerating = false;
+
+  async function gerarDescricaoComIA() {
+    // BLOQUEIO: Se já estiver gerando, ignora novos cliques
+    if (isGenerating) return;
+
+    const nome = document.getElementById('prodName')?.value;
+    const campoDesc = document.getElementById('prodDesc');
+    const loading = document.getElementById('iaLoadingDesc');
+    const btn = document.getElementById('btnGerarIA');
+    
+    const API_KEY = "AIzaSyBnC9w0VSCZRnD7879eg2gGVlhhuL4ngd4";
+
+    if (!nome || !nome.trim()) {
+      alert("⚠️ Digite o nome do produto primeiro!");
+      return;
+    }
+
+    try {
+      // Ativa a trava e o estado visual
+      isGenerating = true;
+      if (loading) loading.classList.remove('hidden');
+      if (btn) {
+        btn.disabled = true;
+        btn.innerText = "Gerando...";
+      }
+
+      const genAI = new GoogleGenerativeAI(API_KEY);
+      
+      // Modelo atualizado para 2026 conforme sua lista
+      const model = genAI.getGenerativeModel({ 
+        model: "gemini-3-flash-preview",
+        systemInstruction: "Você é um especialista em moda e e-commerce. Escreva uma descrição detalhada, porém curta (máximo 200 caracteres). Foque no caimento, no tecido sugerido e na ocasião de uso. Responda APENAS com o texto final."
+      });
+
+      // Prompt com mais detalhes solicitado
+      const prompt = `Crie uma descrição detalhada e persuasiva para o produto: "${nome}". 
+      Mencione como ele valoriza o corpo, a sofisticação do design e sugira um momento de uso (ex: festa, jantar, evento casual).`;
+
+      const result = await model.generateContent(prompt);
+      const response = await result.response;
+      let text = response.text().trim().replace(/^["']|["']$/g, '');
+
+      if (campoDesc) {
+        campoDesc.value = text;
+      }
+
+    } catch (error) {
+      console.error("Erro no Gemini:", error);
+      alert("Houve um erro. Tente novamente em alguns segundos.");
+    } finally {
+      // Libera a trava após o processamento
+      isGenerating = false;
+      if (loading) loading.classList.add('hidden');
+      if (btn) {
+        btn.disabled = false;
+        btn.innerText = "Gerar com IA";
+      }
+    }
+  }
+
+  window.gerarDescricaoComIA = gerarDescricaoComIA;
 </script>
 
     <script src="https://unpkg.com/html5-qrcode"></script>
@@ -8894,53 +8964,7 @@ window.toggleLojaStatus = async () => {
     }
     </style>
 
-<<script>
-  window.gerarDescricaoComIA = async function() {
-    const nome = document.getElementById('prodName')?.value;
-    const campoDesc = document.getElementById('prodDesc');
-    const loading = document.getElementById('iaLoadingDesc');
-    const btn = document.getElementById('btnGerarIA');
-    
-    const API_KEY = "AIzaSyBnC9w0VSCZRnD7879eg2gGVlhhuL4ngd4";
 
-    if (!nome || !nome.trim()) return alert("⚠️ Digite o nome do produto!");
-
-    try {
-      if (loading) loading.classList.remove('hidden');
-      if (btn) btn.disabled = true;
-
-      // URL atualizada para v1beta para evitar o erro 'not found'
-      const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${API_KEY}`;
-
-      const response = await fetch(url, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          contents: [{
-            parts: [{ 
-              text: `Gere uma descrição curta e profissional para o produto: "${nome}". Máximo 180 caracteres.` 
-            }]
-          }]
-        })
-      });
-
-      const data = await response.json();
-
-      if (data.error) throw new Error(data.error.message);
-
-      if (data.candidates && data.candidates[0].content) {
-        campoDesc.value = data.candidates[0].content.parts[0].text;
-      }
-      
-    } catch (error) {
-      console.error("Erro na Requisição:", error);
-      alert("Erro na IA: " + error.message);
-    } finally {
-      if (loading) loading.classList.add('hidden');
-      if (btn) btn.disabled = false;
-    }
-  };
-</script>
 
 </body>
 </html>
