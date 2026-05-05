@@ -102,69 +102,6 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/driver.js@1.0.1/dist/driver.css"/>
 <script src="https://cdn.jsdelivr.net/npm/driver.js@1.0.1/dist/driver.js.iife.js"></script>
 
-<script>
-// Registro do Service Worker
-if ('serviceWorker' in navigator) {
-    navigator.serviceWorker.register('/firebase-messaging-sw.js')
-        .then((registration) => {
-            console.log('✅ Service Worker registrado com escopo:', registration.scope);
-            
-            // Aqui você inicializa o messaging para o FRONTEND[cite: 1]
-            // Certifique-se de que o SDK compat também esteja carregado no index.html
-            const messaging = firebase.messaging();
-            
-            // Solicitar permissão e pegar o token
-            messaging.getToken({ vapidKey: 'SUA_CHAVE_VAPID_PUBLICA' })
-                .then((currentToken) => {
-                    if (currentToken) {
-                        console.log('🚀 Token gerado:', currentToken);
-                        // Envie este token para o seu Firestore no perfil do usuário[cite: 1]
-                    }
-                }).catch((err) => {
-                    console.log('❌ Erro ao obter token:', err);
-                });
-        })
-        .catch((err) => {
-            console.log('❌ Erro ao registrar Service Worker:', err);
-        });
-}
-
-// 2. Função para Gerar e Salvar o Token
-async function configurarNotificacoes(registration, user) {
-    const messaging = firebase.messaging();
-    
-    try {
-        // Solicita permissão ao navegador
-        const permission = await Notification.requestPermission();
-        
-        if (permission === 'granted') {
-            // Gera o token usando sua chave VAPID
-            const token = await messaging.getToken({
-                serviceWorkerRegistration: registration,
-                vapidKey: 'BKk5Dr9AJ8fY0QAelaAvSPK7D9csG5dwdW45VhG0C-oeipeKD2kErkExPHQRp0eAYhm797-k5lLn3OO7-TRfZVw'
-            });
-
-            if (token) {
-                console.log('✅ Token gerado:', token);
-                
-                // Salva no Firestore vinculando ao UID do usuário logado
-                await firebase.firestore().collection('users').doc(user.uid).set({
-                    fcmToken: token,
-                    lastTokenUpdate: firebase.firestore.FieldValue.serverTimestamp()
-                }, { merge: true });
-                
-                console.log('🚀 Endereço de notificação salvo no banco!');
-            } else {
-                console.warn('⚠️ Nenhum token disponível.');
-            }
-        } else {
-            console.warn('❌ Permissão de notificação negada.');
-        }
-    } catch (err) {
-        console.error('❌ Erro ao configurar notificações:', err);
-    }
-}
-</script>
 
     
    <script>
@@ -186,6 +123,81 @@ async function configurarNotificacoes(registration, user) {
             }
         }
     }
+</script>
+
+<script>
+/**
+ * 1. FUNÇÃO PARA SINCRONIZAR O TOKEN
+ * Esta função utiliza o método .set() com { merge: true } para garantir 
+ * que o token seja ATUALIZADO em vez de criar um novo documento toda vez.
+ */
+async function registrarOuAtualizarToken(token, storeId) {
+    if (!storeId) {
+        console.warn("⚠️ ID da loja não identificado. O token não será salvo.");
+        return;
+    }
+
+    // Caminho fixo para evitar duplicidade no banco
+    const docRef = firebase.firestore().doc(`stores/${storeId}/config/notifications`);
+
+    try {
+        await docRef.set({
+            fcmToken: token,
+            lastUpdate: firebase.firestore.FieldValue.serverTimestamp(),
+            platform: "web_pwa"
+        }, { merge: true }); // O merge mantém os outros campos do documento intactos
+        
+        console.log(`✅ Token sincronizado com sucesso para a loja: ${storeId}`);
+    } catch (error) {
+        console.error("❌ Erro ao sincronizar token no Firestore:", error);
+    }
+}
+
+/**
+ * 2. REGISTRO DO SERVICE WORKER E CAPTURA DO TOKEN
+ * O uso de async/await aqui garante que o fluxo siga a ordem correta.
+ */
+if ('serviceWorker' in navigator) {
+    window.addEventListener('load', async () => {
+        try {
+            // Registra o Service Worker que você acabou de subir via deploy
+            const registration = await navigator.serviceWorker.register('/firebase-messaging-sw.js');
+            console.log('✅ Service Worker ativo no escopo:', registration.scope);
+            
+            // Inicializa o messaging (Certifique-se de que o SDK está carregado antes deste script)
+            const messaging = firebase.messaging();
+            
+            // Solicita permissão ao lojista[cite: 1]
+            const permission = await Notification.requestPermission();
+            
+            if (permission === 'granted') {
+                // Gera o token usando sua chave VAPID[cite: 1]
+                const currentToken = await messaging.getToken({ 
+                    serviceWorkerRegistration: registration,
+                    vapidKey: 'BKk5Dr9AJ8fY0QAelaAvSPK7D9csG5dwdW45VhG0C-oeipeKD2kErkExPHQRp0eAYhm797-k5lLn3OO7-TRfZVw' 
+                });
+
+                if (currentToken) {
+                    console.log('🚀 Token gerado:', currentToken);
+                    
+                    // Define a loja ativa dinamicamente (ajuste conforme sua variável global)[cite: 1]
+                    const storeId = (typeof lojaAtiva !== 'undefined' && lojaAtiva) ? lojaAtiva : 'dandan';
+                    
+                    // Chama a função para salvar/atualizar no Firestore[cite: 1]
+                    await registrarOuAtualizarToken(currentToken, storeId);
+                    
+                } else {
+                    console.warn('⚠️ Nenhum token disponível. Verifique as configurações do FCM.');
+                }
+            } else {
+                console.warn('❌ Permissão de notificação negada pelo usuário.');
+            }
+        } catch (err) {
+            // Se cair aqui, verifique se o Firebase foi carregado corretamente no HTML[cite: 1]
+            console.error('❌ Erro no fluxo de notificações:', err);
+        }
+    });
+}
 </script>
 
 <style>
