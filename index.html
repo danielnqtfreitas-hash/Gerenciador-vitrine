@@ -103,30 +103,38 @@
 <script src="https://cdn.jsdelivr.net/npm/driver.js@1.0.1/dist/driver.js.iife.js"></script>
 
 <script>
+// 1. Registro do Service Worker
 if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => {
         navigator.serviceWorker.register('/firebase-messaging-sw.js')
             .then(reg => {
                 console.log('✅ Service Worker de Mensagens Ativo:', reg.scope);
                 
-                // Inicializa a função de permissão e token após o registro
-                if (typeof firebase !== 'undefined') {
-                    configurarNotificacoes(reg);
-                }
+                // Espera o Firebase carregar o usuário para gerar o token
+                firebase.auth().onAuthStateChanged((user) => {
+                    if (user) {
+                        configurarNotificacoes(reg, user);
+                    } else {
+                        console.log('ℹ️ Aguardando login para configurar notificações...');
+                    }
+                });
             })
             .catch(err => {
-                console.error('❌ Erro ao registar Service Worker:', err);
+                console.error('❌ Erro ao registrar Service Worker:', err);
             });
     });
 }
 
-async function configurarNotificacoes(registration) {
+// 2. Função para Gerar e Salvar o Token
+async function configurarNotificacoes(registration, user) {
     const messaging = firebase.messaging();
     
     try {
+        // Solicita permissão ao navegador
         const permission = await Notification.requestPermission();
         
         if (permission === 'granted') {
+            // Gera o token usando sua chave VAPID
             const token = await messaging.getToken({
                 serviceWorkerRegistration: registration,
                 vapidKey: 'BKk5Dr9AJ8fY0QAelaAvSPK7D9csG5dwdW45VhG0C-oeipeKD2kErkExPHQRp0eAYhm797-k5lLn3OO7-TRfZVw'
@@ -135,17 +143,18 @@ async function configurarNotificacoes(registration) {
             if (token) {
                 console.log('✅ Token gerado:', token);
                 
-                // Pegue o ID do usuário logado (ex: auth.currentUser.uid)
-                const user = firebase.auth().currentUser;
-                if (user) {
-                    await firebase.firestore().collection('users').doc(user.uid).set({
-                        fcmToken: token,
-                        lastTokenUpdate: new Date()
-                    }, { merge: true });
-                    
-                    console.log('🚀 Endereço de notificação salvo no banco!');
-                }
+                // Salva no Firestore vinculando ao UID do usuário logado
+                await firebase.firestore().collection('users').doc(user.uid).set({
+                    fcmToken: token,
+                    lastTokenUpdate: firebase.firestore.FieldValue.serverTimestamp()
+                }, { merge: true });
+                
+                console.log('🚀 Endereço de notificação salvo no banco!');
+            } else {
+                console.warn('⚠️ Nenhum token disponível.');
             }
+        } else {
+            console.warn('❌ Permissão de notificação negada.');
         }
     } catch (err) {
         console.error('❌ Erro ao configurar notificações:', err);
