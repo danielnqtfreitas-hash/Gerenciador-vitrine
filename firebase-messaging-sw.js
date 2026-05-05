@@ -1,7 +1,7 @@
 importScripts('https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js');
 importScripts('https://www.gstatic.com/firebasejs/10.7.1/firebase-messaging-compat.js');
 
-// Inicialização com as suas credenciais
+// 1. Inicialização
 firebase.initializeApp({
     apiKey: "AIzaSyAdwsGBTApwOwqr37qCv72gdPRbipsZG0Q", 
     authDomain: "meuestoque-1badc.firebaseapp.com", 
@@ -13,45 +13,50 @@ firebase.initializeApp({
 
 const messaging = firebase.messaging();
 
-// Este evento captura a mensagem quando o PWA está FECHADO ou em BACKGROUND
-messaging.onBackgroundMessage((payload) => {
-    console.log('[sw.js] Mensagem recebida em background:', payload);
+// 2. Configuração de Cache (O que estava no js.js)
+const CACHE_NAME = 'vitrine-pro-cache-v2';
+const ASSETS_TO_CACHE = [
+    '/',
+    '/index.html',
+    '/manifest.json'
+];
 
-    // Extração segura dos dados da notificação
-    const notificationTitle = payload.notification?.title || "Novo Pedido na Vitrine!";
+self.addEventListener('install', (event) => {
+    self.skipWaiting();
+    event.waitUntil(
+        caches.open(CACHE_NAME).then((cache) => cache.addAll(ASSETS_TO_CACHE))
+    );
+});
+
+self.addEventListener('fetch', (event) => {
+    event.respondWith(
+        fetch(event.request).catch(() => caches.match(event.request))
+    );
+});
+
+// 3. Notificações em Background
+messaging.onBackgroundMessage((payload) => {
+    const notificationTitle = payload.notification?.title || "Novo Pedido!";
     const notificationOptions = {
-        body: payload.notification?.body || "Aceda ao painel para ver os detalhes.",
-        // Usar URL absoluta evita erro de carregamento do ícone no SW
-        icon: 'https://vitrineonline.app.br/favicon.png', 
+        body: payload.notification?.body || "Aceda ao painel para ver detalhes.",
+        icon: 'https://vitrineonline.app.br/favicon.png',
         badge: 'https://vitrineonline.app.br/favicon.png',
-        tag: 'novo-pedido-alerta', // Agrupa notificações para não inundar o telemóvel
+        tag: 'novo-pedido',
         renotify: true,
         vibrate: [200, 100, 200],
-        data: {
-            url: 'https://vitrineonline.app.br/painel' // URL que será aberta ao clicar
-        }
+        data: { url: '/painel' }
     };
-
-    // O comando crucial que faz a notificação "saltar" no ecrã
     return self.registration.showNotification(notificationTitle, notificationOptions);
 });
 
-// Lógica para abrir o site quando o utilizador clica na notificação
 self.addEventListener('notificationclick', (event) => {
-    event.notification.close(); // Fecha o balão da notificação
-
+    event.notification.close();
     event.waitUntil(
         clients.matchAll({ type: 'window', includeUncontrolled: true }).then((windowClients) => {
-            // Se o painel já estiver aberto, foca nele
             for (let client of windowClients) {
-                if (client.url.includes('/painel') && 'focus' in client) {
-                    return client.focus();
-                }
+                if (client.url.includes('/painel') && 'focus' in client) return client.focus();
             }
-            // Se não estiver aberto, abre uma nova janela
-            if (clients.openWindow) {
-                return clients.openWindow(event.notification.data.url);
-            }
+            if (clients.openWindow) return clients.openWindow('/painel');
         })
     );
 });
