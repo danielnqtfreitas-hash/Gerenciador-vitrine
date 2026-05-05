@@ -19,6 +19,14 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 
+<script type="importmap">
+  {
+    "imports": {
+      "@google/generative-ai": "https://esm.run/@google/generative-ai"
+    }
+  }
+</script>
+
     <script src="https://unpkg.com/html5-qrcode"></script>
  
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/driver.js@1.0.1/dist/driver.css"/>
@@ -1971,10 +1979,34 @@ if ('serviceWorker' in navigator) {
                     </div>
                 </div>
 
-                <div class="bg-white p-6 rounded-[2rem] border border-slate-100 shadow-sm">
-                    <label class="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Descrição Detalhada</label>
-                    <textarea id="prodDesc" rows="4" class="w-full mt-3 p-4 bg-slate-50 border-none rounded-2xl text-sm outline-none focus:ring-2 focus:ring-primary-500 transition-all" placeholder="Fale sobre o material, dimensões, cuidados..."></textarea>
-                </div>
+                <!-- Bloco de Descrição com IA Integrada -->
+<div class="bg-white p-6 rounded-[2rem] border border-slate-100 shadow-sm">
+    <div class="flex justify-between items-center mb-3">
+        <label class="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Descrição Detalhada</label>
+        
+        <!-- Botão Mágico da IA -->
+        <button type="button" onclick="gerarDescricaoComIA()" id="btnGerarIA" 
+            class="flex items-center gap-2 px-4 py-2 bg-indigo-50 text-indigo-600 rounded-xl border border-indigo-100 active:scale-90 transition-all group">
+            <i data-lucide="sparkles" class="w-3 h-3 group-hover:rotate-12 transition-transform"></i>
+            <span class="text-[9px] font-black uppercase tracking-tighter">Gerar com IA</span>
+        </button>
+    </div>
+    
+    <div class="relative">
+        <textarea id="prodDesc" rows="4" 
+            class="w-full p-4 bg-slate-50 border-none rounded-2xl text-sm outline-none focus:ring-2 focus:ring-primary-500 transition-all" 
+            placeholder="Fale sobre o material, dimensões, cuidados..."></textarea>
+            
+        <!-- Indicador de carregamento sutil -->
+        <div id="iaLoadingDesc" class="hidden absolute inset-0 bg-slate-50/80 backdrop-blur-sm rounded-2xl flex items-center justify-center">
+            <div class="flex items-center gap-2">
+                <div class="w-2 h-2 bg-indigo-600 rounded-full animate-bounce"></div>
+                <div class="w-2 h-2 bg-indigo-600 rounded-full animate-bounce [animation-delay:-0.15s]"></div>
+                <div class="w-2 h-2 bg-indigo-600 rounded-full animate-bounce [animation-delay:-0.3s]"></div>
+            </div>
+        </div>
+    </div>
+</div>
 
                 <div class="flex flex-col sm:flex-row items-center justify-between gap-4 pt-6 border-t border-slate-100">
                     <button type="button" onclick="document.getElementById('productModal').classList.add('hidden')" class="w-full sm:w-auto px-10 py-4 text-slate-400 font-black uppercase text-[10px] tracking-widest hover:text-slate-600 transition-all">Cancelar</button>
@@ -2088,6 +2120,8 @@ async function solicitarPermissaoNotificacao(storeId) {
         console.error('Erro ao configurar notificações:', error);
     }
 }
+
+
 
 // 1. Função que controla o visual do Switch (Definir no topo do script)
 window.updateLojaVisual = (isOpen) => {
@@ -8859,5 +8893,54 @@ window.toggleLojaStatus = async () => {
         @page { margin: 0; }
     }
     </style>
+
+<<script>
+  window.gerarDescricaoComIA = async function() {
+    const nome = document.getElementById('prodName')?.value;
+    const campoDesc = document.getElementById('prodDesc');
+    const loading = document.getElementById('iaLoadingDesc');
+    const btn = document.getElementById('btnGerarIA');
+    
+    const API_KEY = "AIzaSyBnC9w0VSCZRnD7879eg2gGVlhhuL4ngd4";
+
+    if (!nome || !nome.trim()) return alert("⚠️ Digite o nome do produto!");
+
+    try {
+      if (loading) loading.classList.remove('hidden');
+      if (btn) btn.disabled = true;
+
+      // URL atualizada para v1beta para evitar o erro 'not found'
+      const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${API_KEY}`;
+
+      const response = await fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          contents: [{
+            parts: [{ 
+              text: `Gere uma descrição curta e profissional para o produto: "${nome}". Máximo 180 caracteres.` 
+            }]
+          }]
+        })
+      });
+
+      const data = await response.json();
+
+      if (data.error) throw new Error(data.error.message);
+
+      if (data.candidates && data.candidates[0].content) {
+        campoDesc.value = data.candidates[0].content.parts[0].text;
+      }
+      
+    } catch (error) {
+      console.error("Erro na Requisição:", error);
+      alert("Erro na IA: " + error.message);
+    } finally {
+      if (loading) loading.classList.add('hidden');
+      if (btn) btn.disabled = false;
+    }
+  };
+</script>
+
 </body>
 </html>
