@@ -851,26 +851,27 @@ if ('serviceWorker' in navigator) {
     </header>
   
 
-
-
-         
- <!-- VIEW DASHBOARD: ESTILO BANKING APP (MOBILE) -->
-<div id="view-dashboard" class="max-w-md mx-auto space-y-6 hidden animate-fade-in pb-24 px-4 bg-slate-50">
+<!-- O segredo está em garantir que esta div ocupe o espaço restante (flex-1) sem ultrapassar a tela -->
+<div id="content-area" class="flex-1 overflow-y-auto bg-slate-50 p-4 md:p-8">
     
-    <!-- Header: Perfil e Status -->
-    <div class="flex items-center justify-between pt-6 pb-2">
-        <div class="flex items-center gap-3">
-            <div class="w-12 h-12 bg-slate-900 rounded-2xl flex items-center justify-center shadow-sm">
-                <i data-lucide="bar-chart-big" class="w-6 h-6 text-white"></i>
-            </div>
-            <div>
-                <h3 class="text-lg font-bold text-slate-900 leading-tight">Dashboard</h3>
-                <div id="statusLojaText" class="text-[10px] font-black uppercase text-green-600 flex items-center gap-1">
-                    <span class="w-1.5 h-1.5 bg-green-500 rounded-full"></span> Online agora
+    <!-- VIEW DASHBOARD: Removi o bg-slate-50 daqui para não sobrepor e causar borrões no scroll -->
+    <div id="view-dashboard" class="max-w-md mx-auto space-y-6 hidden animate-fade-in pb-24 px-4">
+        
+        <!-- Header: Perfil e Status -->
+        <div class="flex items-center justify-between pt-6 pb-2">
+            <div class="flex items-center gap-3">
+                <div class="w-12 h-12 bg-slate-900 rounded-2xl flex items-center justify-center shadow-sm">
+                    <i data-lucide="bar-chart-big" class="w-6 h-6 text-white"></i>
+                </div>
+                <div>
+                    <h3 class="text-lg font-bold text-slate-900 leading-tight">Dashboard</h3>
+                    <!-- Ajustei o status para não ter margens que empurram o conteúdo -->
+                    <div id="statusLojaText" class="text-[10px] font-black uppercase text-green-600 flex items-center gap-1">
+                        <span class="w-1.5 h-1.5 bg-green-500 rounded-full"></span> Online agora
+                    </div>
                 </div>
             </div>
         </div>
-    </div>
 
     <!-- SEÇÃO 1: INVENTÁRIO (PRODUTOS E CATEGORIAS) -->
     <div class="grid grid-cols-2 gap-3">
