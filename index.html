@@ -103,26 +103,30 @@
 <script src="https://cdn.jsdelivr.net/npm/driver.js@1.0.1/dist/driver.js.iife.js"></script>
 
 <script>
-// 1. Registro do Service Worker
+// Registro do Service Worker
 if ('serviceWorker' in navigator) {
-    window.addEventListener('load', () => {
-        navigator.serviceWorker.register('/firebase-messaging-sw.js')
-            .then(reg => {
-                console.log('✅ Service Worker de Mensagens Ativo:', reg.scope);
-                
-                // Espera o Firebase carregar o usuário para gerar o token
-                firebase.auth().onAuthStateChanged((user) => {
-                    if (user) {
-                        configurarNotificacoes(reg, user);
-                    } else {
-                        console.log('ℹ️ Aguardando login para configurar notificações...');
+    navigator.serviceWorker.register('/firebase-messaging-sw.js')
+        .then((registration) => {
+            console.log('✅ Service Worker registrado com escopo:', registration.scope);
+            
+            // Aqui você inicializa o messaging para o FRONTEND[cite: 1]
+            // Certifique-se de que o SDK compat também esteja carregado no index.html
+            const messaging = firebase.messaging();
+            
+            // Solicitar permissão e pegar o token
+            messaging.getToken({ vapidKey: 'SUA_CHAVE_VAPID_PUBLICA' })
+                .then((currentToken) => {
+                    if (currentToken) {
+                        console.log('🚀 Token gerado:', currentToken);
+                        // Envie este token para o seu Firestore no perfil do usuário[cite: 1]
                     }
+                }).catch((err) => {
+                    console.log('❌ Erro ao obter token:', err);
                 });
-            })
-            .catch(err => {
-                console.error('❌ Erro ao registrar Service Worker:', err);
-            });
-    });
+        })
+        .catch((err) => {
+            console.log('❌ Erro ao registrar Service Worker:', err);
+        });
 }
 
 // 2. Função para Gerar e Salvar o Token
