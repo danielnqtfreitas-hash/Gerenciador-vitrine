@@ -851,8 +851,9 @@ if ('serviceWorker' in navigator) {
     </header>
   
 
-<!-- O segredo está em garantir que esta div ocupe o espaço restante (flex-1) sem ultrapassar a tela -->
-<div id="content-area" class="flex-1 overflow-y-auto bg-slate-50 p-4 md:p-8">
+<!-- CONTAINER DE CONTEÚDO: Ajustado para alinhar tudo no topo -->
+<div id="content-area" class="flex-1 overflow-y-auto bg-slate-50 p-4 md:p-8 flex flex-col justify-start">
+
     
     <!-- VIEW DASHBOARD: Removi o bg-slate-50 daqui para não sobrepor e causar borrões no scroll -->
     <div id="view-dashboard" class="max-w-md mx-auto space-y-6 hidden animate-fade-in pb-24 px-4">
@@ -1282,46 +1283,44 @@ if ('serviceWorker' in navigator) {
     </div>
 </div>
 
-
-            <div id="view-banners" class="max-w-6xl mx-auto space-y-6 hidden animate-fade-in">
-                <div class="flex justify-between items-center">
-                    <h3 class="text-2xl font-bold text-slate-800">Banners de Destaque</h3>
-                    <button onclick="window.openBannerModal()" class="bg-primary-600 text-white px-5 py-2.5 rounded-2xl font-bold flex items-center gap-2 shadow-lg"><i data-lucide="plus" class="w-5 h-5"></i> Novo</button>
-                </div>
-                <div id="bannersList" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"></div>
-                <div id="emptyBannersMsg" class="hidden text-center py-24 text-slate-400 italic">Nenhum banner ativo.</div>
-            </div>
-
-          <div id="view-products" class="max-w-6xl mx-auto space-y-6 hidden animate-fade-in">
-    <!-- Topo: Pesquisa e Botões -->
-    <div class="flex flex-col md:flex-row justify-between items-center gap-4">
-        <!-- Barra de Busca Ajustada -->
-<div class="relative w-full md:w-96">
-    <i data-lucide="search" class="absolute left-4 top-3.5 text-slate-400 w-4 h-4"></i>
-  <!-- Troque filtrarProdutos por renderProductList -->
-<input type="text" 
-       id="productSearch" 
-       oninput="renderProductList()" 
-       placeholder="Pesquisar catálogo..." 
-       class="w-full pl-12 border rounded-2xl p-3.5 outline-none bg-white">
-       </div>
-        
-        <!-- Grupo de Botões -->
-        <div class="flex flex-col sm:flex-row gap-2 w-full md:w-auto">
-            <button onclick="window.openProductModal()" class="flex-1 bg-slate-900 text-white px-8 py-3.5 rounded-2xl font-bold flex justify-center items-center gap-2 shadow-lg uppercase text-sm">
-                <i data-lucide="plus" class="w-5 h-5"></i> Novo Produto
-            </button>
-
-            <button onclick="fluxoCadastroRapido()" class="flex-1 bg-gradient-to-r from-orange-500 to-amber-600 text-white px-8 py-3 rounded-2xl font-bold flex justify-center items-center gap-2 shadow-md hover:scale-[1.02] transition-all uppercase text-[12px]">
-                <i data-lucide="zap" class="w-4 h-4"></i> Produto Rápido
+    <!-- VIEW BANNERS -->
+    <div id="view-banners" class="max-w-6xl mx-auto w-full space-y-6 hidden animate-fade-in">
+        <div class="flex justify-between items-center">
+            <h3 class="text-2xl font-bold text-slate-800">Banners de Destaque</h3>
+            <button onclick="window.openBannerModal()" class="bg-primary-600 text-white px-5 py-2.5 rounded-2xl font-bold flex items-center gap-2 shadow-lg">
+                <i data-lucide="plus" class="w-5 h-5"></i> Novo
             </button>
         </div>
+        <div id="bannersList" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"></div>
+        <div id="emptyBannersMsg" class="hidden text-center py-24 text-slate-400 italic">Nenhum banner ativo.</div>
     </div>
 
-    <!-- Lista de Produtos -->
-    <div id="productListGrouped" class="space-y-4 pb-12"></div>
-</div>
+    <!-- VIEW PRODUTOS -->
+    <div id="view-products" class="max-w-6xl mx-auto w-full space-y-6 hidden animate-fade-in">
+        <!-- Topo: Pesquisa e Botões -->
+        <div class="flex flex-col md:flex-row justify-between items-center gap-4">
+            <!-- Barra de Busca -->
+            <div class="relative w-full md:w-96">
+                <i data-lucide="search" class="absolute left-4 top-3.5 text-slate-400 w-4 h-4"></i>
+                <input type="text" id="productSearch" oninput="renderProductList()" placeholder="Pesquisar catálogo..." class="w-full pl-12 border rounded-2xl p-3.5 outline-none bg-white shadow-sm">
+            </div>
+            
+            <!-- Grupo de Botões -->
+            <div class="flex flex-col sm:flex-row gap-2 w-full md:w-auto">
+                <button onclick="window.openProductModal()" class="flex-1 bg-slate-900 text-white px-8 py-3.5 rounded-2xl font-bold flex justify-center items-center gap-2 shadow-lg uppercase text-sm">
+                    <i data-lucide="plus" class="w-5 h-5"></i> Novo Produto
+                </button>
 
+                <button onclick="fluxoCadastroRapido()" class="flex-1 bg-gradient-to-r from-orange-500 to-amber-600 text-white px-8 py-3 rounded-2xl font-bold flex justify-center items-center gap-2 shadow-md hover:scale-[1.02] transition-all uppercase text-[12px]">
+                    <i data-lucide="zap" class="w-4 h-4"></i> Produto Rápido
+                </button>
+            </div>
+        </div>
+
+        <!-- Lista de Produtos -->
+        <div id="productListGrouped" class="space-y-4 pb-12"></div>
+    </div>
+</div>
             <div id="view-categories" class="max-w-4xl mx-auto space-y-6 hidden animate-fade-in">
                 <div class="bg-white p-6 md:p-8 border border-slate-100 rounded-3xl shadow-sm">
                     <h3 class="font-bold text-xl mb-4 text-slate-800" id="catFormTitle">Departamentos</h3>
