@@ -8994,6 +8994,26 @@ window.fluxoCadastroRapido = async function() {
     }
 };
 
+     // Função para adicionar uma nova opção/item dentro de um grupo de complementos
+window.addOptionToGroup = function(groupId) {
+    if (!window.currentProductComplements) return;
+    
+    const group = window.currentProductComplements.find(g => g.id === groupId);
+    if (group) {
+        // Cria um novo item com ID único
+        const newItem = {
+            id: Date.now().toString(),
+            name: "",
+            price: 0,
+            status: 'active'
+        };
+        
+        group.items.push(newItem);
+        
+        // Renderiza novamente a interface para mostrar o novo campo
+        window.renderComplementGroups();
+    }
+};
             
 window.toggleLojaStatus = async () => {
     if (!currentStoreId) return;
