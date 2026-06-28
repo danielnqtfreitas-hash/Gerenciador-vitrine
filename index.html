@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Painel do Lojista | Vitrine Online</title>
+    <title>Painel Gerenciador | Vitrine Online</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <script src="https://unpkg.com/lucide@latest"></script>
@@ -482,7 +482,9 @@ if ('serviceWorker' in navigator) {
 </head>
 <body class="text-slate-800 antialiased h-screen overflow-y-auto flex bg-slate-50">
     
-  <div id="manualOrderModal" class="modal-overlay fixed inset-0 z-[150] flex items-center justify-center p-4 hidden">
+   <!-- MODAL: Pedido Manual -->
+  
+    <div id="manualOrderModal" class="modal-overlay fixed inset-0 z-[150] flex items-center justify-center p-4 hidden">
     <div class="bg-white rounded-[2.5rem] shadow-2xl w-full max-w-2xl auth-card-container overflow-hidden">
         
         <div class="bg-slate-900 p-6 flex items-center justify-between flex-shrink-0">
@@ -497,75 +499,73 @@ if ('serviceWorker' in navigator) {
             </button>
         </div>
 
-        <div class="auth-card-content p-8 overflow-y-auto max-h-[calc(100vh-120px)]">
+        <div class="auth-card-content p-8 overflow-y-auto">
             <div class="space-y-8">
                 
                 <div class="space-y-4">
                     <h4 class="text-[11px] font-black uppercase text-slate-400 tracking-widest border-b border-slate-100 pb-2">Informações do Cliente</h4>
-                    
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div>
-                            <label class="block text-[10px] font-bold text-slate-500 uppercase mb-1">Cliente</label>
-                            <div class="flex gap-2">
-                                <input type="text" id="manualOrderCustName" 
-                                       class="flex-1 p-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-800 focus:outline-none focus:border-primary-500" 
-                                       placeholder="Nome do cliente">
-                                
-                                <button type="button" onclick="window.openCustomerSelector()" 
-                                        class="p-2.5 bg-primary-50 text-primary-600 rounded-xl hover:bg-primary-100 transition-all shadow-sm"
-                                        title="Selecionar dos contatos">
-                                    <i data-lucide="users" class="w-5 h-5"></i>
-                                </button>
-                            </div>
-                        </div>
+                        <div class="mb-3">
+    <label class="block text-[10px] font-bold text-slate-500 uppercase mb-1">Cliente</label>
+    <div class="flex gap-2">
+        <input type="text" id="manualOrderCustName" 
+               class="flex-1 p-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm" 
+               placeholder="Nome do cliente">
+        
+        <button type="button" onclick="window.openCustomerSelector()" 
+                class="p-2.5 bg-primary-50 text-primary-600 rounded-xl hover:bg-primary-100 transition-all shadow-sm"
+                title="Selecionar dos contatos">
+            <i data-lucide="users" class="w-5 h-5"></i>
+        </button>
+    </div>
+</div>
 
-                        <div>
-                            <label class="block text-[10px] font-bold text-slate-500 uppercase mb-1">Total Final (Opcional)</label>
-                            <div class="relative">
-                                <span class="absolute left-3 top-2.5 text-slate-400 text-sm font-bold">R$</span>
-                                <input type="number" id="manualOrderTotalOverride" step="0.01" 
-                                       class="w-full p-2.5 pl-10 bg-amber-50 border border-amber-200 rounded-xl text-sm font-black text-amber-900 focus:outline-none focus:border-amber-400" 
-                                       placeholder="0,00">
-                            </div>
-                            <p class="text-[9px] text-amber-600 mt-1 font-medium">
-                                ⚠️ Se preencher aqui, este valor será o total, ignorando a soma dos itens.
-                            </p>
-                        </div>
+<div class="mb-4">
+    <label class="block text-[10px] font-bold text-slate-500 uppercase mb-1">Total Final (Opcional)</label>
+    <div class="relative">
+        <span class="absolute left-3 top-2.5 text-slate-400 text-sm font-bold">R$</span>
+        <input type="number" id="manualOrderTotalOverride" step="0.01" 
+               class="w-full p-2.5 pl-10 bg-amber-50 border border-amber-200 rounded-xl text-sm font-black text-amber-900" 
+               placeholder="0,00">
+    </div>
+    <p class="text-[9px] text-amber-600 mt-1 font-medium">
+        ⚠️ Se preencher aqui, este valor será o total, ignorando a soma dos itens.
+    </p>
+</div>
 
-                        <div>
-                            <label class="text-[10px] font-bold text-slate-500 uppercase block mb-1">WhatsApp</label>
-                            <input id="manualPhone" type="text" placeholder="(00) 00000-0000" 
-                                   class="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-800 focus:outline-none focus:border-primary-500">
+                        <div class="space-y-1">
+                            <label class="text-[10px] font-bold text-slate-500 uppercase ml-1">WhatsApp</label>
+                            <input id="manualPhone" type="text" placeholder="(00) 00000-0000" class="input-pro">
                         </div>
-
-                        <div>
-                            <label class="text-[10px] font-bold text-slate-500 uppercase block mb-1">Endereço (Opcional)</label>
-                            <input id="manualAddress" type="text" placeholder="Rua, número, bairro..." 
-                                   class="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-800 focus:outline-none focus:border-primary-500">
+                        <div class="md:col-span-2 space-y-1">
+                            <label class="text-[10px] font-bold text-slate-500 uppercase ml-1">Endereço (Opcional)</label>
+                            <input id="manualAddress" type="text" placeholder="Rua, número, bairro..." class="input-pro">
                         </div>
-
-                        <div class="md:col-span-2">
-                            <label class="text-[10px] font-bold text-slate-500 uppercase block mb-1">Forma de Pagamento</label>
-                            <select id="manualPayment" class="w-full p-2.5 bg-white border border-slate-200 rounded-xl text-sm text-slate-800 focus:outline-none focus:border-primary-500" onchange="window.handlePaymentChange()">
+                        <div class="md:col-span-2 space-y-1">
+                            <label class="text-[10px] font-bold text-slate-500 uppercase ml-1">Forma de Pagamento</label>
+                            <select id="manualPayment" class="input-pro bg-white" onchange="window.handlePaymentChange()">
                                 <option value="">Selecione...</option>
                                 <option value="pix">PIX</option>
                                 <option value="dinheiro">Dinheiro</option>
                                 <option value="cartao_credito">Cartão</option>
-                                <option value="fiado">A Prazo</option>
-                                <option value="parcelado">Parcelado</option>
+                             <option value="fiado">A Prazo</option>
+                             <option value="parcelado">Parcelado</option>
                             </select>
-                            
-                            <div id="paymentDetails" class="hidden mt-3 space-y-3">
-                                <div id="fiadoField" class="hidden">
-                                    <label class="text-[10px] font-bold text-slate-500 uppercase block mb-1">Data para receber</label>
-                                    <input id="fiadoDueDate" type="date" class="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-800 focus:outline-none">
-                                </div>
+                         
+<div id="paymentDetails" class="hidden mt-3 space-y-3">
+    
+    <div id="fiadoField" class="hidden">
+        <label class="text-[10px] font-bold text-slate-500 uppercase">Data para receber</label>
+        <input id="fiadoDueDate" type="date" class="input-pro">
+    </div>
 
-                                <div id="parceladoField" class="hidden">
-                                    <label class="text-[10px] font-bold text-slate-500 uppercase block mb-1">Número de parcelas</label>
-                                    <input id="parcelasQtd" type="number" min="1" max="12" class="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-800 focus:outline-none" placeholder="Ex: 3">
-                                </div>
-                            </div>
+    <div id="parceladoField" class="hidden">
+        <label class="text-[10px] font-bold text-slate-500 uppercase">Número de parcelas</label>
+        <input id="parcelasQtd" type="number" min="1" max="12" class="input-pro" placeholder="Ex: 3">
+    </div>
+
+</div>
+
                         </div>
                     </div>
                 </div>
@@ -590,25 +590,25 @@ if ('serviceWorker' in navigator) {
 
                 <div class="space-y-4">
                     <h4 class="text-[11px] font-black uppercase text-slate-400 tracking-widest border-b border-slate-100 pb-2">Carrinho</h4>
-                    <div id="manualOrderItems" class="space-y-3 min-h-[50px]"></div>
+                    <div id="manualOrderItems" class="space-y-3 min-h-[50px]">
+                        </div>
                 </div>
 
                 <div class="pt-6 border-t border-slate-100">
                     <div class="flex justify-between items-center mb-6 p-4 bg-primary-50 rounded-2xl border border-primary-100">
                         <span class="text-primary-700 font-bold uppercase text-xs tracking-widest">Valor Total</span>
-                        <span id="manualOrderTotal" class="text-2xl font-black text-primary-800">R$ 0,00</span>
+                        <span id="manualTotal" class="text-2xl font-black text-primary-800">R$ 0,00</span>
                     </div>
 
                     <div class="flex flex-col md:flex-row gap-3">
-                        <button onclick="window.closeManualOrderModal()" class="flex-1 py-4 text-slate-400 font-bold hover:text-slate-600 uppercase text-[10px] tracking-widest">
-                            Cancelar
-                        </button>
-                        <button id="btn-finish-manual-order" onclick="window.finishManualOrder()" class="flex-[2] bg-primary-600 text-white py-4 rounded-2xl font-bold shadow-xl hover:bg-primary-700 uppercase tracking-widest text-xs transition-all flex items-center justify-center gap-2">
-                            <i data-lucide="check-circle" class="w-4 h-4"></i> Finalizar Pedido
-                        </button>
-                    </div>
+    <button onclick="window.closeManualOrderModal()" class="flex-1 py-4 text-slate-400 font-bold hover:text-slate-600 uppercase text-[10px] tracking-widest">
+        Cancelar
+    </button>
+    <button id="btn-finish-manual-order" onclick="window.finishManualOrder()" class="flex-[2] bg-primary-600 text-white py-4 rounded-2xl font-bold shadow-xl hover:bg-primary-700 uppercase tracking-widest text-xs transition-all flex items-center justify-center gap-2">
+        <i data-lucide="check-circle" class="w-4 h-4"></i> Finalizar Pedido
+    </button>
+</div>
                 </div>
-
             </div>
         </div>
     </div>
@@ -3376,7 +3376,6 @@ async function loadProductsCache(force = false) {
         productsLoaded = true;
         return;   // ⬅ REMOVE renderProductList daqui
     }
-    
 
     console.log("🌐 Cache Expirado ou Vazio: Buscando do Firebase...");
     const q = query(collection(db, `stores/${currentStoreId}/products`));
@@ -3800,8 +3799,7 @@ installmentValue: (parseFloat(document.getElementById('prodCard').value) / (pars
     }
 };
             
-       
-               window.deleteProduct = async (id, imageUrls = []) => {
+       window.deleteProduct = async (id, imageUrls = []) => {
     if(!confirm("Deseja apagar este produto permanentemente? Suas fotos também serão removidas do servidor.")) return;
 
     try {
@@ -3809,7 +3807,6 @@ installmentValue: (parseFloat(document.getElementById('prodCard').value) / (pars
         const snap = await getDoc(docRef);
         const data = snap.exists() ? snap.data() : null;
 
-        // 1. Coleta TODAS as URLs de imagens para deletar (Principais + Variações + Lixeira)
         let allImagesToDelete = [...imageUrls];
         
         if (data) {
@@ -3821,10 +3818,16 @@ installmentValue: (parseFloat(document.getElementById('prodCard').value) / (pars
             }
         }
 
-        // 2. Apaga o documento no Firestore
+        // 1. Apaga o documento no Firestore
         await deleteDoc(docRef); 
 
-        // 3. Limpeza Física no Storage (Evita desperdício de espaço)
+        // 2. ATUALIZAÇÃO CRUCIAL PARA O CACHE DO CLIENTE (Adicione estas linhas aqui)
+        const storeConfigRef = doc(db, "stores", currentStoreId, "config", "store");
+        await updateDoc(storeConfigRef, {
+            lastUpdate: Date.now()
+        }).catch(err => console.error("Erro ao atualizar timestamp da loja:", err));
+
+        // 3. Limpeza Física no Storage
         const deletePromises = allImagesToDelete.map(url => {
             if (url && url.includes('firebasestorage')) {
                 const imageRef = ref(storage, url);
@@ -3833,13 +3836,12 @@ installmentValue: (parseFloat(document.getElementById('prodCard').value) / (pars
         });
         await Promise.all(deletePromises);
 
-        // 4. Sincroniza vitrine
-        await deleteDoc(docRef); 
-      await loadProductsCache(true);
-     renderProductList();
-// Avisa o botão para ficar colorido
-window.markAsDirty(); 
-showToast("🗑️ Produto e todos os arquivos removidos!");
+        // 4. Sincroniza painel do lojista
+        await loadProductsCache(true);
+        renderProductList();
+        
+        window.markAsDirty(); 
+        showToast("🗑️ Produto e todos os arquivos removidos!");
 
     } catch (err) {
         console.error("Erro na exclusão:", err);
@@ -3847,6 +3849,7 @@ showToast("🗑️ Produto e todos os arquivos removidos!");
     }
 };
 
+               
 
         window.toggleProductStatus = async (id, currentStatus) => {
     const newStatus = currentStatus === 'paused' ? 'active' : 'paused';
@@ -4613,7 +4616,7 @@ if (fab) {
 
     // --- CLIENTES ---
 if (tabName === 'customers') {
-    // Carrega validando o timestamp e depois desenha o ranking atualizado
+    // Usamos o .then() para garantir que a renderização só ocorra após os dados chegarem
     window.loadSavedCustomers().then(() => {
         window.renderCustomerRanking();
     });
@@ -5065,8 +5068,7 @@ async function initAnalyticsInsights() {
     }
 };
 
-   
-   window.openOrderModal = (id) => {
+       window.openOrderModal = (id) => {
     if (typeof audio !== 'undefined' && audio) {
         audio.pause();
         audio.currentTime = 0;
@@ -5089,7 +5091,7 @@ async function initAnalyticsInsights() {
     const theme = getStatusTheme(p.status);
     const modal = document.getElementById('orderDetailModal');
     const modalContent = modal.querySelector('.auth-card-content');
-    let payText = typeof p.paymentMethod === 'string' ? p.paymentMethod : (p.paymentMethod?.type || 'Não informado');
+    let payText = typeof p.paymentMethod === 'string' ? p.paymentMethod : (p.paymentMethod.type || 'Não informado');
 
     const renderMain = () => {
         modalContent.innerHTML = `
@@ -5116,8 +5118,8 @@ async function initAnalyticsInsights() {
                         <i data-lucide="user" class="w-6 h-6"></i>
                     </div>
                     <div class="min-w-0">
-                        <h4 class="text-sm font-black text-slate-800 leading-none mb-1">${p.customer?.name || p.clientName || 'Cliente sem nome'}</h4>
-                        <p class="text-xs text-slate-500 font-medium">${p.customer?.phone || p.clientPhone || ''}</p>
+                        <h4 class="text-sm font-black text-slate-800 leading-none mb-1">${p.customer.name}</h4>
+                        <p class="text-xs text-slate-500 font-medium">${p.customer.phone}</p>
                     </div>
                 </div>
                 
@@ -5125,7 +5127,7 @@ async function initAnalyticsInsights() {
                     <div class="w-5 h-5 mt-0.5 flex items-center justify-center text-slate-300">
                         <i data-lucide="map-pin" class="w-4 h-4"></i>
                     </div>
-                    <p class="text-[11px] text-slate-500 leading-relaxed font-medium">${p.customer?.address || p.customer?.addressString || p.deliveryAddress || 'Retirada em mãos / Loja Física'}</p>
+                    <p class="text-[11px] text-slate-500 leading-relaxed font-medium">${p.customer.address || p.customer.addressString || 'Retirada em mãos / Loja Física'}</p>
                 </div>
 
                 <div class="flex items-center gap-4 pt-4 border-t border-slate-50">
@@ -5138,63 +5140,26 @@ async function initAnalyticsInsights() {
 
             <div class="space-y-3 mb-8">
                 <h4 class="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] ml-2 mb-4">Itens do Carrinho</h4>
-            ${p.items.map(i => {
-                    // 🌟 1. FOTO: Puxa do campo 'img' que vem do Firebase
-                    let foto = i.img || i.image || i.foto || i.variationDetails?.image || null;
-                    
-                    // ID do produto vindo da vitrine (productId) ou manual (id)
-                    const prodId = i.productId || i.id;
-
-                    // 🌟 2. SKU: Como a vitrine não manda o SKU, buscamos ele no estoque local usando o ID
-                    let sku = 'N/A';
-                    if (typeof allProducts !== 'undefined' && allProducts && prodId) {
-                        const prodRef = allProducts.find(prod => prod.id === prodId);
-                        if (prodRef) {
-                            sku = prodRef.sku || 'N/A';
-                            // Fallback caso a foto não tenha vindo no pedido, pega do cadastro
-                            if (!foto && prodRef.images && prodRef.images.length > 0) {
-                                foto = prodRef.images[0];
-                            }
-                        }
-                    }
-
-                    // Se mesmo assim achar um campo sku solto no item, usa ele
-                    if (sku === 'N/A' && i.sku) sku = i.sku;
-                    
-                    // 🌟 3. QUANTIDADE E VALORES: Lendo a chave 'q' enviada pelo carrinho online
-                    const qtd = Number(i.q || i.qty || i.quantity || 1);
-                    const preco = Number(i.price || i.preco || 0);
-                    const sub = Number(i.subtotal || (preco * qtd));
-                    
-                    // Tratamento das variações textuais
-                    let varDesc = '';
-                    if (i.variationDetails) {
-                        varDesc = `${i.variationDetails.color || ''} ${i.variationDetails.size ? '/ ' + i.variationDetails.size : ''}`.trim();
-                    } else if (i.variation || i.selectedVariation) {
-                        const v = i.variation || i.selectedVariation;
-                        varDesc = typeof v === 'object' ? Object.entries(v).map(([k, val]) => `${val}`).join(' / ') : v;
-                    }
+                ${p.items.map(i => {
+                    const prodRef = typeof allProducts !== 'undefined' ? allProducts.find(prod => prod.id === (i.productId || i.id)) : null;
+                    let foto = (i.variationDetails?.image) || (prodRef?.images?.[0]) || i.img || null;
+                    const varDesc = i.variationDetails ? `${i.variationDetails.color} / ${i.variationDetails.size}` : '';
+                    const quantidade = i.q || i.qty || 1;
 
                     return `
                     <div class="group flex items-center gap-4 p-4 bg-white rounded-3xl border border-slate-100 hover:border-primary-200 transition-all shadow-sm">
-                        <div onclick="window.expandImage('${foto || ''}')" class="w-16 h-16 rounded-2xl overflow-hidden border border-slate-100 bg-slate-50 shrink-0 cursor-zoom-in relative flex items-center justify-center">
-                            ${foto ? `
-                                <img src="${foto}" class="w-full h-full object-cover">
-                            ` : `
-                                <div class="w-full h-full flex items-center justify-center bg-slate-100 text-slate-400">
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-6 h-6 opacity-40"><rect width="18" height="18" x="3" y="3" rx="2" ry="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"/></svg>
-                                </div>
-                            `}
+                        <div onclick="window.expandImage('${foto}')" class="w-16 h-16 rounded-2xl overflow-hidden border border-slate-50 bg-slate-50 shrink-0 cursor-zoom-in relative">
+                            ${foto ? `<img src="${foto}" class="w-full h-full object-cover">` : `<div class="w-full h-full flex items-center justify-center text-slate-200"><i data-lucide="image" class="w-6 h-6"></i></div>`}
                         </div>
                         <div class="flex-1 min-w-0">
-                            <p class="text-xs font-black text-slate-800 leading-tight mb-1 truncate">${i.name || 'Produto'}</p>
+                            <p class="text-xs font-black text-slate-800 leading-tight mb-1 truncate">${i.name}</p>
                             <div class="flex flex-wrap items-center gap-2">
-                                <span class="text-[9px] font-black bg-slate-100 text-slate-600 px-2 py-0.5 rounded-md tracking-wider">SKU: ${sku}</span>
+                                <span class="text-[8px] font-black bg-slate-100 text-slate-500 px-2 py-0.5 rounded-full uppercase">${i.sku || 'N/A'}</span>
                                 ${varDesc ? `<span class="text-[9px] font-bold text-primary-500 italic">${varDesc}</span>` : ''}
                             </div>
                             <div class="flex justify-between items-end mt-2">
-                                <span class="text-[10px] font-bold text-slate-400">Qtd <span class="text-slate-800 font-black">${qtd}</span></span>
-                                <span class="text-sm font-black text-slate-900 tracking-tighter">R$ ${sub.toFixed(2).replace('.',',')}</span>
+                                <span class="text-[10px] font-bold text-slate-400">Qtd <span class="text-slate-800">${quantidade}</span></span>
+                                <span class="text-sm font-black text-slate-900 tracking-tighter">R$ ${(i.price * quantidade).toFixed(2).replace('.',',')}</span>
                             </div>
                         </div>
                     </div>`;
@@ -5205,7 +5170,7 @@ async function initAnalyticsInsights() {
                 <div class="relative z-10 flex justify-between items-center">
                     <div>
                         <p class="text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em] mb-1">Total à Receber</p>
-                        <h3 class="text-3xl font-black tracking-tighter">R$ ${Number(p.total || 0).toFixed(2).replace('.',',')}</h3>
+                        <h3 class="text-3xl font-black tracking-tighter">R$ ${p.total.toFixed(2).replace('.',',')}</h3>
                     </div>
                     <div class="w-12 h-12 bg-white/10 rounded-2xl flex items-center justify-center backdrop-blur-md">
                         <i data-lucide="check-check" class="w-6 h-6 text-white"></i>
@@ -5213,6 +5178,7 @@ async function initAnalyticsInsights() {
                 </div>
                 <div class="absolute top-0 right-0 w-32 h-32 bg-primary-500/20 blur-[60px] rounded-full"></div>
             </div>
+
             <div class="space-y-6">
                 <div class="space-y-3">
                     <h4 class="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] ml-2">Ação Principal</h4>
@@ -5222,7 +5188,7 @@ async function initAnalyticsInsights() {
                     </button>
 
                     ${p.status !== 'pending_whatsapp' && p.status !== 'completed' && p.status !== 'canceled' ? `
-                    <button onclick="window.notifyShipping('${p.id}', ${JSON.stringify(p.customer || {}).replace(/"/g, '&quot;')})" 
+                    <button onclick="window.notifyShipping('${p.id}', ${JSON.stringify(p.customer).replace(/"/g, '&quot;')})" 
                             class="w-full py-4.5 bg-amber-500 text-white rounded-[2rem] font-black text-[11px] uppercase tracking-[0.2em] shadow-xl shadow-amber-100 active:scale-95 transition-all flex items-center justify-center gap-3">
                         <i data-lucide="truck" class="w-5 h-5"></i>
                         Despachar / Sair para Entrega
@@ -5233,7 +5199,7 @@ async function initAnalyticsInsights() {
                 <div class="space-y-3">
                     <h4 class="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] ml-2">Gestão e Contato</h4>
                     <div class="grid grid-cols-2 gap-3">
-                        <a href="https://wa.me/55${(p.customer?.phone || p.clientPhone || '').replace(/\D/g,'')}" target="_blank" 
+                        <a href="https://wa.me/55${p.customer.phone.replace(/\D/g,'')}" target="_blank" 
                            class="flex flex-col items-center justify-center p-4 bg-emerald-50 border border-emerald-100 text-emerald-700 rounded-3xl hover:bg-emerald-100 transition-all group">
                             <i data-lucide="message-circle" class="w-6 h-6 mb-2 group-hover:scale-110 transition-transform"></i>
                             <span class="text-[10px] font-black uppercase tracking-tight">WhatsApp</span>
@@ -5265,6 +5231,7 @@ async function initAnalyticsInsights() {
             </div>
         `;
 
+        // Lógica de clique mantida e otimizada
         document.getElementById('btnActionMain').onclick = () => window.updateOrderStatus(p.id, p.status === 'pending_whatsapp' ? 'confirmed' : 'completed');
 
         document.getElementById('btnStatusToggle').onclick = () => {
@@ -5304,168 +5271,100 @@ async function initAnalyticsInsights() {
     modal.classList.remove('hidden');
 };
                 
+
 window.editExistingOrder = async (id) => {
     const p = ordersCache[id];
     if (!p) return;
 
-    // 1. FECHA o modal de detalhes
+    // 1. FECHA o modal de detalhes e ESPERA o modal manual abrir/carregar
     document.getElementById('orderDetailModal').classList.add('hidden');
     
-    // 2. ABRE o modal manual (forçando o carregamento do estoque real)
-    await loadProductsCache(true);
-    await window.loadSavedCustomers();
+    // O 'await' aqui é a chave: ele impede que o código continue até o modal estar limpo e pronto
+    await window.openManualOrderModal(); 
     
-    const modal = document.getElementById("manualOrderModal");
-    const fab = document.getElementById("fabAddOrder");
-    if (modal) modal.classList.remove("hidden");
-    if (fab) fab.classList.add("hidden");
-
-    // 3. Preenche os dados visuais do cabeçalho
+    // 2. Agora sim, preenchemos os dados (sem risco de serem apagados)
     document.querySelector('#manualOrderModal h3').textContent = "Editando Pedido #" + id.slice(-5).toUpperCase();
     
-    const btnFinish = document.getElementById('btn-finish-manual-order');
+    const btnFinish = document.querySelector('button[onclick="window.finishManualOrder()"]');
     if (btnFinish) {
         btnFinish.innerHTML = `<i data-lucide="save" class="w-4 h-4"></i> Salvar Alterações`;
         btnFinish.setAttribute('onclick', `window.saveOrderEdit('${id}')`);
     }
 
-    // Preenche campos de texto
-    document.getElementById("manualOrderCustName").value = p.customer?.name || p.clientName || "";
-    document.getElementById("manualPhone").value = p.customer?.phone || p.clientPhone || "";
-    document.getElementById("manualAddress").value = p.customer?.address || p.customer?.addressString || p.deliveryAddress || "";
+    // Preenchendo campos de texto
+    document.getElementById("manualOrderCustName").value = p.customer.name || "";
+    document.getElementById("manualPhone").value = p.customer.phone || "";
+    document.getElementById("manualAddress").value = p.customer.address || p.customer.addressString || "";
     document.getElementById("manualOrderTotalOverride").value = p.total || "";
-    document.getElementById("manualProductSearch").value = "";
-    document.getElementById("manualSearchResults").innerHTML = "";
-
-    // Configura a forma de pagamento
+    
+    // Configura o pagamento
     const payMethod = typeof p.paymentMethod === 'object' ? p.paymentMethod.type : p.paymentMethod;
     const paySelect = document.getElementById("manualPayment");
     if (paySelect) {
         paySelect.value = payMethod || "";
+        // Dispara manualmente a função que mostra campos de PIX/Parcelas
         window.handlePaymentChange();
     }
 
-    // 4. ATRIBUIÇÃO DIRETA NO ESCOPO GLOBAL (Evita que o render e o save fiquem vazios!)
-    window.manualOrder = p.items.map((item, index) => {
-        // Vincula se veio 'productId' (pedidos online) ou 'id' (pedidos manuais)
-        const prodId = item.productId || item.id;
-        const quantidade = Number(item.qty || item.q || item.quantity || 1);
-        
-        // Encontra o produto original no array global de estoque (allProducts)
-        const prodOriginal = (typeof allProducts !== 'undefined' && allProducts) 
-            ? allProducts.find(prod => String(prod.id) === String(prodId)) 
-            : null;
-
-        // Recupera a foto e os detalhes da variação
-        const fotoLink = item.image || item.img || item.foto || prodOriginal?.images?.[0] || null;
-        
-        // Reconstrói ou mantém o cartId único para os botões de "+" e "-" funcionarem
-        let computedCartId = item.cartId || item.id;
-        if (item.sku && !computedCartId.includes(item.sku)) {
-            computedCartId = `${prodId}-${item.sku}`;
-        }
-
+    // 3. RECUPERAÇÃO DOS ITENS
+    // Aqui garantimos que o custo venha atualizado do seu estoque (allProducts)
+    manualOrder = p.items.map(item => {
+        const prodAtual = allProducts.find(prod => prod.id === item.id);
         return {
-            cartId: computedCartId,
-            id: String(prodId), // Força como String para o seu .find() do render manual funcionar perfeitamente
-            name: item.name || prodOriginal?.name || "Produto",
-            sku: item.sku || (prodOriginal ? prodOriginal.sku : ''),
-            price: Number(item.price || (prodOriginal ? prodOriginal.price : 0)),
-            qty: quantidade,
-            image: fotoLink,
-            variationDetails: item.variationDetails || (prodOriginal?.variations ? prodOriginal.variations.find(v => v.sku === item.sku) : null)
+            ...item,
+            cost: prodAtual ? (prodAtual.cost || 0) : (item.cost || 0),
+            price: item.price // Mantém o preço que você já tinha cobrado
         };
     });
 
-    // Sincroniza a variável sem o prefixo window por segurança
-    manualOrder = window.manualOrder;
-
-    // 5. Renderiza o carrinho atualizado na tela e recalcula o total
+    // Atualiza a lista visual do carrinho no modal
     window.renderManualOrderItems();
-    window.updateManualTotal();
     
     if (window.lucide) lucide.createIcons();
 };
 
+     
 window.saveOrderEdit = async (id) => {
-    // Busca o seletor do botão de forma resiliente (id ou atributo)
-    const btn = document.getElementById('btn-finish-manual-order') || document.querySelector(`button[onclick="window.saveOrderEdit('${id}')"]`);
+    const btn = document.querySelector(`button[onclick="window.saveOrderEdit('${id}')"]`);
     if (btn) btn.disabled = true;
 
     try {
         const overrideValue = parseFloat(document.getElementById('manualOrderTotalOverride').value);
-        const totalCalculado = manualOrder.reduce((sum, i) => sum + (Number(i.qty) || 0) * (Number(i.price) || 0), 0);
+        const totalCalculado = manualOrder.reduce((sum, i) => sum + i.qty * i.price, 0);
         const totalFinal = !isNaN(overrideValue) && overrideValue > 0 ? overrideValue : totalCalculado;
 
         const paymentType = document.getElementById("manualPayment").value;
         const orderRef = doc(db, `stores/${currentStoreId}/orders`, id);
         
-        // 🌟 RECUPERA O PEDIDO ORIGINAL DO CACHE PARA SABER O FORMATO DELE
-        const pedidoOriginal = ordersCache[id];
-        const eraPedidoOnline = pedidoOriginal && pedidoOriginal.items && pedidoOriginal.items.some(i => i.productId !== undefined || i.q !== undefined);
-
-        // 🌟 CONVERTE OS ITENS DE VOLTA PRO FORMATO QUE O BANCO ESPERA
-        const itemsParaSalvar = manualOrder.map(item => {
-            if (eraPedidoOnline) {
-                // Se era um pedido da vitrine online, devolve as chaves originais exatas!
-                return {
-                    productId: item.productId || item.id,
-                    name: item.name,
-                    price: Number(item.price || 0),
-                    q: Number(item.qty || 1), // Volta a ser 'q'
-                    img: item.image || item.img || "", // Volta a ser 'img'
-                    ...(item.sku ? { sku: item.sku } : {}),
-                    ...(item.variationDetails ? { variationDetails: item.variationDetails } : {}),
-                    ...(item.complements ? { complements: item.complements } : {})
-                };
-            } else {
-                // Se era um pedido manual feito direto por você no painel, mantém o padrão manual
-                return {
-                    id: item.id,
-                    cartId: item.cartId || item.id,
-                    name: item.name,
-                    sku: item.sku || "",
-                    price: Number(item.price || 0),
-                    qty: Number(item.qty || 1),
-                    image: item.image || "",
-                    ...(item.variationDetails ? { variationDetails: item.variationDetails } : {})
-                };
-            }
-        });
-
-        // Monta o payload respeitando a estrutura do cabeçalho original
         const updateData = {
             "customer.name": document.getElementById("manualOrderCustName").value,
             "customer.phone": document.getElementById("manualPhone").value,
             "customer.address": document.getElementById("manualAddress").value,
             "customer.addressString": document.getElementById("manualAddress").value,
             paymentMethod: paymentType,
-            items: itemsParaSalvar, // Grava os itens convertidos perfeitamente
+            items: manualOrder,
             total: Number(totalFinal.toFixed(2)),
             updatedAt: Date.now()
         };
 
-        // Salva as alterações de forma limpa no Firestore
+        // Salva as alterações
         await updateDoc(orderRef, updateData);
 
-        showToast("✅ Alterações salvas com sucesso!");
+        showToast("✅ Alterações salvas!");
         window.closeManualOrderModal();
         
-        // Atualiza a listagem local em tempo real
+        // Recarrega o financeiro para o lucro novo aparecer
         if (window.initFinanceDashboard) window.initFinanceDashboard();
-        if (typeof window.renderFilteredOrders === 'function') {
-            window.renderFilteredOrders();
-        } else if (typeof renderMain === 'function') {
-            renderMain();
-        }
+        window.renderFilteredOrders();
 
     } catch (e) {
-        console.error("Erro ao salvar edição de pedido:", e);
+        console.error(e);
         showToast("❌ Erro ao salvar.");
     } finally {
         if (btn) btn.disabled = false;
     }
 };
+
         
 window.deleteOrder = async (id) => {
     // 1. Confirmação de segurança
@@ -6148,152 +6047,113 @@ window.quickDeleteOrder = async (orderId) => {
         alert("Erro ao excluir pedido.");
     }
 };
+
 window.addManualItem = (id, varData = null) => {
-    // Força o ID a virar String para garantir que a comparação no .find() funcione perfeitamente
-    const stringId = String(id);
-    
-    const p = allProducts.find(prod => String(prod.id) === stringId);
-    if (!p) {
-        console.error("Produto não encontrado no array allProducts para o ID:", id);
-        return;
-    }
+    const p = allProducts.find(prod => prod.id === id);
+    if (!p) return;
 
-    // Garante que o array manualOrder está inicializado
-    if (!window.manualOrder) window.manualOrder = [];
+    // 1. CÁLCULO DO PREÇO (SNAPSHOT)
+    const selectedPrice = window.calculateItemPrice(p, varData);
 
-    // 1. CÁLCULO DO PREÇO REAL NO MOMENTO (SNAPSHOT)
-    const selectedPrice = Number(window.calculateItemPrice(p, varData)) || 0;
-
-    // 2. IDENTIFICADOR ÚNICO (Diferencia variações do mesmo produto)
-    const cartId = varData && varData.sku ? `${stringId}-${varData.sku}` : stringId;
-    const existing = manualOrder.find(item => String(item.cartId) === String(cartId));
+    // 2. IDENTIFICADOR ÚNICO (Garante que variações diferentes sejam itens diferentes)
+    const cartId = varData ? `${id}-${varData.sku}` : id;
+    const existing = manualOrder.find(item => item.cartId === cartId);
 
     if (existing) {
-        existing.qty = (Number(existing.qty) || 0) + 1;
+        existing.qty++;
+        // Atualiza o preço caso o método de pagamento tenha mudado desde a última adição
         existing.price = selectedPrice; 
     } else {
-        // Monta o nome da variação de forma limpa
-        let itemName = p.name;
-        if (varData) {
-            const caracteristicas = [varData.color, varData.size].filter(Boolean).join(" - ");
-            if (caracteristicas) {
-                itemName = `${p.name} (${caracteristicas})`;
-            }
-        }
-
         manualOrder.push({
             cartId: cartId,
-            id: stringId,
-            name: itemName,
-            sku: varData ? (varData.sku || '') : (p.sku || ''),
-            price: selectedPrice,
+            id: id,
+            name: varData ? `${p.name} (${varData.color || ''} ${varData.size || ''})`.trim() : p.name,
+            sku: varData ? varData.sku : (p.sku || ''),
+            price: Number(selectedPrice), // Força ser número
             qty: 1,
             image: (varData && varData.image) ? varData.image : (p.images?.[0] || null),
             variationDetails: varData
         });
     }
 
-    // 3. LIMPEZA DO OVERRIDE E RENDERIZAÇÃO
+    // 3. LIMPEZA E RENDERIZAÇÃO
     const overrideInput = document.getElementById('manualOrderTotalOverride');
-    if (overrideInput) {
-        overrideInput.value = "";
-        overrideInput.dataset.automatico = "true";
-    }
+    if (overrideInput) overrideInput.value = "";
 
-    // Força a atualização do HTML na tela
     window.renderManualOrderItems();
 };
+
 // --- 1. CÁLCULO DE PREÇO (CENTRALIZADO) ---
 window.calculateItemPrice = (product, varData = null) => {
-    if (!product) return 0;
-
     const paymentMethod = document.getElementById("manualPayment")?.value || 'dinheiro';
     const isCashMode = ['pix', 'dinheiro'].includes(paymentMethod);
 
-    // 1. Valor Base (Se houver variação com preço válido, usa ela. Senão busca propriedades do produto)
-    let valorBase = 0;
-    if (varData && Number(varData.price) > 0) {
-        valorBase = Number(varData.price);
-    } else {
-        valorBase = Number(product.price) || Number(product.value) || Number(product.priceCard) || 0;
-    }
+    // Valor Base (Variação > Produto)
+    let valorBase = (varData && Number(varData.price) > 0) 
+        ? Number(varData.price) 
+        : (Number(product.value) || Number(product.price) || Number(product.priceCard) || 0);
 
-    // 2. Valor Promocional (Variação > Produto)
-    let valorPromo = 0;
-    if (varData && Number(varData.promoPrice) > 0) {
-        valorPromo = Number(varData.promoPrice);
-    } else {
-        valorPromo = Number(product.promoPrice) || Number(product.promoValue) || 0;
-    }
+    // Valor Promocional
+    let valorPromo = (varData && Number(varData.promoPrice) > 0)
+        ? Number(varData.promoPrice)
+        : (Number(product.promoValue) || Number(product.promoPrice) || 0);
 
     let price = valorBase;
 
-    // 3. Lógica de Aplicação por Método de Pagamento
+    // Lógica: Pix/Dinheiro usa Promoção (se houver). Cartão usa PriceCard ou Base.
     if (isCashMode && valorPromo > 0) {
         price = valorPromo;
     } else if (!isCashMode) {
-        // Se for cartão/fiado e tiver preço específico para cartão, usa ele. Senão, mantém o valor base.
-        const precoCartaoValido = Number(product.priceCard);
-        price = (precoCartaoValido > 0) ? precoCartaoValido : valorBase;
+        price = Number(product.priceCard) || valorBase;
     }
 
-    // Retorna o valor estritamente numérico e arredondado em 2 casas decimais para evitar quebras matemáticas
-    return isNaN(price) ? 0 : Number(Number(price).toFixed(2));
+    return Number(price) || 0;
 };
-// --- 2. RENDERIZAÇÃO DO CARRINHO CORRIGIDA ---
+
+// --- 2. RENDERIZAÇÃO DO CARRINHO ---
 window.renderManualOrderItems = () => {
     const container = document.getElementById("manualOrderItems");
     if (!container) return;
     
     container.innerHTML = "";
 
-    if (!window.manualOrder || manualOrder.length === 0) {
+    if (manualOrder.length === 0) {
         container.innerHTML = `<p class="text-center text-slate-400 text-xs py-4">Carrinho vazio</p>`;
         window.updateManualTotal();
         return;
     }
 
-    // Corrigido: Mapeia os elementos salvando explicitamente a lista de strings geradas
     const htmlItems = manualOrder.map(item => {
         const prodOriginal = allProducts.find(p => p.id === item.id);
         let estoqueDisponivel = 0;
-        let varData = null;
 
-        // 1. Identifica estoque e variação (caso exista)
         if (prodOriginal) {
             if (item.sku && prodOriginal.variations) {
-                varData = prodOriginal.variations.find(v => v.sku === item.sku);
-                estoqueDisponivel = varData ? (Number(varData.stock) || 0) : 0;
+                const vMatch = prodOriginal.variations.find(v => v.sku === item.sku);
+                estoqueDisponivel = vMatch ? (Number(vMatch.stock) || 0) : 0;
             } else {
                 estoqueDisponivel = Number(prodOriginal.stock) || 0;
             }
         }
 
-        // 2. Recalcula o preço unitário dinamicamente baseado nas regras atuais
-        const precoUnitario = prodOriginal ? window.calculateItemPrice(prodOriginal, varData) : (Number(item.price) || 0);
-        
-        // Atualiza o objeto do carrinho para que a função updateManualTotal pegue o valor idêntico
-        item.price = Number(precoUnitario.toFixed(2));
-
         const qtd = Number(item.qty) || 0;
-        const subtotalCalculadoNum = Number((qtd * precoUnitario).toFixed(2));
-        const subtotalFormatado = subtotalCalculadoNum.toFixed(2).replace('.', ',');
+        const precoUnitario = Number(item.price) || 0;
+        const subtotalCalculado = (qtd * precoUnitario).toFixed(2).replace('.', ',');
         
         const noLimite = qtd >= estoqueDisponivel;
 
-        // Retorna a string HTML estruturada do item
         return `
-            <div class="p-2 border border-slate-100 rounded-2xl bg-white shadow-sm flex items-center gap-3 mb-2 animate-fade-in">
-                <div class="w-12 h-12 rounded-xl overflow-hidden bg-slate-50 flex-shrink-0 border border-slate-100 flex items-center justify-center">
+            <div class="p-2 border rounded-2xl bg-white shadow-sm flex items-center gap-3 mb-2 animate-fade-in">
+                <div class="w-12 h-12 rounded-xl overflow-hidden bg-slate-50 flex-shrink-0 border border-slate-100">
                     ${item.image 
                         ? `<img src="${item.image}" class="w-full h-full object-cover">` 
-                        : `<i data-lucide="image" class="w-5 h-5 text-slate-300"></i>`
+                        : `<div class="w-full h-full flex items-center justify-center text-slate-300"><i data-lucide="image" class="w-5 h-5"></i></div>`
                     }
                 </div>
                 <div class="flex-1 min-w-0">
-                    <p class="font-bold text-slate-800 text-[11px] leading-tight truncate uppercase">${item.name || 'Produto sem nome'}</p>
+                    <p class="font-bold text-slate-800 text-[11px] leading-tight truncate uppercase">${item.name}</p>
                     <p class="text-[8px] font-mono text-slate-400 uppercase">SKU: ${item.sku || 'N/A'}</p>
-                    <p class="text-[10px] text-primary-600 font-black mt-0.5">R$ ${subtotalFormatado}</p>
+                    <p class="text-[10px] text-primary-600 font-black mt-0.5">R$ ${subtotalCalculado}</p>
                 </div>
                 <div class="flex items-center gap-1 bg-slate-50 p-1 rounded-xl border border-slate-100">
                     <button onclick="window.changeManualQty('${item.cartId}', -1)" 
@@ -6311,24 +6171,17 @@ window.renderManualOrderItems = () => {
         `;
     });
 
-    // Injeta a string combinada de todos os itens gerados dentro do modal
     container.innerHTML = htmlItems.join("");
-    
-    // Atualiza os cálculos de rodapé
     window.updateManualTotal();
-    
-    // Força o Lucide a renderizar os ícones de mais, menos e imagem
-    if (window.lucide) {
-        lucide.createIcons();
-    }
+    if (window.lucide) lucide.createIcons();
 };
+
 window.updateManualTotal = () => {
-    // 1. Calcula o total somando e truncando cada item de forma estrita
+    // 1. Calcula o total somando cada item do carrinho
     const total = manualOrder.reduce((acc, item) => {
         const q = Number(item.qty) || 0;
         const p = Number(item.price) || 0;
-        const subtotalItem = Number((q * p).toFixed(2));
-        return Number((acc + subtotalItem).toFixed(2));
+        return acc + (q * p);
     }, 0);
     
     // 2. Atualiza o texto visual (Onde aparece R$ 0,00)
@@ -6340,19 +6193,14 @@ window.updateManualTotal = () => {
         });
     }
 
-    // 3. Atualiza o input de preço final de forma inteligente (Override)
+    // 3. Atualiza o input que salva o valor no banco (Override)
     const inputOverride = document.getElementById("manualOrderTotalOverride");
     if (inputOverride) {
-        // Só atualiza o input se ele estiver vazio, zerado ou se o valor for idêntico ao total antigo.
-        // Isso evita que, ao mudar a quantidade de um item, apague um preço manual que você queira fixar.
-        const valorAtualInput = parseFloat(inputOverride.value) || 0;
-        if (valorAtualInput === 0 || inputOverride.dataset.automatico === "true" || valorAtualInput === window.currentManualTotal) {
-            inputOverride.value = total.toFixed(2);
-            inputOverride.dataset.automatico = "true"; // Sinaliza que o sistema que gerou
-        }
+        // Injeta o valor calculado para garantir que não salve como zero
+        inputOverride.value = total.toFixed(2);
     }
     
-    // Guarda o valor real calculado na variável global de segurança
+    // Guarda o valor em uma variável global de segurança
     window.currentManualTotal = total;
 };
 
@@ -6365,24 +6213,18 @@ window.changeManualQty = (cartId, diff) => {
     const prodOriginal = allProducts.find(p => p.id === item.id);
     let estoqueMaximo = 0;
 
-    // 1. Identifica o estoque máximo real de forma segura (Variação vs Produto)
     if (prodOriginal) {
-        if ((item.sku || item.variationDetails) && prodOriginal.variations) {
-            const skuAlvo = item.sku || (item.variationDetails ? item.variationDetails.sku : '');
-            const vMatch = prodOriginal.variations.find(v => v.sku === skuAlvo);
+        if (item.variationDetails) {
+            const vMatch = prodOriginal.variations?.find(v => v.sku === item.sku);
             estoqueMaximo = vMatch ? (Number(vMatch.stock) || 0) : 0;
         } else {
             estoqueMaximo = Number(prodOriginal.stock) || 0;
         }
     }
 
-    // 2. Calcula a nova quantidade garantindo tipagem estrita
-    const qtdAtual = Number(item.qty) || 0;
-    const modificador = Number(diff) || 0;
-    const novaQtd = qtdAtual + modificador;
+    const novaQtd = item.qty + diff;
 
-    // 3. Valida travas de estoque e limites
-    if (novaQtd > estoqueMaximo && modificador > 0) {
+    if (novaQtd > estoqueMaximo && diff > 0) {
         showToast(`⚠️ Limite de estoque atingido (${estoqueMaximo} un.)`);
         return;
     }
@@ -6391,16 +6233,16 @@ window.changeManualQty = (cartId, diff) => {
         manualOrder.splice(itemIndex, 1);
         showToast("🗑️ Item removido do carrinho");
     } else {
-        item.qty = Number(novaQtd);
+        item.qty = novaQtd;
     }
 
-    // 4. Renderiza e atualiza os totais financeiros na hora
     window.renderManualOrderItems();
 };
 
-window.finishManualOrder = async () => {
+
+ window.finishManualOrder = async () => {
     // 1. VALIDAÇÕES DE SEGURANÇA
-    if (!window.manualOrder || manualOrder.length === 0) return showToast("⚠️ Carrinho vazio!");
+    if (manualOrder.length === 0) return showToast("⚠️ Carrinho vazio!");
     
     const payment = document.getElementById("manualPayment").value;
     if (!payment) return showToast("⚠️ Escolha o método de pagamento!");
@@ -6417,27 +6259,28 @@ window.finishManualOrder = async () => {
     if (btn) btn.disabled = true;
 
     try {
-        // 2. PROCESSAMENTO FINANCEIRO DO PEDIDO
+        // 2. PROCESSAMENTO FINANCEIRO
         let totalCalculado = 0;
         let lucroTotalPedido = 0;
 
+        // Criamos o snapshot congelado dos itens
         const itemsSnapshot = manualOrder.map(item => {
-            const pOriginal = allProducts.find(p => String(p.id) === String(item.id));
+            const pOriginal = allProducts.find(p => p.id === item.id);
             const custoNoMomento = pOriginal ? (Number(pOriginal.cost) || 0) : 0;
-            const precoVenda = Number(item.price) || 0;
-            const qtd = Number(item.qty) || 0;
+            const precoVenda = Number(item.price);
+            const qtd = Number(item.qty);
             
             const subtotalItem = Number((precoVenda * qtd).toFixed(2));
             const lucroUnitario = precoVenda - custoNoMomento;
             const lucroTotalItem = Number((lucroUnitario * qtd).toFixed(2));
 
-            totalCalculado = Number((totalCalculado + subtotalItem).toFixed(2));
-            lucroTotalPedido = Number((lucroTotalPedido + lucroTotalItem).toFixed(2));
+            totalCalculado += subtotalItem;
+            lucroTotalPedido += lucroTotalItem;
 
             return {
-                id: String(item.id),
+                id: item.id,
                 name: item.name,
-                sku: item.sku || "",
+                sku: item.sku,
                 qty: qtd,
                 price: precoVenda,
                 costPrice: custoNoMomento,
@@ -6446,57 +6289,49 @@ window.finishManualOrder = async () => {
             };
         });
 
+        // Lógica de Override do Total (Prioriza o que foi digitado)
         const overrideInput = document.getElementById('manualOrderTotalOverride');
         let totalFinal = totalCalculado;
         
         if (overrideInput && overrideInput.value.trim() !== "") {
+            // Converte "150,00" para "150.00" para o cálculo funcionar
             const valorDigitado = parseFloat(overrideInput.value.replace(',', '.'));
             if (!isNaN(valorDigitado) && valorDigitado > 0) {
-                totalFinal = Number(valorDigitado.toFixed(2));
-                const ddesconto = Number((totalCalculado - totalFinal).toFixed(2));
-                lucroTotalPedido = Number((lucroTotalPedido - ddesconto).toFixed(2));
+                totalFinal = valorDigitado;
+                
+                // Ajuste Proporcional do Lucro:
+                // Se você deu desconto no total, o lucro total diminui na mesma proporção.
+                const diferenca = totalCalculado - totalFinal;
+                lucroTotalPedido -= diferenca;
             }
         }
 
-        // --- NOVO PASSO 3 E 4 DENTRO DE window.finishManualOrder ---
-        const inputNome = document.getElementById("manualOrderCustName")?.value.trim() || "";
-        const inputPhone = document.getElementById("manualPhone")?.value.trim() || "";
-        const inputCpf = document.getElementById("manualCpf")?.value.trim() || "";
-        const inputAddress = document.getElementById("manualAddress")?.value.trim() || "";
-
-        // Envia para a nossa centralizadora cuidar de tudo
-        const customerDocId = await window.syncCustomerFromOrder({
-            name: inputNome || "Cliente Local",
-            phone: inputPhone,
-            cpf: inputCpf,
-            address: inputAddress
-        }, totalFinal); // Passa o totalFinal calculado pela sua função
-
-        // 5. CONSTRÓI E SALVA O DOCUMENTO DO PEDIDO
+        // 3. ESTRUTURA DO DOCUMENTO
         const newOrder = {
             customer: {
-                id: customerDocId,
-                name: inputNome || "Cliente Local",
-                phone: inputPhone || "",
-                address: document.getElementById("manualAddress")?.value.trim() || ""
+                name: document.getElementById("manualOrderCustName")?.value || "Cliente Local",
+                phone: document.getElementById("manualPhone")?.value || "",
+                address: document.getElementById("manualAddress")?.value || ""
             },
-            paymentMethod: payment.toUpperCase(),
-            paymentExtra: paymentExtra,
+            paymentMethod: {
+                type: payment,
+                ...paymentExtra
+            },
             items: itemsSnapshot,
             total: Number(totalFinal.toFixed(2)),
             totalProfit: Number(lucroTotalPedido.toFixed(2)),
             status: (payment === "fiado" || payment === "parcelado") ? "to_receive" : "completed",
-            createdAt: Date.now(),
+            createdAt: new Date(),
             manual: true,
             stockDeducted: true
         };
 
-        const ordersCollectionRef = collection(db, "stores", currentStoreId, "orders");
-        await addDoc(ordersCollectionRef, newOrder);
+        // 4. SALVAR NO FIREBASE
+        await addDoc(collection(db, `stores/${currentStoreId}/orders`), newOrder);
 
-        // 6. BAIXA DE ESTOQUE
+        // 5. BAIXA DE ESTOQUE (SKU Sincronizado)
         for (const item of manualOrder) {
-            const productRef = doc(db, "stores", currentStoreId, "products", String(item.id));
+            const productRef = doc(db, `stores/${currentStoreId}/products`, item.id);
             const snap = await getDoc(productRef);
             
             if (snap.exists()) {
@@ -6522,44 +6357,25 @@ window.finishManualOrder = async () => {
                 await updateDoc(productRef, updateData);
             }
         }
-// --- NOVO PASSO 7 DENTRO DE finishManualOrder ---
-        const storeConfigRef = doc(db, "stores", currentStoreId, "config", "store");
-        const novoTimestamp = Date.now();
-        
-        // 1. Atualiza o carimbo de modificação no servidor
-        await updateDoc(storeConfigRef, { lastUpdate: novoTimestamp });
-        
-        // 2. Atualiza a variável de configuração da memória do app
-        if (typeof storeConfig !== "undefined") {
-            storeConfig.lastUpdate = novoTimestamp;
-        }
-        
+
+        // 6. LIMPEZA E FEEDBACK
+        await updateDoc(doc(db, `stores/${currentStoreId}/config/store`), { lastUpdate: Date.now() });
         if (typeof loadProductsCache === "function") await loadProductsCache(true);
         
         showToast("✅ Venda finalizada com sucesso!");
         
-        // Reseta o carrinho e limpa os inputs do modal...
+        // Reset completo
         manualOrder = [];
-        if (document.getElementById("manualOrderCustName")) document.getElementById("manualOrderCustName").value = "";
-        if (document.getElementById("manualPhone")) document.getElementById("manualPhone").value = "";
-        if (document.getElementById("manualAddress")) document.getElementById("manualAddress").value = "";
-        if (document.getElementById("manualPayment")) document.getElementById("manualPayment").value = "";
-        if (document.getElementById("manualCpf")) document.getElementById("manualCpf").value = "";
-        if (overrideInput) {
-            overrideInput.value = "";
-            overrideInput.dataset.automatico = "true";
-        }
+        document.getElementById("manualOrderCustName").value = "";
+        document.getElementById("manualPhone").value = "";
+        document.getElementById("manualAddress").value = "";
+        if (overrideInput) overrideInput.value = "";
         
         window.renderManualOrderItems();
-        
-        // 3. Como o storeConfig.lastUpdate mudou, essa chamada vai notar a diferença e puxar tudo limpo do banco!
-        await window.loadSavedCustomers();
-        if (window.renderCustomerRanking) window.renderCustomerRanking();
-        
         window.closeManualOrderModal();
 
     } catch (e) {
-        console.error("Erro ao finalizar venda financeira:", e);
+        console.error("Erro ao finalizar venda:", e);
         showToast("❌ Erro ao salvar pedido.");
     } finally {
         if (btn) btn.disabled = false;
@@ -6638,30 +6454,20 @@ window.updateOrderStatus = async (id, status) => {
         const estavaCancelado = p.status === 'canceled' || p.status === 'Cancelado';
         const alreadyDeducted = p.stockDeducted === true;
 
-        // --- CASO A: CONFIRMAR OU CONCLUIR (BAIXAR ESTOQUE E ATUALIZAR RANKING DE CLIENTES) ---
+// --- CASO A: CONFIRMAR OU CONCLUIR (BAIXAR ESTOQUE) ---
 if ((status === 'confirmed' || status === 'completed') && (!alreadyDeducted || estavaCancelado)) {
     // 1. Processa o estoque primeiro
     await window.processarBaixaSilenciosa(id, p);
     orderUpdate.stockDeducted = true;
 
-    // 🌟 ATUALIZAÇÃO DO RANKING AUTOMÁTICO (Simples, Baseado na sua estrutura real)
-    if (p.customer && p.customer.name && typeof window.syncCustomerFromOrder === 'function') {
-        console.log(`🎯 [Ranking] Sincronizando cliente online: ${p.customer.name}`);
-        
-        await window.syncCustomerFromOrder({
-            name: p.customer.name,
-            phone: p.customer.phone || "",
-            cpf: p.customer.cpf || "", // se houver campo cpf futuramente
-            address: p.customer.address || ""
-        }, Number(p.total || 0));
-    }
-
     // 2. Dispara a notificação de WhatsApp personalizada (Loja ou Restaurante)
+    // Chamamos a função que criamos anteriormente
     if (status === 'confirmed' && typeof window.sendConfirmationWhatsApp === 'function') {
         window.sendConfirmationWhatsApp(p);
     }
 
     // 3. Gatilho de Impressão de Comanda
+    // O setTimeout evita que o alerta de impressão bloqueie a abertura do WhatsApp
     if (status === 'confirmed') {
         setTimeout(() => {
             if (confirm("Pedido confirmado com sucesso! Deseja imprimir a comanda na impressora térmica?")) {
@@ -6671,66 +6477,72 @@ if ((status === 'confirmed' || status === 'completed') && (!alreadyDeducted || e
                     console.error("Função printOrder não encontrada.");
                 }
             }
-        }, 1000);
+        }, 1000); // Aguarda 1 segundo para não conflitar com o popup do Zap
     }
 }
+       // --- CASO B: CANCELAR (ESTORNAR ESTOQUE) ---
+if (status === 'canceled' && alreadyDeducted) {
+    console.log("Estornando estoque de forma agrupada...");
+    
+    // Agrupa itens por ID de produto para fazer apenas um "updateDoc" por produto
+    const itemsByProduct = p.items.reduce((acc, item) => {
+        if (!acc[item.id]) acc[item.id] = [];
+        acc[item.id].push(item);
+        return acc;
+    }, {});
 
-        // --- CASO B: CANCELAR (ESTORNAR ESTOQUE) ---
-        if (status === 'canceled' && alreadyDeducted) {
-            console.log("Estornando estoque de forma agrupada...");
-            
-            const itemsByProduct = p.items.reduce((acc, item) => {
-                if (!acc[item.id]) acc[item.id] = [];
-                acc[item.id].push(item);
-                return acc;
-            }, {});
+    const stockPromises = Object.keys(itemsByProduct).map(async (productId) => {
+        const productRef = doc(db, `stores/${currentStoreId}/products`, productId);
+        const snap = await getDoc(productRef);
 
-            const stockPromises = Object.keys(itemsByProduct).map(async (productId) => {
-                const productRef = doc(db, `stores/${currentStoreId}/products`, productId);
-                const snap = await getDoc(productRef);
+        if (snap.exists()) {
+            const prodData = snap.data();
+            const itemsToRestore = itemsByProduct[productId];
+            let updatePayload = {};
 
-                if (snap.exists()) {
-                    const prodData = snap.data();
-                    const itemsToRestore = itemsByProduct[productId];
-                    let updatePayload = {};
-
-                    if (prodData.variations && prodData.variations.length > 0) {
-                        let novasVariacoes = [...prodData.variations];
-                        
-                        itemsToRestore.forEach(itemPedido => {
-                            const skuParaDevolver = itemPedido.sku || itemPedido.variationDetails?.sku;
-                            
-                            if (skuParaDevolver) {
-                                novasVariacoes = novasVariacoes.map(v => {
-                                    if (v.sku === skuParaDevolver) {
-                                        const estoqueAtual = Number(v.stock) || 0;
-                                        const qtdRetorno = Number(itemPedido.qty || itemPedido.quantity) || 0;
-                                        return { ...v, stock: estoqueAtual + qtdRetorno };
-                                    }
-                                    return v;
-                                });
+            // Se o produto tem variações (Cores/Tamanhos)
+            if (prodData.variations && prodData.variations.length > 0) {
+                let novasVariacoes = [...prodData.variations];
+                
+                itemsToRestore.forEach(itemPedido => {
+                    // Tenta pegar o SKU de dois lugares para não haver erro
+                    const skuParaDevolver = itemPedido.sku || itemPedido.variationDetails?.sku;
+                    
+                    if (skuParaDevolver) {
+                        novasVariacoes = novasVariacoes.map(v => {
+                            if (v.sku === skuParaDevolver) {
+                                const estoqueAtual = Number(v.stock) || 0;
+                                const qtdRetorno = Number(itemPedido.qty) || 0;
+                                return { ...v, stock: estoqueAtual + qtdRetorno };
                             }
+                            return v;
                         });
-                        
-                        updatePayload.variations = novasVariacoes;
-                        updatePayload.stock = novasVariacoes.reduce((sum, v) => sum + (Number(v.stock) || 0), 0);
-                    } else {
-                        const totalQty = itemsToRestore.reduce((sum, i) => sum + Number(i.qty || i.quantity || 0), 0);
-                        const estoqueAtual = Number(prodData.stock) || 0;
-                        updatePayload.stock = estoqueAtual + totalQty;
                     }
+                });
+                
+                updatePayload.variations = novasVariacoes;
+                // Soma o estoque total das variações ativas
+                updatePayload.stock = novasVariacoes.reduce((sum, v) => sum + (Number(v.stock) || 0), 0);
+            } 
+            // Se for produto simples
+            else {
+                const totalQty = itemsToRestore.reduce((sum, i) => sum + Number(i.qty), 0);
+                const estoqueAtual = Number(prodData.stock) || 0;
+                updatePayload.stock = estoqueAtual + totalQty;
+            }
 
-                    if (updatePayload.stock > 0) {
-                        updatePayload.status = 'active';
-                    }
+            // Se voltou a ter estoque, garante que o produto saia do 'paused'
+            if (updatePayload.stock > 0) {
+                updatePayload.status = 'active';
+            }
 
-                    return updateDoc(productRef, updatePayload);
-                }
-            });
-
-            await Promise.all(stockPromises);
-            orderUpdate.stockDeducted = false;
+            return updateDoc(productRef, updatePayload);
         }
+    });
+
+    await Promise.all(stockPromises);
+    orderUpdate.stockDeducted = false; // Marca que o estoque não está mais deduzido
+}
 
         // --- SALVAR NO FIREBASE ---
         await updateDoc(orderRef, orderUpdate);
@@ -6740,49 +6552,58 @@ if ((status === 'confirmed' || status === 'completed') && (!alreadyDeducted || e
 
         // --- NOTIFICAÇÃO VIA WHATSAPP (RECIBO PIX) ---
         if (status === 'confirmed') {
-            const tipoNegocio = storeConfig.tipoNegocio || 'varejo'; 
+    // 1. Identifica o modo atual do sistema
+    const tipoNegocio = storeConfig.tipoNegocio || 'varejo'; 
 
-            const itemsText = p.items.map(i => {
-                let detalhes = '';
-                if (tipoNegocio === 'restaurante' && i.escolhas && i.escolhas.length > 0) {
-                    detalhes = i.escolhas.map(e => `\n   └ _${e.nome}_`).join('');
-                } else if (i.variationDetails) {
-                    detalhes = ` (${i.variationDetails.color}/${i.variationDetails.size})`;
-                }
-                return `✅ *${i.qty || i.quantity || 1}x ${i.name.toUpperCase()}*${detalhes}`;
-            }).join('\n\n');
-
-            const pixInfo = storeConfig.pix || {};
-            let pixBlock = "";
-            if (p.paymentMethod && p.paymentMethod.toLowerCase().includes('pix') && pixInfo.key) {
-                pixBlock = `\n\n━━━━━━━━━━━━━━━\n🔹 *PAGAMENTO PIX*\n*Chave:* \`${pixInfo.key}\`\n*Titular:* ${pixInfo.name}\n━━━━━━━━━━━━━━━\n_Envie o comprovante para iniciarmos o preparo!_`;
-            }
-
-            let msg = "";
-            const firstName = p.customer.name.split(' ')[0];
-
-            if (tipoNegocio === 'restaurante') {
-                msg = `👨‍🍳 *PEDIDO NA COZINHA!* 👨‍🍳\n\n` +
-                      `Olá, *${firstName}*! O Chef já recebeu seu pedido e o fogão já está aceso! 🔥\n\n` +
-                      `🆔 *PEDIDO:* #${p.id.slice(-5).toUpperCase()}\n\n` +
-                      `📋 *RESUMO DO PEDIDO:*\n${itemsText}\n\n` +
-                      `💰 *TOTAL:* R$ ${p.total.toFixed(2).replace('.', ',')}` +
-                      `${pixBlock}\n\n` +
-                      `🛵 *STATUS:* Preparando com capricho. Avisaremos quando o motoboy sair!`;
-            } else {
-                msg = `🛍️ *PEDIDO CONFIRMADO!* 🛍️\n\n` +
-                      `Olá, *${p.customer.name}*! Seu pedido foi confirmado e já estamos separando seus produtos.\n\n` +
-                      `🆔 *PEDIDO:* #${p.id.slice(-5).toUpperCase()}\n\n` +
-                      `📋 *ITENS:*\n${itemsText}\n\n` +
-                      `💰 *TOTAL:* R$ ${p.total.toFixed(2).replace('.', ',')}` +
-                      `${pixBlock}\n\n` +
-                      `⏳ Avisaremos você assim que o pedido for enviado!`;
-            }
-            
-            const phone = p.customer.phone.replace(/\D/g, '');
-            window.open(`https://wa.me/55${phone}?text=${encodeURIComponent(msg)}`, '_blank');
+    // 2. Formata os itens (se adapta a Adicionais ou Variações)
+    const itemsText = p.items.map(i => {
+        let detalhes = '';
+        
+        // Se for Restaurante e tiver Adicionais/Complementos
+        if (tipoNegocio === 'restaurante' && i.escolhas && i.escolhas.length > 0) {
+            detalhes = i.escolhas.map(e => `\n   └ _${e.nome}_`).join('');
+        } 
+        // Se for Loja e tiver Grades (Cor/Tamanho)
+        else if (i.variationDetails) {
+            detalhes = ` (${i.variationDetails.color}/${i.variationDetails.size})`;
         }
+        
+        return `✅ *${i.qty}x ${i.name.toUpperCase()}*${detalhes}`;
+    }).join('\n\n');
 
+    // 3. Bloco de PIX (comum aos dois)
+    const pixInfo = storeConfig.pix || {};
+    let pixBlock = "";
+    if (p.paymentMethod.toLowerCase().includes('pix') && pixInfo.key) {
+        pixBlock = `\n\n━━━━━━━━━━━━━━━\n🔹 *PAGAMENTO PIX*\n*Chave:* \`${pixInfo.key}\`\n*Titular:* ${pixInfo.name}\n━━━━━━━━━━━━━━━\n_Envie o comprovante para iniciarmos o preparo!_`;
+    }
+
+    // 4. Construção da Mensagem baseada no Tipo de Negócio
+    let msg = "";
+    const firstName = p.customer.name.split(' ')[0];
+
+    if (tipoNegocio === 'restaurante') {
+        msg = `👨‍🍳 *PEDIDO NA COZINHA!* 👨‍🍳\n\n` +
+              `Olá, *${firstName}*! O Chef já recebeu seu pedido e o fogão já está aceso! 🔥\n\n` +
+              `🆔 *PEDIDO:* #${p.id.slice(-5).toUpperCase()}\n\n` +
+              `📋 *RESUMO DO PEDIDO:*\n${itemsText}\n\n` +
+              `💰 *TOTAL:* R$ ${p.total.toFixed(2).replace('.', ',')}` +
+              `${pixBlock}\n\n` +
+              `🛵 *STATUS:* Preparando com capricho. Avisaremos quando o motoboy sair!`;
+    } else {
+        msg = `🛍️ *PEDIDO CONFIRMADO!* 🛍️\n\n` +
+              `Olá, *${p.customer.name}*! Seu pedido foi confirmado e já estamos separando seus produtos.\n\n` +
+              `🆔 *PEDIDO:* #${p.id.slice(-5).toUpperCase()}\n\n` +
+              `📋 *ITENS:*\n${itemsText}\n\n` +
+              `💰 *TOTAL:* R$ ${p.total.toFixed(2).replace('.', ',')}` +
+              `${pixBlock}\n\n` +
+              `⏳ Avisaremos você assim que o pedido for enviado!`;
+    }
+    
+    // 5. Envio
+    const phone = p.customer.phone.replace(/\D/g, '');
+    window.open(`https://wa.me/55${phone}?text=${encodeURIComponent(msg)}`, '_blank');
+}
         // --- ATUALIZAÇÃO DA UI ---
         await loadProductsCache(true); 
         renderProductList();
@@ -6889,7 +6710,6 @@ window.applyCustomDate = () => {
     document.getElementById('modalCustomDate').classList.add('hidden');
     updateFinanceRange('custom');
 };
-
 window.initFinanceDashboard = async () => {
     const now = new Date();
     const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
@@ -6920,8 +6740,7 @@ window.initFinanceDashboard = async () => {
         totalRev: 0, totalProfit: 0, orders: 0,
         pixRev: 0, pixProfit: 0,
         cardRev: 0, cardProfit: 0,
-        cashRev: 0, cashProfit: 0,
-        toReceiveRev: 0, toReceiveProfit: 0 // Controle rigoroso de valores pendentes/fiados
+        cashRev: 0, cashProfit: 0
     };
 
     try {
@@ -6947,7 +6766,14 @@ window.initFinanceDashboard = async () => {
                 payType = (order.paymentMethod.type || "").toLowerCase();
             }
 
+            // 3. Regra para Fiados/A receber (Não soma no caixa até ser pago)
+            if (order.status === 'to_receive' || payType === "fiado" || payType === "parcelado") {
+                return; 
+            }
+
             const totalOrder = Number(order.total) || 0;
+            metrics.totalRev += totalOrder;
+            metrics.orders++;
 
             // --- LÓGICA DE LUCRO BLINDADA (SNAPSHOT) ---
             let orderProfit = 0;
@@ -6960,41 +6786,30 @@ window.initFinanceDashboard = async () => {
             else if (order.items && Array.isArray(order.items)) {
                 order.items.forEach(item => {
                     if (item.profit !== undefined) {
-                        orderProfit = Number((orderProfit + Number(item.profit)).toFixed(2));
+                        orderProfit += Number(item.profit);
                     } else {
                         // Retrocompatibilidade: Se o pedido for antigo e não tiver snapshot
                         const qty = Number(item.qty) || 0;
                         const price = Number(item.price) || 0;
                         const prod = allProducts.find(p => p.id === item.id);
                         const cost = prod ? (Number(prod.cost) || 0) : 0;
-                        const lucroItemAntigo = Number(((price - cost) * qty).toFixed(2));
-                        orderProfit = Number((orderProfit + lucroItemAntigo).toFixed(2));
+                        orderProfit += (price - cost) * qty;
                     }
                 });
             }
+            
+            metrics.totalProfit += orderProfit;
 
-            // 3. Regra para Fiados/A receber (Soma em separado para não distorcer o caixa atual)
-            if (order.status === 'to_receive' || payType === "fiado" || payType === "parcelado") {
-                metrics.toReceiveRev = Number((metrics.toReceiveRev + totalOrder).toFixed(2));
-                metrics.toReceiveProfit = Number((metrics.toReceiveProfit + orderProfit).toFixed(2));
-                return; 
-            }
-
-            // Pagamentos imediatos/em caixa
-            metrics.totalRev = Number((metrics.totalRev + totalOrder).toFixed(2));
-            metrics.totalProfit = Number((metrics.totalProfit + orderProfit).toFixed(2));
-            metrics.orders++;
-
-            // 4. Distribuir métricas por método de pagamento líquido
+            // 4. Distribuir métricas por método de pagamento
             if (payType.includes("pix")) {
-                metrics.pixRev = Number((metrics.pixRev + totalOrder).toFixed(2));
-                metrics.pixProfit = Number((metrics.pixProfit + orderProfit).toFixed(2));
-            } else if (payType.includes("cartao") || payType.includes("card") || payType.includes("credito") || payType.includes("debito")) {
-                metrics.cardRev = Number((metrics.cardRev + totalOrder).toFixed(2));
-                metrics.cardProfit = Number((metrics.cardProfit + orderProfit).toFixed(2));
+                metrics.pixRev += totalOrder;
+                metrics.pixProfit += orderProfit;
+            } else if (payType.includes("cartao") || payType.includes("crédito") || payType.includes("debito")) {
+                metrics.cardRev += totalOrder;
+                metrics.cardProfit += orderProfit;
             } else {
-                metrics.cashRev = Number((metrics.cashRev + totalOrder).toFixed(2));
-                metrics.cashProfit = Number((metrics.cashProfit + orderProfit).toFixed(2));
+                metrics.cashRev += totalOrder;
+                metrics.cashProfit += orderProfit;
             }
         });
 
@@ -7004,9 +6819,8 @@ window.initFinanceDashboard = async () => {
             const qty = Number(p.stock) || 0;
             const price = Number(p.value) || 0;
             const cost = Number(p.cost) || 0;
-            
-            stockValue = Number((stockValue + (price * qty)).toFixed(2));
-            stockCost = Number((stockCost + (cost * qty)).toFixed(2));
+            stockValue += price * qty;
+            stockCost += cost * qty;
             totalItems += qty;
         });
 
@@ -7030,13 +6844,9 @@ window.initFinanceDashboard = async () => {
         setTxt('fin-rev-cash', metrics.cashRev);
         setTxt('fin-profit-cash', metrics.cashProfit);
         
-        // Elementos opcionais para exibir Fiados/Valores a Receber no painel (se houver esses IDs no HTML)
-        setTxt('fin-rev-pending', metrics.toReceiveRev);
-        setTxt('fin-profit-pending', metrics.toReceiveProfit);
-        
         setTxt('fin-stock-value', stockValue);
         setTxt('fin-stock-cost', stockCost);
-        setTxt('fin-profit-potential', Number((stockValue - stockCost).toFixed(2)));
+        setTxt('fin-profit-potential', stockValue - stockCost);
         setTxt('fin-stock-count', `${totalItems} unidades disponíveis`);
 
         // Atualizar gráfico se houver a função disponível
@@ -7672,230 +7482,128 @@ window.processarBaixaSilenciosa = async (orderId, orderData) => {
     }
 };
 
-// --- PASSO 3: RENDERIZAÇÃO ULTRA-RÁPIDA DO RANKING DE CLIENTES FIXADO ---
+// --- LÓGICA DE CLIENTES & RANKING ---
 window.renderCustomerRanking = async () => {
-    try {
-        // 1. Unifica IMEDIATAMENTE ambos os escopos para somar os históricos
-        let dadosLocais = (typeof savedCustomers !== "undefined") ? savedCustomers : {};
-        let dadosGlobais = window.savedCustomers || {};
-        
-        // Combina tudo em um único lugar (Prevalece o dado mais recente do objeto global)
-        let dadosClientes = { ...dadosLocais, ...dadosGlobais };
+    // 1. Garante carga dos dados
+    if (Object.keys(savedCustomers).length === 0) await window.loadSavedCustomers();
 
-        // Se após a unificação ainda estiver zerado, força o download do Firebase
-        if (Object.keys(dadosClientes).length === 0) {
-            await window.loadSavedCustomers();
-            
-            // Recaptura após o término da busca do banco
-            dadosLocais = (typeof savedCustomers !== "undefined") ? savedCustomers : {};
-            dadosGlobais = window.savedCustomers || {};
-            dadosClientes = { ...dadosLocais, ...dadosGlobais };
-        }
+    const customerStats = {};
+    
+    // 2. Mapeia todos os clientes salvos
+    Object.values(savedCustomers).forEach(c => {
+        const phone = c.phone.replace(/\D/g, '');
+        customerStats[phone] = { ...c, orderCount: 0, totalSpent: 0, isGuest: false };
+    });
 
-        // 2. Converte em array e ordena por quem acumulou o maior valor gasto
-        const ranking = Object.values(dadosClientes).sort((a, b) => {
-            const gastoA = Number(a.totalSpent) || 0;
-            const gastoB = Number(b.totalSpent) || 0;
-            if (gastoB !== gastoA) {
-                return gastoB - gastoA;
+    // 3. Soma dados dos pedidos (ignora cancelados)
+    const orders = Object.values(ordersCache);
+    orders.forEach(order => {
+        if (order.status !== 'canceled') {
+            const phone = order.customer.phone.replace(/\D/g, '');
+            if (!customerStats[phone]) {
+                customerStats[phone] = {
+                    name: order.customer.name,
+                    phone: order.customer.phone,
+                    orderCount: 0,
+                    totalSpent: 0,
+                    isGuest: true
+                };
             }
-            return (a.name || "").localeCompare(b.name || "");
-        });
-
-        // 3. ATUALIZA OS CARD-CONTADORES NO TOPO (Se existirem na tela)
-        const qtdTotalReal = ranking.length; 
-        const qtdFieisReal = ranking.filter(c => (Number(c.orderCount) || 0) > 1 || (Number(c.totalSpent) || 0) > 0).length;
-
-        const idsPossiveisTotal = ['totalCustomersCount', 'totalClientesTxt', 'customerCount', 'totalClientes'];
-        const idsPossiveisFieis = ['loyalCustomersCount', 'clientesFieisTxt', 'loyalCount', 'clientesFieis'];
-
-        idsPossiveisTotal.forEach(id => {
-            const el = document.getElementById(id);
-            if (el) el.innerText = qtdTotalReal;
-        });
-
-        idsPossiveisFieis.forEach(id => {
-            const el = document.getElementById(id);
-            if (el) el.innerText = qtdFieisReal;
-        });
-
-        // 4. PREPARAÇÃO DA TABELA HTML
-        const tbody = document.getElementById('customerTableBody');
-        if (!tbody) return;
-        
-        tbody.innerHTML = ""; 
-
-        if (ranking.length === 0) {
-            tbody.innerHTML = `<tr><td colspan="5" class="p-8 text-center text-slate-400 italic text-xs">Nenhum cliente cadastrado até o momento.</td></tr>`;
-            return;
+            customerStats[phone].orderCount++;
+            customerStats[phone].totalSpent += (Number(order.total) || 0);
         }
+    });
 
-        // 5. INJEÇÃO DOS CLIENTES NA TABELA (RANKING)
-        ranking.forEach((c, index) => {
-            const totalGastoNum = Number(c.totalSpent) || 0;
-            const isTop1 = index === 0 && totalGastoNum > 0;
-            
-            // Fallback seguro de identificador único
-            const idUnicoCliente = c.id || c.phone?.replace(/\D/g, '') || "cliente_" + index; 
-            
-            const row = `
-                <tr class="hover:bg-slate-50/50 transition-colors border-b border-slate-50 last:border-0">
-                    <td class="px-4 py-4 text-center">
-                        <span class="inline-flex items-center justify-center w-7 h-7 rounded-full text-[10px] font-black border ${isTop1 ? 'bg-yellow-100 text-yellow-700 border-yellow-200' : 'bg-slate-100 text-slate-500 border-slate-200'}">
-                            ${index + 1}º
-                        </span>
-                    </td>
-                    <td class="px-4 py-4">
-                        <div class="flex flex-col min-w-0">
-                            <div class="flex items-center gap-1">
-                                <span class="font-bold text-slate-800 text-xs truncate uppercase">${c.name || 'Cliente Sem Nome'}</span>
-                                <i data-lucide="check-circle" class="w-3 h-3 text-emerald-500 shrink-0"></i>
-                            </div>
-                            <span class="text-[9px] text-slate-400 font-mono tracking-tighter">
-                                ${c.phone ? c.phone : (c.cpf ? 'CPF: ' + c.cpf : 'ID: ' + idUnicoCliente)}
-                            </span>
-                        </div>
-                    </td>
-                    <td class="px-4 py-4 text-center">
-                        <span class="text-xs font-bold text-slate-600">${c.orderCount || 0}</span>
-                    </td>
-                    <td class="px-4 py-4 text-right">
-                        <span class="font-black text-slate-900 text-xs">R$ ${totalGastoNum.toFixed(2).replace('.',',')}</span>
-                    </td>
-                    <td class="px-4 py-4 text-center">
-                        <div class="flex items-center justify-center gap-1">
-                            <button onclick="window.openCustomerDetails('${idUnicoCliente}')" class="p-2 text-slate-400 hover:text-primary-600 hover:bg-primary-50 rounded-lg transition-all">
-                                <i data-lucide="eye" class="w-4 h-4"></i>
-                            </button>
-                            <button onclick="window.deleteCustomerPermanent('${idUnicoCliente}')" class="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all">
-                                <i data-lucide="trash-2" class="w-4 h-4"></i>
-                            </button>
-                        </div>
-                    </td>
-                </tr>
-            `;
-            tbody.insertAdjacentHTML('beforeend', row);
-        });
+    const ranking = Object.values(customerStats).sort((a, b) => b.totalSpent - a.totalSpent);
 
-        // Renderiza os ícones do Lucide criados dinamicamente na tabela
-        if (window.lucide) lucide.createIcons();
-    } catch (error) {
-        console.error("❌ Erro na renderização do Ranking de Clientes:", error);
-    }
+    // --- PARTE CRUCIAL: ATUALIZA OS CONTADORES NO TOPO ---
+    // Aqui calculamos o total REAL da memória
+    const qtdTotalReal = ranking.length; 
+    const qtdFieisReal = ranking.filter(c => c.orderCount > 1).length;
+
+    // Tentamos encontrar os IDs mais comuns para esses cards. 
+    // Se o seu ID for diferente, ajuste entre as aspas abaixo:
+    const idsPossiveisTotal = ['totalCustomersCount', 'totalClientesTxt', 'customerCount'];
+    const idsPossiveisFieis = ['loyalCustomersCount', 'clientesFieisTxt', 'loyalCount'];
+
+    idsPossiveisTotal.forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.innerText = qtdTotalReal;
+    });
+
+    idsPossiveisFieis.forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.innerText = qtdFieisReal;
+    });
+    // ----------------------------------------------------
+
+    const tbody = document.getElementById('customerTableBody');
+    if (!tbody) return;
+    
+    tbody.innerHTML = ""; 
+
+    // Renderiza o ranking completo na tabela
+    ranking.forEach((c, index) => {
+        const isTop1 = index === 0 && c.totalSpent > 0;
+        const phoneRaw = c.phone.replace(/\D/g, '');
+        
+        const row = `
+            <tr class="hover:bg-slate-50/50 transition-colors border-b border-slate-50 last:border-0">
+                <td class="px-4 py-4 text-center">
+                    <span class="inline-flex items-center justify-center w-7 h-7 rounded-full text-[10px] font-black border ${isTop1 ? 'bg-yellow-100 text-yellow-700 border-yellow-200' : 'bg-slate-100 text-slate-500 border-slate-200'}">
+                        ${index + 1}º
+                    </span>
+                </td>
+                <td class="px-4 py-4">
+                    <div class="flex flex-col min-w-0">
+                        <div class="flex items-center gap-1">
+                            <span class="font-bold text-slate-800 text-xs truncate">${c.name}</span>
+                            ${!c.isGuest ? '<i data-lucide="check-circle" class="w-3 h-3 text-blue-500 shrink-0"></i>' : ''}
+                        </div>
+                        <span class="text-[9px] text-slate-400 font-mono tracking-tighter">${c.phone}</span>
+                    </div>
+                </td>
+                <td class="px-4 py-4 text-center">
+                    <span class="text-xs font-bold text-slate-600">${c.orderCount}</span>
+                </td>
+                <td class="px-4 py-4 text-right">
+                    <span class="font-black text-slate-900 text-xs">R$ ${c.totalSpent.toFixed(2).replace('.',',')}</span>
+                </td>
+                <td class="px-4 py-4 text-center">
+                    <div class="flex items-center justify-center gap-1">
+                        <button onclick="window.openCustomerDetails('${phoneRaw}')" class="p-2 text-slate-400 hover:text-primary-600 hover:bg-primary-50 rounded-lg transition-all">
+                            <i data-lucide="eye" class="w-4 h-4"></i>
+                        </button>
+                        <button onclick="window.deleteCustomerPermanent('${phoneRaw}')" class="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all">
+                            <i data-lucide="trash-2" class="w-4 h-4"></i>
+                        </button>
+                    </div>
+                </td>
+            </tr>
+        `;
+        tbody.insertAdjacentHTML('beforeend', row);
+    });
+
+    if (window.lucide) lucide.createIcons();
 };
 
-// --- FUNÇÃO CENTRALIZADORA DE CLIENTES (ONLINE E MANUAL) ---
-window.syncCustomerFromOrder = async (dadosCliente, totalPedido) => {
-    if (!currentStoreId || !dadosCliente.name) return null;
-
-    try {
-        const phoneClean = (dadosCliente.phone || "").replace(/\D/g, "");
-        const cpfClean = (dadosCliente.cpf || "").replace(/\D/g, "");
-        const nomeClean = (dadosCliente.name || "").toLowerCase().trim().replace(/\s+/g, "_");
-
-        // 1. Aplica a sua Lógica de Camadas de Identificação para achar o ID correto
-        let customerDocId = "";
-        if (phoneClean) {
-            customerDocId = phoneClean;
-        } else if (nomeClean) {
-            customerDocId = nomeClean;
-        } else if (cpfClean) {
-            customerDocId = cpfClean;
-        } else {
-            customerDocId = "cliente_avulso_" + Date.now();
+window.loadCustomersData = async () => {
+    // Só faz a leitura no Firebase se o cache estiver vazio (Economia de leituras)
+    if (Object.keys(savedCustomers).length === 0) {
+        console.log("Buscando base de clientes...");
+        try {
+            const q = query(collection(db, "customers"));
+            const querySnapshot = await getDocs(q);
+            
+            querySnapshot.forEach((doc) => {
+                const data = doc.data();
+                // Limpa o telefone para usar como chave única no cache
+                const phone = data.phone.replace(/\D/g, '');
+                savedCustomers[phone] = { id: doc.id, ...data };
+            });
+        } catch (error) {
+            console.error("Erro ao carregar clientes:", error);
         }
-
-        const customerRef = doc(db, "stores", currentStoreId, "customers", customerDocId);
-        
-        // 2. Verifica se o cliente já existe na memória para somar o acumulado
-        if (!window.savedCustomers) window.savedCustomers = {};
-        if (typeof savedCustomers !== "undefined" && Object.keys(savedCustomers).length > 0) {
-            window.savedCustomers = { ...savedCustomers, ...window.savedCustomers };
-        }
-        
-        const clienteExistente = window.savedCustomers[customerDocId] || { orderCount: 0, totalSpent: 0 };
-        
-        const novoOrderCount = (Number(clienteExistente.orderCount) || 0) + 1;
-        const novoTotalSpent = Number(((Number(clienteExistente.totalSpent) || 0) + Number(totalPedido)).toFixed(2));
-
-        const dadosClienteAtualizados = {
-            id: customerDocId,
-            name: dadosCliente.name,
-            phone: dadosCliente.phone || "",
-            cpf: dadosCliente.cpf || "",
-            address: dadosCliente.address || "",
-            updatedAt: Date.now(),
-            orderCount: novoOrderCount,
-            totalSpent: novoTotalSpent
-        };
-
-        // 3. Salva/Mescla direto no Firestore
-        await setDoc(customerRef, dadosClienteAtualizados, { merge: true });
-
-        // 4. Salva imediatamente nas memórias locais do app
-        window.savedCustomers[customerDocId] = dadosClienteAtualizados;
-        if (typeof savedCustomers !== "undefined") {
-            savedCustomers[customerDocId] = dadosClienteAtualizados;
-        }
-
-        console.log(`🎯 [Sync] Cliente ${dadosCliente.name} atualizado! Gasto total: R$ ${novoTotalSpent}`);
-        return customerDocId;
-
-    } catch (error) {
-        console.error("❌ Erro ao sincronizar cliente do pedido:", error);
-        return null;
-    }
-};
-
-// --- PASSO 2 REENGENHARIA: CARGA BASEADA ESTRITAMENTE NO TIMESTAMP DO SERVIDOR ---
-window.loadSavedCustomers = async (force = false) => {
-    if (!currentStoreId) return;
-    try {
-        const cacheKey = `cache_customers_${currentStoreId}`;
-        const timeKey = `cache_time_customers_${currentStoreId}`;
-        
-        const cacheSalvo = localStorage.getItem(cacheKey);
-        const tempoSalvo = localStorage.getItem(timeKey);
-        
-        const timestampServidor = (typeof storeConfig !== "undefined" && storeConfig?.lastUpdate) 
-            ? Number(storeConfig.lastUpdate) 
-            : 0;
-
-        if (!force && cacheSalvo && tempoSalvo && Number(tempoSalvo) >= timestampServidor) {
-            console.log("👥 [Clientes] Cache de disco atualizado. Usando dados locais.");
-            const dadosParseados = JSON.parse(cacheSalvo);
-            window.savedCustomers = dadosParseados;
-            if (typeof savedCustomers !== "undefined") savedCustomers = dadosParseados;
-            return;
-        }
-
-        console.log("🌐 [Clientes] Buscando base completa no Servidor...");
-        const clientesRef = collection(db, "stores", currentStoreId, "customers");
-        const snap = await getDocs(clientesRef);
-        
-        const dadosAtualizados = {};
-        snap.forEach(doc => {
-            const data = doc.data();
-            dadosAtualizados[doc.id] = {
-                id: doc.id,
-                name: data.name || "Cliente Sem Nome",
-                phone: data.phone || "",
-                cpf: data.cpf || "",
-                address: data.address || "",
-                orderCount: Number(data.orderCount) || 0, // Garante que seja um número válido
-                totalSpent: Number(data.totalSpent) || 0  // Evita campos indefinidos/quebras
-            };
-        });
-
-        window.savedCustomers = dadosAtualizados;
-        if (typeof savedCustomers !== "undefined") savedCustomers = dadosAtualizados;
-
-        localStorage.setItem(cacheKey, JSON.stringify(dadosAtualizados));
-        localStorage.setItem(timeKey, timestampServidor.toString());
-        console.log(`✅ [Clientes] Sincronização concluída: ${Object.keys(dadosAtualizados).length} mapeados.`);
-
-    } catch (error) {
-        console.error("❌ Erro crítico ao carregar clientes cadastrados:", error);
     }
 };
 
@@ -8020,12 +7728,11 @@ window.handleCustomerSubmit = async (e) => {
     if(!phoneRaw) return;
 
     const btn = e.target.querySelector('button[type="submit"]');
-    if (btn) btn.disabled = true; // Proteção caso o botão não seja encontrado
+    btn.disabled = true;
 
     try {
         const custRef = doc(db, `stores/${currentStoreId}/customers`, phoneRaw);
         const data = {
-            id: phoneRaw, // Geralmente útil ter o ID direto no objeto
             name: document.getElementById('custName').value,
             phone: document.getElementById('custPhone').value,
             cpf: document.getElementById('custCpf').value,
@@ -8035,51 +7742,39 @@ window.handleCustomerSubmit = async (e) => {
 
         await setDoc(custRef, data, { merge: true });
      
+        
         // 1. ATUALIZE O TIMESTAMP NO SERVIDOR (Crucial para o refresh funcionar)
-        if (window.markAsDirty) {
-            await window.markAsDirty(); 
-        }
+if (window.markAsDirty) {
+    await window.markAsDirty(); 
+}
 
-        // 2. Atualiza o cache local imediatamente
-        if (typeof savedCustomers !== 'undefined') {
-            savedCustomers[phoneRaw] = data;
-        }
+// 2. Atualiza o cache local imediatamente
+savedCustomers[phoneRaw] = data;
 
-        // 3. Salva no localStorage para que o refresh já tenha o dado novo
-        const cacheKey = `cache_customers_${currentStoreId}`;
-        localStorage.setItem(cacheKey, JSON.stringify(savedCustomers));
+// 3. Salva no localStorage para que o refresh já tenha o dado novo
+const cacheKey = `cache_customers_${currentStoreId}`;
+localStorage.setItem(cacheKey, JSON.stringify(savedCustomers));
 
-        window.closeCustomerModal();
-        showToast("✅ Cliente atualizado!");
+window.closeCustomerModal();
+showToast("✅ Cliente atualizado!");
+window.renderCustomerRanking(); 
         
-        // Renderiza o ranking na hora com os dados novos do cache
-        if (window.renderCustomerRanking) {
-            window.renderCustomerRanking(); 
-        }
-        
-    } catch (error) { // Mudado de 'e' para 'error' para não dar conflito com o 'e' do preventDefault
-        console.error(error);
+    } catch (e) {
         showToast("❌ Erro ao salvar.");
     } finally {
-        if (btn) btn.disabled = false;
+        btn.disabled = false;
     }
 };
 
 
-/// Carregar clientes cadastrados do Banco com Normalização de Chave
+// Carregar clientes cadastrados do Banco
 window.loadSavedCustomers = async (force = false) => {
-    if (!currentStoreId) return;
-    
     const cacheKey = `cache_customers_${currentStoreId}`;
     const timeKey = `cache_time_customers_${currentStoreId}`;
     
     const localData = localStorage.getItem(cacheKey);
     const localTime = localStorage.getItem(timeKey);
-    
-    // Garante segurança caso storeConfig não esteja definido no momento
-    const serverTime = (typeof storeConfig !== "undefined" && storeConfig?.lastUpdate) 
-        ? storeConfig.lastUpdate.toString() 
-        : Date.now().toString();
+    const serverTime = storeConfig.lastUpdate?.toString();
 
     // REGRA BLAZE: Se o tempo no servidor é igual ao do navegador, custo ZERO.
     if (!force && localData && localTime === serverTime) {
@@ -8089,36 +7784,17 @@ window.loadSavedCustomers = async (force = false) => {
     }
 
     console.log("🌐 Clientes: Sincronizando com Firebase...");
-    try {
-        const snap = await getDocs(collection(db, `stores/${currentStoreId}/customers`));
-        savedCustomers = {};
-        
-        snap.forEach(doc => {
-            const data = doc.data();
-            // Pega o telefone do documento (ou usa o ID do doc se o campo estiver vazio)
-            const rawPhone = data.phone || doc.id;
-            // Força a chave do cache a ser SEMPRE o número limpo (ex: 558591027634)
-            const phoneKey = rawPhone.replace(/\D/g, '');
-            
-            if (phoneKey) {
-                savedCustomers[phoneKey] = {
-                    id: doc.id,
-                    name: data.name || "Sem Nome",
-                    phone: data.phone || doc.id,
-                    address: data.address || "",
-                    orderCount: Number(data.orderCount) || 0,
-                    totalSpent: Number(data.totalSpent) || 0
-                };
-            }
-        });
+    const snap = await getDocs(collection(db, `stores/${currentStoreId}/customers`));
+    savedCustomers = {};
+    snap.forEach(doc => {
+        savedCustomers[doc.id] = doc.data();
+    });
 
-        // Salva no disco para a próxima vez
-        localStorage.setItem(cacheKey, JSON.stringify(savedCustomers));
-        localStorage.setItem(timeKey, serverTime);
-    } catch (error) {
-        console.error("Erro ao sincronizar clientes do Firebase:", error);
-    }
+    // Salva no disco para a próxima vez
+    localStorage.setItem(cacheKey, JSON.stringify(savedCustomers));
+    localStorage.setItem(timeKey, serverTime || Date.now().toString());
 };
+
 
      window.applyDynamicColors = (hexColor) => {
     if (!hexColor) return;
@@ -8508,27 +8184,6 @@ window.renderComplementGroups = function() {
     }).join('');
 
     if (window.lucide) lucide.createIcons();
-};
-
-// Função para adicionar uma nova opção/item dentro de um grupo de complementos
-window.addOptionToGroup = function(groupId) {
-    if (!window.currentProductComplements) return;
-    
-    const group = window.currentProductComplements.find(g => g.id === groupId);
-    if (group) {
-        // Cria um novo item com ID único
-        const newItem = {
-            id: Date.now().toString(),
-            name: "",
-            price: 0,
-            status: 'active'
-        };
-        
-        group.items.push(newItem);
-        
-        // Renderiza novamente a interface para mostrar o novo campo
-        window.renderComplementGroups();
-    }
 };
 
 window.toggleGroupStatus = function(groupId) {
@@ -9340,6 +8995,26 @@ window.fluxoCadastroRapido = async function() {
     }
 };
 
+     // Função para adicionar uma nova opção/item dentro de um grupo de complementos
+window.addOptionToGroup = function(groupId) {
+    if (!window.currentProductComplements) return;
+    
+    const group = window.currentProductComplements.find(g => g.id === groupId);
+    if (group) {
+        // Cria um novo item com ID único
+        const newItem = {
+            id: Date.now().toString(),
+            name: "",
+            price: 0,
+            status: 'active'
+        };
+        
+        group.items.push(newItem);
+        
+        // Renderiza novamente a interface para mostrar o novo campo
+        window.renderComplementGroups();
+    }
+};
             
 window.toggleLojaStatus = async () => {
     if (!currentStoreId) return;
