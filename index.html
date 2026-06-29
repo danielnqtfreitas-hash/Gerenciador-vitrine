@@ -5981,13 +5981,12 @@ window.quickDeleteOrder = async (orderId) => {
     }
 };
 
-        // --- FUNÇÕES DO MODAL DE PEDIDO MANUAL ---
+     // --- FUNÇÕES DO MODAL DE PEDIDO MANUAL (COM BUSCA DE CLIENTES CADASTRADOS) ---
 window.openManualOrderModal = async () => {
     // 1. Forçamos o carregamento dos dados MAIS RECENTES (estoque real)
-    // O true indica 'forceRefresh', ignorando o cache de disco
-    await loadProductsCache(true); 
+    await loadProductsCache(true);
     
-    // 2. Também carregamos os clientes
+    // 2. Também carregamos os clientes para garantir que a pesquisa ache todos
     await window.loadSavedCustomers();
 
     const modal = document.getElementById("manualOrderModal");
@@ -5999,8 +5998,8 @@ window.openManualOrderModal = async () => {
     // Limpezas de praxe
     manualOrder = [];
     window.renderManualOrderItems();
-    
-    // Limpar campos de texto
+
+    // Limpar campos de texto originais
     document.getElementById("manualOrderCustName").value = "";
     document.getElementById("manualPhone").value = "";
     document.getElementById("manualAddress").value = "";
@@ -6008,7 +6007,108 @@ window.openManualOrderModal = async () => {
     document.getElementById("manualProductSearch").value = "";
     document.getElementById("manualSearchResults").innerHTML = "";
 
+    // 🌟 ATIVA O BUSCADOR DINÂMICO NO CAMPO DE NOME DO CLIENTE
+    window.initCustomerSearchInOrder();
+
     if(window.lucide) lucide.createIcons();
+};
+
+// --- LOGICA DO BUSCADOR DINÂMICO DE CLIENTES NO PEDIDO MANUAL (VERSÃO FORÇADA/COMPATÍVEL) ---
+window.initCustomerSearchInOrder = () => {
+    const inputNome = document.getElementById("manualOrderCustName");
+    if (!inputNome) return;
+
+    // 1. Cria ou recupera o container da lista suspensa flutuante
+    let dropdown = document.getElementById("manualCustDropdown");
+    if (!dropdown) {
+        dropdown = document.createElement("div");
+        dropdown.id = "manualCustDropdown";
+        // 🌟 Adicionado z-[9999] e bg-slate-900 puro com borda para destacar e flutuar por cima de tudo
+        dropdown.className = "absolute left-0 right-0 bg-slate-900 border border-slate-700/80 rounded-xl shadow-2xl max-h-48 overflow-y-auto z-[9999] hidden p-1 space-y-0.5 mt-1";
+        
+        if (inputNome.parentElement) {
+            inputNome.parentElement.classList.add("relative");
+            inputNome.parentElement.appendChild(dropdown);
+        }
+    }
+
+    // 2. Função que filtra a lista toda vez que digita
+    const filtrarClientes = () => {
+        const termo = inputNome.value.toLowerCase().trim();
+        dropdown.innerHTML = "";
+
+        if (termo === "") {
+            dropdown.classList.add("hidden");
+            return;
+        }
+
+        // Unifica os escopos locais e globais do cache para garantir leitura instantânea
+        let dadosLocais = (typeof savedCustomers !== "undefined") ? savedCustomers : {};
+        let dadosGlobais = window.savedCustomers || {};
+        let cacheClientes = { ...dadosLocais, ...dadosGlobais };
+        
+        const listaClientes = Object.values(cacheClientes);
+
+        // Filtra buscando por Nome, Telefone limpo ou CPF limpo
+        const filtrados = listaClientes.filter(c => {
+            if (!c) return false;
+            const nome = (c.name || "").toLowerCase();
+            const fone = (c.phone || "").replace(/\D/g, "");
+            const cpf = (c.cpf || "").replace(/\D/g, "");
+            const termoLimpo = termo.replace(/\D/g, "");
+
+            return nome.includes(termo) || fone.includes(termoLimpo) || (termoLimpo !== "" && (fone.includes(termoLimpo) || cpf.includes(termoLimpo)));
+        });
+
+        if (filtrados.length === 0) {
+            dropdown.classList.add("hidden");
+            return;
+        }
+
+        // 3. Renderiza as opções encontradas
+        filtrados.forEach(c => {
+            const item = document.createElement("div");
+            // Estilo Dark Mode com hover destacado em Neon/Slate
+            item.className = "p-2.5 hover:bg-slate-950 rounded-lg cursor-pointer text-left text-xs transition-colors border border-transparent hover:border-slate-800 flex flex-col w-full";
+            item.innerHTML = `
+                <div class="font-bold text-white uppercase text-[11px]">${c.name || "Sem Nome"}</div>
+                <div class="text-[9px] text-slate-400 font-mono mt-0.5">📱 ${c.phone || "Sem Tel"}</div>
+            `;
+
+            // Mapeia o clique para auto-preencher os campos originais do seu formulário manual
+            item.onmousedown = (e) => {
+                // Previne o blur do input antes de computar o clique
+                e.preventDefault(); 
+                
+                inputNome.value = c.name || "";
+                
+                const inputPhone = document.getElementById("manualPhone");
+                const inputAddress = document.getElementById("manualAddress");
+                
+                if (inputPhone) inputPhone.value = c.phone || "";
+                if (inputAddress) inputAddress.value = c.address || "";
+                
+                dropdown.classList.add("hidden");
+                if (typeof showToast === "function") showToast(`👥 Cliente ${c.name.split(' ')[0]} selecionado!`);
+            };
+
+            dropdown.appendChild(item);
+        });
+
+        dropdown.classList.remove("hidden");
+    };
+
+    // Remove ouvintes antigos e adiciona os novos com segurança
+    inputNome.removeEventListener("input", filtrarClientes);
+    inputNome.removeEventListener("focus", filtrarClientes);
+    inputNome.addEventListener("input", filtrarClientes);
+    inputNome.addEventListener("focus", filtrarClientes);
+
+    // Fecha se o usuário clicar completamente fora do input ou do menu drop
+    inputNome.addEventListener("blur", () => {
+        // Pequeno atraso para dar tempo de computar o clique se não usar onmousedown
+        setTimeout(() => { dropdown.classList.add("hidden"); }, 200);
+    });
 };
 
 
