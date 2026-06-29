@@ -1241,42 +1241,52 @@ if ('serviceWorker' in navigator) {
         </button>
     </div>
 
-    <!-- CARD PRINCIPAL: O "GOLDEN CARD" -->
-    <div class="relative group">
-        <div class="absolute -inset-1 bg-gradient-to-r from-primary-500 to-blue-600 rounded-[3rem] blur opacity-20 group-hover:opacity-40 transition duration-1000"></div>
-        <div class="relative bg-slate-950 rounded-[3rem] p-10 text-white shadow-2xl overflow-hidden">
-            <!-- Gráfico de fundo decorativo -->
-            <div class="absolute right-0 bottom-0 opacity-20 translate-y-1/4">
-                <svg width="300" height="150" viewBox="0 0 300 150" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <path d="M0 150C50 120 100 140 150 100C200 60 250 80 300 20" stroke="white" stroke-width="4" stroke-linecap="round"/>
-                </svg>
-            </div>
+   <!-- CARD PRINCIPAL: O "GOLDEN CARD" -->
+<div class="relative group">
+    <div class="absolute -inset-1 bg-gradient-to-r from-primary-500 to-blue-600 rounded-[3rem] blur opacity-20 group-hover:opacity-40 transition duration-1000"></div>
+    <div class="relative bg-slate-950 rounded-[3rem] p-10 text-white shadow-2xl overflow-hidden">
+        <!-- Gráfico de fundo decorativo -->
+        <div class="absolute right-0 bottom-0 opacity-20 translate-y-1/4">
+            <svg width="300" height="150" viewBox="0 0 300 150" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M0 150C50 120 100 140 150 100C200 60 250 80 300 20" stroke="white" stroke-width="4" stroke-linecap="round"/>
+            </svg>
+        </div>
 
-            <div class="flex justify-between items-start mb-12">
-                <div>
-                    <p class="text-[10px] font-black text-slate-500 uppercase tracking-[0.3em] mb-3">Receita Bruta Acumulada</p>
-                    <div class="flex items-baseline gap-3">
-                        <span class="text-2xl font-bold text-primary-400">R$</span>
-                        <h2 class="text-6xl font-black tracking-tighter" id="fin-rev-day">0,00</h2>
-                    </div>
-                </div>
-                <div class="bg-white/10 backdrop-blur-xl p-4 rounded-3xl border border-white/10">
-                    <i data-lucide="zap" class="w-6 h-6 text-primary-400 fill-primary-400"></i>
+        <div class="flex justify-between items-start mb-12">
+            <div>
+                <p class="text-[10px] font-black text-slate-500 uppercase tracking-[0.3em] mb-3">Receita Bruta Acumulada</p>
+                <div class="flex items-baseline gap-3">
+                    <span class="text-2xl font-bold text-primary-400">R$</span>
+                    <h2 class="text-6xl font-black tracking-tighter" id="fin-rev-day">0,00</h2>
                 </div>
             </div>
-
-            <div class="grid grid-cols-2 gap-8 relative z-10">
-                <div class="bg-white/5 p-5 rounded-[2rem] border border-white/5">
-                    <p class="text-[9px] font-bold text-slate-500 uppercase mb-1">Volume de Vendas</p>
-                    <p class="text-xl font-black text-white" id="fin-orders-day">0 Pedidos</p>
-                </div>
-                <div class="bg-white/5 p-5 rounded-[2rem] border border-white/5">
-                    <p class="text-[9px] font-bold text-slate-500 uppercase mb-1">Lucro Real Líquido</p>
-                    <p class="text-xl font-black text-emerald-400" id="fin-profit-real">R$ 0,00</p>
-                </div>
+            <div class="bg-white/10 backdrop-blur-xl p-4 rounded-3xl border border-white/10">
+                <i data-lucide="zap" class="w-6 h-6 text-primary-400 fill-primary-400"></i>
             </div>
         </div>
+
+        <div class="grid grid-cols-2 gap-8 relative z-10">
+            <div class="bg-white/5 p-5 rounded-[2rem] border border-white/5">
+                <p class="text-[9px] font-bold text-slate-500 uppercase mb-1">Volume de Vendas</p>
+                <p class="text-xl font-black text-white" id="fin-orders-day">0 Pedidos</p>
+            </div>
+            <div class="bg-white/5 p-5 rounded-[2rem] border border-white/5">
+                <p class="text-[9px] font-bold text-slate-500 uppercase mb-1">Lucro Real Líquido</p>
+                <p class="text-xl font-black text-emerald-400" id="fin-profit-real">R$ 0,00</p>
+            </div>
+        </div>
+
+        <!-- BOTÃO DE DETALHES INTEGRADO AO DESIGN -->
+        <div class="relative z-10 mt-8 pt-2 flex justify-end">
+            <button onclick="window.openFinancialPeriodDetails()" 
+                class="w-full py-3.5 bg-primary-500/10 hover:bg-primary-500 border border-primary-500/20 text-primary-400 hover:text-white font-black uppercase tracking-widest text-[10px] rounded-2xl transition-all shadow-lg flex items-center justify-center gap-2 group/btn">
+                <i data-lucide="eye" class="w-4 h-4 transition-transform group-hover/btn:scale-110"></i> 
+                Ver Pedidos do Período Filtrado
+            </button>
+        </div>
     </div>
+</div>
+
 
     <!-- MÉTODOS DE PAGAMENTO: GRID MINIMALISTA -->
     <div class="grid grid-cols-3 gap-4">
@@ -1348,6 +1358,39 @@ if ('serviceWorker' in navigator) {
 </div>
 <!-- CONTAINER DE CONTEÚDO: Ajustado para alinhar tudo no topo -->
 <div id="content-area" class="flex-1 overflow-y-auto bg-slate-50 p-4 md:p-8 flex flex-col justify-start">
+
+<div id="financialDetailsModal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4 z-[9999] hidden animate-fade-in">
+    <div class="bg-slate-900 border border-slate-800 rounded-[2.5rem] w-full max-w-2xl overflow-hidden shadow-2xl flex flex-col max-h-[85vh]">
+        
+        <div class="p-6 bg-slate-950 border-b border-slate-800 flex items-center gap-3">
+            <div class="w-10 h-10 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-400">
+                <i data-lucide="receipt" class="w-5 h-5"></i>
+            </div>
+            <div>
+                <h3 class="text-sm font-bold text-white uppercase tracking-tight">Pedidos do Período Filtrado</h3>
+                <p class="text-[10px] text-slate-400 uppercase mt-0.5 tracking-wider">Detalhamento completo de itens e SKU</p>
+            </div>
+            <button onclick="document.getElementById('financialDetailsModal').classList.add('hidden')" 
+                class="ml-auto w-8 h-8 rounded-xl bg-slate-900 hover:bg-red-500/20 border border-slate-800 hover:border-red-500/30 text-slate-400 hover:text-red-400 transition-all flex items-center justify-center">
+                <i data-lucide="x" class="w-4 h-4"></i>
+            </button>
+        </div>
+
+        <div id="financialDetailsContent" class="p-6 overflow-y-auto space-y-4 flex-1 bg-slate-900/50 custom-scrollbar">
+            </div>
+
+        <div class="p-5 bg-slate-950 border-t border-slate-800 flex justify-between items-center">
+            <div class="text-left">
+                <p class="text-[9px] font-bold text-slate-400 uppercase tracking-wider">Soma Acumulada no Filtro</p>
+                <span id="financialDetailsGrandTotal" class="text-base font-black text-emerald-400">R$ 0,00</span>
+            </div>
+            <button onclick="document.getElementById('financialDetailsModal').classList.add('hidden')" 
+                class="px-5 py-2.5 bg-slate-800 hover:bg-slate-700 text-white font-bold uppercase tracking-wider text-[10px] rounded-xl transition-all">
+                Fechar Detalhes
+            </button>
+        </div>
+    </div>
+</div>
 
     <!-- VIEW BANNERS -->
     <div id="view-banners" class="max-w-6xl mx-auto w-full space-y-6 hidden animate-fade-in">
@@ -6498,6 +6541,8 @@ window.changeManualQty = (cartId, diff) => {
     window.renderManualOrderItems();
 };
 
+
+
 window.finishManualOrder = async () => {
     if (!window.manualOrder || manualOrder.length === 0) return showToast("⚠️ Carrinho vazio!");
     
@@ -6981,6 +7026,186 @@ window.applyCustomDate = () => {
     updateFinanceRange('custom');
 };
 
+// --- JAVASCRIPT CORRIGIDO: TRATAMENTO ROBUSTO DE DATA E FILTRO REAL ---
+window.openFinancialPeriodDetails = () => {
+    const contentArea = document.getElementById("financialDetailsContent");
+    const grandTotalArea = document.getElementById("financialDetailsGrandTotal");
+    if (!contentArea) return;
+
+    contentArea.innerHTML = "";
+    let totalGeralPeriodo = 0;
+    let totalPedidosExibidos = 0;
+
+    // 1. Identifica os timestamps de início e fim baseando-se no range ativo do seu painel
+    let filterStart = 0;
+    let filterEnd = Infinity;
+
+    const rangeAtivo = typeof currentFinanceRange !== "undefined" ? currentFinanceRange : "today";
+    const agora = new Date();
+    
+    if (rangeAtivo === 'today') {
+        const inicioHoje = new Date();
+        inicioHoje.setHours(0, 0, 0, 0);
+        filterStart = inicioHoje.getTime();
+        
+        const fimHoje = new Date();
+        fimHoje.setHours(23, 59, 59, 999);
+        filterEnd = fimHoje.getTime();
+
+    } else if (rangeAtivo === 'yesterday') {
+        const inicioOntem = new Date();
+        inicioOntem.setDate(inicioOntem.getDate() - 1);
+        inicioOntem.setHours(0, 0, 0, 0);
+        filterStart = inicioOntem.getTime();
+        
+        const fimOntem = new Date();
+        fimOntem.setDate(fimOntem.getDate() - 1);
+        fimOntem.setHours(23, 59, 59, 999);
+        filterEnd = fimOntem.getTime();
+
+    } else if (rangeAtivo === 'week') {
+        const seteDiasAtras = new Date();
+        seteDiasAtras.setDate(seteDiasAtras.getDate() - 7);
+        seteDiasAtras.setHours(0, 0, 0, 0);
+        filterStart = seteDiasAtras.getTime();
+        filterEnd = agora.getTime();
+
+    } else if (rangeAtivo === 'month') {
+        const inicioMes = new Date(agora.getFullYear(), agora.getMonth(), 1, 0, 0, 0, 0);
+        filterStart = inicioMes.getTime();
+        filterEnd = agora.getTime();
+
+    } else if (rangeAtivo === 'custom') {
+        filterStart = window.customStart || 0;
+        filterEnd = window.customEnd || Infinity;
+    }
+
+    // 2. Coleta os pedidos com segurança tratando o objeto do ordersCache
+    let cachePedidos = [];
+    if (typeof ordersCache !== "undefined" && ordersCache !== null) {
+        cachePedidos = Object.values(ordersCache);
+    }
+
+    // 3. Aplica o filtro estrito de período e remove pedidos cancelados
+    const pedidosFiltrados = cachePedidos.filter(order => {
+        if (!order) return false;
+        
+        // Ignora pedidos cancelados na contagem financeira
+        if (order.status === 'canceled' || order.status === 'Cancelado') return false;
+        
+        // TRATAMENTO ROBUSTO DA DATA (createdAt)
+        let timestampPedido = 0;
+        
+        if (order.createdAt) {
+            if (typeof order.createdAt.toMillis === 'function') {
+                timestampPedido = order.createdAt.toMillis();
+            } else if (typeof order.createdAt === 'number') {
+                timestampPedido = order.createdAt;
+            } else if (order.createdAt.seconds) {
+                timestampPedido = order.createdAt.seconds * 1000;
+            } else {
+                timestampPedido = new Date(order.createdAt).getTime() || 0;
+            }
+        }
+
+        return timestampPedido >= filterStart && timestampPedido <= filterEnd;
+    });
+
+    // Se a listagem estiver zerada para o período selecionado
+    if (pedidosFiltrados.length === 0) {
+        let labelPeriodoText = rangeAtivo === 'today' ? 'hoje' : rangeAtivo === 'yesterday' ? 'ontem' : rangeAtivo === 'week' ? 'os últimos 7 dias' : 'este período';
+        contentArea.innerHTML = `
+            <div class="p-8 text-center text-slate-400 border border-dashed border-slate-800 rounded-[2rem] italic text-xs bg-slate-950/20">
+                Nenhum pedido faturado para ${labelPeriodoText}.
+            </div>
+        `;
+        if (grandTotalArea) grandTotalArea.innerText = "R$ 0,00";
+        document.getElementById("financialDetailsModal").classList.remove("hidden");
+        if (window.lucide) lucide.createIcons();
+        return;
+    }
+
+    // Ordenação do pedido mais recente para o mais antigo
+    pedidosFiltrados.sort((a, b) => {
+        let tA = a.createdAt?.toMillis ? a.createdAt.toMillis() : (a.createdAt?.seconds ? a.createdAt.seconds * 1000 : Number(a.createdAt) || 0);
+        let tB = b.createdAt?.toMillis ? b.createdAt.toMillis() : (b.createdAt?.seconds ? b.createdAt.seconds * 1000 : Number(b.createdAt) || 0);
+        return tB - tA;
+    });
+
+    // 4. Renderiza os cards estruturados no container
+    pedidosFiltrados.forEach(order => {
+        const valorTotalPedido = Number(order.total) || 0;
+        totalGeralPeriodo += valorTotalPedido;
+        totalPedidosExibidos++;
+
+        const numPedido = order.id || "S/N";
+        const nomeCliente = order.customer?.name || order.clientName || "Cliente Balcão";
+        
+        let ts = order.createdAt?.toMillis ? order.createdAt.toMillis() : (order.createdAt?.seconds ? order.createdAt.seconds * 1000 : Number(order.createdAt) || 0);
+        const dataFormatada = ts ? new Date(ts).toLocaleDateString('pt-BR') + ' ' + new Date(ts).toLocaleTimeString('pt-BR', {hour: '2-digit', minute:'2-digit'}) : '---';
+
+        let itensHTML = "";
+        const listaItens = order.items || [];
+
+        if (Array.isArray(listaItens) && listaItens.length > 0) {
+            listaItens.forEach(item => {
+                const nomeProd = item.name || item.title || "Produto";
+                const skuProd = item.sku || item.code || "S/ SKU";
+                const qtd = Number(item.q || item.qty || 1);
+                const precoUn = Number(item.price || item.p || 0);
+                const precoTotalItem = precoUn * qtd;
+
+                itensHTML += `
+                    <div class="flex items-center justify-between py-2 border-b border-slate-800/60 last:border-0 text-xs">
+                        <div class="min-w-0 pr-2">
+                            <span class="font-bold text-slate-100 block uppercase truncate text-[11px]">${nomeProd}</span>
+                            <span class="text-[9px] text-emerald-400 font-mono tracking-wider bg-emerald-500/5 px-1 py-0.5 rounded border border-emerald-500/10 mt-0.5 inline-block">SKU: ${skuProd}</span>
+                        </div>
+                        <div class="text-right flex-shrink-0 font-mono text-[11px]">
+                            <span class="text-slate-400 font-bold">${qtd}x</span>
+                            <span class="text-slate-500 ml-1">R$ ${precoUn.toFixed(2).replace('.',',')}</span>
+                            <span class="text-emerald-400 font-extrabold ml-2">R$ ${precoTotalItem.toFixed(2).replace('.',',')}</span>
+                        </div>
+                    </div>
+                `;
+            });
+        } else {
+            itensHTML = `<p class="text-[10px] text-slate-500 italic py-1">Venda direta rápida.</p>`;
+        }
+
+        const pedidoBox = `
+            <div class="bg-slate-950 border border-slate-800 rounded-2xl overflow-hidden shadow-md">
+                <div class="p-3.5 bg-slate-900 border-b border-slate-800 flex justify-between items-center gap-2">
+                    <div class="min-w-0">
+                        <div class="flex items-center gap-1.5">
+                            <span class="text-[9px] font-mono font-black text-primary-400 bg-primary-500/10 px-1.5 py-0.5 rounded border border-primary-500/20">
+                                #...${numPedido.substring(numPedido.length - 6)}
+                            </span>
+                            <span class="text-xs font-black text-white uppercase truncate">${nomeCliente}</span>
+                        </div>
+                        <span class="text-[9px] text-slate-400 block mt-1 font-mono">${dataFormatada}</span>
+                    </div>
+                    <div class="text-right flex-shrink-0">
+                        <span class="text-[9px] font-bold text-slate-500 uppercase block tracking-wider">Total Pedido</span>
+                        <span class="text-xs font-black text-emerald-400 bg-emerald-500/5 px-2 py-0.5 rounded-lg border border-emerald-500/10">R$ ${valorTotalPedido.toFixed(2).replace('.',',')}</span>
+                    </div>
+                </div>
+                <div class="p-3.5 space-y-0.5">
+                    ${itensHTML}
+                </div>
+            </div>
+        `;
+        contentArea.insertAdjacentHTML('beforeend', pedidoBox);
+    });
+
+    if (grandTotalArea) {
+        grandTotalArea.innerText = `R$ ${totalGeralPeriodo.toFixed(2).replace('.', ',')} (${totalPedidosExibidos} ${totalPedidosExibidos === 1 ? 'pedido' : 'pedidos'})`;
+    }
+
+    document.getElementById("financialDetailsModal").classList.remove("hidden");
+    if (window.lucide) lucide.createIcons();
+};
+
 window.initFinanceDashboard = async () => {
     const now = new Date();
     const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
@@ -7305,6 +7530,7 @@ window.updateFinanceChart = (filterStart, filterEnd, rangeType) => {
     }
     lucide.createIcons();
 };
+
 window.expandImage = (url) => {
     const modal = document.getElementById('imageViewerModal');
     const img = document.getElementById('expandedImage');
