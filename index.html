@@ -7906,8 +7906,9 @@ window.loadSavedCustomers = async (force = false) => {
                 phone: data.phone || "",
                 cpf: data.cpf || "",
                 address: data.address || "",
-                orderCount: Number(data.orderCount) || 0, // Garante que seja um número válido
-                totalSpent: Number(data.totalSpent) || 0  // Evita campos indefinidos/quebras
+                orderCount: Number(data.orderCount) || 0, 
+                totalSpent: Number(data.totalSpent) || 0,
+                salesMeta: Number(data.salesMeta) || 0  // 🎯 MAPEADO: Protege a meta para não sumir no cache
             };
         });
 
@@ -7923,31 +7924,261 @@ window.loadSavedCustomers = async (force = false) => {
     }
 };
 
-// Função para abrir os detalhes (Ficha)
-window.openCustomerDetails = (phone) => {
-    // Busca no ranking processado para pegar os totais
+// --- FICHA DO CLIENTE (CRM) COM METAS E LUCRO ACUMULADO ---
+window.openCustomerDetails = (customerId) => {
+    // 1. Garante a busca exata no cache usando o ID real do cliente (seja telefone, nome ou CPF)
+    let dadosLocais = (typeof savedCustomers !== "undefined") ? savedCustomers : {};
+    let dadosGlobais = window.savedCustomers || {};
+    let dadosClientes = { ...dadosLocais, ...dadosGlobais };
+
+    // Busca o cliente pelo ID vindo do clique do "olho"
+    const cust = dadosClientes[customerId] || { 
+        id: customerId,
+        name: "Cliente s/ Cadastro", 
+        phone: customerId, 
+        cpf: "", 
+        address: "",
+        salesMeta: 0
+    };
+
+    const metaDefinida = Number(cust.salesMeta) || 0;
+    // Identificador limpo para cruzar com o histórico de pedidos
+    const phoneTarget = String(cust.phone || customerId).replace(/\D/g, '');
+
+    // 2. Varre o histórico de pedidos (Manuais + Online) calculando Valor Total e Lucro Real
     const stats = Object.values(ordersCache).reduce((acc, order) => {
-        if(order.customer.phone.replace(/\D/g, '') === phone && order.status !== 'canceled') {
-            acc.total += (order.total || 0);
+        if (!order || order.status === 'canceled' || order.status === 'Cancelado') return acc;
+        
+        let orderPhone = order.customer?.phone || order.clientPhone || "";
+        const orderPhoneClean = String(orderPhone).replace(/\D/g, '');
+
+        if (orderPhoneClean === phoneTarget && phoneTarget !== "") {
+            const totalOrder = Number(order.total) || 0;
+            acc.totalComprado += totalOrder;
             acc.count++;
+
+            // CÁLCULO SEGURO DO LUCRO DO PEDIDO
+            let orderProfit = 0;
+            if (order.totalProfit !== undefined && order.totalProfit !== null) {
+                orderProfit = Number(order.totalProfit);
+            } else if (order.items && Array.isArray(order.items)) {
+                order.items.forEach(item => {
+                    if (item.profit !== undefined) {
+                        orderProfit += Number(item.profit);
+                    } else {
+                        const qtd = Number(item.q || item.qty || 0);
+                        const price = Number(item.price || item.p || 0);
+                        const prodId = item.productId || item.id;
+                        const pOriginal = typeof allProducts !== "undefined" ? allProducts.find(p => String(p.id) === String(prodId)) : null;
+                        const cost = pOriginal ? (Number(pOriginal.cost) || 0) : 0;
+                        orderProfit += ((price - cost) * qtd);
+                    }
+                });
+            }
+            acc.lucroTotal += Number(orderProfit.toFixed(2));
         }
         return acc;
-    }, {total: 0, count: 0});
+    }, { totalComprado: 0, lucroTotal: 0, count: 0 });
 
-    const cust = savedCustomers[phone] || { name: "Cliente s/ Cadastro", phone: phone };
+    // 3. Lógica da Barra de Progresso da Meta
+    let porcentagemMeta = 0;
+    let statusMetaHTML = "";
+    
+    if (metaDefinida > 0) {
+        porcentagemMeta = Math.min(Math.round((stats.totalComprado / metaDefinida) * 100), 100);
+        
+        if (stats.totalComprado >= metaDefinida) {
+            statusMetaHTML = `
+                <div class="bg-emerald-500/10 border border-emerald-500/30 rounded-xl p-3 text-center text-emerald-400 font-bold text-xs animate-pulse uppercase tracking-wider flex items-center justify-center gap-2">
+                    🎉 Meta de Compras Atingida! Ofereça um Desconto!
+                </div>
+            `;
+        } else {
+            const quantoFalta = metaDefinida - stats.totalComprado;
+            statusMetaHTML = `
+                <p class="text-[10px] text-slate-400 text-right font-medium">
+                    Faltam <span class="text-primary-400 font-bold">R$ ${quantoFalta.toFixed(2).replace('.', ',')}</span> para a meta
+                </p>
+            `;
+        }
+    } else {
+        statusMetaHTML = `
+            <p class="text-[10px] text-slate-500 italic text-center">Nenhuma meta definida para este cliente ainda.</p>
+        `;
+    }
 
-    document.getElementById('detCustName').textContent = cust.name;
-    document.getElementById('detCustPhone').textContent = cust.phone;
-    document.getElementById('detCustCpf').textContent = cust.cpf || '---';
-    document.getElementById('detCustAddress').textContent = cust.address || 'Não informado';
-    document.getElementById('detCustOrders').textContent = stats.count;
-    document.getElementById('detCustTotal').textContent = `R$ ${stats.total.toFixed(2).replace('.',',')}`;
-    document.getElementById('detCustInitial').textContent = cust.name.charAt(0).toUpperCase();
+    // 4. Injeta o Layout na Modal
+    const modalBody = document.getElementById('customerDetailsModal');
+    if (modalBody) {
+        modalBody.innerHTML = `
+            <div class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4 z-50 animate-fade-in">
+                <div class="bg-slate-900 border border-slate-800 rounded-3xl w-full max-w-md overflow-hidden shadow-2xl shadow-primary-500/5">
+                    
+                    <div class="p-6 bg-gradient-to-b from-slate-950/40 to-transparent border-b border-slate-800/60 flex items-center gap-4">
+                        <div class="w-12 h-12 rounded-2xl bg-primary-500/10 border border-primary-500/20 flex items-center justify-center text-primary-400 font-black text-xl uppercase shadow-inner">
+                            ${(cust.name || 'C').charAt(0).toUpperCase()}
+                        </div>
+                        <div>
+                            <h3 class="text-base font-bold text-white tracking-tight uppercase">${cust.name || 'Cliente'}</h3>
+                            <p class="text-[10px] font-medium text-slate-400 uppercase mt-0.5 tracking-wider">Ficha & Meta do Cliente</p>
+                        </div>
+                        <button onclick="document.getElementById('customerDetailsModal').classList.add('hidden')" class="ml-auto w-8 h-8 rounded-xl bg-slate-950/40 hover:bg-red-500/20 border border-slate-800 hover:border-red-500/30 text-slate-400 hover:text-red-400 transition-all flex items-center justify-center">
+                            <i data-lucide="x" class="w-4 h-4"></i>
+                        </button>
+                    </div>
 
-    document.getElementById('customerDetailsModal').classList.remove('hidden');
-    if (window.lucide) lucide.createIcons();
+                    <div class="p-6 space-y-4 max-h-[65vh] overflow-y-auto">
+                        
+                        <div class="grid grid-cols-2 gap-3">
+                            <div class="bg-slate-950/40 border border-slate-800/40 rounded-2xl p-3 text-center">
+                                <p class="text-[9px] font-bold text-slate-400 uppercase tracking-widest mb-1">Total Comprado</p>
+                                <span class="text-sm font-black text-white">R$ ${stats.totalComprado.toFixed(2).replace('.', ',')}</span>
+                                <p class="text-[9px] text-slate-500 mt-0.5">${stats.count} compras</p>
+                            </div>
+                            <div class="bg-slate-950/40 border border-slate-800/40 rounded-2xl p-3 text-center border-b-2 border-b-emerald-500/40">
+                                <p class="text-[9px] font-bold text-emerald-400 uppercase tracking-widest mb-1">Lucro Gerado para Você</p>
+                                <span class="text-sm font-black text-emerald-400">R$ ${stats.lucroTotal.toFixed(2).replace('.', ',')}</span>
+                                <p class="text-[9px] text-slate-500 mt-0.5">Disponível p/ margem</p>
+                            </div>
+                        </div>
+
+                        <div class="bg-slate-950/30 border border-slate-800/60 rounded-2xl p-4 space-y-3">
+                            <div>
+                                <label class="block text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1.5">Definir Meta de Vendas (R$)</label>
+                                <input type="number" id="editCustMeta" value="${metaDefinida || ''}" placeholder="Ex: 1000"
+                                    class="w-full bg-slate-950/80 border border-slate-800 rounded-xl p-2.5 text-xs text-white font-bold text-primary-400 focus:ring-1 focus:ring-primary-500 outline-none transition-all">
+                            </div>
+
+                            <div class="space-y-1">
+                                <div class="flex justify-between text-[9px] font-bold uppercase tracking-wider">
+                                    <span class="text-slate-500">Progresso da Meta</span>
+                                    <span class="text-primary-400">${porcentagemMeta}%</span>
+                                </div>
+                                <div class="w-full h-2.5 bg-slate-950 rounded-full overflow-hidden border border-slate-800">
+                                    <div class="h-full bg-gradient-to-r from-primary-500 to-emerald-500 rounded-full transition-all duration-500" style="width: ${porcentagemMeta}%"></div>
+                                </div>
+                            </div>
+                            
+                            ${statusMetaHTML}
+                        </div>
+
+                        <div class="space-y-3 pt-2">
+                            <div>
+                                <label class="block text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1.5">Nome do Cliente</label>
+                                <input type="text" id="editCustName" value="${cust.name || ''}" 
+                                    class="w-full bg-slate-950/60 border border-slate-800 rounded-xl p-2.5 text-xs text-white font-medium focus:ring-1 focus:ring-primary-500 outline-none transition-all">
+                            </div>
+
+                            <div>
+                                <label class="block text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1.5">WhatsApp / Telefone</label>
+                                <input type="text" id="editCustPhone" value="${cust.phone || ''}" 
+                                    class="w-full bg-slate-950/60 border border-slate-800 rounded-xl p-2.5 text-xs text-white font-medium focus:ring-1 focus:ring-primary-500 outline-none transition-all">
+                            </div>
+
+                            <div>
+                                <label class="block text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1.5">CPF do Cliente</label>
+                                <input type="text" id="editCustCpf" value="${cust.cpf || ''}" placeholder="---.---.---.--"
+                                    class="w-full bg-slate-950/60 border border-slate-800 rounded-xl p-2.5 text-xs text-white font-medium focus:ring-1 focus:ring-primary-500 outline-none transition-all">
+                            </div>
+
+                            <div>
+                                <label class="block text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1.5">Endereço Principal</label>
+                                <textarea id="editCustAddress" rows="2" 
+                                    class="w-full bg-slate-950/60 border border-slate-800 rounded-xl p-2.5 text-xs text-white font-medium focus:ring-1 focus:ring-primary-500 outline-none transition-all resize-none">${cust.address || ''}</textarea>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="p-4 bg-slate-950/30 border-t border-slate-800/60 flex gap-3">
+                        <button onclick="document.getElementById('customerDetailsModal').classList.add('hidden')" 
+                            class="flex-1 py-2.5 border border-slate-800 text-slate-400 font-bold uppercase tracking-wider text-[10px] rounded-xl hover:bg-slate-800 transition-all">
+                            Cancelar
+                        </button>
+                        <button onclick="window.saveCustomerCRMChanges('${cust.id || ''}', '${cust.id || ''}')" 
+                            class="flex-1 py-2.5 bg-primary-500/20 hover:bg-primary-500 border border-primary-500/30 text-primary-400 hover:text-white font-black uppercase tracking-widest text-[10px] rounded-xl transition-all shadow-lg flex items-center justify-center gap-1.5">
+                            <i data-lucide="save" class="w-3.5 h-3.5"></i> Salvar Dados & Meta
+                        </button>
+                    </div>
+
+                </div>
+            </div>
+        `;
+        
+        modalBody.classList.remove('hidden');
+        if (window.lucide) lucide.createIcons();
+    }
 };
 
+window.saveCustomerCRMChanges = async (docId, originalPhoneKey) => {
+    const nameInput = document.getElementById('editCustName')?.value.trim();
+    const phoneInput = document.getElementById('editCustPhone')?.value.replace(/\D/g, '').trim();
+    const cpfInput = document.getElementById('editCustCpf')?.value.trim();
+    const addressInput = document.getElementById('editCustAddress')?.value.trim();
+    const metaInput = Number(document.getElementById('editCustMeta')?.value) || 0;
+
+    if (!nameInput || !phoneInput) {
+        showToast("⚠️ Nome e WhatsApp são obrigatórios!", "error");
+        return;
+    }
+
+    try {
+        const finalDocId = docId || phoneInput;
+        const customerRef = doc(db, `stores/${currentStoreId}/customers`, finalDocId);
+
+        // 1. Prepara o payload para o Firebase
+        const payload = {
+            name: nameInput,
+            phone: phoneInput,
+            cpf: cpfInput,
+            address: addressInput,
+            salesMeta: metaInput, // 🎯 Salva a meta numérica no Firebase
+            updatedAt: Date.now()
+        };
+
+        // Salva com merge: true no Firestore para preservar históricos
+        await setDoc(customerRef, payload, { merge: true });
+
+        // 2. Recupera o histórico que já existia na memória local para não resetar os contadores
+        let dadosLocais = (typeof savedCustomers !== "undefined") ? savedCustomers : {};
+        let dadosGlobais = window.savedCustomers || {};
+        let cacheClientes = { ...dadosLocais, ...dadosGlobais };
+
+        const dadosAntigos = cacheClientes[originalPhoneKey] || {};
+
+        if (cacheClientes[originalPhoneKey]) {
+            delete cacheClientes[originalPhoneKey];
+        }
+
+        // 3. Monta o objeto atualizado mantendo orderCount e totalSpent vivos
+        const clienteAtualizado = {
+            id: finalDocId,
+            orderCount: Number(dadosAntigos.orderCount) || 0,
+            totalSpent: Number(dadosAntigos.totalSpent) || 0,
+            ...payload
+        };
+
+        // Grava de volta nas variáveis globais/locais
+        cacheClientes[phoneInput] = clienteAtualizado;
+        window.savedCustomers = cacheClientes;
+        if (typeof savedCustomers !== "undefined") savedCustomers = cacheClientes;
+
+        // 🌟 O PULO DO GATO: Atualiza o localStorage imediatamente para persistir após o F5!
+        const cacheKey = `cache_customers_${currentStoreId}`;
+        localStorage.setItem(cacheKey, JSON.stringify(cacheClientes));
+
+        showToast("Ficha e Meta do cliente salvas! 🎯💎");
+        document.getElementById('customerDetailsModal').classList.add('hidden');
+
+        // Atualiza a listagem ao fundo na hora
+        if (typeof window.renderCustomerRanking === 'function') {
+            window.renderCustomerRanking();
+        }
+
+    } catch (error) {
+        console.error("Erro ao salvar dados no CRM:", error);
+        showToast("Erro ao salvar alterações no Firebase.", "error");
+    }
+};
 
 // --- GESTÃO DE CLIENTES (CRM) ---
 let savedCustomers = {}; // Cache dos clientes cadastrados no banco
