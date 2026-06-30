@@ -1359,33 +1359,33 @@ if ('serviceWorker' in navigator) {
 <!-- CONTAINER DE CONTEÚDO: Ajustado para alinhar tudo no topo -->
 <div id="content-area" class="flex-1 overflow-y-auto bg-slate-50 p-4 md:p-8 flex flex-col justify-start">
 
-<div id="financialDetailsModal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4 z-[9999] hidden animate-fade-in">
-    <div class="bg-slate-900 border border-slate-800 rounded-[2.5rem] w-full max-w-2xl overflow-hidden shadow-2xl flex flex-col max-h-[85vh]">
+<div id="financialDetailsModal" class="fixed inset-0 bg-slate-950/60 backdrop-blur-sm flex items-center justify-center p-4 z-[9999] hidden animate-fade-in">
+    <div class="bg-slate-900 border border-slate-700/50 rounded-2xl w-full max-w-2xl overflow-hidden shadow-2xl flex flex-col max-h-[85vh]">
         
-        <div class="p-6 bg-slate-950 border-b border-slate-800 flex items-center gap-3">
-            <div class="w-10 h-10 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-400">
+        <div class="p-5 bg-slate-800 border-b border-slate-700 flex items-center gap-3">
+            <div class="w-10 h-10 rounded-xl bg-violet-500/10 border border-violet-500/20 flex items-center justify-center text-violet-400">
                 <i data-lucide="receipt" class="w-5 h-5"></i>
             </div>
             <div>
                 <h3 class="text-sm font-bold text-white uppercase tracking-tight">Pedidos do Período Filtrado</h3>
-                <p class="text-[10px] text-slate-400 uppercase mt-0.5 tracking-wider">Detalhamento completo de itens e SKU</p>
+                <p class="text-[10px] text-slate-400 uppercase mt-0.5 tracking-wider">Detalhamento de vendas e itens de checkout</p>
             </div>
             <button onclick="document.getElementById('financialDetailsModal').classList.add('hidden')" 
-                class="ml-auto w-8 h-8 rounded-xl bg-slate-900 hover:bg-red-500/20 border border-slate-800 hover:border-red-500/30 text-slate-400 hover:text-red-400 transition-all flex items-center justify-center">
+                class="ml-auto w-8 h-8 rounded-xl bg-slate-700 hover:bg-red-500/20 border border-slate-600 hover:border-red-500/30 text-slate-400 hover:text-red-400 transition-all flex items-center justify-center">
                 <i data-lucide="x" class="w-4 h-4"></i>
             </button>
         </div>
 
-        <div id="financialDetailsContent" class="p-6 overflow-y-auto space-y-4 flex-1 bg-slate-900/50 custom-scrollbar">
+        <div id="financialDetailsContent" class="p-6 overflow-y-auto space-y-4 flex-1 bg-slate-900/40 custom-scrollbar">
             </div>
 
-        <div class="p-5 bg-slate-950 border-t border-slate-800 flex justify-between items-center">
+        <div class="p-5 bg-slate-800 border-t border-slate-700 flex justify-between items-center">
             <div class="text-left">
                 <p class="text-[9px] font-bold text-slate-400 uppercase tracking-wider">Soma Acumulada no Filtro</p>
-                <span id="financialDetailsGrandTotal" class="text-base font-black text-emerald-400">R$ 0,00</span>
+                <span id="financialDetailsGrandTotal" class="text-base font-black text-violet-400">R$ 0,00</span>
             </div>
             <button onclick="document.getElementById('financialDetailsModal').classList.add('hidden')" 
-                class="px-5 py-2.5 bg-slate-800 hover:bg-slate-700 text-white font-bold uppercase tracking-wider text-[10px] rounded-xl transition-all">
+                class="px-5 py-2.5 bg-violet-600 hover:bg-violet-700 text-white font-bold uppercase tracking-wider text-[10px] rounded-xl transition-all shadow-md shadow-violet-600/10">
                 Fechar Detalhes
             </button>
         </div>
@@ -2245,7 +2245,7 @@ let isConfigLoaded = false;
 let categoriesLoaded = false;
 let bannersLoaded = false;
         let customStart = null;
-      let ordersLimit = 20; // Limite inicial
+      let ordersLimit = 50; // Limite inicial
 let lastVisibleOrder = null; // Guarda o último pedido carregado para saber de onde continuar
 let isLoadingMore = false; // Evita cliques duplos
 let customEnd = null;
@@ -3181,56 +3181,74 @@ setPersistence(auth, browserLocalPersistence)
     })
     .catch((error) => console.error("Erro de persistência:", error));
 
-// --- LISTENER DE PEDIDOS (VERSÃO BLINDADA CONTRA NOTIFICAÇÃO FANTASMA) ---
-// --- LISTENER DE PEDIDOS (CORREÇÃO: VARIÁVEL listOrder REMOVIDA) ---
+// --- LISTENER DE PEDIDOS CORRIGIDO: TRAZ DO INÍCIO DO MÊS ATÉ HOJE ---
 window.initOrderListener = (storeId) => {
     if (!storeId) return;
 
+    // 🌟 Calcula o início do mês atual (1º de Junho de 2026 às 00:00) para trazer todos os recentes
+    const dataInicioMes = new Date();
+    dataInicioMes.setDate(1);
+    dataInicioMes.setHours(0, 0, 0, 0);
+    const timestampLimite = dataInicioMes.getTime();
+
+    // 🌟 Buscamos todos os pedidos criados a partir do começo do mês. 
+    // Como os novos usam int64 (número) e o Firestore indexa números antes ou depois de objetos, 
+    // fazemos a busca limpa e filtramos/ordenamos tudo direto no JavaScript para não sumir nada.
     const q = query(
-        collection(db, `stores/${storeId}/orders`),
-        orderBy("createdAt", "desc"),
-        limit(ordersLimit || 20)
+        collection(db, `stores/${storeId}/orders`)
     );
 
     const audio = document.getElementById('notifSound');
 
     onSnapshot(q, (snapshot) => {
-        console.log(`✅ Pedidos atualizados: ${snapshot.docs.length} documentos.`);
-
-        if (snapshot.docs.length > 0 && isFirstLoad) {
-            lastVisibleOrder = snapshot.docs[snapshot.docs.length - 1];
-        }
+        console.log(`✅ Pedidos recebidos do Firebase: ${snapshot.docs.length} documentos.`);
 
         snapshot.docChanges().forEach((change) => {
             const orderData = change.doc.data();
             const orderId = change.doc.id;
 
             if (change.type === "added" || change.type === "modified") {
-                ordersCache[orderId] = { 
-                    id: orderId, 
-                    customer: orderData.customer || { name: "Cliente", phone: "" },
-                    total: orderData.total || 0,
-                    status: orderData.status || "pending_whatsapp",
-                    ...orderData 
-                };
-
-                // Sincronização de Estoque
-                if (orderData.stockDeducted !== true && orderData.status !== 'canceled') {
-                    if (typeof window.processarBaixaSilenciosa === 'function') {
-                        window.processarBaixaSilenciosa(orderId, orderData);
+                // Converte a data do pedido para milissegundos para podermos validar
+                let tPedido = 0;
+                if (orderData.createdAt) {
+                    if (typeof orderData.createdAt.toMillis === 'function') {
+                        tPedido = orderData.createdAt.toMillis();
+                    } else if (typeof orderData.createdAt === 'number') {
+                        tPedido = orderData.createdAt;
+                    } else if (orderData.createdAt.seconds) {
+                        tPedido = orderData.createdAt.seconds * 1000;
+                    } else {
+                        tPedido = new Date(orderData.createdAt).getTime() || 0;
                     }
                 }
 
-                // Notificação Sonora
-                if (change.type === "added" && !isFirstLoad) {
-                    const now = Date.now();
-                    const orderTime = orderData.createdAt?.toMillis ? orderData.createdAt.toMillis() : now;
-                    if (now - orderTime < 120000) {
-                        if (audio) {
-                            audio.currentTime = 0;
-                            audio.play().catch(() => {});
+                // Só adiciona ao cache se for deste mês para frente (evita pesar o app com anos anteriores)
+                if (tPedido >= timestampLimite) {
+                    ordersCache[orderId] = { 
+                        id: orderId, 
+                        customer: orderData.customer || { name: "Cliente", phone: "" },
+                        total: orderData.total || 0,
+                        status: orderData.status || "pending_whatsapp",
+                        ...orderData 
+                    };
+
+                    // Sincronização de Estoque
+                    if (orderData.stockDeducted !== true && orderData.status !== 'canceled') {
+                        if (typeof window.processarBaixaSilenciosa === 'function') {
+                            window.processarBaixaSilenciosa(orderId, orderData);
                         }
-                        if (typeof showToast === 'function') showToast("🔔 Novo pedido recebido!");
+                    }
+
+                    // Notificação Sonora
+                    if (change.type === "added" && !isFirstLoad) {
+                        const now = Date.now();
+                        if (now - tPedido < 120000) {
+                            if (audio) {
+                                audio.currentTime = 0;
+                                audio.play().catch(() => {});
+                            }
+                            if (typeof showToast === 'function') showToast("🔔 Novo pedido recebido!");
+                        }
                     }
                 }
             }
@@ -3240,23 +3258,34 @@ window.initOrderListener = (storeId) => {
 
         isFirstLoad = false; 
 
-        // --- CORREÇÃO DO TRAVAMENTO AQUI ---
-        const listaCompletaDePedidos = Object.values(ordersCache);
+        // 🌟 ORDENAÇÃO COMPLETA: Alinha int64 e Timestamp perfeitamente na linha do tempo
+        let listaCompletaDePedidos = Object.values(ordersCache);
+        
+        listaCompletaDePedidos.sort((a, b) => {
+            let tA = a.createdAt?.toMillis ? a.createdAt.toMillis() : (a.createdAt?.seconds ? a.createdAt.seconds * 1000 : Number(a.createdAt) || 0);
+            let tB = b.createdAt?.toMillis ? b.createdAt.toMillis() : (b.createdAt?.seconds ? b.createdAt.seconds * 1000 : Number(b.createdAt) || 0);
+            return tB - tA; // Mais recente (hoje) primeiro
+        });
+
+        if (listaCompletaDePedidos.length > 0) {
+            lastVisibleOrder = snapshot.docs[snapshot.docs.length - 1];
+        }
+
+        // Corta para exibir apenas os primeiros 20 na lista da interface principal
+        const pedidosExibidos = listaCompletaDePedidos.slice(0, ordersLimit || 20);
 
         if (typeof window.renderFilteredOrders === 'function') {
-            // Se você usa filtros (Abas), precisa garantir que a lista global foi atualizada
             window.renderFilteredOrders(); 
         }
 
-        // Se estiver no Dashboard (Cards de resumo)
+        // Atualiza os Cards do Dashboard da tela principal
         const dashContainer = document.getElementById("ordersCardsContainer");
         if (dashContainer) {
-            if (listaCompletaDePedidos.length === 0) {
+            if (pedidosExibidos.length === 0) {
                 dashContainer.innerHTML = `<p class="text-center text-slate-400 py-10 italic text-sm">Nenhum pedido encontrado.</p>`;
             } else {
-                // Aqui força a atualização visual do dashboard se houver uma função específica
                 if (typeof window.renderDashboardCards === 'function') {
-                    window.renderDashboardCards(listaCompletaDePedidos);
+                    window.renderDashboardCards(pedidosExibidos);
                 }
             }
         }
@@ -7026,17 +7055,28 @@ window.applyCustomDate = () => {
     updateFinanceRange('custom');
 };
 
-// --- JAVASCRIPT CORRIGIDO: TRATAMENTO ROBUSTO DE DATA E FILTRO REAL ---
-window.openFinancialPeriodDetails = () => {
+
+// --- JAVASCRIPT: BUSCA TOTAL SINCRO DE ACORDO COM O PERÍODO COM EXIBIÇÃO DE FOTOS ---
+window.openFinancialPeriodDetails = async () => {
     const contentArea = document.getElementById("financialDetailsContent");
     const grandTotalArea = document.getElementById("financialDetailsGrandTotal");
     if (!contentArea) return;
 
-    contentArea.innerHTML = "";
+    // 1. Feedback visual de carregamento (Spinner elegante na paleta do site)
+    contentArea.innerHTML = `
+        <div class="p-12 text-center text-slate-400 font-medium text-xs flex flex-col items-center justify-center gap-3">
+            <div class="w-7 h-7 border-2 border-violet-500 border-t-transparent rounded-full animate-spin"></div>
+            <span class="tracking-wide uppercase text-[10px] text-slate-400 font-bold">Buscando histórico completo no servidor...</span>
+        </div>
+    `;
+    
+    // Mostra o modal imediatamente com o loading
+    document.getElementById("financialDetailsModal").classList.remove("hidden");
+
     let totalGeralPeriodo = 0;
     let totalPedidosExibidos = 0;
 
-    // 1. Identifica os timestamps de início e fim baseando-se no range ativo do seu painel
+    // 2. Determina os limites temporais exatos do filtro selecionado
     let filterStart = 0;
     let filterEnd = Infinity;
 
@@ -7044,58 +7084,53 @@ window.openFinancialPeriodDetails = () => {
     const agora = new Date();
     
     if (rangeAtivo === 'today') {
-        const inicioHoje = new Date();
-        inicioHoje.setHours(0, 0, 0, 0);
-        filterStart = inicioHoje.getTime();
-        
-        const fimHoje = new Date();
-        fimHoje.setHours(23, 59, 59, 999);
-        filterEnd = fimHoje.getTime();
-
+        const i = new Date(); i.setHours(0, 0, 0, 0); filterStart = i.getTime();
+        const f = new Date(); f.setHours(23, 59, 59, 999); filterEnd = f.getTime();
     } else if (rangeAtivo === 'yesterday') {
-        const inicioOntem = new Date();
-        inicioOntem.setDate(inicioOntem.getDate() - 1);
-        inicioOntem.setHours(0, 0, 0, 0);
-        filterStart = inicioOntem.getTime();
-        
-        const fimOntem = new Date();
-        fimOntem.setDate(fimOntem.getDate() - 1);
-        fimOntem.setHours(23, 59, 59, 999);
-        filterEnd = fimOntem.getTime();
-
+        const i = new Date(); i.setDate(i.getDate() - 1); i.setHours(0, 0, 0, 0); filterStart = i.getTime();
+        const f = new Date(); f.setDate(f.getDate() - 1); f.setHours(23, 59, 59, 999); filterEnd = f.getTime();
     } else if (rangeAtivo === 'week') {
-        const seteDiasAtras = new Date();
-        seteDiasAtras.setDate(seteDiasAtras.getDate() - 7);
-        seteDiasAtras.setHours(0, 0, 0, 0);
-        filterStart = seteDiasAtras.getTime();
+        const i = new Date(); i.setDate(i.getDate() - 7); i.setHours(0, 0, 0, 0); filterStart = i.getTime();
         filterEnd = agora.getTime();
-
     } else if (rangeAtivo === 'month') {
-        const inicioMes = new Date(agora.getFullYear(), agora.getMonth(), 1, 0, 0, 0, 0);
-        filterStart = inicioMes.getTime();
+        const i = new Date(agora.getFullYear(), agora.getMonth(), 1, 0, 0, 0, 0); filterStart = i.getTime();
         filterEnd = agora.getTime();
-
     } else if (rangeAtivo === 'custom') {
         filterStart = window.customStart || 0;
         filterEnd = window.customEnd || Infinity;
     }
 
-    // 2. Coleta os pedidos com segurança tratando o objeto do ordersCache
-    let cachePedidos = [];
-    if (typeof ordersCache !== "undefined" && ordersCache !== null) {
-        cachePedidos = Object.values(ordersCache);
+    let todosOsPedidos = [];
+
+    // 3. Força a leitura completa direto do Firebase ignorando a trava de paginação da tela
+    try {
+        if (typeof db !== "undefined" && currentStoreId) {
+            // Acessa via escopo global do Firestore carregado no seu app
+            const { collection, getDocs } = FirebaseFirestore || window; 
+            const pedidosRef = collection(db, `stores/${currentStoreId}/orders`);
+            const querySnapshot = await getDocs(pedidosRef);
+            
+            querySnapshot.forEach((doc) => {
+                todosOsPedidos.push({ id: doc.id, ...doc.data() });
+            });
+        } else {
+            // Fallback para segurança de dados se falhar a conexão
+            todosOsPedidos = typeof ordersCache !== "undefined" ? Object.values(ordersCache) : [];
+        }
+    } catch (error) {
+        console.error("Erro ao sincronizar dados com servidor:", error);
+        todosOsPedidos = typeof ordersCache !== "undefined" ? Object.values(ordersCache) : [];
     }
 
-    // 3. Aplica o filtro estrito de período e remove pedidos cancelados
-    const pedidosFiltrados = cachePedidos.filter(order => {
+    // 4. Limpa o loading para renderizar os registros encontrados
+    contentArea.innerHTML = "";
+
+    // 5. Filtra aplicando as regras de período e removendo vendas canceladas
+    const pedidosFiltrados = todosOsPedidos.filter(order => {
         if (!order) return false;
-        
-        // Ignora pedidos cancelados na contagem financeira
         if (order.status === 'canceled' || order.status === 'Cancelado') return false;
         
-        // TRATAMENTO ROBUSTO DA DATA (createdAt)
         let timestampPedido = 0;
-        
         if (order.createdAt) {
             if (typeof order.createdAt.toMillis === 'function') {
                 timestampPedido = order.createdAt.toMillis();
@@ -7107,32 +7142,29 @@ window.openFinancialPeriodDetails = () => {
                 timestampPedido = new Date(order.createdAt).getTime() || 0;
             }
         }
-
         return timestampPedido >= filterStart && timestampPedido <= filterEnd;
     });
 
-    // Se a listagem estiver zerada para o período selecionado
     if (pedidosFiltrados.length === 0) {
         let labelPeriodoText = rangeAtivo === 'today' ? 'hoje' : rangeAtivo === 'yesterday' ? 'ontem' : rangeAtivo === 'week' ? 'os últimos 7 dias' : 'este período';
         contentArea.innerHTML = `
-            <div class="p-8 text-center text-slate-400 border border-dashed border-slate-800 rounded-[2rem] italic text-xs bg-slate-950/20">
+            <div class="p-8 text-center text-slate-400 border border-dashed border-slate-700/60 rounded-xl italic text-xs bg-slate-800/30">
                 Nenhum pedido faturado para ${labelPeriodoText}.
             </div>
         `;
         if (grandTotalArea) grandTotalArea.innerText = "R$ 0,00";
-        document.getElementById("financialDetailsModal").classList.remove("hidden");
         if (window.lucide) lucide.createIcons();
         return;
     }
 
-    // Ordenação do pedido mais recente para o mais antigo
+    // Ordena do mais recente para o mais antigo
     pedidosFiltrados.sort((a, b) => {
         let tA = a.createdAt?.toMillis ? a.createdAt.toMillis() : (a.createdAt?.seconds ? a.createdAt.seconds * 1000 : Number(a.createdAt) || 0);
         let tB = b.createdAt?.toMillis ? b.createdAt.toMillis() : (b.createdAt?.seconds ? b.createdAt.seconds * 1000 : Number(b.createdAt) || 0);
         return tB - tA;
     });
 
-    // 4. Renderiza os cards estruturados no container
+    // 6. Constrói a listagem com fotos reais dos produtos
     pedidosFiltrados.forEach(order => {
         const valorTotalPedido = Number(order.total) || 0;
         totalGeralPeriodo += valorTotalPedido;
@@ -7154,43 +7186,63 @@ window.openFinancialPeriodDetails = () => {
                 const qtd = Number(item.q || item.qty || 1);
                 const precoUn = Number(item.price || item.p || 0);
                 const precoTotalItem = precoUn * qtd;
+                
+                // Mapeia os caminhos de imagem comuns salvos no checkout
+                const URLImagem = item.image || item.img || item.photo || item.thumb || '';
+
+                let containerFotoHTML = `
+                    <div class="w-10 h-10 rounded-lg bg-slate-900 border border-slate-700 flex items-center justify-center text-slate-500 flex-shrink-0 overflow-hidden">
+                        <i data-lucide="package" class="w-4 h-4"></i>
+                    </div>
+                `;
+                
+                if (URLImagem && URLImagem.trim() !== '') {
+                    containerFotoHTML = `
+                        <div class="w-10 h-10 rounded-lg border border-slate-700 flex-shrink-0 overflow-hidden bg-slate-900">
+                            <img src="${URLImagem}" alt="${nomeProd}" class="w-full h-full object-cover">
+                        </div>
+                    `;
+                }
 
                 itensHTML += `
-                    <div class="flex items-center justify-between py-2 border-b border-slate-800/60 last:border-0 text-xs">
-                        <div class="min-w-0 pr-2">
-                            <span class="font-bold text-slate-100 block uppercase truncate text-[11px]">${nomeProd}</span>
-                            <span class="text-[9px] text-emerald-400 font-mono tracking-wider bg-emerald-500/5 px-1 py-0.5 rounded border border-emerald-500/10 mt-0.5 inline-block">SKU: ${skuProd}</span>
+                    <div class="flex items-center justify-between py-2.5 border-b border-slate-700/40 last:border-0 text-xs gap-3">
+                        <div class="flex items-center gap-2.5 min-w-0 flex-1">
+                            ${containerFotoHTML}
+                            <div class="min-w-0">
+                                <span class="font-semibold text-slate-200 block uppercase truncate text-[11px]">${nomeProd}</span>
+                                <span class="text-[9px] text-violet-400 font-mono bg-violet-500/5 px-1.5 py-0.5 rounded border border-violet-500/10 mt-0.5 inline-block">SKU: ${skuProd}</span>
+                            </div>
                         </div>
                         <div class="text-right flex-shrink-0 font-mono text-[11px]">
                             <span class="text-slate-400 font-bold">${qtd}x</span>
                             <span class="text-slate-500 ml-1">R$ ${precoUn.toFixed(2).replace('.',',')}</span>
-                            <span class="text-emerald-400 font-extrabold ml-2">R$ ${precoTotalItem.toFixed(2).replace('.',',')}</span>
+                            <span class="text-violet-400 font-bold ml-2">R$ ${precoTotalItem.toFixed(2).replace('.',',')}</span>
                         </div>
                     </div>
                 `;
             });
         } else {
-            itensHTML = `<p class="text-[10px] text-slate-500 italic py-1">Venda direta rápida.</p>`;
+            itensHTML = `<p class="text-[10px] text-slate-500 italic py-1">Venda rápida simplificada.</p>`;
         }
 
         const pedidoBox = `
-            <div class="bg-slate-950 border border-slate-800 rounded-2xl overflow-hidden shadow-md">
-                <div class="p-3.5 bg-slate-900 border-b border-slate-800 flex justify-between items-center gap-2">
+            <div class="bg-slate-800/80 border border-slate-700 rounded-xl overflow-hidden shadow-md">
+                <div class="p-3.5 bg-slate-800 border-b border-slate-700 flex justify-between items-center gap-2">
                     <div class="min-w-0">
                         <div class="flex items-center gap-1.5">
-                            <span class="text-[9px] font-mono font-black text-primary-400 bg-primary-500/10 px-1.5 py-0.5 rounded border border-primary-500/20">
+                            <span class="text-[9px] font-mono font-bold text-violet-400 bg-violet-500/10 px-1.5 py-0.5 rounded border border-violet-500/20">
                                 #...${numPedido.substring(numPedido.length - 6)}
                             </span>
-                            <span class="text-xs font-black text-white uppercase truncate">${nomeCliente}</span>
+                            <span class="text-xs font-bold text-white uppercase truncate">${nomeCliente}</span>
                         </div>
                         <span class="text-[9px] text-slate-400 block mt-1 font-mono">${dataFormatada}</span>
                     </div>
                     <div class="text-right flex-shrink-0">
-                        <span class="text-[9px] font-bold text-slate-500 uppercase block tracking-wider">Total Pedido</span>
-                        <span class="text-xs font-black text-emerald-400 bg-emerald-500/5 px-2 py-0.5 rounded-lg border border-emerald-500/10">R$ ${valorTotalPedido.toFixed(2).replace('.',',')}</span>
+                        <span class="text-[9px] font-medium text-slate-400 uppercase block tracking-wider">Total</span>
+                        <span class="text-xs font-bold text-violet-400 bg-violet-500/5 px-2 py-0.5 rounded-lg border border-violet-500/10">R$ ${valorTotalPedido.toFixed(2).replace('.',',')}</span>
                     </div>
                 </div>
-                <div class="p-3.5 space-y-0.5">
+                <div class="p-3.5 bg-slate-900/20 space-y-0.5">
                     ${itensHTML}
                 </div>
             </div>
@@ -7202,7 +7254,6 @@ window.openFinancialPeriodDetails = () => {
         grandTotalArea.innerText = `R$ ${totalGeralPeriodo.toFixed(2).replace('.', ',')} (${totalPedidosExibidos} ${totalPedidosExibidos === 1 ? 'pedido' : 'pedidos'})`;
     }
 
-    document.getElementById("financialDetailsModal").classList.remove("hidden");
     if (window.lucide) lucide.createIcons();
 };
 
@@ -7401,75 +7452,118 @@ window.initFinanceDashboard = async () => {
     }
 };
 
-window.updateFinanceChart = (filterStart, filterEnd, rangeType) => {
-    const ctx = document.getElementById('financePerformanceChart').getContext('2d');
+// --- GRÁFICO E CARDS: ACEITA PREPARANDO, A PRAZO E CONCLUÍDOS ---
+window.updateFinanceChart = async (filterStart, filterEnd, rangeType) => {
+    window.lastFinanceFilterStart = filterStart;
+    window.lastFinanceFilterEnd = filterEnd;
+    window.lastFinanceRangeType = rangeType;
+
+    const chartCanvas = document.getElementById('financePerformanceChart');
+    if (!chartCanvas) return;
+    const ctx = chartCanvas.getContext('2d');
     
     let labels = [];
     let dataMap = {};
+    let todosOsPedidosBanco = [];
 
-    // 1. FILTRAGEM TOTAL (Pega do cache de memória, ignorando o limite da tela)
-    const orders = Object.values(ordersCache).filter(o => {
-        let t = o.createdAt?.toMillis ? o.createdAt.toMillis() : (typeof o.createdAt === 'number' ? o.createdAt : 0);
-        // Filtra pelo período selecionado e ignora os cancelados para o financeiro
-        return t >= filterStart && t <= filterEnd && o.status !== 'canceled';
+    try {
+        if (typeof db !== "undefined" && typeof currentStoreId !== "undefined" && currentStoreId) {
+            const { collection, getDocs } = FirebaseFirestore || window; 
+            const pedidosRef = collection(db, `stores/${currentStoreId}/orders`);
+            const querySnapshot = await getDocs(pedidosRef);
+            
+            querySnapshot.forEach((doc) => {
+                todosOsPedidosBanco.push({ id: doc.id, ...doc.data() });
+            });
+        } else {
+            todosOsPedidosBanco = typeof ordersCache !== "undefined" ? Object.values(ordersCache) : [];
+        }
+    } catch (error) {
+        console.error("Erro ao alimentar financeiro:", error);
+        todosOsPedidosBanco = typeof ordersCache !== "undefined" ? Object.values(ordersCache) : [];
+    }
+
+    // 🌟 FILTRAGEM AMPLA: Só descarta se for cancelado. Mantém preparando, concluído, a prazo, etc.
+    const orders = todosOsPedidosBanco.filter(o => {
+        if (!o) return false;
+        
+        // Padroniza para letras minúsculas para não falhar na checagem
+        const statusLower = String(o.status || '').toLowerCase();
+        if (statusLower === 'canceled' || statusLower === 'cancelado') return false;
+        
+        let t = 0;
+        if (o.createdAt) {
+            if (typeof o.createdAt.toMillis === 'function') {
+                t = o.createdAt.toMillis();
+            } else if (typeof o.createdAt === 'number') {
+                t = o.createdAt; 
+            } else if (o.createdAt.seconds) {
+                t = o.createdAt.seconds * 1000; 
+            } else {
+                t = new Date(o.createdAt).getTime() || 0;
+            }
+        }
+        return t >= filterStart && t <= filterEnd;
     });
 
-    // 2. ATUALIZAÇÃO DOS CARDS DE RESUMO (OS NÚMEROS NO TOPO)
     const totalFaturamento = orders.reduce((sum, o) => sum + (Number(o.total) || 0), 0);
     const totalPedidos = orders.length;
+    const totalLucro = orders.reduce((sum, o) => sum + (Number(o.totalProfit) || Number(o.profit) || 0), 0);
 
-    // Atualiza os elementos de texto com os valores REAIS do banco
-    const elFaturamento = document.getElementById('totalSales'); 
-    const elQuantidade = document.getElementById('countCompleted'); 
+    const elFaturamento = document.getElementById('fin-rev-day') || document.getElementById('totalSales'); 
+    const elQuantidade = document.getElementById('fin-orders-day') || document.getElementById('countCompleted'); 
+    const elLucro = document.getElementById('fin-profit-real');
 
-    if (elFaturamento) {
-        elFaturamento.innerText = `R$ ${totalFaturamento.toFixed(2).replace('.', ',')}`;
-    }
-    if (elQuantidade) {
-        elQuantidade.innerText = totalPedidos;
-    }
+    if (elFaturamento) elFaturamento.innerText = totalFaturamento.toFixed(2).replace('.', ',');
+    if (elQuantidade) elQuantidade.innerText = `${totalPedidos} ${totalPedidos === 1 ? 'Pedido' : 'Pedidos'}`;
+    if (elLucro) elLucro.innerText = `R$ ${totalLucro.toFixed(2).replace('.', ',')}`;
 
-    // 3. CONFIGURAÇÃO DO GRÁFICO (AGRUPAMENTO POR HORA, DIA OU SEMANA)
     if (rangeType === 'today' || rangeType === 'yesterday') {
-        labels = Array.from({length: 24}, (_, i) => `${i}h`);
+        for (let h = 0; h < 24; h++) {
+            const lbl = String(h).padStart(2, '0') + ':00';
+            labels.push(lbl);
+            dataMap[lbl] = 0;
+        }
         orders.forEach(o => {
-            const h = new Date(o.createdAt?.toDate ? o.createdAt.toDate() : o.createdAt).getHours();
-            dataMap[h] = (dataMap[h] || 0) + (Number(o.total) || 0);
+            let t = o.createdAt?.toMillis ? o.createdAt.toMillis() : (o.createdAt?.seconds ? o.createdAt.seconds * 1000 : Number(o.createdAt) || 0);
+            if(t) {
+                const hora = new Date(t).getHours();
+                const lbl = String(hora).padStart(2, '0') + ':00';
+                if (dataMap[lbl] !== undefined) dataMap[lbl] += (Number(o.total) || 0);
+            }
         });
     } else if (rangeType === 'week') {
         for (let i = 6; i >= 0; i--) {
             const d = new Date();
             d.setDate(d.getDate() - i);
-            const label = d.toLocaleDateString('pt-BR', { weekday: 'short' }).toUpperCase();
-            labels.push(label);
-            dataMap[label] = 0;
+            const lbl = d.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' });
+            labels.push(lbl);
+            dataMap[lbl] = 0;
         }
         orders.forEach(o => {
-            const label = new Date(o.createdAt?.toDate ? o.createdAt.toDate() : o.createdAt)
-                           .toLocaleDateString('pt-BR', { weekday: 'short' }).toUpperCase();
-            if(dataMap[label] !== undefined) dataMap[label] += (Number(o.total) || 0);
+            let t = o.createdAt?.toMillis ? o.createdAt.toMillis() : (o.createdAt?.seconds ? o.createdAt.seconds * 1000 : Number(o.createdAt) || 0);
+            if(t) {
+                const lbl = d.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' });
+                if (dataMap[lbl] !== undefined) dataMap[lbl] += (Number(o.total) || 0);
+            }
         });
     } else {
-        // Mês ou Período Customizado
-        const start = new Date(filterStart);
-        const end = new Date(filterEnd === Infinity ? Date.now() : filterEnd);
-        for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
-            const label = d.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' });
-            labels.push(label);
-            dataMap[label] = 0;
-        }
+        orders.sort((a,b) => {
+            let tA = a.createdAt?.toMillis ? a.createdAt.toMillis() : (a.createdAt?.seconds ? a.createdAt.seconds * 1000 : Number(a.createdAt) || 0);
+            let tB = b.createdAt?.toMillis ? b.createdAt.toMillis() : (b.createdAt?.seconds ? b.createdAt.seconds * 1000 : Number(b.createdAt) || 0);
+            return tA - tB;
+        });
         orders.forEach(o => {
-            const label = new Date(o.createdAt?.toDate ? o.createdAt.toDate() : o.createdAt)
-                           .toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' });
-            if(dataMap[label] !== undefined) dataMap[label] += (Number(o.total) || 0);
+            let t = o.createdAt?.toMillis ? o.createdAt.toMillis() : (o.createdAt?.seconds ? o.createdAt.seconds * 1000 : Number(o.createdAt) || 0);
+            if(t) {
+                const lbl = new Date(t).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' });
+                if (!dataMap[lbl]) { labels.push(lbl); dataMap[lbl] = 0; }
+                dataMap[lbl] += (Number(o.total) || 0);
+            }
         });
     }
 
-    const values = rangeType === 'today' || rangeType === 'yesterday' 
-        ? labels.map((_, i) => dataMap[i] || 0)
-        : labels.map(l => dataMap[l] || 0);
-
-    // 4. RENDERIZAÇÃO DO GRÁFICO
+    let values = labels.map(l => dataMap[l]);
     if (window.financeChartInstance) window.financeChartInstance.destroy();
 
     window.financeChartInstance = new Chart(ctx, {
@@ -7484,30 +7578,16 @@ window.updateFinanceChart = (filterStart, filterEnd, rangeType) => {
                 fill: true,
                 tension: 0.4,
                 pointRadius: 0,
-                pointHoverRadius: 5,
-                pointHoverBackgroundColor: '#8b5cf6',
-                pointHoverBorderColor: '#fff',
-                pointHoverBorderWidth: 2
+                pointHoverRadius: 5
             }]
         },
         options: {
             responsive: true,
             maintainAspectRatio: false,
-            plugins: { 
-                legend: { display: false }, 
-                tooltip: { 
-                    mode: 'index', 
-                    intersect: false,
-                    callbacks: {
-                        label: function(context) {
-                            return 'R$ ' + context.parsed.y.toFixed(2).replace('.', ',');
-                        }
-                    }
-                } 
-            },
+            plugins: { legend: { display: false } },
             scales: {
-                x: { grid: { display: false }, ticks: { font: { size: 9, weight: 'bold' }, color: '#94a3b8', maxRotation: 0 } },
-                y: { beginAtZero: true, grid: { color: '#f1f5f9' }, ticks: { display: false } }
+                x: { grid: { display: false }, ticks: { font: { size: 9, weight: 'bold' }, color: '#94a3b8' } },
+                y: { beginAtZero: true, grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { display: false } }
             }
         }
     });
