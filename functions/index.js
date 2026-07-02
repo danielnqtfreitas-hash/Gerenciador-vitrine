@@ -10,13 +10,29 @@ exports.notificarNovoPedido = functions.firestore
         const storeId = context.params.storeId;
 
         try {
-            const userDoc = await admin.firestore().collection('users').doc(storeId).get();
-            if (!userDoc.exists) return null;
+            // 1. CORRIGIDO: Busca o token exatamente na subcoleção de configurações daquela loja específica
+            const tokenDoc = await admin.firestore()
+                .collection('stores')
+                .doc(storeId)
+                .collection('config')
+                .doc('notifications')
+                .get();
 
-            const token = userDoc.data().fcmToken;
-            if (!token) return null;
+            // Se o documento de notificações não existir, encerra
+            if (!tokenDoc.exists) {
+                console.log(`⚠️ Nenhum documento de notificação encontrado para a loja: ${storeId}`);
+                return null;
+            }
 
-            const clienteNome = novoPedido.customer?.name || "Cliente";
+            // 2. CORRIGIDO: Pega a propriedade fcmToken que o painel salvou
+            const token = tokenDoc.data().fcmToken;
+            if (!token) {
+                console.log(`⚠️ Campo fcmToken vazio para a loja: ${storeId}`);
+                return null;
+            }
+
+            // Trata os dados do pedido baseando-se na estrutura do seu banco
+            const clienteNome = novoPedido.customer?.name || novoPedido.nomeCliente || "Cliente";
             const totalPedido = novoPedido.total || 0;
 
             const mensagem = {
@@ -24,13 +40,20 @@ exports.notificarNovoPedido = functions.firestore
                     title: 'Novo Pedido na Vitrine! 🎉',
                     body: `${clienteNome} fez um pedido de R$ ${totalPedido},00`,
                 },
-                data: { url: '/painel/pedidos' },
+                // Passa os dados dinâmicos para o Service Worker saber para onde redirecionar no clique
+                data: { 
+                    url: `/painel` 
+                },
                 token: token
             };
 
-            return admin.messaging().send(mensagem);
+            console.log(`🚀 Despachando notificação FCM para a loja ${storeId}...`);
+            const response = await admin.messaging().send(mensagem);
+            console.log('✅ Notificação enviada com sucesso:', response);
+            return response;
+
         } catch (error) {
-            console.error('Erro:', error);
+            console.error('❌ Erro ao processar gatilho de notificação:', error);
             return null;
         }
     });
