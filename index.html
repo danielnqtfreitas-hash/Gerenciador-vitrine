@@ -1122,6 +1122,56 @@ if ('serviceWorker' in navigator) {
             </button>
         </div>
 
+        <div class="grid grid-cols-3 gap-3 mb-6 px-1">
+    
+    <!-- TAG: VENDIDO HOJE -->
+    <div class="bg-white border border-slate-100 rounded-2xl p-3 flex items-center gap-3 shadow-sm">
+        <div class="bg-emerald-50 p-2.5 rounded-xl border border-emerald-100 flex items-center justify-center shrink-0">
+            <i data-lucide="trending-up" class="w-4 h-4 text-emerald-600"></i>
+        </div>
+        <div class="min-w-0">
+            <span class="text-[9px] font-bold text-slate-400 uppercase tracking-wider block mb-0.5">Vendido Hoje</span>
+            <div class="flex items-baseline gap-0.5">
+                <span class="text-[10px] font-bold text-emerald-600">R$</span>
+                <span id="pills-faturamento-dia" class="text-sm font-black text-slate-800 tracking-tight truncate">0,00</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- TAG: LUCRO HOJE -->
+    <div class="bg-white border border-slate-100 rounded-2xl p-3 flex items-center gap-3 shadow-sm">
+        <div class="bg-violet-50 p-2.5 rounded-xl border border-violet-100 flex items-center justify-center shrink-0">
+            <i data-lucide="dollar-sign" class="w-4 h-4 text-violet-600"></i>
+        </div>
+        <div class="min-w-0">
+            <span class="text-[9px] font-bold text-slate-400 uppercase tracking-wider block mb-0.5">Lucro Hoje</span>
+            <div class="flex items-baseline gap-0.5">
+                <span class="text-[10px] font-bold text-violet-600">R$</span>
+                <span id="pills-lucro-dia" class="text-sm font-black text-slate-800 tracking-tight truncate">0,00</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- TAG: PEDIDOS HOJE -->
+    <div class="bg-white border border-slate-100 rounded-2xl p-3 flex items-center justify-between shadow-sm">
+        <div class="flex items-center gap-3 min-w-0">
+            <div class="bg-blue-50 p-2.5 rounded-xl border border-blue-100 flex items-center justify-center shrink-0">
+                <i data-lucide="shopping-cart" class="w-4 h-4 text-blue-600"></i>
+            </div>
+            <div class="min-w-0">
+                <span class="text-[9px] font-bold text-slate-400 uppercase tracking-wider block mb-0.5">Pedidos Hoje</span>
+                <span id="pills-quantidade-pedidos" class="text-sm font-black text-slate-800 tracking-tight">0</span>
+            </div>
+        </div>
+        <!-- Indicador Pulse -->
+        <span class="relative flex h-2 w-2 shrink-0 ml-2">
+            <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+            <span class="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+        </span>
+    </div>
+
+</div>
+
         <!-- BARRA DE BUSCA PREMIUM -->
         <div class="relative group">
             <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
@@ -1135,6 +1185,8 @@ if ('serviceWorker' in navigator) {
                 class="w-full bg-white border-none shadow-xl shadow-slate-200/50 rounded-[2rem] py-4 pl-12 pr-4 text-sm font-bold text-slate-700 placeholder:text-slate-400 focus:ring-2 focus:ring-primary-500 transition-all outline-none"
             >
         </div>
+
+
 
         <!-- CONTAINER DE PEDIDOS (FEED) -->
         <div id="ordersCardsContainer" class="space-y-4">
@@ -3288,14 +3340,18 @@ window.initOrderListener = (storeId) => {
             }
         }
 
-        // Recarrega o Gráfico e o Financeiro respeitando as novas datas carregadas
-        if (typeof window.initFinanceDashboard === 'function') {
-            window.initFinanceDashboard(); 
-        }
+       // Garante que as tags de Hoje (Faturamento, Lucro e Quantidade) atualizem em tempo real!
+    if (typeof window.atualizarPillsResumoPedidos === 'function') {
+        window.atualizarPillsResumoPedidos();
+    }
 
-    }, (error) => {
-        console.error("Erro no Listener:", error);
-    });
+    if (typeof window.initFinanceDashboard === 'function') {
+        window.initFinanceDashboard(); 
+    }
+
+}, (error) => {
+    console.error("Erro no Listener:", error);
+});
 };
     // --- LISTENER A: IDENTIDADE, LIMITES E STATUS ---
     async function initStoreData() {
@@ -6565,7 +6621,58 @@ window.changeManualQty = (cartId, diff) => {
     window.renderManualOrderItems();
 };
 
+// --- ATUALIZAÇÃO DOS MINI CARDS DO DIA NA ABA DE PEDIDOS ---
+window.atualizarPillsResumoPedidos = () => {
+    const elDia = document.getElementById('pills-faturamento-dia');
+    const elLucro = document.getElementById('pills-lucro-dia');
+    const elQtd = document.getElementById('pills-quantidade-pedidos');
+    
+    if (!elDia && !elLucro && !elQtd) return;
 
+    // Define exatamente o início do dia de hoje (00:00:00)
+    const inicioHoje = new Date();
+    inicioHoje.setHours(0, 0, 0, 0);
+    const tsHoje = inicioHoje.getTime();
+
+    let faturamentoHoje = 0;
+    let lucroHoje = 0;
+    let totalPedidosHoje = 0;
+
+    // Varre o cache de pedidos da memória
+    Object.values(ordersCache).forEach(order => {
+        if (!order) return;
+
+        // Desconsidera os pedidos cancelados
+        const statusLower = String(order.status || '').toLowerCase();
+        if (statusLower === 'canceled' || statusLower === 'cancelado') return;
+
+        // Recupera o timestamp correto (int64 ou objeto)
+        let tPedido = 0;
+        if (order.createdAt) {
+            if (typeof order.createdAt.toMillis === 'function') {
+                tPedido = order.createdAt.toMillis();
+            } else if (typeof order.createdAt === 'number') {
+                tPedido = order.createdAt;
+            } else if (order.createdAt.seconds) {
+                tPedido = order.createdAt.seconds * 1000;
+            } else {
+                tPedido = new Date(order.createdAt).getTime() || 0;
+            }
+        }
+
+        // Se o pedido pertence ao dia de hoje
+        if (tPedido >= tsHoje) {
+            faturamentoHoje += Number(order.total) || 0;
+            lucroHoje += Number(order.totalProfit) || Number(order.profit) || 0;
+            totalPedidosHoje++;
+        }
+    });
+
+    // Injeta os valores reais com formatação padrão brasileira
+    if (elDia) elDia.innerText = faturamentoHoje.toFixed(2).replace('.', ',');
+    if (elLucro) elLucro.innerText = lucroHoje.toFixed(2).replace('.', ',');
+    if (elQtd) elQtd.innerText = totalPedidosHoje;
+};
 
 window.finishManualOrder = async () => {
     if (!window.manualOrder || manualOrder.length === 0) return showToast("⚠️ Carrinho vazio!");
