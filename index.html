@@ -1122,55 +1122,63 @@ if ('serviceWorker' in navigator) {
             </button>
         </div>
 
-    <div class="grid grid-cols-3 gap-2 mb-6 px-1">
+    <!-- LEGENDA DO PERÍODO -->
+<div class="px-1 mb-2 flex items-center gap-1.5 text-slate-400">
+    <i data-lucide="calendar" class="w-3.5 h-3.5"></i>
+    <span class="text-[10px] font-bold uppercase tracking-wider">Resumo de Hoje</span>
+</div>
+
+<!-- CARDS EM GRID OTIMIZADO -->
+<div class="grid grid-cols-3 gap-2 mb-6 px-1">
     
-    <!-- TAG: VENDIDO HOJE -->
-    <div class="bg-white border border-slate-100 rounded-2xl p-2.5 flex items-center gap-2 shadow-sm min-w-0">
-        <div class="bg-emerald-50 p-2 rounded-xl border border-emerald-100 flex items-center justify-center shrink-0">
+    <!-- TAG: VENDIDO -->
+    <div class="bg-white border border-slate-100 rounded-2xl p-2.5 flex flex-col sm:flex-row sm:items-center gap-1.5 sm:gap-2 shadow-sm min-w-0">
+        <div class="bg-emerald-50 p-1.5 rounded-xl border border-emerald-100 flex items-center justify-center shrink-0 w-7 h-7">
             <i data-lucide="trending-up" class="w-3.5 h-3.5 text-emerald-600"></i>
         </div>
-        <div class="min-w-0 flex-1">
-            <span class="text-[9px] font-bold text-slate-400 uppercase tracking-wider block mb-0.5 truncate">Vendido</span>
-            <div class="flex items-baseline gap-0.5 min-w-0">
+        <div class="min-w-0 w-full">
+            <span class="text-[9px] font-bold text-slate-400 uppercase tracking-wider block leading-none mb-0.5">Vendido</span>
+            <div class="flex items-baseline gap-0.5 w-full">
                 <span class="text-[9px] font-bold text-emerald-600 shrink-0">R$</span>
-                <span id="pills-faturamento-dia" class="xs:text-sm text-xs font-black text-slate-800 tracking-tight truncate block">0,00</span>
+                <span id="pills-faturamento-dia" class="text-xs sm:text-sm font-black text-slate-800 tracking-tight block truncate">0,00</span>
             </div>
         </div>
     </div>
 
-    <!-- TAG: LUCRO HOJE -->
-    <div class="bg-white border border-slate-100 rounded-2xl p-2.5 flex items-center gap-2 shadow-sm min-w-0">
-        <div class="bg-violet-50 p-2 rounded-xl border border-violet-100 flex items-center justify-center shrink-0">
+    <!-- TAG: LUCRO -->
+    <div class="bg-white border border-slate-100 rounded-2xl p-2.5 flex flex-col sm:flex-row sm:items-center gap-1.5 sm:gap-2 shadow-sm min-w-0">
+        <div class="bg-violet-50 p-1.5 rounded-xl border border-violet-100 flex items-center justify-center shrink-0 w-7 h-7">
             <i data-lucide="dollar-sign" class="w-3.5 h-3.5 text-violet-600"></i>
         </div>
-        <div class="min-w-0 flex-1">
-            <span class="text-[9px] font-bold text-slate-400 uppercase tracking-wider block mb-0.5 truncate">Lucro</span>
-            <div class="flex items-baseline gap-0.5 min-w-0">
+        <div class="min-w-0 w-full">
+            <span class="text-[9px] font-bold text-slate-400 uppercase tracking-wider block leading-none mb-0.5">Lucro</span>
+            <div class="flex items-baseline gap-0.5 w-full">
                 <span class="text-[9px] font-bold text-violet-600 shrink-0">R$</span>
-                <span id="pills-lucro-dia" class="xs:text-sm text-xs font-black text-slate-800 tracking-tight truncate block">0,00</span>
+                <span id="pills-lucro-dia" class="text-xs sm:text-sm font-black text-slate-800 tracking-tight block truncate">0,00</span>
             </div>
         </div>
     </div>
 
-    <!-- TAG: PEDIDOS HOJE -->
-    <div class="bg-white border border-slate-100 rounded-2xl p-2.5 flex items-center justify-between shadow-sm min-w-0">
-        <div class="flex items-center gap-2 min-w-0 flex-1">
-            <div class="bg-blue-50 p-2 rounded-xl border border-blue-100 flex items-center justify-center shrink-0">
+    <!-- TAG: PEDIDOS -->
+    <div class="bg-white border border-slate-100 rounded-2xl p-2.5 flex flex-col sm:flex-row sm:items-center justify-between gap-1.5 sm:gap-2 shadow-sm min-w-0 relative">
+        <div class="flex flex-col sm:flex-row sm:items-center gap-1.5 sm:gap-2 min-w-0 w-full">
+            <div class="bg-blue-50 p-1.5 rounded-xl border border-blue-100 flex items-center justify-center shrink-0 w-7 h-7">
                 <i data-lucide="shopping-cart" class="w-3.5 h-3.5 text-blue-600"></i>
             </div>
-            <div class="min-w-0">
-                <span class="text-[9px] font-bold text-slate-400 uppercase tracking-wider block mb-0.5 truncate">Pedidos</span>
-                <span id="pills-quantidade-pedidos" class="xs:text-sm text-xs font-black text-slate-800 tracking-tight block">0</span>
+            <div class="min-w-0 w-full">
+                <span class="text-[9px] font-bold text-slate-400 uppercase tracking-wider block leading-none mb-0.5">Pedidos</span>
+                <span id="pills-quantidade-pedidos" class="text-xs sm:text-sm font-black text-slate-800 tracking-tight block">0</span>
             </div>
         </div>
-        <!-- Indicador Pulse -->
-        <span class="relative flex h-1.5 w-1.5 shrink-0 ml-1">
+        <!-- Indicador Pulse posicionado de forma fixa no canto superior direito no mobile -->
+        <span class="absolute top-2.5 right-2.5 sm:relative sm:top-auto sm:right-auto flex h-1.5 w-1.5 shrink-0">
             <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
             <span class="relative inline-flex rounded-full h-1.5 w-1.5 bg-emerald-500"></span>
         </span>
     </div>
 
 </div>
+
 
         <!-- BARRA DE BUSCA PREMIUM -->
         <div class="relative group">
