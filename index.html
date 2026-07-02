@@ -265,7 +265,15 @@ if ('serviceWorker' in navigator) {
         background: #1f2937; color: white; padding: 8px 10px; border-radius: 8px;
         font-size: 10px; width: max-content; opacity: 0; pointer-events: none; transition: opacity .2s ease; z-index: 50;
     }
-    .tooltip:hover .tooltip-box { opacity: 1; }
+   /* CORRETO */
+.tooltip:hover .tooltip-box {
+  opacity: 1;
+}
+</style> <!-- Fechando o bloco anterior antes de abrir um novo -->
+
+<style>
+    /* Força os inputs de variação a mostrarem maiúsculo visualmente */
+</style>
 
     /* Impressão */
     @media print {
