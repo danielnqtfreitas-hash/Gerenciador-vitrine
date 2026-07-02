@@ -1319,18 +1319,17 @@ if ('serviceWorker' in navigator) {
     <!-- SEÇÃO DE PERFORMANCE E ESTOQUE -->
     <div class="space-y-6">
         <!-- Gráfico Estilo Glass -->
-        <div class="bg-white p-8 rounded-[3rem] border border-slate-100 shadow-sm relative overflow-hidden">
-            <div class="flex items-center justify-between mb-10">
-                <h4 class="text-xs font-black text-slate-900 uppercase tracking-widest">Evolução Diária</h4>
-                <div class="flex items-center gap-2">
-                    <div class="w-2 h-2 rounded-full bg-primary-500"></div>
-                    <span class="text-[10px] font-bold text-slate-400 uppercase">Faturamento</span>
-                </div>
-            </div>
-            <div class="h-56">
-                <canvas id="financePerformanceChart"></canvas>
-            </div>
+      <div class="bg-slate-800/40 border border-slate-700/60 rounded-2xl p-4 w-full max-w-full overflow-hidden">
+    <div class="flex items-center justify-between mb-3">
+        <div class="flex items-center gap-2">
+            <span class="w-2 h-2 rounded-full bg-violet-500 animate-pulse"></span>
+            <h3 class="text-xs font-bold text-slate-300 uppercase tracking-wider">Desempenho do Período</h3>
         </div>
+    </div>
+    <div class="relative w-full h-48 overflow-hidden">
+        <canvas id="financePerformanceChart" class="w-full h-full"></canvas>
+    </div>
+</div>
 
         <!-- Card de Patrimônio: Design Técnico -->
         <div class="bg-slate-50 p-8 rounded-[3rem] border border-slate-200/50 flex flex-col sm:flex-row justify-between items-center gap-8">
@@ -3181,19 +3180,18 @@ setPersistence(auth, browserLocalPersistence)
     })
     .catch((error) => console.error("Erro de persistência:", error));
 
-// --- LISTENER DE PEDIDOS CORRIGIDO: TRAZ DO INÍCIO DO MÊS ATÉ HOJE ---
+// --- LISTENER DE PEDIDOS CORRIGIDO: FILTRO MÓVEL DE 30 DIAS (IMUNE À VIRADA DE MÊS) ---
 window.initOrderListener = (storeId) => {
     if (!storeId) return;
 
-    // 🌟 Calcula o início do mês atual (1º de Junho de 2026 às 00:00) para trazer todos os recentes
-    const dataInicioMes = new Date();
-    dataInicioMes.setDate(1);
-    dataInicioMes.setHours(0, 0, 0, 0);
-    const timestampLimite = dataInicioMes.getTime();
+    // 🌟 EM VEZ DE COLOACAR O DIA 1º DO MÊS, PEGAMOS OS ÚLTIMOS 30 DIAS MÓVEIS
+    // Isso garante que na virada do mês, os dados do mês passado continuem aparecendo!
+    const trintaDiasAtras = new Date();
+    trintaDiasAtras.setDate(trintaDiasAtras.getDate() - 30);
+    trintaDiasAtras.setHours(0, 0, 0, 0);
+    const timestampLimite = trintaDiasAtras.getTime();
 
-    // 🌟 Buscamos todos os pedidos criados a partir do começo do mês. 
-    // Como os novos usam int64 (número) e o Firestore indexa números antes ou depois de objetos, 
-    // fazemos a busca limpa e filtramos/ordenamos tudo direto no JavaScript para não sumir nada.
+    // Consulta limpa para trazer a massa de dados recente sem travas de tipos mixtos (int64 vs Timestamp)
     const q = query(
         collection(db, `stores/${storeId}/orders`)
     );
@@ -3208,7 +3206,7 @@ window.initOrderListener = (storeId) => {
             const orderId = change.doc.id;
 
             if (change.type === "added" || change.type === "modified") {
-                // Converte a data do pedido para milissegundos para podermos validar
+                // Tratamento e unificação dos formatos de data
                 let tPedido = 0;
                 if (orderData.createdAt) {
                     if (typeof orderData.createdAt.toMillis === 'function') {
@@ -3222,7 +3220,7 @@ window.initOrderListener = (storeId) => {
                     }
                 }
 
-                // Só adiciona ao cache se for deste mês para frente (evita pesar o app com anos anteriores)
+                // Só joga no cache se o pedido estiver dentro da janela de 30 dias móveis
                 if (tPedido >= timestampLimite) {
                     ordersCache[orderId] = { 
                         id: orderId, 
@@ -3258,27 +3256,27 @@ window.initOrderListener = (storeId) => {
 
         isFirstLoad = false; 
 
-        // 🌟 ORDENAÇÃO COMPLETA: Alinha int64 e Timestamp perfeitamente na linha do tempo
+        // Ordenação manual em JavaScript (Mais recente primeiro)
         let listaCompletaDePedidos = Object.values(ordersCache);
         
         listaCompletaDePedidos.sort((a, b) => {
             let tA = a.createdAt?.toMillis ? a.createdAt.toMillis() : (a.createdAt?.seconds ? a.createdAt.seconds * 1000 : Number(a.createdAt) || 0);
             let tB = b.createdAt?.toMillis ? b.createdAt.toMillis() : (b.createdAt?.seconds ? b.createdAt.seconds * 1000 : Number(b.createdAt) || 0);
-            return tB - tA; // Mais recente (hoje) primeiro
+            return tB - tA; 
         });
 
         if (listaCompletaDePedidos.length > 0) {
             lastVisibleOrder = snapshot.docs[snapshot.docs.length - 1];
         }
 
-        // Corta para exibir apenas os primeiros 20 na lista da interface principal
+        // Limita a exibição da tela inicial em 20 itens para manter leve
         const pedidosExibidos = listaCompletaDePedidos.slice(0, ordersLimit || 20);
 
         if (typeof window.renderFilteredOrders === 'function') {
             window.renderFilteredOrders(); 
         }
 
-        // Atualiza os Cards do Dashboard da tela principal
+        // Renderiza os cards na área de pedidos da tela inicial
         const dashContainer = document.getElementById("ordersCardsContainer");
         if (dashContainer) {
             if (pedidosExibidos.length === 0) {
@@ -3290,16 +3288,13 @@ window.initOrderListener = (storeId) => {
             }
         }
 
+        // Recarrega o Gráfico e o Financeiro respeitando as novas datas carregadas
         if (typeof window.initFinanceDashboard === 'function') {
             window.initFinanceDashboard(); 
         }
 
     }, (error) => {
         console.error("Erro no Listener:", error);
-        const container = document.getElementById("ordersCardsContainer");
-        if (container) {
-            container.innerHTML = `<p class="text-center text-red-400 py-10 text-xs">Erro ao carregar: ${error.code}</p>`;
-        }
     });
 };
     // --- LISTENER A: IDENTIDADE, LIMITES E STATUS ---
