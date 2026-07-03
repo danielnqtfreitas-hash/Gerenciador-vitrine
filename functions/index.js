@@ -62,3 +62,10 @@ exports.notificarNovoPedido = functions.firestore
             return null;
         }
     });
+
+exports.debugTudo = functions.firestore
+    .document('{colecao}/{documentoId}')
+    .onCreate(async (snap, context) => {
+        console.log(`🔍 EVENTO DETECTADO! Coleção: ${context.params.colecao} | ID: ${context.params.documentoId}`);
+        return null;
+    });
