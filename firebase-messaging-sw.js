@@ -1,8 +1,8 @@
-// 1. Importação dos SDKs Compat (Essencial para evitar o erro "firebase is not defined")
-importScripts('https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js');
-importScripts('https://www.gstatic.com/firebasejs/10.7.1/firebase-messaging-compat.js');
+// 1. Importação atualizada para v11.6.1 (Garante compatibilidade total com o sistema)
+importScripts('https://www.gstatic.com/firebasejs/11.6.1/firebase-app-compat.js');
+importScripts('https://www.gstatic.com/firebasejs/11.6.1/firebase-messaging-compat.js');
 
-// 2. Inicialização com suas credenciais do projeto "meuestoque-1badc"
+// 2. Inicialização com as suas credenciais
 firebase.initializeApp({
     apiKey: "AIzaSyAdwsGBTApwOwqr37qCv72gdPRbipsZG0Q", 
     authDomain: "meuestoque-1badc.firebaseapp.com", 
@@ -40,43 +40,36 @@ self.addEventListener('fetch', (event) => {
 messaging.onBackgroundMessage((payload) => {
     console.log('[sw.js] Mensagem recebida em background:', payload);
 
-    // Garante a captura tanto se vier estruturado em 'notification' quanto em 'data'
+    // Prioriza o title/body do objeto 'data' (enviado pela Cloud Function)
     const notificationTitle = payload.data?.title || payload.notification?.title || "Novo Pedido! 🛍️";
     
     const notificationOptions = {
         body: payload.data?.body || payload.notification?.body || "Acesse o painel para ver detalhes.",
         icon: 'https://vitrineonline.app.br/favicon.png',
         badge: 'https://vitrineonline.app.br/favicon.png',
-        tag: 'novo-pedido', // Agrupa notificações para não inundar o telemóvel
+        tag: 'novo-pedido',
         renotify: true,
         vibrate: [200, 100, 200],
         data: { 
-            url: payload.data?.url || payload.notification?.click_action || '/painel'
+            url: payload.data?.url || '/painel'
         }
     };
 
-    // Força o Service Worker a mostrar a notificação imediatamente no ecrã
-    self.registration.showNotification(notificationTitle, notificationOptions);
+    // Comando crítico para forçar a notificação no ecrã
+    return self.registration.showNotification(notificationTitle, notificationOptions);
 });
 
 // 5. Ação ao Clicar na Notificação
 self.addEventListener('notificationclick', (event) => {
     event.notification.close();
-
     const targetUrl = event.notification.data?.url || '/painel';
 
     event.waitUntil(
         clients.matchAll({ type: 'window', includeUncontrolled: true }).then((windowClients) => {
-            // Se já houver uma aba aberta com o painel, foca nela
             for (let client of windowClients) {
-                if (client.url.includes(targetUrl) && 'focus' in client) {
-                    return client.focus();
-                }
+                if (client.url.includes(targetUrl) && 'focus' in client) return client.focus();
             }
-            // Caso contrário, abre uma nova janela
-            if (clients.openWindow) {
-                return clients.openWindow(targetUrl);
-            }
+            if (clients.openWindow) return clients.openWindow(targetUrl);
         })
     );
 });
