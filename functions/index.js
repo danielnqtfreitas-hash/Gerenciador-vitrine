@@ -57,3 +57,4 @@ exports.notificarNovoPedido = functions.region('southamerica-east1').firestore
 exports.testeDeVida = functions.region('southamerica-east1').https.onRequest((req, res) => {
     res.send("🚀 A Cloud Function está viva e operante no servidor!");
 });
+
