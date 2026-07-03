@@ -125,31 +125,7 @@
     }
 </script>
 
-<!-- 1. IMPORTAÇÕES DO FIREBASE (OBRIGATÓRIO NA PÁGINA) -->
-<!-- Estas bibliotecas permitem que a página use o objeto 'firebase' -->
-<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-messaging-compat.js"></script>
-  
   <script>
-/**
- * 2. CONFIGURAÇÃO DO PROJETO UNIFICADA (meuestoque-1badc)
- */
-const firebaseConfig = {
-    apiKey: "AIzaSyAdwsGBTApwOwqr37qCv72gdPRbipsZG0Q",
-    authDomain: "meuestoque-1badc.firebaseapp.com",
-    projectId: "meuestoque-1badc",
-    storageBucket: "meuestoque-1badc.firebasestorage.app",
-    messagingSenderId: "730003067834",
-    appId: "1:730003067834:web:b205f1ea59053345960383"
-};
-
-if (!firebase.apps.length) {
-    firebase.initializeApp(firebaseConfig);
-}
-
-const db = firebase.firestore();
-const messaging = firebase.messaging();
 
 /**
  * 3. FUNÇÃO COMPATÍVEL PARA SALVAR O TOKEN NO FIRESTORE
@@ -2331,39 +2307,75 @@ const PLAN_DISPLAY_NAMES = {
     'gold_mensal': 'Plano Gold'
 };
 
+// 1. Torna o db e o auth visíveis para suas funções antigas fora do módulo
+window.db = db;
+window.auth = auth;
 
-
-// Função para ativar as notificações
-async function solicitarPermissaoNotificacao(storeId) {
+// 2. Função que salva o token gerado lá na pasta de configurações da sua loja no banco
+async function registrarOuAtualizarToken(storeId, token) {
+    if (!storeId) return;
+    const docRef = doc(db, `stores/${storeId}/config/notifications`);
     try {
-        const permission = await Notification.requestPermission();
-        
-        if (permission === 'granted') {
-            console.log('Permissão concedida!');
-            
-            // Registra o token do lojista
-            const token = await getToken(messaging, { 
-                vapidKey: 'BKk5Dr9AJ8fY0QAelaAvSPK7D9csG5dwdW45VhG0C-oeipeKD2kErkExPHQRp0eAYhm797-k5lLn3OO7-TRfZVw' 
-            });
-
-            if (token) {
-                console.log("Token gerado:", token);
-                // SALVAR NO FIRESTORE
-                // Vamos salvar esse token no cadastro da loja para saber a quem notificar
-                const tokenRef = doc(db, "stores", storeId, "config", "notifications");
-                await setDoc(tokenRef, { 
-                    fcmToken: token,
-                    updatedAt: new Date() 
-                }, { merge: true });
-            }
-        } else {
-            console.log('Permissão negada para notificações.');
-        }
+        await setDoc(docRef, {
+            fcmToken: token,
+            lastUpdate: Date.now(),
+            status: "ativo",
+            device: "Xiaomi Android Background"
+        }, { merge: true });
+        console.log(`✅ Token sincronizado com sucesso (V11) para a loja: ${storeId}`);
     } catch (error) {
-        console.error('Erro ao configurar notificações:', error);
+        console.error("❌ Erro ao salvar token no Firestore:", error);
     }
 }
 
+// 3. Função que o painel chama para registrar o Service Worker e gerar o Token do seu aparelho
+window.solicitarPermissaoNotificacao = async (storeId) => {
+    if (!('serviceWorker' in navigator) || !('Notification' in window)) {
+        console.log('Este navegador não suporta notificações Push.');
+        return;
+    }
+    try {
+        const registration = await navigator.serviceWorker.register('/firebase-messaging-sw.js', { scope: '/' });
+        console.log('✅ Service Worker Ativo no escopo raiz!');
+
+        const permission = await Notification.requestPermission();
+        if (permission === 'granted') {
+            const currentToken = await getToken(messaging, {
+                serviceWorkerRegistration: registration,
+                vapidKey: 'BKk5Dr9AJ8fY0QAelaAvSPK7D9csG5dwdW45VhG0C-oeipeKD2kErkExPHQRp0eAYhm797-k5lLn3OO7-TRfZVw'
+            });
+
+            if (currentToken) {
+                console.log('🚀 Novo Token FCM gerado:', currentToken);
+                await registrarOuAtualizarToken(storeId, currentToken);
+            } else {
+                console.warn('⚠️ Token não retornado pelo Firebase.');
+            }
+        } else {
+            console.warn('❌ Permissão para receber notificações foi negada.');
+        }
+    } catch (error) {
+        console.error('❌ Falha ao configurar push de notificações:', error);
+    }
+};
+
+// 4. Ouvinte que avisa se chegar pedido enquanto você estiver mexendo no PC (Aba aberta)
+onMessage(messaging, (payload) => {
+    console.log("🔔 Notificação recebida em tempo real (Primeiro Plano):", payload);
+    
+    const som = document.getElementById('notifSound');
+    if (som) {
+        som.play().catch(e => console.log("Áudio bloqueado:", e));
+    }
+
+    Swal.fire({
+        title: payload.notification?.title || 'Novo Pedido! 🎉',
+        text: payload.notification?.body || 'Um novo pedido acabou de entrar.',
+        icon: 'success',
+        confirmButtonColor: '#8b5cf6',
+        confirmButtonText: 'Ver Pedidos'
+    });
+});
 
 
 // 1. Função que controla o visual do Switch (Definir no topo do script)
