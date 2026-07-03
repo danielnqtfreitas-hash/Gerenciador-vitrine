@@ -1,12 +1,18 @@
-exports.notificarNovoPedido = functions.firestore
-    .document('stores/{storeId}/orders/{orderId}') // <-- O gatilho que você usa
+const functions = require('firebase-functions');
+const admin = require('firebase-admin');
+admin.initializeApp();
+
+// Este gatilho é mais abrangente para detectar onde o pedido está caindo
+exports.monitorarPedidos = functions.firestore
+    .document('{colecao}/{documentoId}')
     .onCreate(async (snap, context) => {
-        const data = snap.data();
-        const caminho = context.resource.name; // Pega o caminho completo do documento
+        const path = context.resource.name;
+        console.log("🔥 NOVO DOCUMENTO CRIADO!");
+        console.log("📍 Caminho absoluto:", path);
         
-        console.log("🔥 GATILHO DISPARADO!");
-        console.log("📍 Caminho detectado:", caminho);
-        console.log("📦 Dados do pedido:", JSON.stringify(data));
-        
+        // Verifica se o caminho contém 'orders' ou 'pedidos'
+        if (path.includes('orders') || path.includes('pedidos')) {
+            console.log("✅ Possível pedido detectado neste caminho!");
+        }
         return null;
     });
