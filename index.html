@@ -2174,7 +2174,7 @@
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
         import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged, updatePassword, setPersistence, browserLocalPersistence, browserSessionPersistence } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        import { getFirestore, doc, getDoc, setDoc, updateDoc, deleteDoc, onSnapshot, collection, addDoc, query, where, getDocs, orderBy, limit, Timestamp, increment, startAfter} from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        import { getFirestore, doc, getDoc, setDoc, updateDoc, deleteDoc, onSnapshot, collection, addDoc, query, where, getDocs, orderBy, limit, Timestamp, increment, startAfter, arrayUnion} from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
         import { getStorage, ref, uploadString, getDownloadURL, deleteObject } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-storage.js";
         // Procure onde começam os imports e adicione este:
         import { getMessaging, getToken, onMessage } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-messaging.js";
@@ -2241,18 +2241,24 @@ const PLAN_DISPLAY_NAMES = {
 window.db = db;
 window.auth = auth;
 
-// 2. Função que salva o token gerado lá na pasta de configurações da sua loja no banco
+// Certifique-se de importar o arrayUnion no topo do seu arquivo:
+// import { doc, setDoc, arrayUnion } from "firebase/firestore";
+
 async function registrarOuAtualizarToken(storeId, token) {
     if (!storeId) return;
+    
     const docRef = doc(db, `stores/${storeId}/config/notifications`);
+    
     try {
+        // Usamos setDoc com { merge: true } e arrayUnion
+        // Isso adiciona o token à lista 'fcmTokens' sem remover os outros
         await setDoc(docRef, {
-            fcmToken: token,
+            fcmTokens: arrayUnion(token),
             lastUpdate: Date.now(),
-            status: "ativo",
-            device: "Xiaomi Android Background"
+            status: "ativo"
         }, { merge: true });
-        console.log(`✅ Token sincronizado com sucesso (V11) para a loja: ${storeId}`);
+
+        console.log(`✅ Token adicionado à lista de dispositivos da loja: ${storeId}`);
     } catch (error) {
         console.error("❌ Erro ao salvar token no Firestore:", error);
     }
