@@ -57,3 +57,8 @@ exports.notificarNovoPedido = functions.firestore
             return null;
         }
     });
+
+// Teste manual de vida (chame esta URL no seu navegador)
+exports.testeDeVida = functions.https.onRequest((req, res) => {
+    res.send("🚀 A Cloud Function está viva e operante no servidor!");
+});
