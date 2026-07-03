@@ -2258,15 +2258,20 @@ async function registrarOuAtualizarToken(storeId, token) {
     }
 }
 
-// 3. Função que o painel chama para registrar o Service Worker e gerar o Token do seu aparelho
+// 3. Função corrigida com a espera do Service Worker e o caminho correto do arquivo
 window.solicitarPermissaoNotificacao = async (storeId) => {
     if (!('serviceWorker' in navigator) || !('Notification' in window)) {
         console.log('Este navegador não suporta notificações Push.');
         return;
     }
+
     try {
-        const registration = await navigator.serviceWorker.register('/firebase-messaging-sw.js', { scope: '/' });
-        console.log('✅ Service Worker Ativo no escopo raiz!');
+        // CORREÇÃO: Registrando o arquivo correto que editamos
+        const registration = await navigator.serviceWorker.register('/firebase-messaging-sw (2).js', { scope: '/' });
+        
+        // CORREÇÃO: Aguardando o Service Worker estar 100% pronto antes de solicitar o token
+        await navigator.serviceWorker.ready;
+        console.log('✅ Service Worker Ativo e pronto no escopo raiz!');
 
         const permission = await Notification.requestPermission();
         if (permission === 'granted') {
@@ -2285,7 +2290,7 @@ window.solicitarPermissaoNotificacao = async (storeId) => {
             console.warn('❌ Permissão para receber notificações foi negada.');
         }
     } catch (error) {
-        console.error('❌ Falha ao configurar push de notificações:', error);
+        console.error('❌ Falha crítica ao configurar push de notificações:', error);
     }
 };
 
