@@ -2,17 +2,18 @@ const functions = require('firebase-functions');
 const admin = require('firebase-admin');
 admin.initializeApp();
 
-exports.notificarNovoPedido = functions.firestore
+// REGRA DE OURO: Defina a região para coincidir com a do seu Firestore
+exports.notificarNovoPedido = functions.region('southamerica-east1').firestore
     .document('stores/{storeId}/orders/{orderId}')
     .onCreate(async (snap, context) => {
         const pedido = snap.data();
-        const storeId = context.params.storeId; // Captura o nome da loja (dandan, etc)
-        const orderId = context.params.orderId; // Captura o ID do pedido
+        const storeId = context.params.storeId; 
+        const orderId = context.params.orderId;
 
         console.log(`🔥 Novo pedido detectado! Loja: ${storeId}, Pedido: ${orderId}`);
 
         try {
-            // 1. Busca os tokens da loja específica no banco
+            // 1. Busca os tokens da loja específica
             const tokenDoc = await admin.firestore()
                 .doc(`stores/${storeId}/config/notifications`)
                 .get();
@@ -24,6 +25,9 @@ exports.notificarNovoPedido = functions.firestore
 
             const tokens = tokenDoc.data().fcmTokens;
             
+            // Garantir que tokens seja um array
+            const tokenArray = Array.isArray(tokens) ? tokens : [tokens];
+
             // 2. Monta a mensagem
             const mensagem = {
                 notification: {
@@ -43,12 +47,12 @@ exports.notificarNovoPedido = functions.firestore
                 webpush: {
                     headers: { Urgency: 'high' }
                 },
-                tokens: tokens
+                tokens: tokenArray // Usando o array garantido
             };
 
-            // 3. Dispara para todos os dispositivos desta loja
+            // 3. Dispara para todos os dispositivos
             const response = await admin.messaging().sendMulticast(mensagem);
-            console.log(`✅ Notificação disparada para ${storeId}. Sucessos: ${response.successCount}`);
+            console.log(`✅ Notificação disparada para ${storeId}. Sucessos: ${response.successCount}, Falhas: ${response.failureCount}`);
             
             return null;
 
@@ -58,7 +62,7 @@ exports.notificarNovoPedido = functions.firestore
         }
     });
 
-// Teste manual de vida (chame esta URL no seu navegador)
-exports.testeDeVida = functions.https.onRequest((req, res) => {
+// Teste manual de vida
+exports.testeDeVida = functions.region('southamerica-east1').https.onRequest((req, res) => {
     res.send("🚀 A Cloud Function está viva e operante no servidor!");
 });
