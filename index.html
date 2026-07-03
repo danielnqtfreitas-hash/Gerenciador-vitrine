@@ -2237,23 +2237,20 @@ const PLAN_DISPLAY_NAMES = {
     'gold_mensal': 'Plano Gold'
 };
 
-// 1. Torna o db e o auth visíveis para suas funções antigas fora do módulo
+// 1. Torna o db e o auth visíveis globalmente
 window.db = db;
 window.auth = auth;
 
-// Certifique-se de importar o arrayUnion no topo do seu arquivo:
-// import { doc, setDoc, arrayUnion } from "firebase/firestore";
-
+// 2. Função que salva o token na lista (Array)
 async function registrarOuAtualizarToken(storeId, token) {
     if (!storeId) return;
     
+    const db = getFirestore();
     const docRef = doc(db, `stores/${storeId}/config/notifications`);
     
     try {
-        // Usamos setDoc com { merge: true } e arrayUnion
-        // Isso adiciona o token à lista 'fcmTokens' sem remover os outros
         await setDoc(docRef, {
-            fcmTokens: arrayUnion(token),
+            fcmTokens: arrayUnion(token), // Adiciona sem apagar os anteriores
             lastUpdate: Date.now(),
             status: "ativo"
         }, { merge: true });
@@ -2264,7 +2261,7 @@ async function registrarOuAtualizarToken(storeId, token) {
     }
 }
 
-// 3. Função corrigida com a espera do Service Worker e o caminho correto do arquivo
+// 3. Função de configuração do Service Worker e Solicitação de Token
 window.solicitarPermissaoNotificacao = async (storeId) => {
     if (!('serviceWorker' in navigator) || !('Notification' in window)) {
         console.log('Este navegador não suporta notificações Push.');
@@ -2272,10 +2269,10 @@ window.solicitarPermissaoNotificacao = async (storeId) => {
     }
 
     try {
-        // CORREÇÃO: Registrando o arquivo correto que editamos
+        // Registra o Service Worker
         const registration = await navigator.serviceWorker.register('/firebase-messaging-sw.js', { scope: '/' });
         
-        // CORREÇÃO: Aguardando o Service Worker estar 100% pronto antes de solicitar o token
+        // Aguarda estar 100% pronto
         await navigator.serviceWorker.ready;
         console.log('✅ Service Worker Ativo e pronto no escopo raiz!');
 
@@ -2289,35 +2286,38 @@ window.solicitarPermissaoNotificacao = async (storeId) => {
             if (currentToken) {
                 console.log('🚀 Novo Token FCM gerado:', currentToken);
                 await registrarOuAtualizarToken(storeId, currentToken);
-            } else {
-                console.warn('⚠️ Token não retornado pelo Firebase.');
             }
         } else {
             console.warn('❌ Permissão para receber notificações foi negada.');
         }
     } catch (error) {
-        console.error('❌ Falha crítica ao configurar push de notificações:', error);
+        console.error('❌ Falha crítica ao configurar push:', error);
     }
 };
 
-// 4. Ouvinte que avisa se chegar pedido enquanto você estiver mexendo no PC (Aba aberta)
+// 4. Ouvinte de pedidos em primeiro plano
 onMessage(messaging, (payload) => {
-    console.log("🔔 Notificação recebida em tempo real (Primeiro Plano):", payload);
+    console.log("🔔 Notificação recebida em tempo real:", payload);
     
+    // Reprodução de som de alerta
     const som = document.getElementById('notifSound');
     if (som) {
-        som.play().catch(e => console.log("Áudio bloqueado:", e));
+        som.play().catch(e => console.log("Áudio bloqueado pelo navegador:", e));
     }
 
+    // Alerta visual no painel
     Swal.fire({
         title: payload.notification?.title || 'Novo Pedido! 🎉',
         text: payload.notification?.body || 'Um novo pedido acabou de entrar.',
         icon: 'success',
         confirmButtonColor: '#8b5cf6',
         confirmButtonText: 'Ver Pedidos'
+    }).then((result) => {
+        if (result.isConfirmed) {
+            window.location.reload(); // Opcional: recarrega para buscar novos dados
+        }
     });
 });
-
 
 // 1. Função que controla o visual do Switch (Definir no topo do script)
 window.updateLojaVisual = (isOpen) => {
