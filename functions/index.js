@@ -6,38 +6,30 @@ exports.notificarNovoPedido = functions.firestore
     .document('stores/{storeId}/orders/{orderId}')
     .onCreate(async (snap, context) => {
         const novoPedido = snap.data();
-        const pedidoId = context.params.orderId;
         const storeId = context.params.storeId;
 
         try {
-            // 1. Busca o token usando o caminho exato e direto do documento (Compatível com o formato V11)
+            // 1. Busca o documento contendo a LISTA de tokens (fcmTokens)
             const tokenDoc = await admin.firestore()
                 .doc(`stores/${storeId}/config/notifications`)
                 .get();
 
-            // Se o documento de notificações não existir, encerra
-            if (!tokenDoc.exists) {
-                console.log(`⚠️ Nenhum documento de notificação encontrado para a loja: ${storeId}`);
+            if (!tokenDoc.exists || !tokenDoc.data().fcmTokens || tokenDoc.data().fcmTokens.length === 0) {
+                console.log(`⚠️ Nenhum token encontrado na lista fcmTokens para a loja: ${storeId}`);
                 return null;
             }
 
-            // 2. Pega a propriedade fcmToken que o painel salvou
-            const token = tokenDoc.data().fcmToken;
-            if (!token) {
-                console.log(`⚠️ Campo fcmToken vazio para a loja: ${storeId}`);
-                return null;
-            }
+            const tokens = tokenDoc.data().fcmTokens; // Agora é um Array
+            console.log(`🔍 Disparando para ${tokens.length} dispositivos.`);
 
-            // Mapeia os campos exatamente como estão gravados no seu banco (evita erros de "undefined")
             const clienteNome = novoPedido.name || novoPedido.customer?.name || "Cliente";
             const totalPedido = novoPedido.total || 0;
             
             const tituloPush = 'Novo Pedido na Vitrine! 🎉';
             const corpoPush = `${clienteNome} fez um pedido de R$ ${totalPedido}`;
 
-            // PAYLOAD BLINDADO: Envia em formato notification e data com alta prioridade para o Xiaomi
-            const mensagem = {
-                token: token,
+            // 2. Estrutura de mensagem para envio em lote (Multicast)
+            const mensagemMulticast = {
                 notification: {
                     title: tituloPush,
                     body: corpoPush,
@@ -49,25 +41,24 @@ exports.notificarNovoPedido = functions.firestore
                 },
                 android: {
                     priority: 'high',
-                    notification: {
-                        clickAction: 'FLUTTER_NOTIFICATION_CLICK',
-                        status: 'done'
-                    }
+                    notification: { clickAction: 'FLUTTER_NOTIFICATION_CLICK' }
                 },
                 webpush: {
-                    headers: {
-                        Urgency: 'high'
-                    }
-                }
+                    headers: { Urgency: 'high' }
+                },
+                tokens: tokens // Envia para o array completo
             };
 
-            console.log(`🚀 Despachando notificação FCM de alta prioridade para a loja ${storeId}...`);
-            const response = await admin.messaging().send(mensagem);
-            console.log('✅ Notificação enviada com sucesso:', response);
+            // 3. Usa sendMulticast para disparar para todos simultaneamente
+            const response = await admin.messaging().sendMulticast(mensagemMulticast);
+            
+            console.log(`✅ Notificação disparada. Sucessos: ${response.successCount}, Falhas: ${response.failureCount}`);
+            
+            // DICA: Se houver tokens inválidos (failureCount > 0), você pode limpá-los aqui
             return response;
 
         } catch (error) {
-            console.error('❌ Erro ao processar gatilho de notificação:', error);
+            console.error('❌ Erro fatal no processamento:', error);
             return null;
         }
     });
