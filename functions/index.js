@@ -28,26 +28,17 @@ exports.notificarNovoPedido = functions.region('southamerica-east1').firestore
             // Garantir que tokens seja um array
             const tokenArray = Array.isArray(tokens) ? tokens : [tokens];
 
-            // 2. Monta a mensagem
+            // 2. Monta a mensagem (Apenas Data para controle total via Service Worker)
             const mensagem = {
-                notification: {
-                    title: "Novo Pedido na Vitrine! 🛍️",
-                    body: `Cliente: ${pedido.name || 'Cliente'} | Valor: R$ ${pedido.total || '0'}`
-                },
                 data: { 
+                    title: "Novo Pedido na Vitrine! 🛍️",
+                    body: `Cliente: ${pedido.name || 'Cliente'} | Valor: R$ ${pedido.total || '0'}`,
                     url: `/painel` 
-                },
-                android: {
-                    priority: 'high',
-                    notification: {
-                        channelId: 'fcm_default_channel',
-                        clickAction: 'FLUTTER_NOTIFICATION_CLICK'
-                    }
                 },
                 webpush: {
                     headers: { Urgency: 'high' }
                 },
-                tokens: tokenArray // Usando o array garantido
+                tokens: tokenArray
             };
 
             // 3. Dispara para todos os dispositivos
