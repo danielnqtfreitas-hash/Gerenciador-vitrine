@@ -36,41 +36,44 @@ self.addEventListener('fetch', (event) => {
     );
 });
 
-// 4. Tratamento de Mensagens em Segundo Plano (Background)
+// 4. Captura de Mensagens em Segundo Plano (Background)
 messaging.onBackgroundMessage((payload) => {
     console.log('[sw.js] Mensagem recebida em background:', payload);
 
-    const notificationTitle = payload.notification?.title || "Novo Pedido!";
+    // Garante a captura tanto se vier estruturado em 'notification' quanto em 'data'
+    const notificationTitle = payload.data?.title || payload.notification?.title || "Novo Pedido! 🛍️";
+    
     const notificationOptions = {
-        body: payload.notification?.body || "Acesse o painel para ver detalhes.",
+        body: payload.data?.body || payload.notification?.body || "Acesse o painel para ver detalhes.",
         icon: 'https://vitrineonline.app.br/favicon.png',
         badge: 'https://vitrineonline.app.br/favicon.png',
-        tag: 'novo-pedido', // Agrupa notificações para não floodar o celular
+        tag: 'novo-pedido', // Agrupa notificações para não inundar o telemóvel
         renotify: true,
         vibrate: [200, 100, 200],
         data: { 
-            url: payload.data?.url || '/painel' // URL dinâmica vinda do Firebase
+            url: payload.data?.url || payload.notification?.click_action || '/painel'
         }
     };
 
-    return self.registration.showNotification(notificationTitle, notificationOptions);
+    // Força o Service Worker a mostrar a notificação imediatamente no ecrã
+    self.registration.showNotification(notificationTitle, notificationOptions);
 });
 
 // 5. Ação ao Clicar na Notificação
 self.addEventListener('notificationclick', (event) => {
     event.notification.close();
 
-    const targetUrl = event.notification.data.url;
+    const targetUrl = event.notification.data?.url || '/painel';
 
     event.waitUntil(
         clients.matchAll({ type: 'window', includeUncontrolled: true }).then((windowClients) => {
-            // Se já houver uma aba aberta, foca nela
+            // Se já houver uma aba aberta com o painel, foca nela
             for (let client of windowClients) {
                 if (client.url.includes(targetUrl) && 'focus' in client) {
                     return client.focus();
                 }
             }
-            // Caso contrário, abre uma nova aba
+            // Caso contrário, abre uma nova janela
             if (clients.openWindow) {
                 return clients.openWindow(targetUrl);
             }
