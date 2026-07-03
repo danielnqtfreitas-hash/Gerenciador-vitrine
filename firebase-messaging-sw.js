@@ -36,16 +36,18 @@ self.addEventListener('fetch', (event) => {
     );
 });
 
-// 4. Captura de Mensagens em Segundo Plano (Onde forçamos o balão)
+// 4. Captura de Mensagens em Segundo Plano (Forçando a exibição visual)
 messaging.onBackgroundMessage((payload) => {
     console.log('[sw.js] Mensagem recebida em background:', payload);
 
-    // Prioriza os campos 'data' e, se não existirem, usa 'notification' conforme o seu log
-    const notificationTitle = payload.data?.title || payload.notification?.title || "Novo Pedido! 🛍️";
-    const notificationBody = payload.data?.body || payload.notification?.body || "Acesse o painel para ver detalhes.";
+    // Mapeamento extraído exatamente da estrutura do seu log
+    const notificationTitle = payload.notification?.title || "Novo Pedido! 🛍️";
+    const notificationBody = payload.notification?.body || "Acesse o painel para ver detalhes.";
+    const notificationImage = payload.notification?.image;
     
     const notificationOptions = {
         body: notificationBody,
+        image: notificationImage, // Inclui a imagem capturada do seu log
         icon: 'https://vitrineonline.app.br/favicon.png',
         badge: 'https://vitrineonline.app.br/favicon.png',
         tag: 'novo-pedido',
@@ -56,11 +58,11 @@ messaging.onBackgroundMessage((payload) => {
         }
     };
 
-    // Comando final para garantir que o sistema operacional mostre o alerta visual
+    // Força a exibição da notificação visual no SO
     return self.registration.showNotification(notificationTitle, notificationOptions);
 });
 
-// 5. Ação ao Clicar na Notificação (Foca ou abre o painel)
+// 5. Ação ao Clicar na Notificação
 self.addEventListener('notificationclick', (event) => {
     event.notification.close();
     const targetUrl = event.notification.data?.url || '/painel';
