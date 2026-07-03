@@ -125,39 +125,6 @@
     }
 </script>
 
-  <script>
-
-/**
- * 3. FUNÇÃO COMPATÍVEL PARA SALVAR O TOKEN NO FIRESTORE
- * Sincroniza em config/notifications para leitura correta da Cloud Function
- */
-async function registrarOuAtualizarToken(token) {
-    const storeId = (typeof currentStoreId !== 'undefined' && currentStoreId) ? currentStoreId : 'dandan';
-    const docRef = db.doc(`stores/${storeId}/config/notifications`);
-
-    try {
-        await docRef.set({
-            fcmToken: token,
-            lastUpdate: firebase.firestore.FieldValue.serverTimestamp(),
-            status: "ativo",
-            device: "Xiaomi Android Background"
-        }, { merge: true }); 
-        
-        console.log(`✅ Token sincronizado com sucesso para a loja: ${storeId}`);
-    } catch (error) {
-        console.error("❌ Erro ao salvar token no Firestore:", error);
-    }
-}
-
-// Executa o setup assim que a janela terminar o carregamento total
-window.addEventListener('load', () => {
-    inicializarNotificacoesFCM();
-});
-
-// Mantém um atalho global caso queira disparar por um botão de "Ativar Alertas"
-window.requestNotificationPermission = inicializarNotificacoesFCM;
-</script>
-
 <style>
     :root {
         --brand-color: #8b5cf6;
