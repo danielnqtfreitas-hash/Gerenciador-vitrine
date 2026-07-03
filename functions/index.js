@@ -10,7 +10,7 @@ exports.notificarNovoPedido = functions.firestore
         const storeId = context.params.storeId;
 
         try {
-            // 1. CORRIGIDO: Busca o token exatamente na subcoleção de configurações daquela loja específica
+            // 1. Busca o token exatamente na subcoleção de configurações daquela loja específica
             const tokenDoc = await admin.firestore()
                 .collection('stores')
                 .doc(storeId)
@@ -24,7 +24,7 @@ exports.notificarNovoPedido = functions.firestore
                 return null;
             }
 
-            // 2. CORRIGIDO: Pega a propriedade fcmToken que o painel salvou
+            // 2. Pega a propriedade fcmToken que o painel salvou
             const token = tokenDoc.data().fcmToken;
             if (!token) {
                 console.log(`⚠️ Campo fcmToken vazio para a loja: ${storeId}`);
@@ -34,20 +34,37 @@ exports.notificarNovoPedido = functions.firestore
             // Trata os dados do pedido baseando-se na estrutura do seu banco
             const clienteNome = novoPedido.customer?.name || novoPedido.nomeCliente || "Cliente";
             const totalPedido = novoPedido.total || 0;
+            const tituloPush = 'Novo Pedido na Vitrine! 🎉';
+            const corpoPush = `${clienteNome} fez um pedido de R$ ${totalPedido}`;
 
+            // 🌟 PAYLOAD BLINDADO: Envia tanto em notification quanto em data com alta prioridade
             const mensagem = {
+                token: token,
                 notification: {
-                    title: 'Novo Pedido na Vitrine! 🎉',
-                    body: `${clienteNome} fez um pedido de R$ ${totalPedido},00`,
+                    title: tituloPush,
+                    body: corpoPush,
                 },
-                // Passa os dados dinâmicos para o Service Worker saber para onde redirecionar no clique
                 data: { 
+                    title: tituloPush,
+                    body: corpoPush,
                     url: `/painel` 
                 },
-                token: token
+                // Configurações específicas para acordar dispositivos Android/Xiaomi dormindo
+                android: {
+                    priority: 'high',
+                    notification: {
+                        clickAction: 'FLUTTER_NOTIFICATION_CLICK',
+                        status: 'done'
+                    }
+                },
+                webpush: {
+                    headers: {
+                        Urgency: 'high'
+                    }
+                }
             };
 
-            console.log(`🚀 Despachando notificação FCM para a loja ${storeId}...`);
+            console.log(`🚀 Despachando notificação FCM de alta prioridade para a loja ${storeId}...`);
             const response = await admin.messaging().send(mensagem);
             console.log('✅ Notificação enviada com sucesso:', response);
             return response;
