@@ -31,32 +31,30 @@ self.addEventListener('fetch', (event) => {
 messaging.onBackgroundMessage((payload) => {
     console.log('[sw.js] Mensagem recebida em background:', payload);
 
-    // Mapeamento robusto: busca primeiro em 'data' e, se não encontrar, usa 'notification'
-    const title = payload.data?.title || payload.notification?.title || "Novo Pedido! 🛍️";
-    const body = payload.data?.body || payload.notification?.body || "Clique para ver o pedido.";
-    const image = payload.data?.image || payload.notification?.image;
-    
-    // URL de redirecionamento (prioriza data.url, depois fallback para /painel)
-    const url = payload.data?.url || '/painel';
+    // Agora buscamos diretamente do 'data', já que o backend foi alterado
+    const data = payload.data || {};
+    const title = data.title || "Novo Pedido! 🛍️";
+    const body = data.body || "Clique para ver o pedido.";
+    const url = data.url || '/painel';
 
     const options = {
         body: body,
-        image: image,
         icon: 'https://vitrineonline.app.br/favicon.png',
         badge: 'https://vitrineonline.app.br/favicon.png',
         tag: 'novo-pedido',
         renotify: true,
         vibrate: [200, 100, 200],
-        data: { url: url }
+        data: { url: url } // Passamos a URL aqui para o evento de click usar
     };
 
-    // Força a exibição manual para garantir que o navegador não ignore o push
     return self.registration.showNotification(title, options);
 });
 
 // 5. Ação ao Clicar na Notificação
 self.addEventListener('notificationclick', (event) => {
     event.notification.close();
+    
+    // A URL vem do objeto 'data' definido nas 'options' acima
     const targetUrl = event.notification.data?.url || '/painel';
 
     event.waitUntil(
