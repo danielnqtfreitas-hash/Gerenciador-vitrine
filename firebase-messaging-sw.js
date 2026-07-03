@@ -1,4 +1,4 @@
-// 1. Importação atualizada para v11.6.1 (Garante compatibilidade total com o sistema)
+// 1. Importação dos SDKs (Versão 11.6.1 para máxima compatibilidade)
 importScripts('https://www.gstatic.com/firebasejs/11.6.1/firebase-app-compat.js');
 importScripts('https://www.gstatic.com/firebasejs/11.6.1/firebase-messaging-compat.js');
 
@@ -14,7 +14,7 @@ firebase.initializeApp({
 
 const messaging = firebase.messaging();
 
-// 3. Configuração de Cache (Estratégia PWA)
+// 3. Estratégia de Cache PWA
 const CACHE_NAME = 'vitrine-pro-cache-v2';
 const ASSETS_TO_CACHE = [
     '/',
@@ -36,15 +36,16 @@ self.addEventListener('fetch', (event) => {
     );
 });
 
-// 4. Captura de Mensagens em Segundo Plano (Background)
+// 4. Captura de Mensagens em Segundo Plano (Onde forçamos o balão)
 messaging.onBackgroundMessage((payload) => {
     console.log('[sw.js] Mensagem recebida em background:', payload);
 
-    // Prioriza o title/body do objeto 'data' (enviado pela Cloud Function)
+    // Prioriza os campos 'data' e, se não existirem, usa 'notification' conforme o seu log
     const notificationTitle = payload.data?.title || payload.notification?.title || "Novo Pedido! 🛍️";
+    const notificationBody = payload.data?.body || payload.notification?.body || "Acesse o painel para ver detalhes.";
     
     const notificationOptions = {
-        body: payload.data?.body || payload.notification?.body || "Acesse o painel para ver detalhes.",
+        body: notificationBody,
         icon: 'https://vitrineonline.app.br/favicon.png',
         badge: 'https://vitrineonline.app.br/favicon.png',
         tag: 'novo-pedido',
@@ -55,11 +56,11 @@ messaging.onBackgroundMessage((payload) => {
         }
     };
 
-    // Comando crítico para forçar a notificação no ecrã
+    // Comando final para garantir que o sistema operacional mostre o alerta visual
     return self.registration.showNotification(notificationTitle, notificationOptions);
 });
 
-// 5. Ação ao Clicar na Notificação
+// 5. Ação ao Clicar na Notificação (Foca ou abre o painel)
 self.addEventListener('notificationclick', (event) => {
     event.notification.close();
     const targetUrl = event.notification.data?.url || '/painel';
