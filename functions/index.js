@@ -10,12 +10,9 @@ exports.notificarNovoPedido = functions.firestore
         const storeId = context.params.storeId;
 
         try {
-            // 1. Busca o token exatamente na subcoleção de configurações daquela loja específica
+            // 1. Busca o token usando o caminho exato e direto do documento (Compatível com o formato V11)
             const tokenDoc = await admin.firestore()
-                .collection('stores')
-                .doc(storeId)
-                .collection('config')
-                .doc('notifications')
+                .doc(`stores/${storeId}/config/notifications`)
                 .get();
 
             // Se o documento de notificações não existir, encerra
@@ -31,13 +28,14 @@ exports.notificarNovoPedido = functions.firestore
                 return null;
             }
 
-            // Trata os dados do pedido baseando-se na estrutura do seu banco
-            const clienteNome = novoPedido.customer?.name || novoPedido.nomeCliente || "Cliente";
+            // Mapeia os campos exatamente como estão gravados no seu banco (evita erros de "undefined")
+            const clienteNome = novoPedido.name || novoPedido.customer?.name || "Cliente";
             const totalPedido = novoPedido.total || 0;
+            
             const tituloPush = 'Novo Pedido na Vitrine! 🎉';
             const corpoPush = `${clienteNome} fez um pedido de R$ ${totalPedido}`;
 
-            // 🌟 PAYLOAD BLINDADO: Envia tanto em notification quanto em data com alta prioridade
+            // PAYLOAD BLINDADO: Envia em formato notification e data com alta prioridade para o Xiaomi
             const mensagem = {
                 token: token,
                 notification: {
@@ -49,7 +47,6 @@ exports.notificarNovoPedido = functions.firestore
                     body: corpoPush,
                     url: `/painel` 
                 },
-                // Configurações específicas para acordar dispositivos Android/Xiaomi dormindo
                 android: {
                     priority: 'high',
                     notification: {
